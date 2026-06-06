@@ -187,9 +187,9 @@ export function QuickOrderList({
 				<div className="mb-4 flex items-center justify-between gap-3">
 					<h2 className="text-lg font-semibold">Quick Orders</h2>
 
-					<Button size="sm" className="h-8 gap-2" onClick={onCreate}>
+					<Button size="sm" className="h-8" onClick={onCreate}>
 						<Plus className="size-4" />
-						Create Quick Order
+						Create 
 					</Button>
 				</div>
 
