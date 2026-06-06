@@ -1,6 +1,6 @@
 "use client"
 
-import * as React from "react"
+
 import { MinusIcon, PlusIcon, ShoppingBagIcon, Trash2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -74,6 +74,7 @@ export function CartSidebar({
                   key={item.id}
                   className="rounded-md border bg-card p-3 text-card-foreground"
                 >
+                  
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="truncate text-sm font-semibold">

@@ -194,7 +194,7 @@ function OrderDetail({ order, onBack, onClose }) {
 
 			<div className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
 				<div className="grid grid-cols-3 gap-3">
-					<div className="rounded-lg bg-emerald-50 p-3 text-foreground dark:bg-emerald-950/35 dark:ring-1 dark:ring-emerald-900/80">
+					<div className="rounded-lg bg-emerald-50 p-3 text-foreground dark:bg-emerald-800/5 dark:ring-1 dark:ring-emerald-900/80">
 						<CalendarClock className="mb-2 size-4 text-emerald-600" />
 						<p className="text-[11px] text-muted-foreground dark:text-emerald-100/70">Placed On</p>
 						<p className="text-xs font-bold">
@@ -203,12 +203,12 @@ function OrderDetail({ order, onBack, onClose }) {
 							{order.placedAt}
 						</p>
 					</div>
-					<div className="rounded-lg bg-emerald-50 p-3 text-foreground dark:bg-emerald-950/35 dark:ring-1 dark:ring-emerald-900/80">
+					<div className="rounded-lg bg-emerald-50 p-3 text-foreground dark:bg-emerald-800/5 dark:ring-1 dark:ring-emerald-900/80">
 						<PackageCheck className="mb-2 size-4 text-emerald-600" />
 						<p className="text-[11px] text-muted-foreground dark:text-emerald-100/70">Order Type</p>
 						<p className="text-xs font-bold">{order.type}</p>
 					</div>
-					<div className="rounded-lg bg-emerald-50 p-3 text-foreground dark:bg-emerald-950/35 dark:ring-1 dark:ring-emerald-900/80">
+					<div className="rounded-lg bg-emerald-50 p-3 text-foreground dark:bg-emerald-800/5 dark:ring-1 dark:ring-emerald-900/80">
 						<CircleDollarSign className="mb-2 size-4 text-emerald-600" />
 						<p className="text-[11px] text-muted-foreground dark:text-emerald-100/70">Order Total</p>
 						<p className="text-lg font-bold">{formatCurrency(order.total)}</p>
@@ -256,13 +256,15 @@ function OrderDetail({ order, onBack, onClose }) {
 					</div>
 				</div>
 			</div>
-
-			<div className="border-t p-4">
-				<Button variant="outline" className="h-11 w-full text-primary">
-					<Download className="size-4" />
-					Download Invoice (PDF)
-				</Button>
-			</div>
+			
+			{order.status !== "Order Sent" && (
+	<div className="border-t p-4">
+		<Button variant="outline" className="h-11 w-full text-primary">
+			<Download className="size-4" />
+			Download Invoice (PDF)
+		</Button>
+	</div>
+)}
 		</section>
 	)
 }
@@ -292,10 +294,10 @@ export default function MyOrders() {
 	const totalThisMonth = myOrders.reduce((sum, order) => sum + order.total, 0)
 
 	return (
-		<main className="grid h-full min-h-0 gap-4 overflow-hidden bg-background p-3 lg:grid-cols-[minmax(0,1fr)_430px] lg:p-4">
+		<main className="grid h-full min-h-0 gap-4  bg-background p-3 lg:grid-cols-[minmax(0,1fr)_430px] lg:p-4">
 			<div
 				className={cn(
-					"min-h-0 space-y-4 overflow-hidden",
+					"min-h-0 space-y-4 ",
 					selectedOrder ? "hidden lg:block" : "block"
 				)}
 			>
@@ -304,28 +306,24 @@ export default function MyOrders() {
 						icon={Truck}
 						value="12"
 						label="Total Orders"
-						note="This Month"
 						tone="bg-emerald-50 text-emerald-600"
 					/>
 					<StatCard
 						icon={PackageCheck}
 						value={deliveredCount}
 						label="Orders Delivered"
-						note="This Month"
 						tone="bg-violet-50 text-violet-600"
 					/>
 					<StatCard
 						icon={CalendarClock}
 						value="3"
 						label="Upcoming Orders"
-						note="Next 7 Days"
 						tone="bg-orange-50 text-orange-600"
 					/>
 					<StatCard
 						icon={CircleDollarSign}
 						value={formatCurrency(totalThisMonth)}
 						label="Total Spend"
-						note="This Month"
 						tone="bg-blue-50 text-blue-600"
 					/>
 				</section>
