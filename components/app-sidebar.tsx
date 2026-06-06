@@ -13,15 +13,14 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon, Star, MessageCircle, Users } from "lucide-react"
-import { BiCategory } from "react-icons/bi";
+import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, FrameIcon, PieChartIcon, MapIcon, Star, MessageCircle, Users, BookOpenIcon } from "lucide-react"
 import { RxDashboard } from "react-icons/rx"
 
 // This is sample data.
 const data = {
   user: {
     name: "Samuel Ponraj",
-    avatar: "/avatars/shadcn.jpg",
+    avatar: "",
   },
   teams: [
     {
@@ -59,33 +58,19 @@ const data = {
       isActive: true,
     },
     {
-      title: "Order Guide",
-      url: "/order-guide",
+      title: "Quick Order",
+      url: "/quick-order",
       icon: (
         <Star
         />
       ),
       isActive: false,
-      // items: [
-      //   {
-      //     title: "History",
-      //     url: "#",
-      //   },
-      //   {
-      //     title: "Starred",
-      //     url: "#",
-      //   },
-      //   {
-      //     title: "Settings",
-      //     url: "#",
-      //   },
-      // ],
     },
     {
-      title: "Categories",
-      url: "/categories",
+      title: "Catalog",
+      url: "/catalog",
       icon: (
-        <BiCategory
+        <BookOpenIcon
         />
       ),
       // items: [

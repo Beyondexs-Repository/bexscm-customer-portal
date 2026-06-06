@@ -147,3 +147,29 @@ body {
 button{
   cursor: pointer;
 }
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* Scroll bar Styles */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px var(--primary); 
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary); 
+  border-radius: 10px;
+}

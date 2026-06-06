@@ -9,13 +9,13 @@ const routeMeta = {
     title: "Overview",
     description: "Track orders and business operations",
   },
-  "/order-guide": {
-    title: "Order Guide",
+  "/quick-order": {
+    title: "Quick Order",
     description: "Build and review guided orders",
   },
-  "/categories": {
-    title: "Categories",
-    description: "Browse product categories",
+  "/catalog": {
+    title: "Catalog",
+    description: "Browse product catalog",
   },
   "/messages": {
     title: "Messages",

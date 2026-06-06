@@ -11,12 +11,11 @@ import {
 
 import { cn } from "@/lib/utils"
 import { CartSidebar } from "@/components/cart-sidebar"
+import { useCart } from "@/app/context/app-context"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
-const CART_COUNT = 3
-const CART_TOTAL = "$15.00"
 const CUTOFF_TIME = "8:00 AM"
 const CUTOFF_DATE = "6/6"
 
@@ -76,6 +75,29 @@ function SiteHeader({
   title?: React.ReactNode
   description?: React.ReactNode
 }) {
+  const {
+    items,
+    itemCount,
+    total,
+    incrementItem,
+    decrementItem,
+    removeItem,
+  } = useCart() as {
+    items: {
+      id: string
+      name: string
+      price: number
+      quantity: number
+      sku: string
+      unit: string
+    }[]
+    itemCount: number
+    total: number
+    incrementItem: (id: string) => void
+    decrementItem: (id: string) => void
+    removeItem: (id: string) => void
+  }
+  const cartTotal = `$${total.toFixed(2)}`
   const today = startOfDay(new Date())
   const calendarRef = React.useRef<HTMLDivElement>(null)
   const calendarTriggerRef = React.useRef<HTMLButtonElement>(null)
@@ -138,7 +160,7 @@ function SiteHeader({
     <header
       data-slot="site-header"
       className={cn(
-        "relative flex h-16 shrink-0 items-center justify-between gap-3 border-b bg-background px-6 transition-[width] ease-linear",
+        "sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b bg-background px-3 transition-[width] ease-linear sm:px-4 lg:px-6",
         className
       )}
       {...props}
@@ -279,10 +301,10 @@ function SiteHeader({
           <HeaderInfoItem
             icon={ShoppingCartIcon}
             caption="Cart"
-            label={CART_TOTAL}
+            label={cartTotal}
           />
           <span className="absolute right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold leading-none text-primary-foreground">
-            {CART_COUNT}
+            {itemCount}
           </span>
         </button>
         {children}
@@ -290,8 +312,12 @@ function SiteHeader({
       <CartSidebar
         open={cartOpen}
         onOpenChange={setCartOpen}
-        itemCount={CART_COUNT}
-        total={CART_TOTAL}
+        itemCount={itemCount}
+        total={cartTotal}
+        items={items}
+        onIncrement={incrementItem}
+        onDecrement={decrementItem}
+        onRemove={removeItem}
       />
     </header>
   )
