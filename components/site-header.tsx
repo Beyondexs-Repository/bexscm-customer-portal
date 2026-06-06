@@ -15,6 +15,7 @@ import { useCart } from "@/app/context/app-context"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { usePathname } from "next/navigation"
 
 const CUTOFF_TIME = "8:00 AM"
 const CUTOFF_DATE = "6/6"
@@ -156,6 +157,10 @@ function SiteHeader({
     }
   }, [calendarOpen])
 
+  const pathname = usePathname()
+
+  const isCatalogPage = pathname === "/catalog"
+
   return (
     <header
       data-slot="site-header"
@@ -186,6 +191,7 @@ function SiteHeader({
           </div>
         )}
       </div>
+      {isCatalogPage && (
       <div className="absolute left-1/2 top-1/2 hidden w-[min(36vw,28rem)] -translate-x-1/2 -translate-y-1/2 md:block">
         <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -194,6 +200,7 @@ function SiteHeader({
           className="h-9 rounded-md pl-9"
         />
       </div>
+      )}
       <div className="flex shrink-0 items-center gap-4 pr-3">
         <button
           ref={calendarTriggerRef}

@@ -15,11 +15,12 @@ import {
 } from "@/components/ui/sidebar"
 import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, FrameIcon, PieChartIcon, MapIcon, Star, MessageCircle, Users, BookOpenIcon } from "lucide-react"
 import { RxDashboard } from "react-icons/rx"
+import { LuNotepadText } from "react-icons/lu"
 
 // This is sample data.
 const data = {
   user: {
-    name: "Samuel Ponraj",
+    name: "Beyondex Solutions",
     avatar: "",
   },
   teams: [
@@ -72,6 +73,27 @@ const data = {
       icon: (
         <BookOpenIcon
         />
+      ),
+      // items: [
+      //   {  
+      //     title: "Genesis",
+      //     url: "#",
+      //   },
+      //   {
+      //     title: "Explorer",
+      //     url: "#",
+      //   },
+      //   {
+      //     title: "Quantum",
+      //     url: "#",
+      //   },
+      // ],
+    },
+    {
+      title: "My Orders",
+      url: "/my-orders",
+      icon: (
+        <LuNotepadText />
       ),
       // items: [
       //   {  

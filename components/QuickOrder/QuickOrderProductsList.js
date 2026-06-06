@@ -1,0 +1,437 @@
+"use client"
+
+import { useMemo, useState } from "react"
+import Link from "next/link"
+import {
+	ChevronLeft,
+	MoveRight,
+	MoreVertical,
+	Package2,
+	Plus,
+	ShoppingBasket,
+	ShoppingCart,
+	Trash2,
+} from "lucide-react"
+
+import { useCart } from "@/app/context/app-context"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog"
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+
+const productImages = [
+	"https://images.unsplash.com/photo-1579653853027-5b305f13a7ca?auto=format&fit=crop&w=720&q=80",
+	"https://images.unsplash.com/photo-1510130387422-82bed34b37e9?auto=format&fit=crop&w=720&q=80",
+	"https://images.unsplash.com/photo-1599084993091-1cb5c0721cc6?auto=format&fit=crop&w=720&q=80",
+	"https://images.unsplash.com/photo-1568495248636-6432b97bd949?auto=format&fit=crop&w=720&q=80",
+	"https://images.unsplash.com/photo-1604909052743-94e838986d24?auto=format&fit=crop&w=720&q=80",
+	"https://images.unsplash.com/photo-1559737558-2f5a35f4523b?auto=format&fit=crop&w=720&q=80",
+]
+
+function formatPrice(price, unit) {
+	return `$${Number(price).toFixed(2)} / ${unit}`
+}
+
+function touchOrder(order) {
+	return {
+		...order,
+		updatedAt: new Date().toISOString(),
+	}
+}
+
+function ProductImage({ product, index }) {
+	const image = productImages[index % productImages.length]
+
+	return (
+		<div className="relative aspect-[1.25] overflow-hidden bg-muted sm:aspect-[1.35] xl:aspect-[1.45]">
+			<div className="absolute inset-0 grid place-items-center bg-[linear-gradient(135deg,var(--muted),var(--background))] text-primary/70">
+				<Package2 className="size-8 sm:size-10" />
+			</div>
+			<div
+				role="img"
+				aria-label={product.name}
+				className="absolute inset-0 bg-cover bg-center"
+				style={{ backgroundImage: `url(${image})` }}
+			/>
+		</div>
+	)
+}
+
+function EmptyProductsCard() {
+	return (
+		<div className="flex min-h-[420px] items-center justify-center">
+			<div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+				<div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+					<ShoppingBasket className="size-8 text-muted-foreground" />
+				</div>
+
+				<h3 className="text-xl font-semibold">No products added yet</h3>
+
+				<p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+					Add products from the catalog to build this quick order group.
+				</p>
+
+				<Button asChild className="mt-6">
+					<Link href="/catalog">
+						<Plus className="size-4" />
+						Add Products
+					</Link>
+				</Button>
+			</div>
+		</div>
+	)
+}
+
+function SavedProductCard({
+	product,
+	index,
+	cartQuantity,
+	onAddToCart,
+	onIncrement,
+	onDecrement,
+	onChangeGroup,
+	onRequestDelete,
+}) {
+	const [draftQuantity, setDraftQuantity] = useState(1)
+	const isInCart = cartQuantity > 0
+	const quantity = isInCart ? cartQuantity : draftQuantity
+
+	return (
+		<article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
+			<div className="relative">
+				<ProductImage product={product} index={index} />
+
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="outline"
+							size="icon-sm"
+							aria-label={`${product.name} options`}
+							className="absolute right-1.5 top-1.5 bg-background/95 text-muted-foreground shadow-sm sm:right-2 sm:top-2"
+						>
+							<MoreVertical />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-44">
+						<DropdownMenuItem onSelect={() => onChangeGroup(product)}>
+							<MoveRight className="size-4" />
+							Change group
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							variant="destructive"
+							onSelect={() => onRequestDelete(product)}
+						>
+							<Trash2 className="size-4" />
+							Delete
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</div>
+
+			<div className="space-y-2 p-2 lg:space-y-3 lg:p-3">
+				<div className="min-w-0 space-y-1">
+					<h3 className="truncate text-xs font-bold lg:text-sm">
+						{product.name}
+					</h3>
+					<p className="truncate text-[0.68rem] font-semibold text-muted-foreground lg:text-xs">
+						{product.subcategory || product.category || product.sku}
+					</p>
+					<div className="grid gap-0.5 text-[0.62rem] font-medium text-muted-foreground lg:text-[0.7rem]">
+						<span className="truncate">Pack Size: 1 {product.unit}</span>
+					</div>
+				</div>
+
+				<p className="text-sm font-bold lg:text-base">
+					{formatPrice(product.price, product.unit)}
+				</p>
+
+				<div className="grid gap-2 min-[460px]:grid-cols-[4.25rem_1fr] lg:grid-cols-[4.75rem_1fr]">
+					<div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							aria-label={`Decrease ${product.name} quantity`}
+							className="h-full rounded-none"
+							onClick={() => {
+								if (isInCart) {
+									onDecrement(product.id)
+									return
+								}
+
+								setDraftQuantity((current) => Math.max(1, current - 1))
+							}}
+						>
+							-
+						</Button>
+						<Input
+							value={quantity}
+							readOnly
+							aria-label={`${product.name} quantity`}
+							className="h-full rounded-none border-0 px-0 text-center text-xs font-normal shadow-none focus-visible:ring-0"
+						/>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							aria-label={`Increase ${product.name} quantity`}
+							className="h-full rounded-none"
+							onClick={() => {
+								if (isInCart) {
+									onIncrement(product.id)
+									return
+								}
+
+								setDraftQuantity((current) => current + 1)
+							}}
+						>
+							+
+						</Button>
+					</div>
+
+					<Button
+						variant={isInCart ? "secondary" : "default"}
+						className="h-8 min-w-0 rounded-md px-2 text-[0.68rem] font-bold lg:text-xs"
+						onClick={() => {
+							if (!isInCart) {
+								onAddToCart(product, draftQuantity)
+							}
+						}}
+					>
+						<ShoppingCart />
+						<span className="truncate">
+							{isInCart ? "Added" : "Add to Cart"}
+						</span>
+					</Button>
+				</div>
+			</div>
+		</article>
+	)
+}
+
+export function QuickOrderProductsList({
+	selectedOrder,
+	selectedGroup,
+	setQuickOrders,
+	onBack,
+}) {
+	const { items, addItem, incrementItem, decrementItem } = useCart()
+	const [productToMove, setProductToMove] = useState(null)
+	const [productToDelete, setProductToDelete] = useState(null)
+	const products = selectedGroup?.products ?? []
+	const cartQuantities = useMemo(
+		() => new Map(items.map((item) => [item.id, item.quantity])),
+		[items]
+	)
+
+	function removeFromGroup(productId) {
+		if (!selectedOrder || !selectedGroup) return
+
+		setQuickOrders((orders) =>
+			orders.map((order) =>
+				order.id === selectedOrder.id
+					? touchOrder({
+							...order,
+							groups: order.groups.map((group) =>
+								group.id === selectedGroup.id
+									? {
+											...group,
+											products: group.products.filter(
+												(product) => product.id !== productId
+											),
+										}
+									: group
+							),
+						})
+					: order
+			)
+		)
+	}
+
+	function moveProductToGroup(targetGroupId) {
+		if (!selectedOrder || !selectedGroup || !productToMove) return
+
+		setQuickOrders((orders) =>
+			orders.map((order) => {
+				if (order.id !== selectedOrder.id) return order
+
+				return touchOrder({
+					...order,
+					groups: order.groups.map((group) => {
+						if (group.id === selectedGroup.id) {
+							return {
+								...group,
+								products: group.products.filter(
+									(product) => product.id !== productToMove.id
+								),
+							}
+						}
+
+						if (group.id === targetGroupId) {
+							if (group.products.some((product) => product.id === productToMove.id)) {
+								return group
+							}
+
+							return {
+								...group,
+								products: [...group.products, productToMove],
+							}
+						}
+
+						return group
+					}),
+				})
+			})
+		)
+		setProductToMove(null)
+	}
+
+	function confirmDeleteProduct() {
+		if (!productToDelete) return
+
+		removeFromGroup(productToDelete.id)
+		setProductToDelete(null)
+	}
+
+	if (!selectedOrder || !selectedGroup) {
+		return (
+			<section className="grid h-full min-h-[420px] place-items-center rounded-lg border bg-card">
+				<p className="text-sm text-muted-foreground">
+					Select or create a group to begin.
+				</p>
+			</section>
+		)
+	}
+
+	return (
+		<>
+			<section className="h-full min-h-0 overflow-hidden rounded-lg border bg-card shadow-sm">
+				<div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+					<div className="flex min-w-0 gap-3">
+						<Button
+							variant="outline"
+							size="icon-sm"
+							className="mt-1 shrink-0 lg:hidden"
+							aria-label="Back to quick orders"
+							onClick={onBack}
+						>
+							<ChevronLeft />
+						</Button>
+
+						<div className="min-w-0">
+							<div className="flex min-w-0 items-center gap-2 text-xs font-semibold text-muted-foreground">
+								<span className="truncate">{selectedOrder.name}</span>
+								<span>/</span>
+								<span className="truncate text-foreground">
+									{selectedGroup.name}
+								</span>
+							</div>
+							<div className="mt-4 flex min-w-0 items-center gap-2">
+								<h2 className="truncate text-xl font-bold">
+									{selectedGroup.name}
+								</h2>
+								<Badge variant="secondary">{products.length} items</Badge>
+							</div>
+						</div>
+					</div>
+
+					<Button asChild variant="outline" size="sm">
+						<Link href="/catalog">
+							<Plus className="size-4" />
+							Add Products
+						</Link>
+					</Button>
+				</div>
+
+				<div className="min-h-0 p-4">
+					{products.length === 0 ? (
+						<EmptyProductsCard />
+					) : (
+						<div className="no-scrollbar h-[calc(100vh-15rem)] overflow-y-auto pr-1">
+							<div className="grid grid-cols-2 gap-3 xl:grid-cols-3 2xl:grid-cols-4">
+								{products.map((product, index) => (
+									<SavedProductCard
+										key={product.id}
+										product={product}
+										index={index}
+										cartQuantity={cartQuantities.get(product.id) ?? 0}
+										onAddToCart={addItem}
+										onIncrement={incrementItem}
+										onDecrement={decrementItem}
+										onChangeGroup={setProductToMove}
+										onRequestDelete={setProductToDelete}
+									/>
+								))}
+							</div>
+						</div>
+					)}
+				</div>
+			</section>
+
+			<Dialog
+				open={Boolean(productToMove)}
+				onOpenChange={(open) => !open && setProductToMove(null)}
+			>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<DialogTitle>Change Group</DialogTitle>
+						<DialogDescription>
+							Move this product to another group in {selectedOrder.name}.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-2 py-2">
+						{selectedOrder.groups.map((group) => (
+							<Button
+								key={group.id}
+								variant={group.id === selectedGroup.id ? "secondary" : "outline"}
+								className="h-11 w-full justify-between"
+								disabled={group.id === selectedGroup.id}
+								onClick={() => moveProductToGroup(group.id)}
+							>
+								<span className="truncate">{group.name}</span>
+								<span className="rounded-full bg-background/70 px-2 py-0.5 text-xs">
+									{group.products.length}
+								</span>
+							</Button>
+						))}
+					</div>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={Boolean(productToDelete)}
+				onOpenChange={(open) => !open && setProductToDelete(null)}
+			>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<DialogTitle>Delete Product</DialogTitle>
+						<DialogDescription>
+							Remove {productToDelete?.name} from {selectedGroup.name}.
+						</DialogDescription>
+					</DialogHeader>
+
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setProductToDelete(null)}>
+							Cancel
+						</Button>
+						<Button variant="destructive" onClick={confirmDeleteProduct}>
+							Delete
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</>
+	)
+}

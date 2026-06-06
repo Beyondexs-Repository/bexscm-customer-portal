@@ -1,5 +1,9 @@
-import { PlaceholderPage } from "@/components/placeholder-page"
+import Messages from "@/components/messages/Messages"
 
 export default function MessagesPage() {
-  return <PlaceholderPage title="Messages" />
+	return (
+		<div className="p-4">
+			<Messages fullscreen />
+		</div>
+	)
 }

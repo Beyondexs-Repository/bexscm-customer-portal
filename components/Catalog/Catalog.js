@@ -1,26 +1,44 @@
-"use client"
+"use client";
 
-import { useMemo, useState } from "react"
+import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Heart,
+  Star,
   Package2,
   ShoppingCart,
   SlidersHorizontal,
-} from "lucide-react"
+} from "lucide-react";
 
-import { useCart, useCatalog } from "@/app/context/app-context"
-import { Button } from "@/components/ui/button"
+import {
+  useCart,
+  useCatalog,
+  useQuickOrders,
+} from "@/app/context/app-context";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const productImages = [
   "https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=720&q=80",
@@ -35,13 +53,13 @@ const productImages = [
   "https://images.unsplash.com/photo-1519996529931-28324d5a630e?auto=format&fit=crop&w=720&q=80",
   "https://images.unsplash.com/photo-1518843875459-f738682238a6?auto=format&fit=crop&w=720&q=80",
   "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=720&q=80",
-]
+];
 
-const pageSizeOptions = [10, 20, 40, 60]
-const sortOptions = ["Name A-Z", "Price Low to High", "Price High to Low"]
+const pageSizeOptions = [10, 20, 40, 60];
+const sortOptions = ["Name A-Z", "Price Low to High", "Price High to Low"];
 
 function formatPrice(price, unit) {
-  return `$${Number(price).toFixed(2)} / ${unit}`
+  return `$${Number(price).toFixed(2)} / ${unit}`;
 }
 
 function SelectMenu({ label, value, options, onChange, className }) {
@@ -49,7 +67,7 @@ function SelectMenu({ label, value, options, onChange, className }) {
     <label
       className={cn(
         "grid min-w-0 gap-1.5 text-xs font-semibold text-foreground sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:gap-2",
-        className
+        className,
       )}
     >
       <span className="whitespace-nowrap">{label}</span>
@@ -72,11 +90,11 @@ function SelectMenu({ label, value, options, onChange, className }) {
         </DropdownMenuContent>
       </DropdownMenu>
     </label>
-  )
+  );
 }
 
 function ProductImage({ product, index }) {
-  const image = productImages[index % productImages.length]
+  const image = productImages[index % productImages.length];
 
   return (
     <div className="relative aspect-[1.25] overflow-hidden bg-muted sm:aspect-[1.35] xl:aspect-[1.45]">
@@ -90,33 +108,51 @@ function ProductImage({ product, index }) {
         style={{ backgroundImage: `url(${image})` }}
       />
     </div>
-  )
+  );
 }
 
 function ProductCard({
   product,
   index,
   cartQuantity,
+  isInQuickOrder,
   onAdd,
   onIncrement,
   onDecrement,
+  onOpenQuickOrder,
 }) {
-  const [draftQuantity, setDraftQuantity] = useState(1)
-  const isInCart = cartQuantity > 0
-  const quantity = isInCart ? cartQuantity : draftQuantity
+  const [draftQuantity, setDraftQuantity] = useState(1);
+  const isInCart = cartQuantity > 0;
+  const quantity = isInCart ? cartQuantity : draftQuantity;
 
   return (
     <article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
       <div className="relative">
         <ProductImage product={product} index={index} />
-        <Button
-          variant="outline"
-          size="icon-sm"
-          aria-label={`Save ${product.name}`}
-          className="absolute right-1.5 top-1.5 rounded-full bg-background/95 text-muted-foreground shadow-sm hover:text-primary sm:right-2 sm:top-2"
-        >
-          <Heart />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                aria-label={`Quick Order ${product.name}`}
+                className="absolute right-1.5 top-1.5 rounded-full bg-background/95 text-muted-foreground shadow-sm hover:text-primary sm:right-2 sm:top-2"
+                onClick={() => onOpenQuickOrder(product)}
+              >
+                <Star
+                  className={cn(
+                    "h-4 w-4",
+                    isInQuickOrder && "fill-primary text-primary",
+                  )}
+                />
+              </Button>
+            </TooltipTrigger>
+
+            <TooltipContent>
+              <p>Add to Quick Order</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <div className="space-y-2 p-2 lg:space-y-3 lg:p-3">
@@ -145,11 +181,11 @@ function ProductCard({
               className="h-full rounded-none"
               onClick={() => {
                 if (isInCart) {
-                  onDecrement(product.id)
-                  return
+                  onDecrement(product.id);
+                  return;
                 }
 
-                setDraftQuantity((current) => Math.max(1, current - 1))
+                setDraftQuantity((current) => Math.max(1, current - 1));
               }}
             >
               -
@@ -167,11 +203,11 @@ function ProductCard({
               className="h-full rounded-none"
               onClick={() => {
                 if (isInCart) {
-                  onIncrement(product.id)
-                  return
+                  onIncrement(product.id);
+                  return;
                 }
 
-                setDraftQuantity((current) => current + 1)
+                setDraftQuantity((current) => current + 1);
               }}
             >
               +
@@ -183,7 +219,7 @@ function ProductCard({
             className="h-8 min-w-0 rounded-md px-2 text-[0.68rem] font-bold lg:text-xs"
             onClick={() => {
               if (!isInCart) {
-                onAdd(product, draftQuantity)
+                onAdd(product, draftQuantity);
               }
             }}
           >
@@ -195,91 +231,205 @@ function ProductCard({
         </div>
       </div>
     </article>
-  )
+  );
+}
+
+function isProductInDefaultGroup(order, productId) {
+  return Boolean(
+    order.groups[0]?.products.some((product) => product.id === productId),
+  );
+}
+
+function QuickOrderPickerDialog({
+  product,
+  quickOrders,
+  open,
+  onOpenChange,
+  onAdd,
+  onRemove,
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add to Quick Order</DialogTitle>
+          <DialogDescription>
+            Select the quick orders where this product should appear.
+          </DialogDescription>
+        </DialogHeader>
+
+        {!product ? null : quickOrders.length === 0 ? (
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Create a quick order first, then return to the catalog to add
+              products.
+            </p>
+            <Button asChild>
+              <Link href="/quick-order">Create Quick Order</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2 py-2">
+            <p className="truncate text-sm font-semibold">{product.name}</p>
+
+            <div className="space-y-2">
+              {quickOrders.map((order) => {
+                const checked = isProductInDefaultGroup(order, product.id);
+
+                return (
+                  <label
+                    key={order.id}
+                    className="flex cursor-pointer items-start gap-3 rounded-md border bg-background p-3 text-sm transition-colors hover:bg-muted/50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(event) => {
+                        if (event.target.checked) {
+                          onAdd(order.id, product);
+                          return;
+                        }
+
+                        onRemove(order.id, product.id);
+                      }}
+                      className="mt-0.5 size-4 accent-primary"
+                    />
+                    <span className="grid min-w-0 gap-1">
+                      <span className="truncate font-semibold">{order.name}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        Default Group
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 function getVisiblePages(currentPage, totalPages) {
   if (totalPages <= 5) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1)
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
 
-  const pages = new Set([1, totalPages, currentPage])
+  const pages = new Set([1, totalPages, currentPage]);
 
-  if (currentPage > 1) pages.add(currentPage - 1)
-  if (currentPage < totalPages) pages.add(currentPage + 1)
+  if (currentPage > 1) pages.add(currentPage - 1);
+  if (currentPage < totalPages) pages.add(currentPage + 1);
 
-  return [...pages].sort((a, b) => a - b)
+  return [...pages].sort((a, b) => a - b);
 }
 
 export function Catalog() {
-  const { items, addItem, incrementItem, decrementItem } = useCart()
-  const { catalog } = useCatalog()
-  const categoryNames = catalog.map((category) => category.name)
-  const [categoryName, setCategoryName] = useState(categoryNames[0])
+  const { items, addItem, incrementItem, decrementItem } = useCart();
+  const { catalog } = useCatalog();
+  const {
+    quickOrders,
+    addProductToQuickOrder,
+    removeProductFromQuickOrder,
+  } = useQuickOrders();
+  const [quickOrderProduct, setQuickOrderProduct] = useState(null);
+  const categoryNames = ["All", ...catalog.map((category) => category.name)];
+  const [categoryName, setCategoryName] = useState("All");
   const activeCategory =
-    catalog.find((category) => category.name === categoryName) ?? catalog[0]
-  const subcategoryNames = activeCategory.subcategories.map(
-    (subcategory) => subcategory.name
-  )
-  const [subcategoryName, setSubcategoryName] = useState(
-    activeCategory.subcategories[0]?.name ?? ""
-  )
-  const activeSubcategory =
-    activeCategory.subcategories.find(
-      (subcategory) => subcategory.name === subcategoryName
-    ) ?? activeCategory.subcategories[0]
-  const [sortBy, setSortBy] = useState(sortOptions[0])
-  const [pageSize, setPageSize] = useState(20)
-  const [currentPage, setCurrentPage] = useState(1)
+    categoryName === "All"
+      ? null
+      : catalog.find((category) => category.name === categoryName);
+
+  const subcategoryNames =
+    categoryName === "All"
+      ? ["All"]
+      : ["All", ...(activeCategory?.subcategories.map((s) => s.name) ?? [])];
+
+  const [subcategoryName, setSubcategoryName] = useState("All");
+  const [sortBy, setSortBy] = useState(sortOptions[0]);
+  const [pageSize, setPageSize] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const products = useMemo(() => {
-    const sorted = [...(activeSubcategory?.products ?? [])]
+    let filtered = [];
 
-    if (sortBy === "Price Low to High") {
-      sorted.sort((a, b) => a.price - b.price)
-    } else if (sortBy === "Price High to Low") {
-      sorted.sort((a, b) => b.price - a.price)
+    if (categoryName === "All") {
+      filtered = catalog.flatMap((category) =>
+        category.subcategories.flatMap((subcategory) =>
+          subcategory.products.map((product) => ({
+            ...product,
+            category: category.name,
+            subcategory: subcategory.name,
+          })),
+        ),
+      );
+    } else if (subcategoryName === "All") {
+      filtered =
+        activeCategory?.subcategories.flatMap((subcategory) =>
+          subcategory.products.map((product) => ({
+            ...product,
+            category: activeCategory.name,
+            subcategory: subcategory.name,
+          })),
+        ) ?? [];
     } else {
-      sorted.sort((a, b) => a.name.localeCompare(b.name))
+      const selectedSubcategory = activeCategory?.subcategories.find(
+        (subcategory) => subcategory.name === subcategoryName,
+      );
+
+      filtered = selectedSubcategory?.products ?? [];
     }
 
-    return sorted
-  }, [activeSubcategory, sortBy])
+    if (sortBy === "Price Low to High") {
+      filtered.sort((a, b) => a.price - b.price);
+    } else if (sortBy === "Price High to Low") {
+      filtered.sort((a, b) => b.price - a.price);
+    } else {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    }
 
-  const totalPages = Math.max(1, Math.ceil(products.length / pageSize))
-  const safePage = Math.min(currentPage, totalPages)
-  const startIndex = products.length === 0 ? 0 : (safePage - 1) * pageSize
-  const endIndex = Math.min(startIndex + pageSize, products.length)
-  const visibleProducts = products.slice(startIndex, endIndex)
-  const visiblePages = getVisiblePages(safePage, totalPages)
+    return filtered;
+  }, [catalog, categoryName, subcategoryName, sortBy, activeCategory]);
+
+  const totalPages = Math.max(1, Math.ceil(products.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = products.length === 0 ? 0 : (safePage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, products.length);
+  const visibleProducts = products.slice(startIndex, endIndex);
+  const visiblePages = getVisiblePages(safePage, totalPages);
   const cartQuantities = useMemo(
     () => new Map(items.map((item) => [item.id, item.quantity])),
-    [items]
-  )
+    [items],
+  );
+  const quickOrderProductIds = useMemo(
+    () =>
+      new Set(
+        quickOrders.flatMap((order) =>
+          order.groups[0]?.products.map((product) => product.id) ?? [],
+        ),
+      ),
+    [quickOrders],
+  );
 
   function handleCategoryChange(nextCategoryName) {
-    const nextCategory = catalog.find(
-      (category) => category.name === nextCategoryName
-    )
-
-    setCategoryName(nextCategoryName)
-    setSubcategoryName(nextCategory?.subcategories[0]?.name ?? "")
-    setCurrentPage(1)
+    setCategoryName(nextCategoryName);
+    setSubcategoryName("All");
+    setCurrentPage(1);
   }
 
   function handleSubcategoryChange(nextSubcategoryName) {
-    setSubcategoryName(nextSubcategoryName)
-    setCurrentPage(1)
+    setSubcategoryName(nextSubcategoryName);
+    setCurrentPage(1);
   }
 
   function handleSortChange(nextSortBy) {
-    setSortBy(nextSortBy)
-    setCurrentPage(1)
+    setSortBy(nextSortBy);
+    setCurrentPage(1);
   }
 
   function handlePageSizeChange(nextPageSize) {
-    setPageSize(nextPageSize)
-    setCurrentPage(1)
+    setPageSize(nextPageSize);
+    setCurrentPage(1);
   }
 
   return (
@@ -296,7 +446,7 @@ export function Catalog() {
             />
             <SelectMenu
               label="Subcategory"
-              value={activeSubcategory?.name ?? ""}
+              value={subcategoryName}
               options={subcategoryNames}
               onChange={handleSubcategoryChange}
               className="lg:max-w-80"
@@ -340,9 +490,11 @@ export function Catalog() {
               product={product}
               index={startIndex + index}
               cartQuantity={cartQuantities.get(product.id) ?? 0}
+              isInQuickOrder={quickOrderProductIds.has(product.id)}
               onAdd={addItem}
               onIncrement={incrementItem}
               onDecrement={decrementItem}
+              onOpenQuickOrder={setQuickOrderProduct}
             />
           ))}
         </section>
@@ -359,8 +511,8 @@ export function Catalog() {
               <ChevronLeft />
             </Button>
             {visiblePages.map((page, index) => {
-              const previousPage = visiblePages[index - 1]
-              const showGap = previousPage && page - previousPage > 1
+              const previousPage = visiblePages[index - 1];
+              const showGap = previousPage && page - previousPage > 1;
 
               return (
                 <span key={page} className="contents">
@@ -383,7 +535,7 @@ export function Catalog() {
                     {page}
                   </Button>
                 </span>
-              )
+              );
             })}
             <Button
               variant="outline"
@@ -425,6 +577,17 @@ export function Catalog() {
           </div>
         </div>
       </div>
+
+      <QuickOrderPickerDialog
+        product={quickOrderProduct}
+        quickOrders={quickOrders}
+        open={Boolean(quickOrderProduct)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setQuickOrderProduct(null);
+        }}
+        onAdd={addProductToQuickOrder}
+        onRemove={removeProductFromQuickOrder}
+      />
     </main>
-  )
+  );
 }

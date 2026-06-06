@@ -1,13 +1,85 @@
 "use client"
 
-import { createContext, useContext, useMemo, useState } from "react"
+import { createContext, useContext, useEffect, useMemo, useState } from "react"
 
 import catalog from "@/data/data.json"
 
 const AppContext = createContext(null)
+const CART_STORAGE_KEY = "aloha.cart.v1"
+const QUICK_ORDERS_STORAGE_KEY = "aloha.quickOrders.v1"
+
+function createDefaultGroup() {
+  return {
+    id: crypto.randomUUID(),
+    name: "Default Group",
+    products: [],
+  }
+}
+
+function getInitialCartItems() {
+  if (typeof window === "undefined") {
+    return []
+  }
+
+  try {
+    const items = JSON.parse(window.localStorage.getItem(CART_STORAGE_KEY))
+    return Array.isArray(items) ? items : []
+  } catch {
+    return []
+  }
+}
+
+function normalizeQuickOrders(orders) {
+  return Array.isArray(orders)
+    ? orders.map((order) => ({
+        ...order,
+        groups:
+          Array.isArray(order.groups) && order.groups.length > 0
+            ? order.groups.map((group, index) => ({
+                ...group,
+                name: group.name || (index === 0 ? "Default Group" : "Group"),
+                products: Array.isArray(group.products) ? group.products : [],
+              }))
+            : [createDefaultGroup()],
+      }))
+    : []
+}
+
+function getInitialQuickOrders() {
+  if (typeof window === "undefined") {
+    return []
+  }
+
+  try {
+    return normalizeQuickOrders(
+      JSON.parse(window.localStorage.getItem(QUICK_ORDERS_STORAGE_KEY))
+    )
+  } catch {
+    return []
+  }
+}
+
+function touchQuickOrder(order) {
+  return {
+    ...order,
+    updatedAt: new Date().toISOString(),
+  }
+}
 
 export function AppProvider({ children }) {
-  const [cartItems, setCartItems] = useState([])
+  const [cartItems, setCartItems] = useState(getInitialCartItems)
+  const [quickOrders, setQuickOrders] = useState(getInitialQuickOrders)
+
+  useEffect(() => {
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems))
+  }, [cartItems])
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      QUICK_ORDERS_STORAGE_KEY,
+      JSON.stringify(quickOrders)
+    )
+  }, [quickOrders])
 
   function addCartItem(product, quantity = 1) {
     setCartItems((currentItems) => {
@@ -61,6 +133,80 @@ export function AppProvider({ children }) {
     )
   }
 
+  function createQuickOrder(name) {
+    const defaultGroup = createDefaultGroup()
+    const newOrder = {
+      id: crypto.randomUUID(),
+      name,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      groups: [defaultGroup],
+    }
+
+    setQuickOrders((orders) => [...orders, newOrder])
+
+    return newOrder
+  }
+
+  function addProductToQuickOrder(orderId, product) {
+    setQuickOrders((orders) =>
+      orders.map((order) => {
+        if (order.id !== orderId) return order
+
+        const defaultGroup = order.groups[0] ?? createDefaultGroup()
+        const groups = order.groups.length > 0 ? order.groups : [defaultGroup]
+
+        return touchQuickOrder({
+          ...order,
+          groups: groups.map((group, index) => {
+            if (index !== 0) return group
+            if (group.products.some((item) => item.id === product.id)) {
+              return group
+            }
+
+            return {
+              ...group,
+              products: [
+                ...group.products,
+                {
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  unit: product.unit,
+                  sku: product.sku,
+                  category: product.category,
+                  subcategory: product.subcategory,
+                },
+              ],
+            }
+          }),
+        })
+      })
+    )
+  }
+
+  function removeProductFromQuickOrder(orderId, productId) {
+    setQuickOrders((orders) =>
+      orders.map((order) =>
+        order.id === orderId
+          ? touchQuickOrder({
+              ...order,
+              groups: order.groups.map((group, index) =>
+                index === 0
+                  ? {
+                      ...group,
+                      products: group.products.filter(
+                        (product) => product.id !== productId
+                      ),
+                    }
+                  : group
+              ),
+            })
+          : order
+      )
+    )
+  }
+
   const value = useMemo(() => {
     const cartItemCount = cartItems.reduce(
       (sum, item) => sum + item.quantity,
@@ -77,14 +223,37 @@ export function AppProvider({ children }) {
       cartItems,
       cartItemCount,
       cartTotal,
+      quickOrders,
+      setQuickOrders,
       addCartItem,
       incrementCartItem,
       decrementCartItem,
       removeCartItem,
+      createQuickOrder,
+      addProductToQuickOrder,
+      removeProductFromQuickOrder,
     }
-  }, [cartItems])
+  }, [cartItems, quickOrders])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
+}
+
+export function useQuickOrders() {
+  const {
+    quickOrders,
+    setQuickOrders,
+    createQuickOrder,
+    addProductToQuickOrder,
+    removeProductFromQuickOrder,
+  } = useAppContext()
+
+  return {
+    quickOrders,
+    setQuickOrders,
+    createQuickOrder,
+    addProductToQuickOrder,
+    removeProductFromQuickOrder,
+  }
 }
 
 export function useAppContext() {
