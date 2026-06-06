@@ -10,6 +10,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 export function NavMain({
@@ -27,6 +28,20 @@ export function NavMain({
   }[]
 }) {
   const pathname = usePathname()
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  function handleNavClick(
+    event: React.MouseEvent<HTMLAnchorElement>,
+    isActive: boolean
+  ) {
+    if (isActive) {
+      event.preventDefault()
+    }
+
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
 
   return (
     <SidebarGroup>
@@ -44,7 +59,10 @@ export function NavMain({
                 tooltip={item.title}
                 className="h-11 !py-2 text-sm"
               >
-                <Link href={item.url}>
+                <Link
+                  href={item.url}
+                  onClick={(event) => handleNavClick(event, isActive)}
+                >
                   {item.icon}
                   <span>{item.title}</span>
                 </Link>

@@ -59,7 +59,7 @@ export default function MyOrders() {
 		filteredOrders.find((order) => order.id === selectedOrderId) || null
 
 	return (
-		<main className="grid h-full min-h-0 gap-4 bg-background p-3 xl:grid-cols-[minmax(0,1fr)_430px] lg:p-4">
+		<main className="grid min-h-full gap-4 bg-background p-3 sm:p-4 xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_minmax(360px,430px)] xl:pb-6">
 			<div
 				className={cn(
 					"min-h-0",
@@ -91,8 +91,8 @@ export default function MyOrders() {
 						onClose={() => setSelectedOrderId(null)}
 					/>
 				) : (
-					<section className="grid h-full place-items-center rounded-lg border bg-card">
-						<p className="text-sm text-muted-foreground">
+					<section className="hidden h-full min-h-[18rem] place-items-center rounded-lg border bg-card xl:grid">
+						<p className="px-4 text-center text-sm text-muted-foreground">
 							Select an order to view details.
 						</p>
 					</section>

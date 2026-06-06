@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import {
 	ChevronUp,
@@ -34,6 +34,13 @@ export default function Messages({ fullscreen = false }) {
 	const [open, setOpen] = useState(fullscreen)
 	const [message, setMessage] = useState("")
 	const [messages, setMessages] = useState(initialMessages)
+	const messageAreaRef = useRef(null)
+
+	useEffect(() => {
+		if (!messageAreaRef.current) return
+
+		messageAreaRef.current.scrollTop = messageAreaRef.current.scrollHeight
+	}, [messages, open])
 
 	function handleSend() {
 		if (!message.trim()) return
@@ -53,7 +60,7 @@ export default function Messages({ fullscreen = false }) {
 	}
 
 	const chatBoxClass = fullscreen
-	? "flex h-[calc(100vh-4rem)] flex-col bg-background"
+	? "flex h-full min-h-0 flex-col overflow-hidden bg-background"
 	: "fixed bottom-0 right-6 z-50 flex h-[620px] w-[430px] flex-col overflow-hidden rounded-t-xl border bg-background shadow-2xl"
 
 	return (
@@ -94,8 +101,12 @@ export default function Messages({ fullscreen = false }) {
 						</div>
 					)}
 
-					<div className="flex-1 overflow-y-auto px-5 py-4">
-						<div className="my-5 flex items-center gap-3">
+					<div
+						ref={messageAreaRef}
+						className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
+					>
+						<div className="flex min-h-full flex-col">
+						<div className="mt-auto flex items-center gap-3 pb-5">
 							<div className="h-px flex-1 bg-border" />
 							<span className="text-xs font-semibold text-muted-foreground">
 								TODAY
@@ -145,9 +156,10 @@ export default function Messages({ fullscreen = false }) {
 								</div>
 							))}
 						</div>
+						</div>
 					</div>
 
-					<div className="sticky bottom-0 border-t bg-background p-3">
+					<div className="shrink-0 border-t bg-background p-3">
 						<textarea
 							value={message}
 							onChange={(e) => setMessage(e.target.value)}

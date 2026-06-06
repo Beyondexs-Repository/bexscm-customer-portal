@@ -20,7 +20,7 @@ import { LuNotepadText } from "react-icons/lu"
 // This is sample data.
 const data = {
   user: {
-    name: "Beyondex Solutions",
+    name: "Company Name",
     avatar: "",
   },
   teams: [

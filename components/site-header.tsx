@@ -1,21 +1,32 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
+  BadgeCheckIcon,
   CalendarDaysIcon,
   ChevronDownIcon,
   Clock3Icon,
-  SearchIcon,
+  LogOutIcon,
   ShoppingCartIcon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { CartSidebar } from "@/components/cart-sidebar"
 import { useCart } from "@/app/context/app-context"
-import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { usePathname } from "next/navigation"
 
 const CUTOFF_TIME = "8:00 AM"
 const CUTOFF_DATE = "6/6"
@@ -76,6 +87,7 @@ function SiteHeader({
   title?: React.ReactNode
   description?: React.ReactNode
 }) {
+  const router = useRouter()
   const {
     items,
     itemCount,
@@ -157,9 +169,11 @@ function SiteHeader({
     }
   }, [calendarOpen])
 
-  const pathname = usePathname()
-
-  const isCatalogPage = pathname === "/catalog"
+  function handleLogout() {
+    window.sessionStorage.removeItem("aloha-login-verified")
+    document.cookie = "aloha-login-verified=; path=/; max-age=0; SameSite=Lax"
+    router.replace("/login")
+  }
 
   return (
     <header
@@ -191,17 +205,7 @@ function SiteHeader({
           </div>
         )}
       </div>
-      {isCatalogPage && (
-      <div className="absolute left-1/2 top-1/2 hidden w-[min(36vw,28rem)] -translate-x-1/2 -translate-y-1/2 md:block">
-        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search Products ..."
-          className="h-9 rounded-md pl-9"
-        />
-      </div>
-      )}
-      <div className="flex shrink-0 items-center gap-4 pr-3">
+      <div className="flex shrink-0 items-center gap-2 pr-1 sm:gap-4 sm:pr-3">
         <button
           ref={calendarTriggerRef}
           type="button"
@@ -299,18 +303,57 @@ function SiteHeader({
           className="hidden sm:block"
         />
         <Separator orientation="vertical" className="hidden h-8 sm:block" />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="rounded-full outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
+              aria-label="Open profile menu"
+            >
+              <Avatar className="size-8">
+                <AvatarFallback className="text-xs font-semibold">CN</AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="p-0 font-normal">
+              <div className="flex items-center gap-3 px-3 py-2 text-left text-sm">
+                <Avatar className="size-9">
+                  <AvatarFallback className="text-xs font-semibold">CN</AvatarFallback>
+                </Avatar>
+                <span className="truncate font-medium">Company Name</span>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem asChild className="px-3 py-2.5">
+                <Link href="/profile">
+                  <BadgeCheckIcon />
+                  My Profile
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="px-3 py-2.5" onClick={handleLogout}>
+              <LogOutIcon />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <button
           type="button"
-          className="relative rounded-md px-1 text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative flex size-9 items-center justify-center rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:size-auto sm:px-1"
           onClick={() => setCartOpen(true)}
           aria-label="Open cart"
         >
+          <ShoppingCartIcon className="size-5 text-primary sm:hidden" />
           <HeaderInfoItem
             icon={ShoppingCartIcon}
             caption="Cart"
             label={cartTotal}
+            className="hidden sm:block"
           />
-          <span className="absolute right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold leading-none text-primary-foreground">
+          <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-primary text-[10px] font-semibold leading-none text-primary-foreground sm:right-1">
             {itemCount}
           </span>
         </button>

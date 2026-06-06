@@ -1,13 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  CalendarDays,
+  Clock3,
   Star,
   Package2,
+  RotateCcw,
+  Search,
   ShoppingCart,
   SlidersHorizontal,
 } from "lucide-react";
@@ -32,6 +36,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -57,6 +68,23 @@ const productImages = [
 
 const pageSizeOptions = [10, 20, 40, 60];
 const sortOptions = ["Name A-Z", "Price Low to High", "Price High to Low"];
+const DEFAULT_SORT = sortOptions[0];
+const CUTOFF_TIME = "8:00 AM 6/6";
+
+const formatDeliveryDate = (date) =>
+  date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+const startOfDay = (date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const isSameDay = (first, second) =>
+  first.getFullYear() === second.getFullYear() &&
+  first.getMonth() === second.getMonth() &&
+  first.getDate() === second.getDate();
 
 function formatPrice(price, unit) {
   return `$${Number(price).toFixed(2)} / ${unit}`;
@@ -75,10 +103,10 @@ function SelectMenu({ label, value, options, onChange, className }) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className="h-9 w-full justify-between rounded-md px-2 text-xs font-semibold lg:h-10 lg:px-3"
+            className="h-9 w-full min-w-0 justify-between rounded-md px-2 text-xs font-semibold lg:h-10 lg:px-3"
           >
             <span className="truncate">{value}</span>
-            <ChevronDown className="text-muted-foreground" />
+            <ChevronDown className="shrink-0 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
@@ -311,6 +339,280 @@ function QuickOrderPickerDialog({
   );
 }
 
+function CatalogFilterControls({
+  searchQuery,
+  categoryName,
+  categoryNames,
+  subcategoryName,
+  subcategoryNames,
+  sortBy,
+  activeFilterCount,
+  onSearchChange,
+  onCategoryChange,
+  onSubcategoryChange,
+  onSortChange,
+  onClearAll,
+  layout = "desktop",
+}) {
+  const isMobile = layout === "mobile";
+
+  return (
+    <div className="min-w-0 space-y-4">
+      <div
+        className={cn(
+          "grid min-w-0 gap-2",
+          isMobile ? "grid-cols-1" : "sm:grid-cols-[minmax(0,1fr)_8.5rem_auto]",
+        )}
+      >
+        <div className="relative min-w-0">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            value={searchQuery}
+            onChange={onSearchChange}
+            placeholder="Search products by name, keyword, SKU..."
+            className="h-10 rounded-md pl-9 text-sm"
+          />
+        </div>
+
+        <Button
+          variant="outline"
+          className="relative h-10 min-w-0 mt-1 sm:mt-0 justify-start rounded-md text-xs font-semibold"
+        >
+          <SlidersHorizontal className="shrink-0" />
+          <span className="truncate">Filters</span>
+          {activeFilterCount > 0 && (
+            <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
+              {activeFilterCount}
+            </span>
+          )}
+        </Button>
+
+        {!isMobile && (
+          <Button
+            variant="ghost"
+            className="h-10 justify-start px-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
+            onClick={onClearAll}
+            disabled={activeFilterCount === 0}
+          >
+            <RotateCcw className="size-4" />
+            Clear all
+          </Button>
+        )}
+      </div>
+
+      <div
+        className={cn(
+          "grid min-w-0 gap-2",
+          isMobile ? "grid-cols-2" : "md:grid-cols-3 md:gap-3",
+        )}
+      >
+        <SelectMenu
+          label="Category"
+          value={categoryName}
+          options={categoryNames}
+          onChange={onCategoryChange}
+        />
+        <SelectMenu
+          label="Subcategory"
+          value={subcategoryName}
+          options={subcategoryNames}
+          onChange={onSubcategoryChange}
+        />
+        <SelectMenu
+          label="Sort by"
+          value={sortBy}
+          options={sortOptions}
+          onChange={onSortChange}
+        />
+
+        {isMobile && (
+          <Button
+            variant="outline"
+            className="mt-auto h-9 min-w-0 justify-start rounded-md text-xs font-semibold"
+          >
+            <SlidersHorizontal className="shrink-0" />
+            <span className="truncate">Filters</span>
+          </Button>
+        )}
+      </div>
+
+      {isMobile && (
+        <Button
+          variant="ghost"
+          className="h-9 w-full justify-center text-xs font-semibold text-muted-foreground hover:text-foreground"
+          onClick={onClearAll}
+          disabled={activeFilterCount === 0}
+        >
+          <RotateCcw className="size-4" />
+          Clear all
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function MobileDeliveryInfo() {
+  const today = startOfDay(new Date());
+  const calendarRef = useRef(null);
+  const calendarTriggerRef = useRef(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [deliveryDate, setDeliveryDate] = useState(() => new Date(2026, 5, 12));
+  const [calendarMonth, setCalendarMonth] = useState(
+    () => new Date(2026, 5, 1),
+  );
+
+  const calendarDays = useMemo(() => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const dayOffset = firstDay.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    return Array.from({ length: dayOffset + daysInMonth }, (_, index) => {
+      if (index < dayOffset) {
+        return null;
+      }
+
+      return new Date(year, month, index - dayOffset + 1);
+    });
+  }, [calendarMonth]);
+
+  const calendarTitle = calendarMonth.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  useEffect(() => {
+    if (!calendarOpen) {
+      return undefined;
+    }
+
+    const handlePointerDown = (event) => {
+      const target = event.target;
+
+      if (
+        calendarRef.current?.contains(target) ||
+        calendarTriggerRef.current?.contains(target)
+      ) {
+        return;
+      }
+
+      setCalendarOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [calendarOpen]);
+
+  return (
+    <div className="relative grid grid-cols-2 gap-2 md:hidden">
+      <button
+        ref={calendarTriggerRef}
+        type="button"
+        className="rounded-md border bg-background p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={() => setCalendarOpen((open) => !open)}
+        aria-expanded={calendarOpen}
+      >
+        <div className="flex items-center gap-2 text-primary">
+          <CalendarDays className="size-4" />
+          <span className="text-[11px] font-medium text-muted-foreground">
+            Delivery Date
+          </span>
+        </div>
+        <p className="mt-1 text-sm font-bold">{formatDeliveryDate(deliveryDate)}</p>
+      </button>
+
+      <div className="rounded-md border bg-background p-3">
+        <div className="flex items-center gap-2 text-primary">
+          <Clock3 className="size-4" />
+          <span className="text-[11px] font-medium text-muted-foreground">
+            Cutoff Time
+          </span>
+        </div>
+        <p className="mt-1 text-sm font-bold">{CUTOFF_TIME}</p>
+      </div>
+
+      {calendarOpen && (
+        <div
+          ref={calendarRef}
+          className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-40 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg"
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <button
+              type="button"
+              className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted"
+              onClick={() =>
+                setCalendarMonth(
+                  new Date(
+                    calendarMonth.getFullYear(),
+                    calendarMonth.getMonth() - 1,
+                    1,
+                  ),
+                )
+              }
+            >
+              Prev
+            </button>
+            <p className="text-sm font-semibold">{calendarTitle}</p>
+            <button
+              type="button"
+              className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted"
+              onClick={() =>
+                setCalendarMonth(
+                  new Date(
+                    calendarMonth.getFullYear(),
+                    calendarMonth.getMonth() + 1,
+                    1,
+                  ),
+                )
+              }
+            >
+              Next
+            </button>
+          </div>
+          <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
+            {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
+              <span key={`${day}-${index}`}>{day}</span>
+            ))}
+          </div>
+          <div className="mt-1 grid grid-cols-7 gap-1">
+            {calendarDays.map((date, index) => {
+              const disabled = date ? startOfDay(date) < today : true;
+              const selected = date ? isSameDay(date, deliveryDate) : false;
+
+              return date ? (
+                <button
+                  key={date.toISOString()}
+                  type="button"
+                  disabled={disabled}
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors",
+                    selected && "bg-primary text-primary-foreground",
+                    !selected && !disabled && "hover:bg-muted",
+                    disabled && "cursor-not-allowed text-muted-foreground/35",
+                  )}
+                  onClick={() => {
+                    setDeliveryDate(date);
+                    setCalendarOpen(false);
+                  }}
+                >
+                  {date.getDate()}
+                </button>
+              ) : (
+                <span key={`empty-${index}`} />
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function getVisiblePages(currentPage, totalPages) {
   if (totalPages <= 5) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -346,7 +648,9 @@ export function Catalog() {
       : ["All", ...(activeCategory?.subcategories.map((s) => s.name) ?? [])];
 
   const [subcategoryName, setSubcategoryName] = useState("All");
-  const [sortBy, setSortBy] = useState(sortOptions[0]);
+  const [sortBy, setSortBy] = useState(DEFAULT_SORT);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -380,6 +684,24 @@ export function Catalog() {
       filtered = selectedSubcategory?.products ?? [];
     }
 
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+
+    if (normalizedSearch) {
+      filtered = filtered.filter((product) =>
+        [
+          product.name,
+          product.category,
+          product.subcategory,
+          product.unit,
+          product.id,
+        ]
+          .filter(Boolean)
+          .some((value) =>
+            String(value).toLowerCase().includes(normalizedSearch),
+          ),
+      );
+    }
+
     if (sortBy === "Price Low to High") {
       filtered.sort((a, b) => a.price - b.price);
     } else if (sortBy === "Price High to Low") {
@@ -389,7 +711,7 @@ export function Catalog() {
     }
 
     return filtered;
-  }, [catalog, categoryName, subcategoryName, sortBy, activeCategory]);
+  }, [catalog, categoryName, subcategoryName, sortBy, searchQuery, activeCategory]);
 
   const totalPages = Math.max(1, Math.ceil(products.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
@@ -427,6 +749,25 @@ export function Catalog() {
     setCurrentPage(1);
   }
 
+  function handleSearchChange(event) {
+    setSearchQuery(event.target.value);
+    setCurrentPage(1);
+  }
+
+  function handleClearAll() {
+    setSearchQuery("");
+    setCategoryName("All");
+    setSubcategoryName("All");
+    setSortBy(DEFAULT_SORT);
+    setCurrentPage(1);
+  }
+
+  const activeFilterCount =
+    (searchQuery.trim() ? 1 : 0) +
+    (categoryName !== "All" ? 1 : 0) +
+    (subcategoryName !== "All" ? 1 : 0) +
+    (sortBy !== DEFAULT_SORT ? 1 : 0);
+
   function handlePageSizeChange(nextPageSize) {
     setPageSize(nextPageSize);
     setCurrentPage(1);
@@ -434,45 +775,65 @@ export function Catalog() {
 
   return (
     <main className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden p-2 sm:p-3 lg:p-4">
-      <section className="min-w-0 shrink-0 space-y-3 rounded-lg border bg-background p-2 shadow-sm lg:p-4">
-        <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div className="grid min-w-0 grid-cols-2 gap-2 lg:w-[min(100%,40rem)]">
-            <SelectMenu
-              label="Category"
-              value={categoryName}
-              options={categoryNames}
-              onChange={handleCategoryChange}
-              className="lg:max-w-72"
-            />
-            <SelectMenu
-              label="Subcategory"
-              value={subcategoryName}
-              options={subcategoryNames}
-              onChange={handleSubcategoryChange}
-              className="lg:max-w-80"
-            />
-          </div>
+      <div className="mb-3 md:hidden">
+        <MobileDeliveryInfo />
+      </div>
 
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_7rem] items-end gap-2 sm:grid-cols-[minmax(0,16rem)_8rem] sm:justify-end lg:flex-1 lg:grid-cols-[18rem_8rem] lg:gap-3">
-            <SelectMenu
-              label="Sort by"
-              value={sortBy}
-              options={sortOptions}
-              onChange={handleSortChange}
-              className="min-w-0 sm:w-64 lg:w-72"
-            />
-            <Button
-              variant="outline"
-              className="relative h-9 min-w-0 justify-start rounded-md text-xs font-semibold sm:w-32 lg:h-10"
-            >
-              <SlidersHorizontal />
-              Filters
-              <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
-                2
+      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <SheetTrigger asChild>
+          <Button
+            variant="outline"
+            className="mb-3 h-10 w-full justify-center rounded-md text-sm font-semibold md:hidden"
+          >
+            <SlidersHorizontal className="size-4" />
+            Show Filters
+            {activeFilterCount > 0 && (
+              <span className="grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
+                {activeFilterCount}
               </span>
-            </Button>
+            )}
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="top" className="max-h-[85svh] overflow-y-auto p-4 md:hidden">
+          <SheetHeader>
+            <SheetTitle>Catalog Filters</SheetTitle>
+          </SheetHeader>
+
+          <div className=" space-y-4">
+            <CatalogFilterControls
+              layout="mobile"
+              searchQuery={searchQuery}
+              categoryName={categoryName}
+              categoryNames={categoryNames}
+              subcategoryName={subcategoryName}
+              subcategoryNames={subcategoryNames}
+              sortBy={sortBy}
+              activeFilterCount={activeFilterCount}
+              onSearchChange={handleSearchChange}
+              onCategoryChange={handleCategoryChange}
+              onSubcategoryChange={handleSubcategoryChange}
+              onSortChange={handleSortChange}
+              onClearAll={handleClearAll}
+            />
           </div>
-        </div>
+        </SheetContent>
+      </Sheet>
+
+      <section className="hidden min-w-0 shrink-0 rounded-lg border bg-background p-3 shadow-sm md:block lg:p-4">
+        <CatalogFilterControls
+          searchQuery={searchQuery}
+          categoryName={categoryName}
+          categoryNames={categoryNames}
+          subcategoryName={subcategoryName}
+          subcategoryNames={subcategoryNames}
+          sortBy={sortBy}
+          activeFilterCount={activeFilterCount}
+          onSearchChange={handleSearchChange}
+          onCategoryChange={handleCategoryChange}
+          onSubcategoryChange={handleSubcategoryChange}
+          onSortChange={handleSortChange}
+          onClearAll={handleClearAll}
+        />
       </section>
 
       <div className="no-scrollbar mt-3 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden pr-1">

@@ -96,7 +96,7 @@ export default function Overview() {
 	return (
 		<>
 			<WelcomeCard />
-			<Messages />
+			{/* <Messages /> */}
 			<div className="">
 				<Reorders />
 			</div>

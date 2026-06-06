@@ -21,6 +21,10 @@ const routeMeta = {
     title: "My Orders",
     description: "View and manage your orders",
   },
+  "/profile": {
+    title: "Profile",
+    description: "View account details and preferences",
+  },
   "/messages": {
     title: "Messages",
     description: "View customer and team messages",

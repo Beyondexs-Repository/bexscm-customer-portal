@@ -15,7 +15,7 @@ export default function WelcomeCard() {
         <p className="text-lg font-semibold">Welcome back,</p>
 
         <h1 className="mt-1 text-3xl font-bold tracking-tight">
-          Beyondex Solutions<span>👋</span>
+          Company Name<span>👋</span>
         </h1>
 
         <p className="mt-2 text-sm text-muted-foreground">

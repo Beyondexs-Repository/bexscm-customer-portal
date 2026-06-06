@@ -42,7 +42,10 @@ export function CartSidebar({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[min(100vw,24rem)] gap-0 p-0 sm:max-w-md">
+      <SheetContent
+        side="right"
+        className="gap-0 p-0 data-[side=right]:w-screen data-[side=right]:max-w-none sm:data-[side=right]:w-[min(100vw,24rem)] sm:data-[side=right]:max-w-md"
+      >
         <SheetHeader className="border-b px-5 py-4">
           <SheetTitle className="text-lg font-semibold">
             Your Cart{" "}
