@@ -159,8 +159,8 @@ function OrderDetail({ order, onBack, onClose }) {
 						<Button
 							variant="outline"
 							size="icon-sm"
-							className="shrink-0 lg:hidden"
-							aria-label="Back to orders"
+							className="mt-1 shrink-0 lg:hidden"
+							aria-label="Back to quick orders"
 							onClick={onBack}
 						>
 							<ChevronLeft />
