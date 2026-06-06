@@ -11,7 +11,7 @@ export function AppShell({ title, description, children }) {
         <AppSidebar />
         <SidebarInset className="h-svh min-w-0 overflow-hidden">
           <SiteHeader title={title} description={description} />
-          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto pb-20 md:pb-0">
+          <div className="no-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto pb-20 md:pb-0">
             {children}
           </div>
           <FooterNav />
