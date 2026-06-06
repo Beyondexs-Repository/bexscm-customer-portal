@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 
 const countryCodes = [
   { label: "India", value: "+91" },
-  { label: "United States", value: "+1" },
+  { label: "United States", value: "+11" },
   { label: "United Kingdom", value: "+44" },
   { label: "United Arab Emirates", value: "+971" },
 ]
