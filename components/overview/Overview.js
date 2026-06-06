@@ -97,9 +97,9 @@ export default function Overview() {
 		<>
 			<WelcomeCard />
 			<Messages />
-			{/* <div className="">
+			<div className="">
 				<Reorders />
-			</div> */}
+			</div>
 		</>
 	)
 }
