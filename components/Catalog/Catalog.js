@@ -509,15 +509,15 @@ function MobileDeliveryInfo() {
   }, [calendarOpen]);
 
   return (
-    <div className="relative grid grid-cols-2 gap-2 md:hidden">
+    <div className="relative grid grid-cols-2 divide-x rounded-md py-1 md:hidden">
       <button
         ref={calendarTriggerRef}
         type="button"
-        className="rounded-md border bg-background p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="px-3 py-0  text-center transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={() => setCalendarOpen((open) => !open)}
         aria-expanded={calendarOpen}
       >
-        <div className="flex items-center gap-2 text-primary">
+        <div className="flex items-center justify-center gap-2 text-primary">
           <CalendarDays className="size-4" />
           <span className="text-[11px] font-medium text-muted-foreground">
             Delivery Date
@@ -526,14 +526,14 @@ function MobileDeliveryInfo() {
         <p className="mt-1 text-sm font-bold">{formatDeliveryDate(deliveryDate)}</p>
       </button>
 
-      <div className="rounded-md border bg-background p-3">
-        <div className="flex items-center gap-2 text-primary">
+      <div className="px-3 py-0">
+        <div className="flex items-center justify-center gap-2 text-primary">
           <Clock3 className="size-4" />
           <span className="text-[11px] font-medium text-muted-foreground">
             Cutoff Time
           </span>
         </div>
-        <p className="mt-1 text-sm font-bold">{CUTOFF_TIME}</p>
+        <p className="mt-1 text-sm text-center font-bold">{CUTOFF_TIME}</p>
       </div>
 
       {calendarOpen && (

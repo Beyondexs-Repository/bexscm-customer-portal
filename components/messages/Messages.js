@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import {
+	Camera,
 	ChevronUp,
-	ImageIcon,
 	Maximize2,
 	Paperclip,
 	Send,
@@ -17,7 +17,7 @@ const initialMessages = [
 	{
 		id: 1,
 		type: "received",
-		text: "Hi Beyondexs, can you confirm whether the Premium Incense Sticks are available in stock?",
+		text: "Hi <name>, can you confirm whether the Premium Incense Sticks are available in stock?",
 		time: "10:15 AM",
 		date: "Today",
 	},
@@ -35,6 +35,8 @@ export default function Messages({ fullscreen = false }) {
 	const [message, setMessage] = useState("")
 	const [messages, setMessages] = useState(initialMessages)
 	const messageAreaRef = useRef(null)
+	const attachmentInputRef = useRef(null)
+	const cameraInputRef = useRef(null)
 
 	useEffect(() => {
 		if (!messageAreaRef.current) return
@@ -57,6 +59,10 @@ export default function Messages({ fullscreen = false }) {
 		])
 
 		setMessage("")
+	}
+
+	function handleSelectedFiles(event) {
+		event.target.value = ""
 	}
 
 	const chatBoxClass = fullscreen
@@ -159,45 +165,65 @@ export default function Messages({ fullscreen = false }) {
 						</div>
 					</div>
 
-					<div className="shrink-0 border-t bg-background p-3">
-						<textarea
-							value={message}
-							onChange={(e) => setMessage(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" && !e.shiftKey) {
-									e.preventDefault()
-									handleSend()
-								}
-							}}
-							placeholder="Write a message..."
-							rows={2}
-							className="mb-2 w-full resize-none rounded-lg border bg-muted/40 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-						/>
-
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-2">
+					<div className="shrink-0 border-t bg-background px-3 py-2">
+						<div className="flex items-end gap-2">
+							<div className="flex min-h-11 flex-1 items-end gap-1 rounded-full border bg-muted/35 px-2 py-1.5 focus-within:ring-2 focus-within:ring-primary/30">
 								<button
 									type="button"
-									className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+									className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+									aria-label="Attach file"
+									onClick={() => attachmentInputRef.current?.click()}
 								>
 									<Paperclip className="h-5 w-5" />
 								</button>
+								<input
+									ref={attachmentInputRef}
+									type="file"
+									className="hidden"
+									multiple
+									onChange={handleSelectedFiles}
+								/>
+
+								<textarea
+									value={message}
+									onChange={(e) => setMessage(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" && !e.shiftKey) {
+											e.preventDefault()
+											handleSend()
+										}
+									}}
+									placeholder="Write a message..."
+									rows={1}
+									className="max-h-24 min-h-8 flex-1 resize-none bg-transparent px-1 py-1.5 text-sm leading-5 outline-none placeholder:text-muted-foreground"
+								/>
 
 								<button
 									type="button"
-									className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+									className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+									aria-label="Open camera"
+									onClick={() => cameraInputRef.current?.click()}
 								>
-									<ImageIcon className="h-5 w-5" />
+									<Camera className="h-5 w-5" />
 								</button>
+								<input
+									ref={cameraInputRef}
+									type="file"
+									accept="image/*"
+									capture="environment"
+									className="hidden"
+									onChange={handleSelectedFiles}
+								/>
 							</div>
 
 							<button
 								type="button"
 								onClick={handleSend}
-								className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+								className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60"
+								disabled={!message.trim()}
+								aria-label="Send message"
 							>
-								Send
-								<Send className="h-4 w-4" />
+								<Send className="h-5 w-5" />
 							</button>
 						</div>
 					</div>

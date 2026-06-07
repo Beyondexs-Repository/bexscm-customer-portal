@@ -61,6 +61,7 @@ export function QuickOrderList({
 }) {
 	const [dialog, setDialog] = useState(null)
 	const [draftName, setDraftName] = useState("")
+	const [expandedOrderId, setExpandedOrderId] = useState(null)
 
 	function closeDialog() {
 		setDialog(null)
@@ -100,7 +101,7 @@ export function QuickOrderList({
 						: order
 				)
 			)
-			setSelectedOrderId(dialog.order.id)
+			setExpandedOrderId(dialog.order.id)
 			setSelectedGroupId(group.id)
 			closeDialog()
 			return
@@ -144,6 +145,9 @@ export function QuickOrderList({
 			if (selectedOrderId === dialog.order.id) {
 				setSelectedOrderId(null)
 				setSelectedGroupId(null)
+			}
+			if (expandedOrderId === dialog.order.id) {
+				setExpandedOrderId(null)
 			}
 			closeDialog()
 			return
@@ -196,27 +200,29 @@ export function QuickOrderList({
 				<div className="no-scrollbar h-[calc(100vh-11rem)] space-y-3 overflow-y-auto pr-1">
 					{quickOrders.map((order, orderIndex) => {
 						const isSelectedOrder = order.id === selectedOrderId
+						const isExpandedOrder =
+							order.id === expandedOrderId || isSelectedOrder
 
 						return (
 							<section
 								key={order.id}
 								className={cn(
 									"rounded-lg border bg-background/50 p-3 transition-colors",
-									isSelectedOrder && "border-primary/80"
+									isExpandedOrder && "border-primary/80"
 								)}
 							>
 								<button
 									type="button"
 									className="flex w-full items-start justify-between gap-3 rounded-md text-left"
 									onClick={() => {
-										if (isSelectedOrder) {
+										if (isExpandedOrder) {
+											setExpandedOrderId(null)
 											setSelectedOrderId(null)
 											setSelectedGroupId(null)
 											return
 										}
 
-										setSelectedOrderId(order.id)
-										setSelectedGroupId(order.groups[0]?.id ?? null)
+										setExpandedOrderId(order.id)
 									}}
 								>
 									<div className="min-w-0 space-y-1">
@@ -239,12 +245,12 @@ export function QuickOrderList({
 									<ChevronRight
 										className={cn(
 											"mt-2 size-4 shrink-0 text-muted-foreground transition-transform",
-											isSelectedOrder && "rotate-90"
+											isExpandedOrder && "rotate-90"
 										)}
 									/>
 								</button>
 
-								{isSelectedOrder ? (
+								{isExpandedOrder ? (
 									<div className="mt-4 space-y-2">
 										{order.groups.map((group) => {
 											const isSelectedGroup = group.id === selectedGroupId
@@ -262,7 +268,11 @@ export function QuickOrderList({
 													<button
 														type="button"
 														className="min-w-0 flex-1 truncate text-left font-medium"
-														onClick={() => setSelectedGroupId(group.id)}
+														onClick={() => {
+															setExpandedOrderId(order.id)
+															setSelectedOrderId(order.id)
+															setSelectedGroupId(group.id)
+														}}
 													>
 														{group.name}
 													</button>

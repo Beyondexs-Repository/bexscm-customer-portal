@@ -65,33 +65,35 @@ export default function OrderDetails({ order, onBack, onClose }) {
 			</div>
 
 			<div className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-3 pb-24 sm:p-4 xl:pb-4">
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-					<div className="rounded-lg bg-emerald-50 p-3 text-foreground dark:bg-emerald-800/5 dark:ring-1 dark:ring-emerald-900/80">
+				<div className="grid grid-cols-3 gap-2 sm:gap-3">
+					<div className="min-w-0 rounded-lg bg-emerald-50 p-2 text-foreground dark:bg-emerald-800/5 dark:ring-1 dark:ring-emerald-900/80 sm:p-3">
 						<CalendarClock className="mb-2 size-4 text-emerald-600" />
-						<p className="text-[11px] text-muted-foreground dark:text-emerald-100/70">
+						<p className="text-[10px] text-muted-foreground dark:text-emerald-100/70 sm:text-[11px]">
 							Placed On
 						</p>
-						<p className="break-words text-xs font-bold leading-snug">
+						<p className="break-words text-[11px] font-bold leading-snug sm:text-xs">
 							{order.placedOn}
 							<br />
 							{order.placedAt}
 						</p>
 					</div>
 
-					<div className="rounded-lg bg-emerald-50 p-3 text-foreground dark:bg-emerald-800/5 dark:ring-1 dark:ring-emerald-900/80">
+					<div className="min-w-0 rounded-lg bg-emerald-50 p-2 text-foreground dark:bg-emerald-800/5 dark:ring-1 dark:ring-emerald-900/80 sm:p-3">
 						<PackageCheck className="mb-2 size-4 text-emerald-600" />
-						<p className="text-[11px] text-muted-foreground dark:text-emerald-100/70">
+						<p className="text-[10px] text-muted-foreground dark:text-emerald-100/70 sm:text-[11px]">
 							Order Type
 						</p>
-						<p className="break-words text-xs font-bold leading-snug">{order.type}</p>
+						<p className="break-words text-[11px] font-bold leading-snug sm:text-xs">
+							{order.type}
+						</p>
 					</div>
 
-					<div className="rounded-lg bg-emerald-50 p-3 text-foreground dark:bg-emerald-800/5 dark:ring-1 dark:ring-emerald-900/80">
+					<div className="min-w-0 rounded-lg bg-emerald-50 p-2 text-foreground dark:bg-emerald-800/5 dark:ring-1 dark:ring-emerald-900/80 sm:p-3">
 						<CircleDollarSign className="mb-2 size-4 text-emerald-600" />
-						<p className="text-[11px] text-muted-foreground dark:text-emerald-100/70">
+						<p className="text-[10px] text-muted-foreground dark:text-emerald-100/70 sm:text-[11px]">
 							Order Total
 						</p>
-						<p className="truncate text-lg font-bold leading-tight">
+						<p className="truncate text-sm font-bold leading-tight sm:text-lg">
 							{formatCurrency(order.total)}
 						</p>
 					</div>

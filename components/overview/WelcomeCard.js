@@ -22,22 +22,22 @@ export default function WelcomeCard() {
           Here&apos;s what&apos;s happening with your account today.
         </p>
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button asChild className="py-5">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+          <Button asChild className="col-span-2 w-full py-5 sm:w-auto">
             <Link href="/quick-order">
               <ShoppingCart className="size-4" />
               Start Quick Order
             </Link>
           </Button>
 
-          <Button asChild variant="outline" className="py-5">
+          <Button asChild variant="outline" className="w-full py-5 sm:w-auto">
             <Link href="/catalog">
               <BookOpen className="size-4" />
               Browse Catalog
             </Link>
           </Button>
 
-          <Button asChild variant="outline" className="py-5">
+          <Button asChild variant="outline" className="w-full py-5 sm:w-auto">
             <Link href="/my-orders">
               <CalendarDays className="size-4" />
               View Orders

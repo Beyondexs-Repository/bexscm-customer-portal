@@ -60,7 +60,7 @@ export function FooterNav() {
               href={item.url}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex min-h-14 flex-col items-center justify-center gap-1 rounded-md px-1 text-[10px] font-medium leading-tight text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                "flex min-h-14 flex-col items-center justify-center gap-1 rounded-md px-1 text-[10px] font-medium leading-tight text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary active:bg-primary/10 active:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 isActive && "bg-primary/10 text-primary"
               )}
             >
