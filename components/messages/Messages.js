@@ -35,6 +35,7 @@ export default function Messages({ fullscreen = false }) {
 	const [message, setMessage] = useState("")
 	const [messages, setMessages] = useState(initialMessages)
 	const messageAreaRef = useRef(null)
+	const messageInputRef = useRef(null)
 	const attachmentInputRef = useRef(null)
 	const cameraInputRef = useRef(null)
 
@@ -43,6 +44,15 @@ export default function Messages({ fullscreen = false }) {
 
 		messageAreaRef.current.scrollTop = messageAreaRef.current.scrollHeight
 	}, [messages, open])
+
+	useEffect(() => {
+		if (!messageInputRef.current) return
+
+		const input = messageInputRef.current
+		input.style.height = "auto"
+		input.style.height = `${Math.min(input.scrollHeight, 72)}px`
+		input.style.overflowY = input.scrollHeight > 72 ? "auto" : "hidden"
+	}, [message])
 
 	function handleSend() {
 		if (!message.trim()) return
@@ -109,10 +119,10 @@ export default function Messages({ fullscreen = false }) {
 
 					<div
 						ref={messageAreaRef}
-						className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
+						className="min-h-0 flex-1 overflow-y-auto px-2 py-3 sm:px-5 sm:py-4"
 					>
 						<div className="flex min-h-full flex-col">
-						<div className="mt-auto flex items-center gap-3 pb-5">
+						<div className="mt-auto flex items-center gap-2 pb-4 sm:gap-3 sm:pb-5">
 							<div className="h-px flex-1 bg-border" />
 							<span className="text-xs font-semibold text-muted-foreground">
 								TODAY
@@ -120,11 +130,11 @@ export default function Messages({ fullscreen = false }) {
 							<div className="h-px flex-1 bg-border" />
 						</div>
 
-						<div className="space-y-5">
+						<div className="space-y-4 sm:space-y-5">
 							{messages.map((item) => (
 								<div
 									key={item.id}
-									className={`flex gap-3 ${
+									className={`flex min-w-0 gap-2 sm:gap-3 ${
 										item.type === "sent"
 											? "justify-end"
 											: "items-start"
@@ -134,18 +144,18 @@ export default function Messages({ fullscreen = false }) {
 										<img
 											src={avatarUrl}
 											alt="Customer"
-											className="h-10 w-10 rounded-full"
+											className="h-8 w-8 shrink-0 rounded-full sm:h-10 sm:w-10"
 										/>
 									)}
 
 									<div
-										className={`max-w-[520px] ${
+										className={`min-w-0 max-w-[82%] sm:max-w-[520px] ${
 											item.type === "sent"
-												? "rounded-2xl bg-primary px-4 py-2 text-primary-foreground"
-												: "rounded-2xl bg-muted px-4 py-2"
+												? "rounded-2xl bg-primary px-3 py-2 text-primary-foreground sm:px-4"
+												: "rounded-2xl bg-muted px-3 py-2 sm:px-4"
 										}`}
 									>
-										<p className="whitespace-pre-line text-sm leading-relaxed">
+										<p className="whitespace-pre-line break-words text-sm leading-relaxed">
 											{item.text}
 										</p>
 
@@ -156,7 +166,7 @@ export default function Messages({ fullscreen = false }) {
 													: "text-muted-foreground"
 											}`}
 										>
-											{item.date} · {item.time}
+											{item.date} - {item.time}
 										</div>
 									</div>
 								</div>
@@ -165,16 +175,16 @@ export default function Messages({ fullscreen = false }) {
 						</div>
 					</div>
 
-					<div className="shrink-0 border-t bg-background px-3 py-2">
-						<div className="flex items-end gap-2">
-							<div className="flex min-h-11 flex-1 items-end gap-1 rounded-full border bg-muted/35 px-2 py-1.5 focus-within:ring-2 focus-within:ring-primary/30">
+					<div className="shrink-0 border-t bg-background px-1.5 py-1.5 sm:px-3 sm:py-2">
+						<div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+							<div className="flex min-h-11 min-w-0 flex-1 items-center gap-1 rounded-full border bg-muted/35 px-1.5 py-1.5 focus-within:ring-2 focus-within:ring-primary/30 sm:px-2">
 								<button
 									type="button"
-									className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+									className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:size-8"
 									aria-label="Attach file"
 									onClick={() => attachmentInputRef.current?.click()}
 								>
-									<Paperclip className="h-5 w-5" />
+									<Paperclip className="h-4 w-4 sm:h-5 sm:w-5" />
 								</button>
 								<input
 									ref={attachmentInputRef}
@@ -185,6 +195,7 @@ export default function Messages({ fullscreen = false }) {
 								/>
 
 								<textarea
+									ref={messageInputRef}
 									value={message}
 									onChange={(e) => setMessage(e.target.value)}
 									onKeyDown={(e) => {
@@ -195,16 +206,16 @@ export default function Messages({ fullscreen = false }) {
 									}}
 									placeholder="Write a message..."
 									rows={1}
-									className="max-h-24 min-h-8 flex-1 resize-none bg-transparent px-1 py-1.5 text-sm leading-5 outline-none placeholder:text-muted-foreground"
+									className="no-scrollbar min-h-8 min-w-0 flex-1 resize-none bg-transparent px-1 py-1.5 text-sm leading-5 outline-none placeholder:text-muted-foreground [overflow-wrap:anywhere]"
 								/>
 
 								<button
 									type="button"
-									className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+									className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:size-8"
 									aria-label="Open camera"
 									onClick={() => cameraInputRef.current?.click()}
 								>
-									<Camera className="h-5 w-5" />
+									<Camera className="h-4 w-4 sm:h-5 sm:w-5" />
 								</button>
 								<input
 									ref={cameraInputRef}
@@ -219,11 +230,11 @@ export default function Messages({ fullscreen = false }) {
 							<button
 								type="button"
 								onClick={handleSend}
-								className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60"
+								className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60 sm:size-11"
 								disabled={!message.trim()}
 								aria-label="Send message"
 							>
-								<Send className="h-5 w-5" />
+								<Send className="h-4 w-4 sm:h-5 sm:w-5" />
 							</button>
 						</div>
 					</div>
