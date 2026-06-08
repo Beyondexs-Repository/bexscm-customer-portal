@@ -19,13 +19,6 @@ import {
 import { useCart, useCatalog, useQuickOrders } from "@/app/context/app-context";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -46,6 +39,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { OrderQuidePickerDialog } from "@/components/Catalog/OrderQuidePickerDialog";
 
 const productImages = [
   "https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=720&q=80",
@@ -192,7 +186,13 @@ function ProductCard({
   return (
     <article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
       <div className="relative">
-        <ProductImage product={product} index={index} />
+        <Link
+          href={`/catalog/${product.id}`}
+          aria-label={`View details for ${product.name}`}
+          className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <ProductImage product={product} index={index} />
+        </Link>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -221,9 +221,12 @@ function ProductCard({
 
       <div className="space-y-2 p-2 lg:space-y-3 lg:p-3">
         <div className="min-w-0 space-y-1">
-          <h3 className="truncate text-xs font-bold lg:text-sm">
+          <Link
+            href={`/catalog/${product.id}`}
+            className="block truncate text-xs font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
+          >
             {product.name}
-          </h3>
+          </Link>
           <p className="truncate text-[0.68rem] font-semibold text-muted-foreground lg:text-xs">
             {product.subcategory}
           </p>
@@ -252,7 +255,7 @@ function ProductCard({
                 setDraftQuantity((current) => Math.max(1, current - 1));
               }}
             >
-              -
+              <span className="grid size-full place-items-center">-</span>
             </Button>
             <Input
               value={quantity}
@@ -274,7 +277,7 @@ function ProductCard({
                 setDraftQuantity((current) => current + 1);
               }}
             >
-              +
+              <span className="grid size-full place-items-center">+</span>
             </Button>
           </div>
 
@@ -295,85 +298,6 @@ function ProductCard({
         </div>
       </div>
     </article>
-  );
-}
-
-function isProductInDefaultGroup(order, productId) {
-  return Boolean(
-    order.groups[0]?.products.some((product) => product.id === productId),
-  );
-}
-
-function QuickOrderPickerDialog({
-  product,
-  quickOrders,
-  open,
-  onOpenChange,
-  onAdd,
-  onRemove,
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Add to Order Quide</DialogTitle>
-          <DialogDescription>
-            Select the order quides where this product should appear.
-          </DialogDescription>
-        </DialogHeader>
-
-        {!product ? null : quickOrders.length === 0 ? (
-          <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground">
-              Create an order quide first, then return to the catalog to add
-              products.
-            </p>
-            <Button asChild>
-              <Link href="/order-quide">Create Order Quide</Link>
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-2 py-2">
-            <p className="truncate text-sm font-semibold">{product.name}</p>
-
-            <div className="space-y-2">
-              {quickOrders.map((order) => {
-                const checked = isProductInDefaultGroup(order, product.id);
-
-                return (
-                  <label
-                    key={order.id}
-                    className="flex cursor-pointer items-start gap-3 rounded-md border bg-background p-3 text-sm transition-colors hover:bg-muted/50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(event) => {
-                        if (event.target.checked) {
-                          onAdd(order.id, product);
-                          return;
-                        }
-
-                        onRemove(order.id, product.id);
-                      }}
-                      className="mt-0.5 size-4 accent-primary"
-                    />
-                    <span className="grid min-w-0 gap-1">
-                      <span className="truncate font-semibold">
-                        {order.name}
-                      </span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        Default Group
-                      </span>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -692,6 +616,14 @@ export function Catalog() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
+  const catalogScrollRef = useRef(null);
+
+  function scrollCatalogToTop() {
+    catalogScrollRef.current?.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
 
   useEffect(() => {
     const searchDelay = window.setTimeout(() => {
@@ -783,7 +715,9 @@ export function Catalog() {
       new Set(
         quickOrders.flatMap(
           (order) =>
-            order.groups[0]?.products.map((product) => product.id) ?? [],
+            order.groups.flatMap((group) =>
+              group.products.map((product) => product.id),
+            ) ?? [],
         ),
       ),
     [quickOrders],
@@ -827,6 +761,7 @@ export function Catalog() {
   function handlePageSizeChange(nextPageSize) {
     setPageSize(nextPageSize);
     setCurrentPage(1);
+    scrollCatalogToTop();
   }
 
   return (
@@ -895,7 +830,10 @@ export function Catalog() {
         />
       </section>
 
-      <div className="no-scrollbar mt-3 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden pr-1">
+      <div
+        ref={catalogScrollRef}
+        className="no-scrollbar mt-3 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden pr-1"
+      >
         <div className="mb-2 flex min-w-0 items-center justify-between gap-3 text-xs text-muted-foreground sm:text-sm">
           <p className="truncate">
             Showing {products.length === 0 ? 0 : startIndex + 1} to {endIndex}{" "}
@@ -926,7 +864,10 @@ export function Catalog() {
               size="icon-sm"
               aria-label="Previous page"
               disabled={safePage === 1}
-              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              onClick={() => {
+                setCurrentPage((page) => Math.max(1, page - 1));
+                scrollCatalogToTop();
+              }}
             >
               <ChevronLeft />
             </Button>
@@ -950,7 +891,10 @@ export function Catalog() {
                     variant={page === safePage ? "default" : "outline"}
                     size="icon-sm"
                     aria-label={`Page ${page}`}
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => {
+                      setCurrentPage(page);
+                      scrollCatalogToTop();
+                    }}
                   >
                     {page}
                   </Button>
@@ -962,9 +906,10 @@ export function Catalog() {
               size="icon-sm"
               aria-label="Next page"
               disabled={safePage === totalPages}
-              onClick={() =>
-                setCurrentPage((page) => Math.min(totalPages, page + 1))
-              }
+              onClick={() => {
+                setCurrentPage((page) => Math.min(totalPages, page + 1));
+                scrollCatalogToTop();
+              }}
             >
               <ChevronRight />
             </Button>
@@ -998,7 +943,7 @@ export function Catalog() {
         </div>
       </div>
 
-      <QuickOrderPickerDialog
+      <OrderQuidePickerDialog
         product={quickOrderProduct}
         quickOrders={quickOrders}
         open={Boolean(quickOrderProduct)}

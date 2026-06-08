@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { DownloadInvoice } from "@/lib/PdfGenerators/DownloadInvoice"
 
 import { formatCurrency, statusStyles } from "./MyOrders"
 
@@ -149,7 +150,9 @@ export default function OrderDetails({ order, onBack, onClose }) {
 
 			{order.status !== "Order Sent" && (
 				<div className="border-t p-3 sm:p-4">
-					<Button variant="outline" className="h-11 w-full text-primary">
+					<Button variant="outline" 
+					className="h-11 w-full text-primary"
+					onClick={() => DownloadInvoice(order)}>
 						<Download className="size-4" />
 						Download Invoice (PDF)
 					</Button>

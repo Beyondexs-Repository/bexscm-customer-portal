@@ -148,18 +148,19 @@ export function AppProvider({ children }) {
     return newOrder
   }
 
-  function addProductToQuickOrder(orderId, product) {
+  function addProductToQuickOrder(orderId, product, groupId) {
     setQuickOrders((orders) =>
       orders.map((order) => {
         if (order.id !== orderId) return order
 
         const defaultGroup = order.groups[0] ?? createDefaultGroup()
         const groups = order.groups.length > 0 ? order.groups : [defaultGroup]
+        const targetGroupId = groupId ?? defaultGroup.id
 
         return touchQuickOrder({
           ...order,
-          groups: groups.map((group, index) => {
-            if (index !== 0) return group
+          groups: groups.map((group) => {
+            if (group.id !== targetGroupId) return group
             if (group.products.some((item) => item.id === product.id)) {
               return group
             }
@@ -185,14 +186,14 @@ export function AppProvider({ children }) {
     )
   }
 
-  function removeProductFromQuickOrder(orderId, productId) {
+  function removeProductFromQuickOrder(orderId, productId, groupId) {
     setQuickOrders((orders) =>
       orders.map((order) =>
         order.id === orderId
           ? touchQuickOrder({
               ...order,
               groups: order.groups.map((group, index) =>
-                index === 0
+                (groupId ? group.id === groupId : index === 0)
                   ? {
                       ...group,
                       products: group.products.filter(

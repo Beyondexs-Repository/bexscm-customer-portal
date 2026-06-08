@@ -112,7 +112,13 @@ function SavedProductCard({
 	return (
 		<article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
 			<div className="relative">
-				<ProductImage product={product} index={index} />
+				<Link
+					href={`/catalog/${product.id}`}
+					aria-label={`View details for ${product.name}`}
+					className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				>
+					<ProductImage product={product} index={index} />
+				</Link>
 
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
@@ -143,9 +149,12 @@ function SavedProductCard({
 
 			<div className="space-y-2 p-2 lg:space-y-3 lg:p-3">
 				<div className="min-w-0 space-y-1">
-					<h3 className="truncate text-xs font-bold lg:text-sm">
+					<Link
+						href={`/catalog/${product.id}`}
+						className="block truncate text-xs font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
+					>
 						{product.name}
-					</h3>
+					</Link>
 					<p className="truncate text-[0.68rem] font-semibold text-muted-foreground lg:text-xs">
 						{product.subcategory || product.category || product.sku}
 					</p>
@@ -174,7 +183,7 @@ function SavedProductCard({
 								setDraftQuantity((current) => Math.max(1, current - 1))
 							}}
 						>
-							-
+							<span className="grid size-full place-items-center">-</span>
 						</Button>
 						<Input
 							value={quantity}
@@ -196,7 +205,7 @@ function SavedProductCard({
 								setDraftQuantity((current) => current + 1)
 							}}
 						>
-							+
+							<span className="grid size-full place-items-center">+</span>
 						</Button>
 					</div>
 

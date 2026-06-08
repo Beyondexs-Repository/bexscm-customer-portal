@@ -37,7 +37,9 @@ const routeMeta = {
 
 export function DashboardShell({ children }) {
   const pathname = usePathname()
-  const meta = routeMeta[pathname] ?? routeMeta["/"]
+  const meta =
+    routeMeta[pathname] ??
+    (pathname.startsWith("/catalog/") ? routeMeta["/catalog"] : routeMeta["/"])
 
   return (
     <AppShell title={meta.title} description={meta.description}>
