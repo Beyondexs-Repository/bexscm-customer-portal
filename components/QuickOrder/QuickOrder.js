@@ -106,29 +106,29 @@ export function QuickOrder() {
 
 	return (
 		<>
-			<div className="flex min-h-[calc(100vh-8rem)] items-center justify-center p-6">
-				<Card className="min-h-[320px] w-full max-w-xl shadow-sm">
-					<CardHeader className="flex flex-col items-center justify-center pt-12 text-center">
-						<div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-							<Star className="size-10 text-primary" />
+			<div className="flex min-h-[calc(100svh-13rem)] items-center justify-center p-4 md:min-h-[calc(100vh-8rem)] md:p-6">
+				<Card className="w-full max-w-xl shadow-sm md:min-h-[320px]">
+					<CardHeader className="flex flex-col items-center justify-center pt-8 text-center md:pt-12">
+						<div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 md:mb-6 md:h-20 md:w-20">
+							<Star className="size-8 text-primary md:size-10" />
 						</div>
 
-						<CardTitle className="text-3xl font-bold">Quick Orders</CardTitle>
+						<CardTitle className="text-2xl font-bold md:text-3xl">Order Quides</CardTitle>
 
-						<CardDescription className="mt-4 max-w-md text-base leading-relaxed">
+						<CardDescription className="mt-3 max-w-md text-sm leading-relaxed md:mt-4 md:text-base">
 							Create and save frequently ordered product lists for faster ordering and
 							checkout.
 						</CardDescription>
 					</CardHeader>
 
-					<CardContent className="flex justify-center pb-12 pt-4">
+					<CardContent className="flex justify-center pb-8 pt-2 md:pb-12 md:pt-4">
 						<Button
 							size="lg"
 							onClick={() => setOpen(true)}
 							className="min-w-[220px]"
 						>
 							<Plus className="size-4" />
-							Create Quick Order
+							Create Order Quide
 						</Button>
 					</CardContent>
 				</Card>
@@ -156,14 +156,14 @@ function CreateQuickOrderDialog({
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>Create Quick Order</DialogTitle>
+					<DialogTitle>Create Order Quide</DialogTitle>
 					<DialogDescription>
-						Enter a name for your quick order list.
+						Enter a name for your order quide list.
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="space-y-2 py-2">
-					<Label htmlFor="quickOrderName">Quick Order Name</Label>
+					<Label htmlFor="quickOrderName">Order Quide Name</Label>
 					<Input
 						id="quickOrderName"
 						placeholder="Eg: Weekly Seafood Order"
@@ -185,7 +185,7 @@ function CreateQuickOrderDialog({
 					>
 						Cancel
 					</Button>
-					<Button onClick={handleSave}>Save Quick Order</Button>
+					<Button onClick={handleSave}>Save Order Quide</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

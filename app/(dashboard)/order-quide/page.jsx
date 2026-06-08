@@ -1,5 +1,5 @@
 import { QuickOrder } from "@/components/QuickOrder/QuickOrder"
 
-export default function QuickOrderPage() {
+export default function OrderQuidePage() {
   return <QuickOrder />
 }

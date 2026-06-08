@@ -19,8 +19,8 @@ const footerNavItems = [
     icon: LayoutDashboardIcon,
   },
   {
-    title: "Quick Order",
-    url: "/quick-order",
+    title: "Order Quide",
+    url: "/order-quide",
     icon: StarIcon,
   },
   {

@@ -16,11 +16,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 
-import {
-  useCart,
-  useCatalog,
-  useQuickOrders,
-} from "@/app/context/app-context";
+import { useCart, useCatalog, useQuickOrders } from "@/app/context/app-context";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -90,16 +86,37 @@ function formatPrice(price, unit) {
   return `$${Number(price).toFixed(2)} / ${unit}`;
 }
 
-function SelectMenu({ label, value, options, onChange, className }) {
+function SelectMenu({
+  label,
+  value,
+  options,
+  onChange,
+  className,
+  searchable = false,
+}) {
+  const [open, setOpen] = useState(false);
+  const [optionSearch, setOptionSearch] = useState("");
+  const filteredOptions = searchable
+    ? options.filter((option) =>
+        option.toLowerCase().includes(optionSearch.trim().toLowerCase()),
+      )
+    : options;
+
   return (
-    <label
+    <div
       className={cn(
         "grid min-w-0 gap-1.5 text-xs font-semibold text-foreground sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:gap-2",
         className,
       )}
     >
       <span className="whitespace-nowrap">{label}</span>
-      <DropdownMenu>
+      <DropdownMenu
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (!nextOpen) setOptionSearch("");
+        }}
+      >
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
@@ -110,14 +127,33 @@ function SelectMenu({ label, value, options, onChange, className }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
-          {options.map((option) => (
+          {searchable && (
+            <div className="border-b p-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={optionSearch}
+                  onChange={(event) => setOptionSearch(event.target.value)}
+                  onKeyDown={(event) => event.stopPropagation()}
+                  placeholder="Search category..."
+                  className="h-8 rounded-md pl-8 text-xs"
+                />
+              </div>
+            </div>
+          )}
+          {filteredOptions.map((option) => (
             <DropdownMenuItem key={option} onSelect={() => onChange(option)}>
               {option}
             </DropdownMenuItem>
           ))}
+          {filteredOptions.length === 0 && (
+            <div className="px-2 py-2 text-xs font-medium text-muted-foreground">
+              No categories found
+            </div>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
-    </label>
+    </div>
   );
 }
 
@@ -163,8 +199,8 @@ function ProductCard({
               <Button
                 variant="outline"
                 size="icon-sm"
-                aria-label={`Quick Order ${product.name}`}
-                className="absolute right-1.5 top-1.5 rounded-full bg-background/95 text-muted-foreground shadow-sm hover:text-primary sm:right-2 sm:top-2"
+                aria-label={`Order Quide ${product.name}`}
+                className="absolute right-1.5 top-1.5 rounded-full border bg-card text-muted-foreground shadow-md hover:text-primary dark:border-border dark:bg-card hover:dark:bg-card/60 sm:right-2 sm:top-2"
                 onClick={() => onOpenQuickOrder(product)}
               >
                 <Star
@@ -177,7 +213,7 @@ function ProductCard({
             </TooltipTrigger>
 
             <TooltipContent>
-              <p>Add to Quick Order</p>
+              <p>Add to Order Quide</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -280,20 +316,20 @@ function QuickOrderPickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add to Quick Order</DialogTitle>
+          <DialogTitle>Add to Order Quide</DialogTitle>
           <DialogDescription>
-            Select the quick orders where this product should appear.
+            Select the order quides where this product should appear.
           </DialogDescription>
         </DialogHeader>
 
         {!product ? null : quickOrders.length === 0 ? (
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">
-              Create a quick order first, then return to the catalog to add
+              Create an order quide first, then return to the catalog to add
               products.
             </p>
             <Button asChild>
-              <Link href="/quick-order">Create Quick Order</Link>
+              <Link href="/order-quide">Create Order Quide</Link>
             </Button>
           </div>
         ) : (
@@ -323,7 +359,9 @@ function QuickOrderPickerDialog({
                       className="mt-0.5 size-4 accent-primary"
                     />
                     <span className="grid min-w-0 gap-1">
-                      <span className="truncate font-semibold">{order.name}</span>
+                      <span className="truncate font-semibold">
+                        {order.name}
+                      </span>
                       <span className="truncate text-xs text-muted-foreground">
                         Default Group
                       </span>
@@ -412,6 +450,7 @@ function CatalogFilterControls({
           value={categoryName}
           options={categoryNames}
           onChange={onCategoryChange}
+          searchable
         />
         <SelectMenu
           label="Subcategory"
@@ -523,7 +562,9 @@ function MobileDeliveryInfo() {
             Delivery Date
           </span>
         </div>
-        <p className="mt-1 text-sm font-bold">{formatDeliveryDate(deliveryDate)}</p>
+        <p className="mt-1 text-sm font-bold">
+          {formatDeliveryDate(deliveryDate)}
+        </p>
       </button>
 
       <div className="px-3 py-0">
@@ -629,11 +670,8 @@ function getVisiblePages(currentPage, totalPages) {
 export function Catalog() {
   const { items, addItem, incrementItem, decrementItem } = useCart();
   const { catalog } = useCatalog();
-  const {
-    quickOrders,
-    addProductToQuickOrder,
-    removeProductFromQuickOrder,
-  } = useQuickOrders();
+  const { quickOrders, addProductToQuickOrder, removeProductFromQuickOrder } =
+    useQuickOrders();
   const [quickOrderProduct, setQuickOrderProduct] = useState(null);
   const categoryNames = ["All", ...catalog.map((category) => category.name)];
   const [categoryName, setCategoryName] = useState("All");
@@ -650,9 +688,19 @@ export function Catalog() {
   const [subcategoryName, setSubcategoryName] = useState("All");
   const [sortBy, setSortBy] = useState(DEFAULT_SORT);
   const [searchQuery, setSearchQuery] = useState("");
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    const searchDelay = window.setTimeout(() => {
+      setAppliedSearchQuery(searchQuery);
+      setCurrentPage(1);
+    }, 1000);
+
+    return () => window.clearTimeout(searchDelay);
+  }, [searchQuery]);
 
   const products = useMemo(() => {
     let filtered = [];
@@ -684,7 +732,7 @@ export function Catalog() {
       filtered = selectedSubcategory?.products ?? [];
     }
 
-    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const normalizedSearch = appliedSearchQuery.trim().toLowerCase();
 
     if (normalizedSearch) {
       filtered = filtered.filter((product) =>
@@ -711,7 +759,14 @@ export function Catalog() {
     }
 
     return filtered;
-  }, [catalog, categoryName, subcategoryName, sortBy, searchQuery, activeCategory]);
+  }, [
+    catalog,
+    categoryName,
+    subcategoryName,
+    sortBy,
+    appliedSearchQuery,
+    activeCategory,
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(products.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
@@ -726,8 +781,9 @@ export function Catalog() {
   const quickOrderProductIds = useMemo(
     () =>
       new Set(
-        quickOrders.flatMap((order) =>
-          order.groups[0]?.products.map((product) => product.id) ?? [],
+        quickOrders.flatMap(
+          (order) =>
+            order.groups[0]?.products.map((product) => product.id) ?? [],
         ),
       ),
     [quickOrders],
@@ -751,11 +807,11 @@ export function Catalog() {
 
   function handleSearchChange(event) {
     setSearchQuery(event.target.value);
-    setCurrentPage(1);
   }
 
   function handleClearAll() {
     setSearchQuery("");
+    setAppliedSearchQuery("");
     setCategoryName("All");
     setSubcategoryName("All");
     setSortBy(DEFAULT_SORT);
@@ -794,7 +850,10 @@ export function Catalog() {
             )}
           </Button>
         </SheetTrigger>
-        <SheetContent side="top" className="max-h-[85svh] overflow-y-auto p-4 md:hidden">
+        <SheetContent
+          side="top"
+          className="max-h-[85svh] overflow-y-auto p-4 md:hidden"
+        >
           <SheetHeader>
             <SheetTitle>Catalog Filters</SheetTitle>
           </SheetHeader>

@@ -81,7 +81,7 @@ function EmptyProductsCard() {
 				<h3 className="text-xl font-semibold">No products added yet</h3>
 
 				<p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-					Add products from the catalog to build this quick order group.
+					Add products from the catalog to build this order quide group.
 				</p>
 
 				<Button asChild className="mt-6">
@@ -323,7 +323,7 @@ export function QuickOrderProductsList({
 							variant="outline"
 							size="icon-sm"
 							className="mt-1 shrink-0 lg:hidden"
-							aria-label="Back to quick orders"
+							aria-label="Back to order quides"
 							onClick={onBack}
 						>
 							<ChevronLeft />

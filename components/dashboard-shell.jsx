@@ -9,8 +9,8 @@ const routeMeta = {
     title: "Overview",
     description: "Track orders and business operations",
   },
-  "/quick-order": {
-    title: "Quick Order",
+  "/order-quide": {
+    title: "Order Quide",
     description: "Build and review guided orders",
   },
   "/catalog": {

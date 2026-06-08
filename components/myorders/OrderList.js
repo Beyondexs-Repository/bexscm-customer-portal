@@ -240,7 +240,7 @@ export default function OrderList({
 								</DropdownMenuContent>
 							</DropdownMenu>
 
-							<DropdownMenu>
+							{/* <DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button
 										variant="outline"
@@ -257,7 +257,7 @@ export default function OrderList({
 									<DropdownMenuSeparator />
 									<DropdownMenuItem>Oldest First</DropdownMenuItem>
 								</DropdownMenuContent>
-							</DropdownMenu>
+							</DropdownMenu> */}
 						</div>
 					</div>
 				</div>

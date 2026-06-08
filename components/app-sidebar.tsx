@@ -59,8 +59,8 @@ const data = {
       isActive: true,
     },
     {
-      title: "Quick Order",
-      url: "/quick-order",
+      title: "Order Quide",
+      url: "/order-quide",
       icon: (
         <Star
         />

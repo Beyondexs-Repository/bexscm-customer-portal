@@ -189,7 +189,7 @@ export function QuickOrderList({
 		<>
 			<aside className="min-h-0 overflow-hidden rounded-lg border bg-card/55 p-3 shadow-sm">
 				<div className="mb-4 flex items-center justify-between gap-3">
-					<h2 className="text-lg font-semibold">Quick Orders</h2>
+					<h2 className="text-lg font-semibold">Order Quides</h2>
 
 					<Button size="sm" className="h-8" onClick={onCreate}>
 						<Plus className="size-4" />
@@ -362,7 +362,7 @@ export function QuickOrderList({
 							{dialog?.type === "add-group"
 								? "Add Group"
 								: dialog?.type === "rename-order"
-									? "Rename Quick Order"
+									? "Rename Order Quide"
 									: "Rename Group"}
 						</DialogTitle>
 						<DialogDescription>
@@ -399,12 +399,12 @@ export function QuickOrderList({
 					<DialogHeader>
 						<DialogTitle>
 							{dialog?.type === "delete-order"
-								? "Delete Quick Order"
+								? "Delete Order Quide"
 								: "Delete Group"}
 						</DialogTitle>
 						<DialogDescription>
-							This action removes the selected item from your saved quick
-							orders.
+							This action removes the selected item from your saved order
+							quides.
 						</DialogDescription>
 					</DialogHeader>
 

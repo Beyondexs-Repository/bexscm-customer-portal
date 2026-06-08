@@ -9,7 +9,7 @@ import OrderList from "./OrderList"
 import OrderDetails from "./OrderDetails"
 
 export const statusFilters = ["All Orders", "Upcoming", "Past"]
-export const typeFilters = ["App/Web", "Other"]
+export const typeFilters = ["App/Web", "Others"]
 
 export const statusStyles = {
 	green:

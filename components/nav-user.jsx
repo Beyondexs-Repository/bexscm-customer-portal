@@ -25,6 +25,7 @@ import {
   BellIcon,
   LogOutIcon,
 } from "lucide-react";
+import Link from "next/link";
 
 export function NavUser({ user }) {
   const { isMobile } = useSidebar();
@@ -87,8 +88,10 @@ export function NavUser({ user }) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <BadgeCheckIcon />
-                My Profile
+                <Link href="/profile" className="flex items-center gap-2">
+                  <BadgeCheckIcon />
+                  My Profile
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

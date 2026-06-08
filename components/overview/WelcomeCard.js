@@ -24,9 +24,9 @@ export default function WelcomeCard() {
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
           <Button asChild className="col-span-2 w-full py-5 sm:w-auto">
-            <Link href="/quick-order">
+            <Link href="/order-quide">
               <ShoppingCart className="size-4" />
-              Start Quick Order
+              Start Order Quide
             </Link>
           </Button>
 
