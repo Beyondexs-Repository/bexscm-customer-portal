@@ -18,7 +18,7 @@ import {
 } from "@/lib/catalog-products";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { OrderQuidePickerDialog } from "@/components/Catalog/OrderQuidePickerDialog";
+import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -74,7 +74,7 @@ export function ProductDetails({ productId }) {
   const { quickOrders, addProductToQuickOrder, removeProductFromQuickOrder } =
     useQuickOrders();
   const [draftQuantity, setDraftQuantity] = useState(1);
-  const [orderQuideOpen, setOrderQuideOpen] = useState(false);
+  const [orderGuideOpen, setOrderGuideOpen] = useState(false);
 
   const galleryImages = useMemo(
     () => getProductGalleryImages(product),
@@ -84,7 +84,7 @@ export function ProductDetails({ productId }) {
     ? (items.find((item) => item.id === product.id)?.quantity ?? 0)
     : 0;
   const quantity = cartQuantity > 0 ? cartQuantity : draftQuantity;
-  const isInOrderQuide = product
+  const isInOrderGuide = product
     ? quickOrders.some((order) =>
         order.groups.some((group) =>
           group.products.some((item) => item.id === product.id),
@@ -178,9 +178,9 @@ export function ProductDetails({ productId }) {
 
                   setDraftQuantity((current) => Math.max(1, current - 1));
                 }}
-                >
-                  <span className="grid size-full place-items-center">-</span>
-                </Button>
+              >
+                <span className="grid size-full place-items-center">-</span>
+              </Button>
 
               <div className="flex flex-1 items-center justify-center text-sm font-bold">
                 {quantity}
@@ -198,9 +198,9 @@ export function ProductDetails({ productId }) {
 
                   setDraftQuantity((current) => current + 1);
                 }}
-                >
-                  <span className="grid size-full place-items-center">+</span>
-                </Button>
+              >
+                <span className="grid size-full place-items-center">+</span>
+              </Button>
             </div>
 
             <Button
@@ -229,15 +229,15 @@ export function ProductDetails({ productId }) {
             <Button
               variant="outline"
               className="h-10 w-full rounded-full text-sm font-bold"
-              onClick={() => setOrderQuideOpen(true)}
+              onClick={() => setOrderGuideOpen(true)}
             >
               <Star
                 className={cn(
                   "size-4",
-                  isInOrderQuide && "fill-primary text-primary",
+                  isInOrderGuide && "fill-primary text-primary",
                 )}
               />
-              {isInOrderQuide ? "Update Order Quide" : "Add to Order Quide"}
+              {isInOrderGuide ? "Update Order Guide" : "Add to Order Guide"}
             </Button>
           </div>
         </section>
@@ -255,16 +255,16 @@ export function ProductDetails({ productId }) {
         <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
           <li>• Carefully selected for freshness and quality.</li>
           <li>• Suitable for regular B2B ordering.</li>
-          <li>• Easy to add to cart or save to Order Quide.</li>
+          <li>• Easy to add to cart or save to Order Guide.</li>
           <li>• Packed and delivered with reliable service.</li>
         </ul>
       </section>
 
-      <OrderQuidePickerDialog
+      <OrderGuidePickerDialog
         product={product}
         quickOrders={quickOrders}
-        open={orderQuideOpen}
-        onOpenChange={setOrderQuideOpen}
+        open={orderGuideOpen}
+        onOpenChange={setOrderGuideOpen}
         onAdd={addProductToQuickOrder}
         onRemove={removeProductFromQuickOrder}
       />

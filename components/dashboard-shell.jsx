@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { usePathname } from "next/navigation"
+import { usePathname } from "next/navigation";
 
-import { AppShell } from "@/components/app-shell"
+import { AppShell } from "@/components/app-shell";
 
 const routeMeta = {
   "/": {
     title: "Overview",
     description: "Track orders and business operations",
   },
-  "/order-quide": {
-    title: "Order Quide",
+  "/order-guide": {
+    title: "Order Guide",
     description: "Build and review guided orders",
   },
   "/catalog": {
@@ -33,17 +33,17 @@ const routeMeta = {
     title: "Employees",
     description: "Manage employee records",
   },
-}
+};
 
 export function DashboardShell({ children }) {
-  const pathname = usePathname()
+  const pathname = usePathname();
   const meta =
     routeMeta[pathname] ??
-    (pathname.startsWith("/catalog/") ? routeMeta["/catalog"] : routeMeta["/"])
+    (pathname.startsWith("/catalog/") ? routeMeta["/catalog"] : routeMeta["/"]);
 
   return (
     <AppShell title={meta.title} description={meta.description}>
       {children}
     </AppShell>
-  )
+  );
 }

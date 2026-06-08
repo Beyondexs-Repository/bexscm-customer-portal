@@ -1,21 +1,32 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
-import { ModeToggle } from "@/components/mode-toggle"
+import { NavMain } from "@/components/nav-main";
+import { NavUser } from "@/components/nav-user";
+import { TeamSwitcher } from "@/components/team-switcher";
+import { ModeToggle } from "@/components/mode-toggle";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, FrameIcon, PieChartIcon, MapIcon, Star, MessageCircle, Users, BookOpenIcon } from "lucide-react"
-import { RxDashboard } from "react-icons/rx"
-import { LuNotepadText } from "react-icons/lu"
+} from "@/components/ui/sidebar";
+import {
+  GalleryVerticalEndIcon,
+  AudioLinesIcon,
+  TerminalIcon,
+  FrameIcon,
+  PieChartIcon,
+  MapIcon,
+  Star,
+  MessageCircle,
+  Users,
+  BookOpenIcon,
+} from "lucide-react";
+import { RxDashboard } from "react-icons/rx";
+import { LuNotepadText } from "react-icons/lu";
 
 // This is sample data.
 const data = {
@@ -26,26 +37,17 @@ const data = {
   teams: [
     {
       name: "Acme Inc",
-      logo: (
-        <GalleryVerticalEndIcon
-        />
-      ),
+      logo: <GalleryVerticalEndIcon />,
       plan: "Enterprise",
     },
     {
       name: "Acme Corp.",
-      logo: (
-        <AudioLinesIcon
-        />
-      ),
+      logo: <AudioLinesIcon />,
       plan: "Startup",
     },
     {
       name: "Evil Corp.",
-      logo: (
-        <TerminalIcon
-        />
-      ),
+      logo: <TerminalIcon />,
       plan: "Free",
     },
   ],
@@ -53,29 +55,21 @@ const data = {
     {
       title: "Overview",
       url: "/",
-      icon: (
-        <RxDashboard />
-      ),
+      icon: <RxDashboard />,
       isActive: true,
     },
     {
-      title: "Order Quide",
-      url: "/order-quide",
-      icon: (
-        <Star
-        />
-      ),
+      title: "Order Guide",
+      url: "/order-guide",
+      icon: <Star />,
       isActive: false,
     },
     {
       title: "Catalog",
       url: "/catalog",
-      icon: (
-        <BookOpenIcon
-        />
-      ),
+      icon: <BookOpenIcon />,
       // items: [
-      //   {  
+      //   {
       //     title: "Genesis",
       //     url: "#",
       //   },
@@ -92,11 +86,9 @@ const data = {
     {
       title: "My Orders",
       url: "/my-orders",
-      icon: (
-        <LuNotepadText />
-      ),
+      icon: <LuNotepadText />,
       // items: [
-      //   {  
+      //   {
       //     title: "Genesis",
       //     url: "#",
       //   },
@@ -113,46 +105,32 @@ const data = {
     {
       title: "Messages",
       url: "/messages",
-      icon: (
-         <MessageCircle />
-      ),
+      icon: <MessageCircle />,
     },
     {
       title: "Employees",
       url: "/employees",
-      icon: (
-        <Users
-        />
-      ),
+      icon: <Users />,
     },
   ],
   projects: [
     {
       name: "Design Engineering",
       url: "#",
-      icon: (
-        <FrameIcon
-        />
-      ),
+      icon: <FrameIcon />,
     },
     {
       name: "Sales & Marketing",
       url: "#",
-      icon: (
-        <PieChartIcon
-        />
-      ),
+      icon: <PieChartIcon />,
     },
     {
       name: "Travel",
       url: "#",
-      icon: (
-        <MapIcon
-        />
-      ),
+      icon: <MapIcon />,
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -169,5 +147,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

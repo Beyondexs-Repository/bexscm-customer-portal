@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   BookOpenIcon,
   ClipboardListIcon,
   LayoutDashboardIcon,
   MessageCircleIcon,
   StarIcon,
-} from "lucide-react"
+} from "lucide-react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 const footerNavItems = [
   {
@@ -19,8 +19,8 @@ const footerNavItems = [
     icon: LayoutDashboardIcon,
   },
   {
-    title: "Order Quide",
-    url: "/order-quide",
+    title: "Order Guide",
+    url: "/order-guide",
     icon: StarIcon,
   },
   {
@@ -38,10 +38,10 @@ const footerNavItems = [
     url: "/messages",
     icon: MessageCircleIcon,
   },
-]
+];
 
 export function FooterNav() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <nav
@@ -50,9 +50,9 @@ export function FooterNav() {
     >
       <div className="grid grid-cols-5 items-end gap-1">
         {footerNavItems.map((item) => {
-          const Icon = item.icon
+          const Icon = item.icon;
           const isActive =
-            item.url === "/" ? pathname === "/" : pathname.startsWith(item.url)
+            item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
 
           return (
             <Link
@@ -61,15 +61,15 @@ export function FooterNav() {
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex min-h-14 flex-col items-center justify-center gap-1 rounded-md px-1 text-[10px] font-medium leading-tight text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary active:bg-primary/10 active:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                isActive && "bg-primary/10 text-primary"
+                isActive && "bg-primary/10 text-primary",
               )}
             >
               <Icon className="size-5 shrink-0" aria-hidden="true" />
               <span className="max-w-full truncate">{item.title}</span>
             </Link>
-          )
+          );
         })}
       </div>
     </nav>
-  )
+  );
 }

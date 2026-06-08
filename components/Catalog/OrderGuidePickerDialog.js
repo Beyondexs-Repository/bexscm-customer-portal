@@ -1,38 +1,38 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 function isProductInGroup(group, productId) {
-  return Boolean(group.products?.some((product) => product.id === productId))
+  return Boolean(group.products?.some((product) => product.id === productId));
 }
 
 function countSelectedGroups(order, productId) {
   return order.groups.reduce(
     (total, group) => total + (isProductInGroup(group, productId) ? 1 : 0),
     0,
-  )
+  );
 }
 
 function countOtherGroupProducts(group, productId) {
-  return group.products.filter((product) => product.id !== productId).length
+  return group.products.filter((product) => product.id !== productId).length;
 }
 
-export function OrderQuidePickerDialog({
+export function OrderGuidePickerDialog({
   product,
   quickOrders,
   open,
@@ -45,15 +45,15 @@ export function OrderQuidePickerDialog({
       ? quickOrders
           .filter((order) => countSelectedGroups(order, product.id) > 0)
           .map((order) => order.id)
-      : []
+      : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[min(92svh,44rem)] overflow-hidden sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add to Order Quide</DialogTitle>
+          <DialogTitle>Add to Order Guide</DialogTitle>
           <DialogDescription>
-            Select an order quide, then choose the groups where this product
+            Select an order guide, then choose the groups where this product
             should appear.
           </DialogDescription>
         </DialogHeader>
@@ -61,10 +61,10 @@ export function OrderQuidePickerDialog({
         {!product ? null : quickOrders.length === 0 ? (
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">
-              Create an order quide first, then return to add products.
+              Create an order guide first, then return to add products.
             </p>
             <Button asChild>
-              <Link href="/order-quide">Create Order Quide</Link>
+              <Link href="/order-guide">Create Order Guide</Link>
             </Button>
           </div>
         ) : (
@@ -78,7 +78,7 @@ export function OrderQuidePickerDialog({
               className="gap-2"
             >
               {quickOrders.map((order) => {
-                const selectedCount = countSelectedGroups(order, product.id)
+                const selectedCount = countSelectedGroups(order, product.id);
 
                 return (
                   <AccordionItem
@@ -105,11 +105,11 @@ export function OrderQuidePickerDialog({
                     <AccordionContent className="pb-3">
                       <div className="ml-3 space-y-2 border-l pl-3">
                         {order.groups.map((group) => {
-                          const checked = isProductInGroup(group, product.id)
+                          const checked = isProductInGroup(group, product.id);
                           const otherItemCount = countOtherGroupProducts(
                             group,
                             product.id,
-                          )
+                          );
 
                           return (
                             <label
@@ -121,11 +121,11 @@ export function OrderQuidePickerDialog({
                                 checked={checked}
                                 onChange={(event) => {
                                   if (event.target.checked) {
-                                    onAdd(order.id, product, group.id)
-                                    return
+                                    onAdd(order.id, product, group.id);
+                                    return;
                                   }
 
-                                  onRemove(order.id, product.id, group.id)
+                                  onRemove(order.id, product.id, group.id);
                                 }}
                                 className="mt-0.5 size-4 accent-primary"
                               />
@@ -139,17 +139,17 @@ export function OrderQuidePickerDialog({
                                 </span>
                               </span>
                             </label>
-                          )
+                          );
                         })}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
-                )
+                );
               })}
             </Accordion>
           </div>
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

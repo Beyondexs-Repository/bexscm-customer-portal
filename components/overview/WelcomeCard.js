@@ -6,9 +6,6 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export default function WelcomeCard() {
-
-	
-
   return (
     <section className="relative overflow-hidden rounded-xl border bg-primary/10 dark:bg-background p-6 shadow-sm">
       <div className="relative z-10">
@@ -24,9 +21,9 @@ export default function WelcomeCard() {
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
           <Button asChild className="col-span-2 w-full py-5 sm:w-auto">
-            <Link href="/order-quide">
+            <Link href="/order-guide">
               <ShoppingCart className="size-4" />
-              Start Order Quide
+              Start Order Guide
             </Link>
           </Button>
 

@@ -39,7 +39,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { OrderQuidePickerDialog } from "@/components/Catalog/OrderQuidePickerDialog";
+import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
 
 const productImages = [
   "https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=720&q=80",
@@ -199,7 +199,7 @@ function ProductCard({
               <Button
                 variant="outline"
                 size="icon-sm"
-                aria-label={`Order Quide ${product.name}`}
+                aria-label={`Order Guide ${product.name}`}
                 className="absolute right-1.5 top-1.5 rounded-full border bg-card text-muted-foreground shadow-md hover:text-primary dark:border-border dark:bg-card hover:dark:bg-card/60 sm:right-2 sm:top-2"
                 onClick={() => onOpenQuickOrder(product)}
               >
@@ -213,7 +213,7 @@ function ProductCard({
             </TooltipTrigger>
 
             <TooltipContent>
-              <p>Add to Order Quide</p>
+              <p>Add to Order Guide</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -943,7 +943,7 @@ export function Catalog() {
         </div>
       </div>
 
-      <OrderQuidePickerDialog
+      <OrderGuidePickerDialog
         product={quickOrderProduct}
         quickOrders={quickOrders}
         open={Boolean(quickOrderProduct)}

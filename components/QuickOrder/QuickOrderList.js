@@ -195,8 +195,12 @@ export function QuickOrderList({
     if (!sourceOrderId || sourceOrderId === targetOrderId) return;
 
     setQuickOrders((orders) => {
-      const sourceIndex = orders.findIndex((order) => order.id === sourceOrderId);
-      const targetIndex = orders.findIndex((order) => order.id === targetOrderId);
+      const sourceIndex = orders.findIndex(
+        (order) => order.id === sourceOrderId,
+      );
+      const targetIndex = orders.findIndex(
+        (order) => order.id === targetOrderId,
+      );
 
       if (sourceIndex === -1 || targetIndex === -1) return orders;
 
@@ -219,7 +223,7 @@ export function QuickOrderList({
     <>
       <aside className="min-h-0 overflow-hidden rounded-lg border bg-card/55 p-3 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Order Quides</h2>
+          <h2 className="text-lg font-semibold">Order Guides</h2>
 
           <Button size="sm" className="h-8" onClick={onCreate}>
             <Plus className="size-4" />
@@ -430,7 +434,7 @@ export function QuickOrderList({
               {dialog?.type === "add-group"
                 ? "Add Group"
                 : dialog?.type === "rename-order"
-                  ? "Rename Order Quide"
+                  ? "Rename Order Guide"
                   : "Rename Group"}
             </DialogTitle>
             <DialogDescription>
@@ -467,12 +471,12 @@ export function QuickOrderList({
           <DialogHeader>
             <DialogTitle>
               {dialog?.type === "delete-order"
-                ? "Delete Order Quide"
+                ? "Delete Order Guide"
                 : "Delete Group"}
             </DialogTitle>
             <DialogDescription>
               This action removes the selected item from your saved order
-              quides.
+              guides.
             </DialogDescription>
           </DialogHeader>
 
