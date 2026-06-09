@@ -249,7 +249,7 @@ export default function Login() {
 				alt="Crate Inc."
 				width={80}
 				height={80}
-				className="size-16 rounded-full object-contain"
+				className="size-16 object-contain"
 				priority
 			/>
 			<div>
@@ -293,7 +293,7 @@ export default function Login() {
 						alt="Aloha Produce"
 						width={44}
 						height={44}
-						className="size-10 rounded-full object-contain"
+						className="size-10 object-contain"
 						priority
 					/>
 					<div>
