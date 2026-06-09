@@ -1,5 +1,5 @@
-import { QuickOrder } from "@/components/QuickOrder/QuickOrder";
+import { OrderGuide } from "@/components/OrderGuide/OrderGuide";
 
 export default function OrderGuidePage() {
-  return <QuickOrder />;
+  return <OrderGuide />;
 }

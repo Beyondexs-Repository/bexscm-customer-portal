@@ -62,7 +62,7 @@ function formatUpdatedAt(value) {
   return `Updated ${days} day${days === 1 ? "" : "s"} ago`;
 }
 
-export function QuickOrderList({
+export function OrderGuideList({
   quickOrders,
   setQuickOrders,
   selectedOrderId,

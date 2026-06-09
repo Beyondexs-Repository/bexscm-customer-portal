@@ -103,11 +103,13 @@ function SavedProductCard({
   onIncrement,
   onDecrement,
   onChangeGroup,
+  onEditPar,
   onRequestDelete,
 }) {
   const [draftQuantity, setDraftQuantity] = useState(1);
   const isInCart = cartQuantity > 0;
   const quantity = isInCart ? cartQuantity : draftQuantity;
+  const parValue = product.par;
 
   return (
     <article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
@@ -136,6 +138,10 @@ function SavedProductCard({
               <MoveRight className="size-4" />
               Change group
             </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onEditPar(product)}>
+              <Package2 className="size-4" />
+              Edit PAR
+            </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
               onSelect={() => onRequestDelete(product)}
@@ -147,7 +153,7 @@ function SavedProductCard({
         </DropdownMenu>
       </div>
 
-      <div className="space-y-2 p-2 lg:space-y-3 lg:p-3">
+      <div className="space-y-2 p-2 lg:space-y-3 lg:p-3 relative">
         <div className="min-w-0 space-y-1">
           <Link
             href={`/catalog/${product.id}`}
@@ -155,9 +161,11 @@ function SavedProductCard({
           >
             {product.name}
           </Link>
-          <p className="truncate text-[0.68rem] font-semibold text-muted-foreground lg:text-xs">
-            {product.subcategory || product.category || product.sku}
-          </p>
+          <div className="flex items-start justify-between gap-2 text-[0.68rem] font-semibold text-muted-foreground lg:text-xs">
+            <p className="min-w-0 truncate">
+              {product.subcategory || product.category || product.sku}
+            </p>
+          </div>
           <div className="grid gap-0.5 text-[0.62rem] font-medium text-muted-foreground lg:text-[0.7rem]">
             <span className="truncate">Pack Size: 1 {product.unit}</span>
           </div>
@@ -185,12 +193,14 @@ function SavedProductCard({
             >
               <span className="grid size-full place-items-center">-</span>
             </Button>
+
             <Input
               value={quantity}
               readOnly
               aria-label={`${product.name} quantity`}
               className="h-full rounded-none border-0 px-0 text-center text-xs font-normal shadow-none focus-visible:ring-0"
             />
+
             <Button
               variant="ghost"
               size="icon-sm"
@@ -223,26 +233,66 @@ function SavedProductCard({
               {isInCart ? "Added" : "Add to Cart"}
             </span>
           </Button>
+          
         </div>
+          {parValue != null && parValue !== "" && (
+              <p className="shrink-0 text-right absolute right-2 top-2 flex flex-col items-center text-[0.72rem] font-medium text-muted-foreground">
+                PAR <span className="font-medium text-md">{parValue}</span>
+              </p>
+            )}
       </div>
     </article>
   );
 }
 
-export function QuickOrderProductsList({
+export function OrderGuideProductsList({
   selectedOrder,
   selectedGroup,
   setQuickOrders,
   onBack,
 }) {
-  const { items, addItem, incrementItem, decrementItem } = useCart();
+  const { items, addItem, incrementItem, decrementItem, removeItem } =
+    useCart();
   const [productToMove, setProductToMove] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
+  const [productToEditPar, setProductToEditPar] = useState(null);
+  const [parDraft, setParDraft] = useState("");
+
   const products = selectedGroup?.products ?? [];
+
   const cartQuantities = useMemo(
     () => new Map(items.map((item) => [item.id, item.quantity])),
     [items],
   );
+
+  const allProductsInCart =
+    products.length > 0 &&
+    products.every((product) => (cartQuantities.get(product.id) ?? 0) > 0);
+
+  const selectedCount = products.filter(
+    (product) => (cartQuantities.get(product.id) ?? 0) > 0,
+  ).length;
+
+  function handleSelectAllAndAddToCart() {
+    if (products.length === 0) return;
+
+    if (allProductsInCart) {
+      products.forEach((product) => {
+        if ((cartQuantities.get(product.id) ?? 0) > 0) {
+          removeItem(product.id);
+        }
+      });
+      return;
+    }
+
+    products.forEach((product) => {
+      const cartQuantity = cartQuantities.get(product.id) ?? 0;
+
+      if (cartQuantity === 0) {
+        addItem(product, 1);
+      }
+    });
+  }
 
   function removeFromGroup(productId) {
     if (!selectedOrder || !selectedGroup) return;
@@ -258,6 +308,35 @@ export function QuickOrderProductsList({
                       ...group,
                       products: group.products.filter(
                         (product) => product.id !== productId,
+                      ),
+                    }
+                  : group,
+              ),
+            })
+          : order,
+      ),
+    );
+  }
+
+  function updateProductInGroup(productId, updates) {
+    if (!selectedOrder || !selectedGroup) return;
+
+    setQuickOrders((orders) =>
+      orders.map((order) =>
+        order.id === selectedOrder.id
+          ? touchOrder({
+              ...order,
+              groups: order.groups.map((group) =>
+                group.id === selectedGroup.id
+                  ? {
+                      ...group,
+                      products: group.products.map((product) =>
+                        product.id === productId
+                          ? {
+                              ...product,
+                              ...updates,
+                            }
+                          : product,
                       ),
                     }
                   : group,
@@ -307,6 +386,7 @@ export function QuickOrderProductsList({
         });
       }),
     );
+
     setProductToMove(null);
   }
 
@@ -315,6 +395,26 @@ export function QuickOrderProductsList({
 
     removeFromGroup(productToDelete.id);
     setProductToDelete(null);
+  }
+
+  function openEditParDialog(product) {
+    setProductToEditPar(product);
+    setParDraft(
+      product.par === null || product.par === undefined ? "" : String(product.par),
+    );
+  }
+
+  function saveProductPar() {
+    if (!productToEditPar) return;
+
+    const nextPar = parDraft.trim();
+
+    updateProductInGroup(productToEditPar.id, {
+      par: nextPar === "" ? null : nextPar,
+    });
+
+    setProductToEditPar(null);
+    setParDraft("");
   }
 
   if (!selectedOrder || !selectedGroup) {
@@ -330,7 +430,7 @@ export function QuickOrderProductsList({
   return (
     <>
       <section className="h-full min-h-0 overflow-hidden rounded-lg border bg-card shadow-sm">
-        <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 gap-3">
             <Button
               variant="outline"
@@ -350,6 +450,7 @@ export function QuickOrderProductsList({
                   {selectedGroup.name}
                 </span>
               </div>
+
               <div className="mt-4 flex min-w-0 items-center gap-2">
                 <h2 className="truncate text-xl font-bold">
                   {selectedGroup.name}
@@ -359,12 +460,26 @@ export function QuickOrderProductsList({
             </div>
           </div>
 
-          <Button asChild variant="outline" size="sm">
-            <Link href="/catalog">
-              <Plus className="size-4" />
-              Add Products
-            </Link>
-          </Button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto">
+            <Button asChild variant="outline" size="sm" className="h-8">
+              <Link href="/catalog">
+                <Plus className="size-4" />
+                Add Products
+              </Link>
+            </Button>
+
+            {products.length > 0 && (
+              <Button
+                size="sm"
+                variant={allProductsInCart ? "secondary" : "default"}
+                onClick={handleSelectAllAndAddToCart}
+                className="h-8 flex items-center gap-1 "
+              >
+                <ShoppingCart className="size-4" />
+                {allProductsInCart ? `Selected (${selectedCount})` : "Select All"}
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="min-h-0 p-4">
@@ -383,6 +498,7 @@ export function QuickOrderProductsList({
                     onIncrement={incrementItem}
                     onDecrement={decrementItem}
                     onChangeGroup={setProductToMove}
+                    onEditPar={openEditParDialog}
                     onRequestDelete={setProductToDelete}
                   />
                 ))}
@@ -444,6 +560,44 @@ export function QuickOrderProductsList({
             <Button variant="destructive" onClick={confirmDeleteProduct}>
               Delete
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(productToEditPar)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setProductToEditPar(null);
+            setParDraft("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit PAR</DialogTitle>
+            <DialogDescription>
+              Update the PAR value for {productToEditPar?.name}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            <Input
+              value={parDraft}
+              onChange={(event) => setParDraft(event.target.value)}
+              placeholder="Enter PAR"
+              aria-label="PAR value"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setProductToEditPar(null);
+              setParDraft("");
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={saveProductPar}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

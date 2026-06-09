@@ -23,10 +23,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { QuickOrderList } from "./QuickOrderList";
-import { QuickOrderProductsList } from "./QuickOrderProductsList";
+import { OrderGuideList } from "./OrderGuideList";
+import { OrderGuideProductsList } from "./OrderGuideProductsList";
 
-export function QuickOrder() {
+export function OrderGuide() {
   const { quickOrders, setQuickOrders, createQuickOrder } = useQuickOrders();
   const [open, setOpen] = useState(false);
   const [quickOrderName, setQuickOrderName] = useState("");
@@ -65,7 +65,7 @@ export function QuickOrder() {
             selectedOrder ? "hidden lg:block" : "block",
           )}
         >
-          <QuickOrderList
+          <OrderGuideList
             quickOrders={quickOrders}
             setQuickOrders={setQuickOrders}
             selectedOrderId={selectedOrder?.id ?? null}
@@ -82,7 +82,7 @@ export function QuickOrder() {
             selectedOrder ? "block" : "hidden lg:block",
           )}
         >
-          <QuickOrderProductsList
+          <OrderGuideProductsList
             selectedOrder={selectedOrder}
             selectedGroup={selectedGroup}
             setQuickOrders={setQuickOrders}
