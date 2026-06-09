@@ -9,8 +9,8 @@ const poppins = Poppins({
 });
 
 export const metadata = {
-  title: "Aloha Produce Web App",
-  description: "Aloha Produce - Fresh Produce Delivered to Your Doorstep",
+  title: "Crate Inc. Web App",
+  description: "Crate Inc. - Fresh Produce Delivered to Your Doorstep",
 };
 
 export default function RootLayout({children}) {

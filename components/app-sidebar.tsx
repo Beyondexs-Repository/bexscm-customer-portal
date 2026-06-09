@@ -31,7 +31,7 @@ import { LuNotepadText } from "react-icons/lu";
 // This is sample data.
 const data = {
   user: {
-    name: "Company Name",
+    name: "Crate Inc.",
     avatar: "",
   },
   teams: [

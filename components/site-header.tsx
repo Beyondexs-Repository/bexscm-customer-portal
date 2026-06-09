@@ -321,7 +321,7 @@ function SiteHeader({
                 <Avatar className="size-9">
                   <AvatarFallback className="text-xs font-semibold">CN</AvatarFallback>
                 </Avatar>
-                <span className="truncate font-medium">Company Name</span>
+                <span className="truncate font-medium">Crate Inc.</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

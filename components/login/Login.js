@@ -246,14 +246,14 @@ export default function Login() {
 		<div className="absolute left-6 top-6 z-30 flex items-center gap-3 sm:left-10 lg:left-14">
 			<Image
 				src="/logo/logo.png"
-				alt="Aloha Produce"
+				alt="Crate Inc."
 				width={80}
 				height={80}
 				className="size-16 rounded-full object-contain"
 				priority
 			/>
 			<div>
-				<p className="text-2xl font-black tracking-tight">ALOHA PRODUCE</p>
+				<p className="text-2xl font-black tracking-tight">CRATE INC.</p>
 				<p className="mt-1 text-sm font-semibold text-slate-500">
 					Your Brand Tagline
 				</p>
@@ -268,7 +268,7 @@ export default function Login() {
 						Welcome to
 					</p>
 					<h1 className="mt-2 text-1xl font-black tracking-tight xl:text-3xl">
-						Aloha Produce
+						Crate Inc.
 					</h1>
 					<p className=" max-w-md text-base font-semibold leading-7 text-slate-500">
 						Your trusted partner for fresh products, every day.

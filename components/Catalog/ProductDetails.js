@@ -247,7 +247,7 @@ export function ProductDetails({ productId }) {
         <h2 className="text-xl font-bold">Product Description</h2>
 
         <p className="mt-3 max-w-4xl leading-7 text-muted-foreground">
-          Fresh, reliable product packed for Aloha Produce ordering. This
+          Fresh, reliable product packed for Crate Inc. ordering. This
           product is suitable for restaurants, retailers, catering services, and
           business buyers who need consistent quality and dependable supply.
         </p>

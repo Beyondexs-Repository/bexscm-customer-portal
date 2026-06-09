@@ -1,6 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   ChevronRight,
   Download,
@@ -62,6 +79,167 @@ function formatUpdatedAt(value) {
   return `Updated ${days} day${days === 1 ? "" : "s"} ago`;
 }
 
+function OrderGuideCard({
+  order,
+  orderIndex,
+  isSelectedOrder,
+  isExpandedOrder,
+  selectedGroupId,
+  onToggleExpand,
+  onSelectGroup,
+  onOpenRenameOrder,
+  onOpenRenameGroup,
+  onOpenDeleteOrder,
+  onOpenDeleteGroup,
+  onAddGroup,
+  onDownloadPARSheet,
+}) {
+  const {
+    setNodeRef,
+    setActivatorNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: order.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <section
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "rounded-lg border bg-background/50 p-3 transition-colors",
+        isExpandedOrder && "border-primary/80",
+        isDragging && "opacity-70 shadow-lg",
+      )}
+    >
+      <div className="flex items-start gap-2">
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          aria-label={`Drag ${order.name}`}
+          className="mt-1 grid size-7 shrink-0 cursor-grab place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="size-4" />
+        </button>
+
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 items-start justify-between gap-3 rounded-md text-left"
+          onClick={onToggleExpand}
+        >
+          <div className="min-w-0 space-y-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <h3 className="truncate text-sm font-semibold">{order.name}</h3>
+              {orderIndex === 0 ? (
+                <Badge className="h-4 px-1.5 text-[10px]">Default</Badge>
+              ) : null}
+            </div>
+            <p className="truncate text-xs text-muted-foreground">
+              {countOrderProducts(order)} items - {formatUpdatedAt(order.updatedAt)}
+            </p>
+          </div>
+
+          <ChevronRight
+            className={cn(
+              "mt-2 size-4 shrink-0 text-muted-foreground transition-transform",
+              isExpandedOrder && "rotate-90",
+            )}
+          />
+        </button>
+      </div>
+
+      {isExpandedOrder ? (
+        <div className="mt-4 space-y-2">
+          {order.groups.map((group) => {
+            const isSelectedGroup = isSelectedOrder && group.id === selectedGroupId;
+
+            return (
+              <div
+                key={group.id}
+                className={cn(
+                  "flex items-center justify-between gap-2 rounded-md border border-transparent px-3 py-2.5 text-sm",
+                  isSelectedGroup ? "bg-primary/25 text-foreground" : "bg-muted/35",
+                )}
+              >
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 truncate text-left font-medium"
+                  onClick={() => onSelectGroup(order.id, group.id)}
+                >
+                  {group.name}
+                </button>
+
+                <span className="rounded-full bg-background/75 px-2 py-0.5 text-xs font-semibold">
+                  {group.products.length}
+                </span>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label={`${group.name} options`}
+                    >
+                      <MoreVertical />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-36">
+                    <DropdownMenuItem onSelect={() => onOpenRenameGroup(order, group)}>
+                      <Pencil className="size-4" />
+                      Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      disabled={order.groups.length <= 1}
+                      onSelect={() => onOpenDeleteGroup(order, group)}
+                    >
+                      <Trash2 className="size-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            );
+          })}
+
+          <Button
+            variant="outline"
+            className="h-10 w-full border-dashed bg-transparent"
+            onClick={() => onAddGroup(order)}
+          >
+            <Plus className="size-4" />
+            Add Group
+          </Button>
+
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <Button variant="outline" size="sm" onClick={() => onOpenRenameOrder(order)}>
+              <Pencil className="size-4" />
+              Rename
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => onOpenDeleteOrder(order)}>
+              <Trash2 className="size-4" />
+              Delete
+            </Button>
+          </div>
+          <Button size="sm" className="mt-0 h-8 w-full" onClick={() => onDownloadPARSheet(order)}>
+            <Download className="size-4" />
+            Download PAR Sheet
+          </Button>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function OrderGuideList({
   quickOrders,
   setQuickOrders,
@@ -74,7 +252,23 @@ export function OrderGuideList({
   const [dialog, setDialog] = useState(null);
   const [draftName, setDraftName] = useState("");
   const [expandedOrderId, setExpandedOrderId] = useState(null);
-  const [draggedOrderId, setDraggedOrderId] = useState(null);
+  const [activeOrderId, setActiveOrderId] = useState(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const activeOrder = useMemo(
+    () => quickOrders.find((order) => order.id === activeOrderId) ?? null,
+    [activeOrderId, quickOrders],
+  );
 
   function closeDialog() {
     setDialog(null);
@@ -191,25 +385,27 @@ export function OrderGuideList({
     }
   }
 
-  function moveOrder(sourceOrderId, targetOrderId) {
-    if (!sourceOrderId || sourceOrderId === targetOrderId) return;
+  function handleDragEnd(event) {
+    const { active, over } = event;
+
+    setActiveOrderId(null);
+
+    if (!over || active.id === over.id) return;
 
     setQuickOrders((orders) => {
-      const sourceIndex = orders.findIndex(
-        (order) => order.id === sourceOrderId,
+      const oldIndex = orders.findIndex((order) => order.id === active.id);
+      const newIndex = orders.findIndex((order) => order.id === over.id);
+
+      if (oldIndex === -1 || newIndex === -1) return orders;
+
+      return arrayMove(orders, oldIndex, newIndex).map((order) =>
+        order.id === active.id ? touchOrder(order) : order,
       );
-      const targetIndex = orders.findIndex(
-        (order) => order.id === targetOrderId,
-      );
-
-      if (sourceIndex === -1 || targetIndex === -1) return orders;
-
-      const nextOrders = [...orders];
-      const [movedOrder] = nextOrders.splice(sourceIndex, 1);
-      nextOrders.splice(targetIndex, 0, touchOrder(movedOrder));
-
-      return nextOrders;
     });
+  }
+
+  function handleDragCancel() {
+    setActiveOrderId(null);
   }
 
   const isNameDialog =
@@ -221,9 +417,9 @@ export function OrderGuideList({
 
   return (
     <>
-      <aside className="min-h-0 overflow-hidden rounded-lg border bg-card/55 p-3 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Order Guides</h2>
+      <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-card/55 p-2 shadow-sm lg:p-2.5">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="text-base font-semibold lg:text-lg">Order Guides</h2>
 
           <Button size="sm" className="h-8" onClick={onCreate}>
             <Plus className="size-4" />
@@ -231,50 +427,32 @@ export function OrderGuideList({
           </Button>
         </div>
 
-        <div className="no-scrollbar h-[calc(100vh-11rem)] space-y-3 overflow-y-auto pr-1">
-          {quickOrders.map((order, orderIndex) => {
-            const isSelectedOrder = order.id === selectedOrderId;
-            const isExpandedOrder =
-              order.id === expandedOrderId || isSelectedOrder;
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={({ active }) => setActiveOrderId(active.id)}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <SortableContext
+            items={quickOrders.map((order) => order.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="no-scrollbar flex-1 space-y-2 overflow-y-auto pr-1">
+              {quickOrders.map((order, orderIndex) => {
+                const isSelectedOrder = order.id === selectedOrderId;
+                const isExpandedOrder =
+                  order.id === expandedOrderId || isSelectedOrder;
 
-            return (
-              <section
-                key={order.id}
-                onDragOver={(event) => {
-                  if (!draggedOrderId || draggedOrderId === order.id) return;
-                  event.preventDefault();
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  moveOrder(draggedOrderId, order.id);
-                  setDraggedOrderId(null);
-                }}
-                className={cn(
-                  "rounded-lg border bg-background/50 p-3 transition-colors",
-                  isExpandedOrder && "border-primary/80",
-                  draggedOrderId === order.id && "opacity-60",
-                )}
-              >
-                <div className="flex items-start gap-2">
-                  <button
-                    type="button"
-                    draggable
-                    aria-label={`Drag ${order.name}`}
-                    className="mt-1 grid size-7 shrink-0 cursor-grab place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
-                    onDragStart={(event) => {
-                      setDraggedOrderId(order.id);
-                      event.dataTransfer.effectAllowed = "move";
-                      event.dataTransfer.setData("text/plain", order.id);
-                    }}
-                    onDragEnd={() => setDraggedOrderId(null)}
-                  >
-                    <GripVertical className="size-4" />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="flex min-w-0 flex-1 items-start justify-between gap-3 rounded-md text-left"
-                    onClick={() => {
+                return (
+                  <OrderGuideCard
+                    key={order.id}
+                    order={order}
+                    orderIndex={orderIndex}
+                    isSelectedOrder={isSelectedOrder}
+                    isExpandedOrder={isExpandedOrder}
+                    selectedGroupId={selectedGroupId}
+                    onToggleExpand={() => {
                       if (isExpandedOrder) {
                         setExpandedOrderId(null);
                         setSelectedOrderId(null);
@@ -284,144 +462,57 @@ export function OrderGuideList({
 
                       setExpandedOrderId(order.id);
                     }}
-                  >
+                    onSelectGroup={(orderId, groupId) => {
+                      setExpandedOrderId(orderId);
+                      setSelectedOrderId(orderId);
+                      setSelectedGroupId(groupId);
+                    }}
+                    onOpenRenameOrder={openRenameOrder}
+                    onOpenRenameGroup={openRenameGroup}
+                    onOpenDeleteOrder={(orderToDelete) =>
+                      setDialog({ type: "delete-order", order: orderToDelete })
+                    }
+                    onOpenDeleteGroup={(orderToDelete, groupToDelete) =>
+                      setDialog({
+                        type: "delete-group",
+                        order: orderToDelete,
+                        group: groupToDelete,
+                      })
+                    }
+                    onAddGroup={openAddGroup}
+                    onDownloadPARSheet={downloadPARSheet}
+                  />
+                );
+              })}
+            </div>
+          </SortableContext>
+
+          <DragOverlay>
+            {activeOrder ? (
+              <section className="rounded-lg border border-primary/80 bg-background/95 p-3 shadow-2xl">
+                <div className="flex items-start gap-2">
+                  <div className="mt-1 grid size-7 shrink-0 place-items-center rounded-md text-primary">
+                    <GripVertical className="size-4" />
+                  </div>
+
+                  <div className="flex min-w-0 flex-1 items-start justify-between gap-3 rounded-md text-left">
                     <div className="min-w-0 space-y-1">
                       <div className="flex min-w-0 items-center gap-2">
                         <h3 className="truncate text-sm font-semibold">
-                          {order.name}
+                          {activeOrder.name}
                         </h3>
-                        {orderIndex === 0 ? (
-                          <Badge className="h-4 px-1.5 text-[10px]">
-                            Default
-                          </Badge>
-                        ) : null}
                       </div>
                       <p className="truncate text-xs text-muted-foreground">
-                        {countOrderProducts(order)} items -{" "}
-                        {formatUpdatedAt(order.updatedAt)}
+                        {countOrderProducts(activeOrder)} items -{" "}
+                        {formatUpdatedAt(activeOrder.updatedAt)}
                       </p>
                     </div>
-
-                    <ChevronRight
-                      className={cn(
-                        "mt-2 size-4 shrink-0 text-muted-foreground transition-transform",
-                        isExpandedOrder && "rotate-90",
-                      )}
-                    />
-                  </button>
-                </div>
-
-                {isExpandedOrder ? (
-                  <div className="mt-4 space-y-2">
-                    {order.groups.map((group) => {
-                      const isSelectedGroup = group.id === selectedGroupId;
-
-                      return (
-                        <div
-                          key={group.id}
-                          className={cn(
-                            "flex items-center justify-between gap-2 rounded-md border border-transparent px-3 py-2.5 text-sm",
-                            isSelectedGroup
-                              ? "bg-primary/25 text-foreground"
-                              : "bg-muted/35",
-                          )}
-                        >
-                          <button
-                            type="button"
-                            className="min-w-0 flex-1 truncate text-left font-medium"
-                            onClick={() => {
-                              setExpandedOrderId(order.id);
-                              setSelectedOrderId(order.id);
-                              setSelectedGroupId(group.id);
-                            }}
-                          >
-                            {group.name}
-                          </button>
-
-                          <span className="rounded-full bg-background/75 px-2 py-0.5 text-xs font-semibold">
-                            {group.products.length}
-                          </span>
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon-xs"
-                                aria-label={`${group.name} options`}
-                              >
-                                <MoreVertical />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-36">
-                              <DropdownMenuItem
-                                onSelect={() => openRenameGroup(order, group)}
-                              >
-                                <Pencil className="size-4" />
-                                Rename
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                variant="destructive"
-                                disabled={order.groups.length <= 1}
-                                onSelect={() =>
-                                  setDialog({
-                                    type: "delete-group",
-                                    order,
-                                    group,
-                                  })
-                                }
-                              >
-                                <Trash2 className="size-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      );
-                    })}
-
-                    <Button
-                      variant="outline"
-                      className="h-10 w-full border-dashed bg-transparent"
-                      onClick={() => openAddGroup(order)}
-                    >
-                      <Plus className="size-4" />
-                      Add Group
-                    </Button>
-
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openRenameOrder(order)}
-                      >
-                        <Pencil className="size-4" />
-                        Rename
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() =>
-                          setDialog({ type: "delete-order", order })
-                        }
-                      >
-                        <Trash2 className="size-4" />
-                        Delete
-                      </Button>
-                    </div>
-                    <Button
-                      size="sm"
-                      className="h-8 mt-0 w-full"
-                      onClick={() => downloadPARSheet(order)}
-                    >
-                      <Download className="size-4" />
-                      Download PAR Sheet
-                    </Button>
                   </div>
-                ) : null}
+                </div>
               </section>
-            );
-          })}
-        </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </aside>
 
       <Dialog

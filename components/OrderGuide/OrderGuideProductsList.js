@@ -56,7 +56,7 @@ function ProductImage({ product, index }) {
   const image = productImages[index % productImages.length];
 
   return (
-    <div className="relative aspect-[1.25] overflow-hidden bg-muted sm:aspect-[1.35] xl:aspect-[1.45]">
+    <div className="relative aspect-[1.15] overflow-hidden bg-muted sm:aspect-[1.2] xl:aspect-[1.28]">
       <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(135deg,var(--muted),var(--background))] text-primary/70">
         <Package2 className="size-8 sm:size-10" />
       </div>
@@ -72,19 +72,19 @@ function ProductImage({ product, index }) {
 
 function EmptyProductsCard() {
   return (
-    <div className="flex min-h-[420px] items-center justify-center">
-      <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+    <div className="flex min-h-[320px] items-center justify-center">
+      <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
           <ShoppingBasket className="size-8 text-muted-foreground" />
         </div>
 
-        <h3 className="text-xl font-semibold">No products added yet</h3>
+        <h3 className="text-lg font-semibold">No products added yet</h3>
 
-        <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
           Add products from the catalog to build this order guide group.
         </p>
 
-        <Button asChild className="mt-6">
+        <Button asChild className="mt-5 h-9">
           <Link href="/catalog">
             <Plus className="size-4" />
             Add Products
@@ -153,29 +153,29 @@ function SavedProductCard({
         </DropdownMenu>
       </div>
 
-      <div className="space-y-2 p-2 lg:space-y-3 lg:p-3 relative">
+      <div className="relative space-y-1.5 p-2 lg:space-y-2 lg:p-2.5 relative">
         <div className="min-w-0 space-y-1">
           <Link
             href={`/catalog/${product.id}`}
-            className="block truncate text-xs font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
+            className="block truncate text-[0.72rem] font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
           >
             {product.name}
           </Link>
-          <div className="flex items-start justify-between gap-2 text-[0.68rem] font-semibold text-muted-foreground lg:text-xs">
-            <p className="min-w-0 truncate">
+          <div className="flex items-start justify-between gap-2 text-[0.64rem] font-semibold text-muted-foreground lg:text-xs">
+            <p className="min-w-0 truncate leading-tight">
               {product.subcategory || product.category || product.sku}
             </p>
           </div>
-          <div className="grid gap-0.5 text-[0.62rem] font-medium text-muted-foreground lg:text-[0.7rem]">
+          <div className="grid gap-0.5 text-[0.6rem] font-medium text-muted-foreground lg:text-[0.7rem]">
             <span className="truncate">Pack Size: 1 {product.unit}</span>
           </div>
         </div>
 
-        <p className="text-sm font-bold lg:text-base">
+        <p className="text-[0.95rem] font-bold lg:text-base">
           {formatPrice(product.price, product.unit)}
         </p>
 
-        <div className="grid gap-2 min-[460px]:grid-cols-[4.25rem_1fr] lg:grid-cols-[4.75rem_1fr]">
+        <div className="grid gap-2 min-[460px]:grid-cols-[4rem_1fr] lg:grid-cols-[4.5rem_1fr]">
           <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
             <Button
               variant="ghost"
@@ -221,7 +221,7 @@ function SavedProductCard({
 
           <Button
             variant={isInCart ? "secondary" : "default"}
-            className="h-8 min-w-0 rounded-md px-2 text-[0.68rem] font-bold lg:text-xs"
+            className="h-8 min-w-0 rounded-md px-2 text-[0.65rem] font-bold lg:text-xs"
             onClick={() => {
               if (!isInCart) {
                 onAddToCart(product, draftQuantity);
@@ -233,11 +233,10 @@ function SavedProductCard({
               {isInCart ? "Added" : "Add to Cart"}
             </span>
           </Button>
-          
         </div>
-          {parValue != null && parValue !== "" && (
-              <p className="shrink-0 text-right absolute right-2 top-2 flex flex-col items-center text-[0.72rem] font-medium text-muted-foreground">
-                PAR <span className="font-medium text-md">{parValue}</span>
+        {parValue != null && parValue !== "" && (
+              <p className="shrink-0 text-right leading-tight absolute right-2 top-2 flex flex-col items-center text-sm text-muted-foreground">
+                PAR <span className="font-medium text-xs">{parValue}</span>
               </p>
             )}
       </div>
@@ -429,13 +428,13 @@ export function OrderGuideProductsList({
 
   return (
     <>
-      <section className="h-full min-h-0 overflow-hidden rounded-lg border bg-card shadow-sm">
-        <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 gap-3">
+      <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-card shadow-sm">
+        <div className="flex shrink-0 flex-col gap-2 border-b p-2 sm:flex-row sm:items-start sm:justify-between lg:p-3">
+          <div className="flex min-w-0 gap-2 lg:gap-3">
             <Button
               variant="outline"
               size="icon-sm"
-              className="mt-1 shrink-0 lg:hidden"
+              className="mt-0.5 shrink-0 lg:hidden"
               aria-label="Back to order guides"
               onClick={onBack}
             >
@@ -443,7 +442,7 @@ export function OrderGuideProductsList({
             </Button>
 
             <div className="min-w-0">
-              <div className="flex min-w-0 items-center gap-2 text-xs font-semibold text-muted-foreground">
+              <div className="flex min-w-0 items-center gap-2 text-[0.7rem] font-semibold text-muted-foreground lg:text-xs">
                 <span className="truncate">{selectedOrder.name}</span>
                 <span>/</span>
                 <span className="truncate text-foreground">
@@ -451,11 +450,13 @@ export function OrderGuideProductsList({
                 </span>
               </div>
 
-              <div className="mt-4 flex min-w-0 items-center gap-2">
-                <h2 className="truncate text-xl font-bold">
+              <div className="mt-2 flex min-w-0 items-center gap-2 lg:mt-3">
+                <h2 className="truncate text-lg font-bold lg:text-xl">
                   {selectedGroup.name}
                 </h2>
-                <Badge variant="secondary">{products.length} items</Badge>
+                <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                  {products.length} items
+                </Badge>
               </div>
             </div>
           </div>
@@ -473,7 +474,7 @@ export function OrderGuideProductsList({
                 size="sm"
                 variant={allProductsInCart ? "secondary" : "default"}
                 onClick={handleSelectAllAndAddToCart}
-                className="h-8 flex items-center gap-1 "
+                className="h-8 flex items-center gap-1"
               >
                 <ShoppingCart className="size-4" />
                 {allProductsInCart ? `Selected (${selectedCount})` : "Select All"}
@@ -482,12 +483,12 @@ export function OrderGuideProductsList({
           </div>
         </div>
 
-        <div className="min-h-0 p-4">
+        <div className="min-h-0 flex-1 p-2 lg:p-3">
           {products.length === 0 ? (
             <EmptyProductsCard />
           ) : (
-            <div className="no-scrollbar h-[calc(100vh-15rem)] overflow-y-auto pr-1">
-              <div className="grid grid-cols-2 gap-3 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="no-scrollbar h-full overflow-y-auto">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3 2xl:grid-cols-4">
                 {products.map((product, index) => (
                   <SavedProductCard
                     key={product.id}

@@ -58,7 +58,7 @@ export function OrderGuide() {
 
   if (quickOrders.length > 0) {
     return (
-      <div className="grid h-full min-h-0 gap-3 overflow-hidden bg-background p-3 lg:grid-cols-[340px_1fr] lg:gap-4 lg:p-4">
+      <div className="grid h-full min-h-0 gap-2 overflow-hidden bg-background p-2 lg:grid-cols-[320px_1fr] lg:gap-3 lg:p-3">
         <div
           className={cn(
             "h-full min-h-0",
