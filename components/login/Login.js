@@ -286,19 +286,7 @@ export default function Login() {
 			</div>
 
 			{/* Login Card */}
-			<section className="absolute left-1/2 top-1/2 z-30 w-[calc(100%-2rem)] max-w-[380px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/70 bg-white/95 p-5 shadow-2xl shadow-orange-950/10 backdrop-blur sm:max-w-md sm:p-6 lg:left-auto lg:right-14 lg:w-full lg:max-w-[400px] lg:translate-x-0 lg:p-7 xl:right-20">
-				<div className="mb-5 flex items-center gap-3">
-					<Image
-						src="/logo/logo.png"
-						alt="Aloha Produce"
-						width={44}
-						height={44}
-						className="size-10 object-contain"
-						priority
-					/>
-					<div>
-					</div>
-				</div>
+			<section className="absolute left-1/2 top-1/2 z-30 w-[calc(100%-2rem)] max-w-[380px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/70 bg-white/95 p-5 shadow-2xl shadow-orange-950/10 backdrop-blur sm:max-w-md sm:p-6 lg:left-auto lg:right-14 lg:w-full lg:max-w-[380px] lg:translate-x-0 lg:p-7 xl:right-20">
 
 				<div className="mx-auto flex size-14 items-center justify-center rounded-full bg-orange-100 text-orange-500">
 					{step === "phone" ? (
@@ -310,7 +298,7 @@ export default function Login() {
 
 				<div className="mt-4 text-center">
 					<h2 className="text-xl font-black tracking-tight sm:text-2xl">
-						{step === "phone" ? "Enter your phone number" : "Enter OTP"}
+						{step === "phone" ? "Enter Your Mobile Number" : "Enter OTP"}
 					</h2>
 					<p className="mx-auto mt-2 max-w-sm text-xs font-semibold leading-5 text-slate-500">
 						{step === "phone"

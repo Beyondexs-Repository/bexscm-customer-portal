@@ -80,6 +80,12 @@ function formatPrice(price, unit) {
   return `$${Number(price).toFixed(2)} / ${unit}`;
 }
 
+function pluralizeFilterLabel(label) {
+  return label.toLowerCase().endsWith("y")
+    ? `${label.toLowerCase().slice(0, -1)}ies`
+    : `${label.toLowerCase()}s`;
+}
+
 function SelectMenu({
   label,
   value,
@@ -90,6 +96,8 @@ function SelectMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [optionSearch, setOptionSearch] = useState("");
+  const searchPlaceholder = `Search ${label.toLowerCase()}...`;
+  const emptyStateLabel = pluralizeFilterLabel(label);
   const filteredOptions = searchable
     ? options.filter((option) =>
         option.toLowerCase().includes(optionSearch.trim().toLowerCase()),
@@ -129,7 +137,7 @@ function SelectMenu({
                   value={optionSearch}
                   onChange={(event) => setOptionSearch(event.target.value)}
                   onKeyDown={(event) => event.stopPropagation()}
-                  placeholder="Search category..."
+                  placeholder={searchPlaceholder}
                   className="h-8 rounded-md pl-8 text-xs"
                 />
               </div>
@@ -142,7 +150,7 @@ function SelectMenu({
           ))}
           {filteredOptions.length === 0 && (
             <div className="px-2 py-2 text-xs font-medium text-muted-foreground">
-              No categories found
+              No {emptyStateLabel} found
             </div>
           )}
         </DropdownMenuContent>
@@ -381,6 +389,7 @@ function CatalogFilterControls({
           value={subcategoryName}
           options={subcategoryNames}
           onChange={onSubcategoryChange}
+          searchable
         />
         <SelectMenu
           label="Sort by"
