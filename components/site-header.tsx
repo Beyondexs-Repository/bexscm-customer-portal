@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import {
   BadgeCheckIcon,
   CalendarDaysIcon,
@@ -88,6 +89,7 @@ function SiteHeader({
   description?: React.ReactNode
 }) {
   const router = useRouter()
+  const t = useTranslations("header")
   const {
     items,
     itemCount,
@@ -215,7 +217,7 @@ function SiteHeader({
         >
           <HeaderInfoItem
             icon={CalendarDaysIcon}
-            caption="Delivery Date"
+            caption={t("deliveryDate")}
             label={formatDeliveryDate(deliveryDate)}
             contentClassName="pr-5"
           >
@@ -241,7 +243,7 @@ function SiteHeader({
                   )
                 }
               >
-                Prev
+                {t("prev")}
               </button>
               <p className="text-sm font-semibold">{calendarTitle}</p>
               <button
@@ -257,7 +259,7 @@ function SiteHeader({
                   )
                 }
               >
-                Next
+                {t("next")}
               </button>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
@@ -298,7 +300,7 @@ function SiteHeader({
         <Separator orientation="vertical" className="hidden h-8 sm:block" />
         <HeaderInfoItem
           icon={Clock3Icon}
-          caption="Cutoff Time"
+          caption={t("cutoffTime")}
           label={`${CUTOFF_TIME} ${CUTOFF_DATE}`}
           className="hidden sm:block"
         />
@@ -308,7 +310,7 @@ function SiteHeader({
             <button
               type="button"
               className="rounded-full outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
-              aria-label="Open profile menu"
+              aria-label={t("openProfileMenu")}
             >
               <Avatar className="size-8">
                 <AvatarFallback className="text-xs font-semibold">CN</AvatarFallback>
@@ -329,14 +331,14 @@ function SiteHeader({
               <DropdownMenuItem asChild className="px-3 py-2.5">
                 <Link href="/profile">
                   <BadgeCheckIcon />
-                  My Profile
+                  {t("myProfile")}
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="px-3 py-2.5" onClick={handleLogout}>
               <LogOutIcon />
-              Log out
+              {t("logOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -344,12 +346,12 @@ function SiteHeader({
           type="button"
           className="relative flex size-9 items-center justify-center rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:size-auto sm:px-1"
           onClick={() => setCartOpen(true)}
-          aria-label="Open cart"
+          aria-label={t("openCart")}
         >
           <ShoppingCartIcon className="size-5 text-primary sm:hidden" />
           <HeaderInfoItem
             icon={ShoppingCartIcon}
-            caption="Cart"
+            caption={t("cart")}
             label={cartTotal}
             className="hidden sm:block"
           />

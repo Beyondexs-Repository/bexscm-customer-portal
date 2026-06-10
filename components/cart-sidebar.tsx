@@ -1,6 +1,7 @@
 "use client"
 
 
+import { useTranslations } from "next-intl"
 import { MinusIcon, PlusIcon, ShoppingBagIcon, Trash2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -39,6 +40,7 @@ export function CartSidebar({
   onRemove?: (id: string) => void
 }) {
   const isEmpty = items.length === 0
+  const t = useTranslations("cart")
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -48,9 +50,9 @@ export function CartSidebar({
       >
         <SheetHeader className="border-b px-5 py-4">
           <SheetTitle className="text-lg font-semibold">
-            Your Cart{" "}
+            {t("title")}{" "}
             <span className="text-sm font-normal text-muted-foreground">
-              ({itemCount} items)
+              {t("itemsCount", { count: itemCount })}
             </span>
           </SheetTitle>
         </SheetHeader>
@@ -63,10 +65,10 @@ export function CartSidebar({
                   <ShoppingBagIcon className="size-7 text-primary" />
                 </div>
                 <p className="text-base font-semibold text-foreground">
-                  Your cart is empty
+                  {t("emptyTitle")}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Add products to see them here.
+                  {t("emptyDescription")}
                 </p>
               </div>
             </div>
@@ -90,7 +92,7 @@ export function CartSidebar({
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={`Remove ${item.name}`}
+                      aria-label={t("remove", { name: item.name })}
                       onClick={() => onRemove?.(item.id)}
                     >
                       <Trash2Icon />
@@ -102,7 +104,7 @@ export function CartSidebar({
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`Decrease ${item.name}`}
+                        aria-label={t("decrease", { name: item.name })}
                         className="h-full rounded-none"
                         onClick={() => onDecrement?.(item.id)}
                       >
@@ -114,7 +116,7 @@ export function CartSidebar({
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`Increase ${item.name}`}
+                        aria-label={t("increase", { name: item.name })}
                         className="h-full rounded-none"
                         onClick={() => onIncrement?.(item.id)}
                       >
@@ -133,11 +135,11 @@ export function CartSidebar({
 
         <SheetFooter className="border-t px-5 py-4">
           <div className="flex items-center justify-between text-base font-semibold">
-            <span>Total</span>
+            <span>{t("total")}</span>
             <span>{total}</span>
           </div>
           <Button className="h-11 w-full" disabled={isEmpty}>
-            Proceed to Checkout
+            {t("proceed")}
           </Button>
         </SheetFooter>
       </SheetContent>

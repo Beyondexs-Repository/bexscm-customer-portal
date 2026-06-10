@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ChevronDown,
   ChevronLeft,
@@ -187,6 +188,7 @@ function ProductCard({
   onDecrement,
   onOpenQuickOrder,
 }) {
+  const t = useTranslations("catalog")
   const [draftQuantity, setDraftQuantity] = useState(1);
   const isInCart = cartQuantity > 0;
   const quantity = isInCart ? cartQuantity : draftQuantity;
@@ -221,7 +223,7 @@ function ProductCard({
             </TooltipTrigger>
 
             <TooltipContent>
-              <p>Add to Order Guide</p>
+              <p>{t("addToOrderGuide")}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -239,7 +241,7 @@ function ProductCard({
             {product.subcategory}
           </p>
           <div className="grid gap-0.5 text-[0.62rem] font-medium text-muted-foreground lg:text-[0.7rem]">
-            <span className="truncate">Pack Size: 1 {product.unit}</span>
+            <span className="truncate">{t("packSize", { unit: product.unit })}</span>
           </div>
         </div>
 
@@ -300,7 +302,7 @@ function ProductCard({
           >
             <ShoppingCart />
             <span className="truncate">
-              {isInCart ? "Added to Cart" : "Add to Cart"}
+              {isInCart ? t("addedToCart") : t("addToCart")}
             </span>
           </Button>
         </div>
@@ -325,6 +327,7 @@ function CatalogFilterControls({
   layout = "desktop",
 }) {
   const isMobile = layout === "mobile";
+  const t = useTranslations("catalog")
 
   return (
     <div className="min-w-0 space-y-4">
@@ -340,7 +343,7 @@ function CatalogFilterControls({
             type="search"
             value={searchQuery}
             onChange={onSearchChange}
-            placeholder="Search products by name, keyword, SKU..."
+            placeholder={t("searchProducts")}
             className="h-10 rounded-md pl-9 text-sm"
           />
         </div>
@@ -350,7 +353,7 @@ function CatalogFilterControls({
           className="relative h-10 min-w-0 mt-1 sm:mt-0 justify-start rounded-md text-xs font-semibold"
         >
           <SlidersHorizontal className="shrink-0" />
-          <span className="truncate">Filters</span>
+          <span className="truncate">{t("filters")}</span>
           {activeFilterCount > 0 && (
             <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
               {activeFilterCount}
@@ -366,7 +369,7 @@ function CatalogFilterControls({
             disabled={activeFilterCount === 0}
           >
             <RotateCcw className="size-4" />
-            Clear all
+            {t("clearAll")}
           </Button>
         )}
       </div>
@@ -378,7 +381,7 @@ function CatalogFilterControls({
         )}
       >
         <SelectMenu
-          label="Category"
+          label={t("category")}
           value={categoryName}
           options={categoryNames}
           onChange={onCategoryChange}
@@ -404,7 +407,7 @@ function CatalogFilterControls({
             className="mt-auto h-9 min-w-0 justify-start rounded-md text-xs font-semibold"
           >
             <SlidersHorizontal className="shrink-0" />
-            <span className="truncate">Filters</span>
+            <span className="truncate">{t("filters")}</span>
           </Button>
         )}
       </div>
@@ -417,7 +420,7 @@ function CatalogFilterControls({
           disabled={activeFilterCount === 0}
         >
           <RotateCcw className="size-4" />
-          Clear all
+          {t("clearAll")}
         </Button>
       )}
     </div>
@@ -425,6 +428,7 @@ function CatalogFilterControls({
 }
 
 function MobileDeliveryInfo() {
+  const t = useTranslations("catalog")
   const today = startOfDay(new Date());
   const calendarRef = useRef(null);
   const calendarTriggerRef = useRef(null);
@@ -492,7 +496,7 @@ function MobileDeliveryInfo() {
         <div className="flex items-center justify-center gap-2 text-primary">
           <CalendarDays className="size-4" />
           <span className="text-[11px] font-medium text-muted-foreground">
-            Delivery Date
+            {t("deliveryDate")}
           </span>
         </div>
         <p className="mt-1 text-sm font-bold">
@@ -504,7 +508,7 @@ function MobileDeliveryInfo() {
         <div className="flex items-center justify-center gap-2 text-primary">
           <Clock3 className="size-4" />
           <span className="text-[11px] font-medium text-muted-foreground">
-            Cutoff Time
+            {t("cutoffTime")}
           </span>
         </div>
         <p className="mt-1 text-sm text-center font-bold">{CUTOFF_TIME}</p>
@@ -529,7 +533,7 @@ function MobileDeliveryInfo() {
                 )
               }
             >
-              Prev
+              {t("prev")}
             </button>
             <p className="text-sm font-semibold">{calendarTitle}</p>
             <button
@@ -545,7 +549,7 @@ function MobileDeliveryInfo() {
                 )
               }
             >
-              Next
+              {t("next")}
             </button>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
@@ -601,6 +605,7 @@ function getVisiblePages(currentPage, totalPages) {
 }
 
 export function Catalog() {
+  const t = useTranslations("catalog")
   const { items, addItem, incrementItem, decrementItem } = useCart();
   const { catalog } = useCatalog();
   const { quickOrders, addProductToQuickOrder, removeProductFromQuickOrder } =
@@ -786,7 +791,7 @@ export function Catalog() {
             className="mb-3 h-10 w-full justify-center rounded-md text-sm font-semibold md:hidden"
           >
             <SlidersHorizontal className="size-4" />
-            Show Filters
+            {t("showFilters")}
             {activeFilterCount > 0 && (
               <span className="grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
                 {activeFilterCount}
@@ -799,7 +804,7 @@ export function Catalog() {
           className="max-h-[85svh] overflow-y-auto p-4 md:hidden"
         >
           <SheetHeader>
-            <SheetTitle>Catalog Filters</SheetTitle>
+            <SheetTitle>{t("catalogFilters")}</SheetTitle>
           </SheetHeader>
 
           <div className=" space-y-4">
@@ -845,8 +850,7 @@ export function Catalog() {
       >
         <div className="mb-2 flex min-w-0 items-center justify-between gap-3 text-xs text-muted-foreground sm:text-sm">
           <p className="truncate">
-            Showing {products.length === 0 ? 0 : startIndex + 1} to {endIndex}{" "}
-            of {products.length} products
+            {t("showingProducts", { start: products.length === 0 ? 0 : startIndex + 1, end: endIndex, total: products.length })}
           </p>
         </div>
 
@@ -871,7 +875,7 @@ export function Catalog() {
             <Button
               variant="outline"
               size="icon-sm"
-              aria-label="Previous page"
+              aria-label={t("previousPage")}
               disabled={safePage === 1}
               onClick={() => {
                 setCurrentPage((page) => Math.max(1, page - 1));
@@ -890,7 +894,7 @@ export function Catalog() {
                     <Button
                       variant="outline"
                       size="icon-sm"
-                      aria-label="Skipped pages"
+                      aria-label={t("skippedPages")}
                       disabled
                     >
                       ...
@@ -913,7 +917,7 @@ export function Catalog() {
             <Button
               variant="outline"
               size="icon-sm"
-              aria-label="Next page"
+              aria-label={t("nextPage")}
               disabled={safePage === totalPages}
               onClick={() => {
                 setCurrentPage((page) => Math.min(totalPages, page + 1));
@@ -925,7 +929,7 @@ export function Catalog() {
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            <span>Show</span>
+            <span>{t("show")}</span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -947,7 +951,7 @@ export function Catalog() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <span>per page</span>
+            <span>{t("perPage")}</span>
           </div>
         </div>
       </div>

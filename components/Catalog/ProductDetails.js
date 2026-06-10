@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
   Check,
@@ -69,6 +70,7 @@ function ProductGallery({ product, images }) {
 }
 
 export function ProductDetails({ productId }) {
+  const t = useTranslations("catalog")
   const product = findCatalogProduct(productId);
   const { items, addItem, incrementItem, decrementItem } = useCart();
   const { quickOrders, addProductToQuickOrder, removeProductFromQuickOrder } =
@@ -96,14 +98,14 @@ export function ProductDetails({ productId }) {
     return (
       <main className="grid h-full min-h-0 place-items-center p-4">
         <section className="grid max-w-md gap-4 rounded-lg border bg-card p-6 text-center shadow-sm">
-          <h1 className="text-xl font-bold">Product not found</h1>
+          <h1 className="text-xl font-bold">{t("productNotFound")}</h1>
           <p className="text-sm text-muted-foreground">
             The product you are looking for is unavailable or has been removed.
           </p>
           <Button asChild>
             <Link href="/catalog">
               <ChevronLeft className="size-4" />
-              Back to Catalog
+              {t("backToCatalog")}
             </Link>
           </Button>
         </section>
@@ -144,23 +146,23 @@ export function ProductDetails({ productId }) {
               {formatPrice(product.price, product.unit)}
             </p>
             <p className="mt-2 text-sm font-semibold text-green-600">
-              In stock
+              {t("inStock")}
             </p>
           </div>
 
           <div className="mt-5 space-y-3 text-sm">
             <div className="grid grid-cols-[120px_1fr] gap-3">
-              <span className="font-semibold">Unit</span>
+              <span className="font-semibold">{t("unit")}</span>
               <span>{product.unit}</span>
             </div>
 
             <div className="grid grid-cols-[120px_1fr] gap-3">
-              <span className="font-semibold">Pack Size</span>
+              <span className="font-semibold">{t("packSize")}</span>
               <span>1 {product.unit}</span>
             </div>
 
             <div className="grid grid-cols-[120px_1fr] gap-3">
-              <span className="font-semibold">Category</span>
+              <span className="font-semibold">{t("category")}</span>
               <span>{product.category}</span>
             </div>
           </div>
@@ -221,7 +223,7 @@ export function ProductDetails({ productId }) {
               ) : (
                 <ShoppingCart />
               )}
-              {cartQuantity > 0 ? `Added (${cartQuantity})` : "Add to Cart"}
+              {cartQuantity > 0 ? t("addedToCartCount", { count: cartQuantity }) : t("addToCart")}
             </Button>
           </div>
 
@@ -237,14 +239,14 @@ export function ProductDetails({ productId }) {
                   isInOrderGuide && "fill-primary text-primary",
                 )}
               />
-              {isInOrderGuide ? "Update Order Guide" : "Add to Order Guide"}
+              {isInOrderGuide ? t("updateOrderGuide") : t("addToOrderGuide")}
             </Button>
           </div>
         </section>
       </div>
 
       <section className="mx-auto max-w-7xl border-t px-4 py-8 lg:px-6">
-        <h2 className="text-xl font-bold">Product Description</h2>
+        <h2 className="text-xl font-bold">{t("productDescription")}</h2>
 
         <p className="mt-3 max-w-4xl leading-7 text-muted-foreground">
           Fresh, reliable product packed for Crate Inc. ordering. This
@@ -253,10 +255,10 @@ export function ProductDetails({ productId }) {
         </p>
 
         <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-          <li>• Carefully selected for freshness and quality.</li>
-          <li>• Suitable for regular B2B ordering.</li>
-          <li>• Easy to add to cart or save to Order Guide.</li>
-          <li>• Packed and delivered with reliable service.</li>
+          <li>• {t("desc1")}</li>
+          <li>• {t("desc2")}</li>
+          <li>• {t("desc3")}</li>
+          <li>• {t("desc4")}</li>
         </ul>
       </section>
 

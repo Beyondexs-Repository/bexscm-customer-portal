@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ import Link from "next/link";
 export function NavUser({ user }) {
   const { isMobile } = useSidebar();
   const router = useRouter();
+  const t = useTranslations("userMenu");
 
   function handleLogout() {
     window.sessionStorage.removeItem("aloha-login-verified");
@@ -90,14 +92,14 @@ export function NavUser({ user }) {
               <DropdownMenuItem>
                 <Link href="/profile" className="flex items-center gap-2">
                   <BadgeCheckIcon />
-                  My Profile
+                  {t("myProfile")}
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOutIcon />
-              Log out
+              {t("logOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

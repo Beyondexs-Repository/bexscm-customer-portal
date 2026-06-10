@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import { TeamSwitcher } from "@/components/team-switcher";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ModeToggle } from "@/components/mode-toggle";
 import {
   Sidebar,
@@ -13,6 +15,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 import {
   GalleryVerticalEndIcon,
   AudioLinesIcon,
@@ -133,16 +136,55 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const t = useTranslations("nav")
+
+  const navMain = [
+    {
+      title: t("overview"),
+      url: "/",
+      icon: <RxDashboard />,
+      isActive: true,
+    },
+    {
+      title: t("orderGuide"),
+      url: "/order-guide",
+      icon: <Star />,
+      isActive: false,
+    },
+    {
+      title: t("catalog"),
+      url: "/catalog",
+      icon: <BookOpenIcon />,
+    },
+    {
+      title: t("myOrders"),
+      url: "/my-orders",
+      icon: <LuNotepadText />,
+    },
+    {
+      title: t("messages"),
+      url: "/messages",
+      icon: <MessageCircle />,
+    },
+    {
+      title: t("employees"),
+      url: "/employees",
+      icon: <Users />,
+    },
+  ]
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMain} label={t("main")} />
       </SidebarContent>
       <SidebarFooter>
+        <LocaleSwitcher />
         <ModeToggle />
+        <Separator className="my-1" />
         <NavUser user={data.user} />
       </SidebarFooter>
       <SidebarRail />

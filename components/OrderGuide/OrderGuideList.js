@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   DndContext,
   DragOverlay,
@@ -94,6 +95,7 @@ function OrderGuideCard({
   onAddGroup,
   onDownloadPARSheet,
 }) {
+  const t = useTranslations("orderGuide")
   const {
     setNodeRef,
     setActivatorNodeRef,
@@ -140,7 +142,7 @@ function OrderGuideCard({
             <div className="flex min-w-0 items-center gap-2">
               <h3 className="truncate text-sm font-semibold">{order.name}</h3>
               {orderIndex === 0 ? (
-                <Badge className="h-4 px-1.5 text-[10px]">Default</Badge>
+                <Badge className="h-4 px-1.5 text-[10px]">{t("default")}</Badge>
               ) : null}
             </div>
             <p className="truncate text-xs text-muted-foreground">
@@ -195,7 +197,7 @@ function OrderGuideCard({
                   <DropdownMenuContent align="end" className="w-36">
                     <DropdownMenuItem onSelect={() => onOpenRenameGroup(order, group)}>
                       <Pencil className="size-4" />
-                      Rename
+                      {t("rename")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       variant="destructive"
@@ -203,7 +205,7 @@ function OrderGuideCard({
                       onSelect={() => onOpenDeleteGroup(order, group)}
                     >
                       <Trash2 className="size-4" />
-                      Delete
+                      {t("delete")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -217,22 +219,22 @@ function OrderGuideCard({
             onClick={() => onAddGroup(order)}
           >
             <Plus className="size-4" />
-            Add Group
+            {t("addGroup")}
           </Button>
 
           <div className="grid grid-cols-2 gap-2 pt-1">
             <Button variant="outline" size="sm" onClick={() => onOpenRenameOrder(order)}>
               <Pencil className="size-4" />
-              Rename
+              {t("rename")}
             </Button>
             <Button variant="destructive" size="sm" onClick={() => onOpenDeleteOrder(order)}>
               <Trash2 className="size-4" />
-              Delete
+              {t("delete")}
             </Button>
           </div>
           <Button size="sm" className="mt-0 h-8 w-full" onClick={() => onDownloadPARSheet(order)}>
             <Download className="size-4" />
-            Download PAR Sheet
+            {t("downloadPARSheet")}
           </Button>
         </div>
       ) : null}
@@ -249,6 +251,7 @@ export function OrderGuideList({
   setSelectedGroupId,
   onCreate,
 }) {
+  const t = useTranslations("orderGuide")
   const [dialog, setDialog] = useState(null);
   const [draftName, setDraftName] = useState("");
   const [expandedOrderId, setExpandedOrderId] = useState(null);
@@ -547,9 +550,9 @@ export function OrderGuideList({
 
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>
-              Cancel
+              {t("cancel")}
             </Button>
-            <Button onClick={saveNameDialog}>Save</Button>
+            <Button onClick={saveNameDialog}>{t("save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -562,8 +565,8 @@ export function OrderGuideList({
           <DialogHeader>
             <DialogTitle>
               {dialog?.type === "delete-order"
-                ? "Delete Order Guide"
-                : "Delete Group"}
+                ? t("deleteOrderGuide")
+                : t("deleteGroup")}
             </DialogTitle>
             <DialogDescription>
               This action removes the selected item from your saved order
@@ -573,10 +576,10 @@ export function OrderGuideList({
 
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDelete}>
-              Delete
+              {t("delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

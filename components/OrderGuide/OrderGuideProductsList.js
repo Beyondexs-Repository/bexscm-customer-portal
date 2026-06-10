@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -71,6 +72,7 @@ function ProductImage({ product, index }) {
 }
 
 function EmptyProductsCard() {
+  const t = useTranslations("orderGuide")
   return (
     <div className="flex min-h-[320px] items-center justify-center">
       <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
@@ -78,7 +80,7 @@ function EmptyProductsCard() {
           <ShoppingBasket className="size-8 text-muted-foreground" />
         </div>
 
-        <h3 className="text-lg font-semibold">No products added yet</h3>
+        <h3 className="text-lg font-semibold">{t("noProductsYet")}</h3>
 
         <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
           Add products from the catalog to build this order guide group.
@@ -87,7 +89,7 @@ function EmptyProductsCard() {
         <Button asChild className="mt-5 h-9">
           <Link href="/catalog">
             <Plus className="size-4" />
-            Add Products
+            {t("addProducts")}
           </Link>
         </Button>
       </div>
@@ -106,6 +108,7 @@ function SavedProductCard({
   onEditPar,
   onRequestDelete,
 }) {
+  const t = useTranslations("orderGuide")
   const [draftQuantity, setDraftQuantity] = useState(1);
   const isInCart = cartQuantity > 0;
   const quantity = isInCart ? cartQuantity : draftQuantity;
@@ -136,18 +139,18 @@ function SavedProductCard({
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem onSelect={() => onChangeGroup(product)}>
               <MoveRight className="size-4" />
-              Change group
+              {t("changeGroup")}
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => onEditPar(product)}>
               <Package2 className="size-4" />
-              Edit PAR
+              {t("editPar")}
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
               onSelect={() => onRequestDelete(product)}
             >
               <Trash2 className="size-4" />
-              Delete
+              {t("delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -230,13 +233,13 @@ function SavedProductCard({
           >
             <ShoppingCart />
             <span className="truncate">
-              {isInCart ? "Added" : "Add to Cart"}
+              {isInCart ? t("added") : t("addToCart")}
             </span>
           </Button>
         </div>
         {parValue != null && parValue !== "" && (
               <p className="shrink-0 text-right leading-tight absolute right-2 top-2 flex flex-col items-center text-sm text-muted-foreground">
-                PAR <span className="font-medium text-xs">{parValue}</span>
+                {t("par")} <span className="font-medium text-xs">{parValue}</span>
               </p>
             )}
       </div>
@@ -250,6 +253,7 @@ export function OrderGuideProductsList({
   setQuickOrders,
   onBack,
 }) {
+  const t = useTranslations("orderGuide")
   const { items, addItem, incrementItem, decrementItem, removeItem } =
     useCart();
   const [productToMove, setProductToMove] = useState(null);
@@ -435,7 +439,7 @@ export function OrderGuideProductsList({
               variant="outline"
               size="icon-sm"
               className="mt-0.5 shrink-0 lg:hidden"
-              aria-label="Back to order guides"
+              aria-label={t("backToOrderGuides")}
               onClick={onBack}
             >
               <ChevronLeft />
@@ -465,7 +469,7 @@ export function OrderGuideProductsList({
             <Button asChild variant="outline" size="sm" className="h-8">
               <Link href="/catalog">
                 <Plus className="size-4" />
-                Add Products
+                {t("addProducts")}
               </Link>
             </Button>
 
@@ -548,18 +552,18 @@ export function OrderGuideProductsList({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Product</DialogTitle>
+            <DialogTitle>{t("deleteProduct")}</DialogTitle>
             <DialogDescription>
-              Remove {productToDelete?.name} from {selectedGroup.name}.
+              {t("removeProduct", { product: productToDelete?.name, group: selectedGroup.name })}
             </DialogDescription>
           </DialogHeader>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setProductToDelete(null)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDeleteProduct}>
-              Delete
+              {t("delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -576,9 +580,9 @@ export function OrderGuideProductsList({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit PAR</DialogTitle>
+            <DialogTitle>{t("editPar")}</DialogTitle>
             <DialogDescription>
-              Update the PAR value for {productToEditPar?.name}.
+              {t("updatePar", { product: productToEditPar?.name })}
             </DialogDescription>
           </DialogHeader>
 
@@ -586,8 +590,8 @@ export function OrderGuideProductsList({
             <Input
               value={parDraft}
               onChange={(event) => setParDraft(event.target.value)}
-              placeholder="Enter PAR"
-              aria-label="PAR value"
+              placeholder={t("enterPar")}
+              aria-label={t("parValue")}
             />
           </div>
 
@@ -596,9 +600,9 @@ export function OrderGuideProductsList({
               setProductToEditPar(null);
               setParDraft("");
             }}>
-              Cancel
+              {t("cancel")}
             </Button>
-            <Button onClick={saveProductPar}>Save</Button>
+            <Button onClick={saveProductPar}>{t("save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -3,10 +3,14 @@
 import Image from "next/image"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useLocale, useTranslations } from "next-intl"
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
   ChevronDownIcon,
+  ChevronDown,
+  CheckIcon,
+  LanguagesIcon,
   PhoneIcon,
   ShieldCheckIcon,
   SparklesIcon,
@@ -19,6 +23,18 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { localeCookieName, locales } from "@/lib/i18n"
+
+const localeLabels = {
+  en: "English",
+  es: "Spanish",
+}
 
 const countryNameFormatter =
   typeof Intl !== "undefined" && Intl.DisplayNames
@@ -60,25 +76,25 @@ const countries = getCountries()
     return first.name.localeCompare(second.name)
   })
 
-function getPhoneError(phone, selectedCountry) {
+function getPhoneError(phone, selectedCountry, t) {
   const digits = phone.replace(/\D/g, "")
 
   if (!digits) {
-    return "Enter your phone number."
+    return t("phoneRequired")
   }
 
   const parsedPhone = parsePhoneNumberFromString(digits, selectedCountry)
 
   if (!parsedPhone || parsedPhone.country !== selectedCountry) {
-    return "Enter a phone number for the selected country."
+    return t("countryMismatch")
   }
 
   if (!parsedPhone.isPossible()) {
-    return "Phone number length does not match the selected country."
+    return t("lengthMismatch")
   }
 
   if (!parsedPhone.isValid()) {
-    return "Enter a valid phone number."
+    return t("validPhone")
   }
 
   return ""
@@ -86,6 +102,8 @@ function getPhoneError(phone, selectedCountry) {
 
 export default function Login() {
   const router = useRouter()
+  const locale = useLocale()
+  const t = useTranslations("auth")
   const phoneId = useId()
   const otpLabelId = useId()
   const countrySearchId = useId()
@@ -154,7 +172,7 @@ export default function Login() {
   function handleSendOtp(event) {
     event.preventDefault()
 
-    const nextError = getPhoneError(phone, selectedCountry)
+    const nextError = getPhoneError(phone, selectedCountry, t)
 
     if (nextError) {
       setPhoneError(nextError)
@@ -165,7 +183,7 @@ export default function Login() {
     setPhoneError("")
     setStep("otp")
     setMessage(
-      `A 6 digit OTP has been sent to ${formattedPhone ?? maskedPhone}.`,
+      t("otpSent", { phone: formattedPhone ?? maskedPhone }),
     )
     window.setTimeout(() => otpRefs.current[0]?.focus(), 0)
   }
@@ -222,11 +240,11 @@ export default function Login() {
     event.preventDefault()
 
     if (otpValue.length !== 6) {
-      setMessage("Enter the 6 digit OTP to continue.")
+      setMessage(t("enterOtp"))
       return
     }
 
-    setMessage("Phone number verified.")
+    setMessage(t("phoneVerified"))
     window.sessionStorage.setItem("aloha-login-verified", "true")
     document.cookie =
       "aloha-login-verified=true; path=/; max-age=604800; SameSite=Lax"
@@ -238,6 +256,11 @@ export default function Login() {
     setOtp(["", "", "", "", "", ""])
     setMessage("")
     window.setTimeout(() => document.getElementById(phoneId)?.focus(), 0)
+  }
+
+  function handleLocaleChange(nextLocale) {
+    document.cookie = `${localeCookieName}=${nextLocale}; path=/; max-age=31536000; SameSite=Lax`
+    router.refresh()
   }
 
   return (
@@ -255,7 +278,7 @@ export default function Login() {
 			<div>
 				<p className="text-2xl font-black tracking-tight">CRATE INC.</p>
 				<p className="mt-1 text-sm font-semibold text-slate-500">
-					Your Brand Tagline
+					{t("tagline")}
 				</p>
 			</div>
 		</div>
@@ -265,19 +288,19 @@ export default function Login() {
 			<div className="relative flex w-full flex-col items-center lg:items-start">
 				<div className="hidden lg:block">
 					<p className="text-lg font-extrabold text-orange-500">
-						Welcome to
+						{t("welcomeTo")}
 					</p>
 					<h1 className="mt-2 text-1xl font-black tracking-tight xl:text-3xl">
 						Crate Inc.
 					</h1>
 					<p className=" max-w-md text-base font-semibold leading-7 text-slate-500">
-						Your trusted partner for fresh products, every day.
+						{t("trustMessage")}
 					</p>
 				</div>
 
 				<Image
 					src="/placeholder.png"
-					alt="Fresh produce and grocery box"
+					alt={t("freshBoxAlt")}
 					width={720}
 					height={460}
 					className="pointer-events-none fixed md:right-0 -bottom-4 -right-4 z-0 w-[115%] max-w-none object-contain drop-shadow-2xl lg:static lg:mt-6 lg:w-full "
@@ -287,6 +310,33 @@ export default function Login() {
 
 			{/* Login Card */}
 			<section className="absolute left-1/2 top-1/2 z-30 w-[calc(100%-2rem)] max-w-[380px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/70 bg-white/95 p-5 shadow-2xl shadow-orange-950/10 backdrop-blur sm:max-w-md sm:p-6 lg:left-auto lg:right-14 lg:w-full lg:max-w-[380px] lg:translate-x-0 lg:p-7 xl:right-20">
+				<div className="absolute right-3 top-3 z-40">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<button
+								type="button"
+								className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-2.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+								aria-label="Language"
+							>
+								<LanguagesIcon className="size-4" />
+								<span>{localeLabels[locale] ?? "English"}</span>
+								<ChevronDownIcon className="size-3.5" />
+							</button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="w-36">
+							{locales.map((item) => (
+								<DropdownMenuItem
+									key={item}
+									onSelect={() => handleLocaleChange(item)}
+									className="justify-between"
+								>
+									<span>{localeLabels[item]}</span>
+									{locale === item ? <CheckIcon className="size-4" /> : null}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 
 				<div className="mx-auto flex size-14 items-center justify-center rounded-full bg-orange-100 text-orange-500">
 					{step === "phone" ? (
@@ -298,12 +348,12 @@ export default function Login() {
 
 				<div className="mt-4 text-center">
 					<h2 className="text-xl font-black tracking-tight sm:text-2xl">
-						{step === "phone" ? "Enter Your Mobile Number" : "Enter OTP"}
+						{step === "phone" ? t("enterMobile") : t("enterOtpTitle")}
 					</h2>
 					<p className="mx-auto mt-2 max-w-sm text-xs font-semibold leading-5 text-slate-500">
-						{step === "phone"
-							? "We'll send you a one-time password to sign in securely."
-							: `Use the code sent to ${formattedPhone ?? maskedPhone}.`}
+							{step === "phone"
+								? t("secureSignIn")
+								: t("useCode", { phone: formattedPhone ?? maskedPhone })}
 					</p>
 				</div>
 
@@ -335,7 +385,7 @@ export default function Login() {
 													onChange={(event) =>
 														setCountrySearch(event.target.value)
 													}
-													placeholder="Search country or code"
+													placeholder={t("searchCountry")}
 													className="h-9"
 												/>
 											</div>
@@ -366,7 +416,7 @@ export default function Login() {
 									id={phoneId}
 									inputMode="tel"
 									autoComplete="tel-national"
-									placeholder="Enter phone number"
+									placeholder={t("enterPhone")}
 									value={phone}
 									onChange={handlePhoneChange}
 									className="h-12 rounded-none border-0 px-3 text-sm shadow-none focus-visible:ring-0"
@@ -382,7 +432,7 @@ export default function Login() {
 
 						<div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
 							<ShieldCheckIcon className="size-5 text-green-500" />
-							Your data is secure with us.
+							{t("secureData")}
 						</div>
 
 						<Button
@@ -390,7 +440,7 @@ export default function Login() {
 							size="lg"
 							type="submit"
 						>
-							Send OTP
+							{t("sendOtp")}
 							<ArrowRightIcon className="size-5" />
 						</Button>
 					</form>
@@ -399,7 +449,7 @@ export default function Login() {
 						<div className="space-y-3">
 							<div className="flex items-center justify-between gap-3">
 								<label className="text-sm font-bold" id={otpLabelId}>
-									OTP Code
+									{t("otpCode")}
 								</label>
 
 								<button
@@ -408,7 +458,7 @@ export default function Login() {
 									onClick={handleChangePhone}
 								>
 									<ArrowLeftIcon className="size-4" />
-									Change number
+									{t("changeNumber")}
 								</button>
 							</div>
 
@@ -420,7 +470,7 @@ export default function Login() {
 								{otp.map((digit, index) => (
 									<Input
 										key={index}
-										aria-label={`OTP digit ${index + 1}`}
+										aria-label={t("otpDigit", { index: index + 1 })}
 										autoComplete={index === 0 ? "one-time-code" : "off"}
 										className="h-11 rounded-lg px-0 text-center text-lg font-black border-2 border-slate-200 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
 										inputMode="numeric"
@@ -444,7 +494,7 @@ export default function Login() {
 							size="lg"
 							type="submit"
 						>
-							Verify and continue
+							{t("verifyContinue")}
 							<ArrowRightIcon className="size-5" />
 						</Button>
 					</form>
@@ -458,7 +508,7 @@ export default function Login() {
 
 				<div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold text-slate-400">
 					<SparklesIcon className="size-4 text-orange-400" />
-					Fast, private, and protected sign in
+					{t("footerNote")}
 				</div>
 			</section>
 		</section>

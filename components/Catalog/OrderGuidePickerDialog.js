@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import {
   Accordion,
@@ -40,6 +41,7 @@ export function OrderGuidePickerDialog({
   onAdd,
   onRemove,
 }) {
+  const t = useTranslations("catalog")
   const defaultOpenOrders =
     product && quickOrders.length > 0
       ? quickOrders
@@ -51,20 +53,17 @@ export function OrderGuidePickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[min(92svh,44rem)] overflow-hidden sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add to Order Guide</DialogTitle>
-          <DialogDescription>
-            Select an order guide, then choose the groups where this product
-            should appear.
-          </DialogDescription>
+          <DialogTitle>{t("addToOrderGuide")}</DialogTitle>
+          <DialogDescription>{t("orderGuidePickerDescription")}</DialogDescription>
         </DialogHeader>
 
         {!product ? null : quickOrders.length === 0 ? (
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">
-              Create an order guide first, then return to add products.
+              {t("createOrderGuideFirst")}
             </p>
             <Button asChild>
-              <Link href="/order-guide">Create Order Guide</Link>
+              <Link href="/order-guide">{t("createOrderGuide")}</Link>
             </Button>
           </div>
         ) : (
@@ -93,12 +92,8 @@ export function OrderGuidePickerDialog({
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {selectedCount > 0
-                            ? `${selectedCount} group${
-                                selectedCount === 1 ? "" : "s"
-                              } selected`
-                            : `${order.groups.length} group${
-                                order.groups.length === 1 ? "" : "s"
-                              } available`}
+                            ? t("groupsSelected", { count: selectedCount })
+                            : t("groupsAvailable", { count: order.groups.length })}
                         </span>
                       </span>
                     </AccordionTrigger>
@@ -134,8 +129,7 @@ export function OrderGuidePickerDialog({
                                   {group.name}
                                 </span>
                                 <span className="truncate text-xs text-muted-foreground">
-                                  {otherItemCount} other item
-                                  {otherItemCount === 1 ? "" : "s"}
+                                  {t("otherItems", { count: otherItemCount })}
                                 </span>
                               </span>
                             </label>

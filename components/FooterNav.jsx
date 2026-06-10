@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   BookOpenIcon,
   ClipboardListIcon,
@@ -42,10 +43,39 @@ const footerNavItems = [
 
 export function FooterNav() {
   const pathname = usePathname();
+  const t = useTranslations("footerNav");
+
+  const footerNavItems = [
+    {
+      title: t("overview"),
+      url: "/",
+      icon: LayoutDashboardIcon,
+    },
+    {
+      title: t("orderGuide"),
+      url: "/order-guide",
+      icon: StarIcon,
+    },
+    {
+      title: t("catalog"),
+      url: "/catalog",
+      icon: BookOpenIcon,
+    },
+    {
+      title: t("myOrders"),
+      url: "/my-orders",
+      icon: ClipboardListIcon,
+    },
+    {
+      title: t("messages"),
+      url: "/messages",
+      icon: MessageCircleIcon,
+    },
+  ];
 
   return (
     <nav
-      aria-label="Mobile primary navigation"
+      aria-label={t("ariaLabel")}
       className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:hidden"
     >
       <div className="grid grid-cols-5 items-end gap-1">

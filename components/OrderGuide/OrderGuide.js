@@ -1,70 +1,51 @@
-"use client";
+"use client"
 
-import { useMemo, useState } from "react";
-import { Plus, Star } from "lucide-react";
+import { useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
+import { Plus, Star } from "lucide-react"
 
-import { useQuickOrders } from "@/app/context/app-context";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { OrderGuideList } from "./OrderGuideList";
-import { OrderGuideProductsList } from "./OrderGuideProductsList";
+import { useQuickOrders } from "@/app/context/app-context"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
+import { OrderGuideList } from "./OrderGuideList"
+import { OrderGuideProductsList } from "./OrderGuideProductsList"
 
 export function OrderGuide() {
-  const { quickOrders, setQuickOrders, createQuickOrder } = useQuickOrders();
-  const [open, setOpen] = useState(false);
-  const [quickOrderName, setQuickOrderName] = useState("");
-  const [selectedOrderId, setSelectedOrderId] = useState(null);
-  const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const t = useTranslations("orderGuide")
+  const { quickOrders, setQuickOrders, createQuickOrder } = useQuickOrders()
+  const [open, setOpen] = useState(false)
+  const [quickOrderName, setQuickOrderName] = useState("")
+  const [selectedOrderId, setSelectedOrderId] = useState(null)
+  const [selectedGroupId, setSelectedGroupId] = useState(null)
 
   const selectedOrder = useMemo(
-    () =>
-      selectedOrderId
-        ? (quickOrders.find((order) => order.id === selectedOrderId) ?? null)
-        : null,
+    () => (selectedOrderId ? quickOrders.find((order) => order.id === selectedOrderId) ?? null : null),
     [quickOrders, selectedOrderId],
-  );
+  )
   const selectedGroup =
     selectedOrder?.groups.find((group) => group.id === selectedGroupId) ??
     selectedOrder?.groups[0] ??
-    null;
+    null
 
   function handleSave() {
-    if (!quickOrderName.trim()) return;
+    if (!quickOrderName.trim()) return
 
-    const newOrder = createQuickOrder(quickOrderName.trim());
+    const newOrder = createQuickOrder(quickOrderName.trim())
 
-    setSelectedOrderId(newOrder.id);
-    setSelectedGroupId(newOrder.groups[0]?.id ?? null);
-    setQuickOrderName("");
-    setOpen(false);
+    setSelectedOrderId(newOrder.id)
+    setSelectedGroupId(newOrder.groups[0]?.id ?? null)
+    setQuickOrderName("")
+    setOpen(false)
   }
 
   if (quickOrders.length > 0) {
     return (
       <div className="grid h-full min-h-0 gap-2 overflow-hidden bg-background p-2 lg:grid-cols-[320px_1fr] lg:gap-3 lg:p-3">
-        <div
-          className={cn(
-            "h-full min-h-0",
-            selectedOrder ? "hidden lg:block" : "block",
-          )}
-        >
+        <div className={cn("h-full min-h-0", selectedOrder ? "hidden lg:block" : "block")}>
           <OrderGuideList
             quickOrders={quickOrders}
             setQuickOrders={setQuickOrders}
@@ -76,19 +57,14 @@ export function OrderGuide() {
           />
         </div>
 
-        <div
-          className={cn(
-            "h-full min-h-0",
-            selectedOrder ? "block" : "hidden lg:block",
-          )}
-        >
+        <div className={cn("h-full min-h-0", selectedOrder ? "block" : "hidden lg:block")}>
           <OrderGuideProductsList
             selectedOrder={selectedOrder}
             selectedGroup={selectedGroup}
             setQuickOrders={setQuickOrders}
             onBack={() => {
-              setSelectedOrderId(null);
-              setSelectedGroupId(null);
+              setSelectedOrderId(null)
+              setSelectedGroupId(null)
             }}
           />
         </div>
@@ -101,7 +77,7 @@ export function OrderGuide() {
           handleSave={handleSave}
         />
       </div>
-    );
+    )
   }
 
   return (
@@ -113,24 +89,16 @@ export function OrderGuide() {
               <Star className="size-8 text-primary md:size-10" />
             </div>
 
-            <CardTitle className="text-2xl font-bold md:text-3xl">
-              Order Guides
-            </CardTitle>
-
+            <CardTitle className="text-2xl font-bold md:text-3xl">{t("title")}</CardTitle>
             <CardDescription className="mt-3 max-w-md text-sm leading-relaxed md:mt-4 md:text-base">
-              Create and save frequently ordered product lists for faster
-              ordering and checkout.
+              {t("description")}
             </CardDescription>
           </CardHeader>
 
           <CardContent className="flex justify-center pb-8 pt-2 md:pb-12 md:pt-4">
-            <Button
-              size="lg"
-              onClick={() => setOpen(true)}
-              className="min-w-[220px]"
-            >
+            <Button size="lg" onClick={() => setOpen(true)} className="min-w-[220px]">
               <Plus className="size-4" />
-              Create Order Guide
+              {t("create")}
             </Button>
           </CardContent>
         </Card>
@@ -144,7 +112,7 @@ export function OrderGuide() {
         handleSave={handleSave}
       />
     </>
-  );
+  )
 }
 
 function CreateQuickOrderDialog({
@@ -154,25 +122,25 @@ function CreateQuickOrderDialog({
   setQuickOrderName,
   handleSave,
 }) {
+  const t = useTranslations("orderGuide")
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Order Guide</DialogTitle>
-          <DialogDescription>
-            Enter a name for your order guide list.
-          </DialogDescription>
+          <DialogTitle>{t("createDialogTitle")}</DialogTitle>
+          <DialogDescription>{t("createDialogDescription")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2 py-2">
-          <Label htmlFor="quickOrderName">Order Guide Name</Label>
+          <Label htmlFor="quickOrderName">{t("nameLabel")}</Label>
           <Input
             id="quickOrderName"
-            placeholder="Eg: Weekly Seafood Order"
+            placeholder={t("namePlaceholder")}
             value={quickOrderName}
             onChange={(e) => setQuickOrderName(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") handleSave();
+              if (e.key === "Enter") handleSave()
             }}
           />
         </div>
@@ -181,15 +149,15 @@ function CreateQuickOrderDialog({
           <Button
             variant="outline"
             onClick={() => {
-              setQuickOrderName("");
-              setOpen(false);
+              setQuickOrderName("")
+              setOpen(false)
             }}
           >
-            Cancel
+            {t("cancel")}
           </Button>
-          <Button onClick={handleSave}>Save Order Guide</Button>
+          <Button onClick={handleSave}>{t("save")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
