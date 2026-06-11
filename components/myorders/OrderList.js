@@ -67,8 +67,10 @@ function OrderRow({ order, selected, onSelect }) {
           </Badge>
         </div>
 
-        <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
-          {t("placedOn", { date: order.placedOn, time: order.placedAt })}
+        <p className="mt-1 line-clamp-2 text-[11px] leading-snug">
+          <span className="text-muted-foreground">{t("placedOnLabel")} </span>
+          <span className="font-semibold text-foreground">{order.placedOn}</span>
+          <span className="text-muted-foreground"> {t("at")} {order.placedAt}</span>
         </p>
 
         <div className="mt-3 grid grid-cols-2 gap-3 md:hidden">
@@ -118,6 +120,11 @@ export default function OrderList({
   const deliveredCount = orders.filter((order) => order.status === "Delivered").length
   const upcomingCount = orders.filter((order) => order.status === "Order Sent").length
   const totalThisMonth = orders.reduce((sum, order) => sum + order.total, 0)
+  const statusFilterLabels = {
+    all: t("allOrders"),
+    upcoming: t("upcoming"),
+    past: t("past"),
+  }
 
   return (
     <div className="min-h-0 space-y-4 pb-2">
@@ -145,7 +152,7 @@ export default function OrderList({
                   className="h-9 min-w-0 px-2 text-[11px] sm:px-3 sm:text-xs"
                   onClick={() => onStatusFilterChange(filter)}
                 >
-                  <span className="truncate">{filter}</span>
+                  <span className="truncate">{statusFilterLabels[filter]}</span>
                 </Button>
               ))}
             </div>

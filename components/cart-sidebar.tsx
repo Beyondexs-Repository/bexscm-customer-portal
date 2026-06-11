@@ -1,6 +1,5 @@
 "use client"
 
-
 import { useTranslations } from "next-intl"
 import { MinusIcon, PlusIcon, ShoppingBagIcon, Trash2Icon } from "lucide-react"
 
@@ -34,6 +33,7 @@ export function CartSidebar({
     quantity: number
     sku: string
     unit: string
+    image?: string
   }[]
   onIncrement?: (id: string) => void
   onDecrement?: (id: string) => void
@@ -79,53 +79,68 @@ export function CartSidebar({
                   key={item.id}
                   className="rounded-md border bg-card p-3 text-card-foreground"
                 >
-                  
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="truncate text-sm font-semibold">
-                        {item.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {item.sku} · ${item.price.toFixed(2)} / {item.unit}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={t("remove", { name: item.name })}
-                      onClick={() => onRemove?.(item.id)}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  </div>
+                  <div className="flex items-start gap-3">
+                    <div
+                      role="img"
+                      aria-label={item.name}
+                      className="size-16 shrink-0 overflow-hidden rounded-md border bg-muted bg-cover bg-center"
+                      style={
+                        item.image
+                          ? { backgroundImage: `url(${item.image})` }
+                          : undefined
+                      }
+                    />
 
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={t("decrease", { name: item.name })}
-                        className="h-full rounded-none"
-                        onClick={() => onDecrement?.(item.id)}
-                      >
-                        <MinusIcon />
-                      </Button>
-                      <div className="grid min-w-8 place-items-center px-2 text-xs font-semibold">
-                        {item.quantity}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="truncate text-sm font-semibold">
+                            {item.name}
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            {item.sku} · ${item.price.toFixed(2)} / {item.unit}
+                          </p>
+                        </div>
+
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={t("remove", { name: item.name })}
+                          onClick={() => onRemove?.(item.id)}
+                        >
+                          <Trash2Icon />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={t("increase", { name: item.name })}
-                        className="h-full rounded-none"
-                        onClick={() => onIncrement?.(item.id)}
-                      >
-                        <PlusIcon />
-                      </Button>
+
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={t("decrease", { name: item.name })}
+                            className="h-full rounded-none"
+                            onClick={() => onDecrement?.(item.id)}
+                          >
+                            <MinusIcon />
+                          </Button>
+                          <div className="grid min-w-8 place-items-center px-2 text-xs font-semibold">
+                            {item.quantity}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={t("increase", { name: item.name })}
+                            className="h-full rounded-none"
+                            onClick={() => onIncrement?.(item.id)}
+                          >
+                            <PlusIcon />
+                          </Button>
+                        </div>
+                        <p className="text-sm font-semibold">
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-sm font-semibold">
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </p>
                   </div>
                 </article>
               ))}

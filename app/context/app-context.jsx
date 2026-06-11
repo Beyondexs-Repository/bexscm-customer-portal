@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
 
 import catalog from "@/data/data.json"
+import { findCatalogProduct } from "@/lib/catalog-products"
 
 const AppContext = createContext(null)
 const CART_STORAGE_KEY = "aloha.cart.v1"
@@ -23,7 +24,16 @@ function getInitialCartItems() {
 
   try {
     const items = JSON.parse(window.localStorage.getItem(CART_STORAGE_KEY))
-    return Array.isArray(items) ? items : []
+    return Array.isArray(items)
+      ? items.map((item) => {
+          const catalogItem = findCatalogProduct(item.id)
+
+          return {
+            ...item,
+            image: item.image || catalogItem?.image || "",
+          }
+        })
+      : []
   } catch {
     return []
   }
@@ -101,6 +111,7 @@ export function AppProvider({ children }) {
           price: product.price,
           unit: product.unit,
           sku: product.sku,
+          image: product.image || "",
           quantity,
         },
       ]

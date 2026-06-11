@@ -51,7 +51,15 @@
 }
 
 body {
-    font-family: poppins, sans-serif;
+  font-family: var(--font-sans), sans-serif;
+}
+
+:root {
+  --font-sans: var(--font-poppins);
+}
+
+html[lang="ta"] {
+  --font-sans: var(--font-noto-sans-tamil);
 }
 
 :root {

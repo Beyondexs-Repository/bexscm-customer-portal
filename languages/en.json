@@ -1,6 +1,6 @@
 {
   "sidebar": {
-    "translate": "Translate",
+    "language": "Language",
     "english": "English",
     "spanish": "Spanish",
     "darkMode": "Dark Mode",
@@ -23,8 +23,9 @@
     "myOrders": "My Orders",
     "messages": "Chat"
   },
+  
   "userMenu": {
-    "myProfile": "My Profile",
+    "myProfile": "Manage account",
     "logOut": "Log out"
   },
   "header": {
@@ -32,7 +33,7 @@
     "cutoffTime": "Cutoff Time",
     "prev": "Prev",
     "next": "Next",
-    "myProfile": "My Profile",
+    "myProfile": "Manage account",
     "logOut": "Log out",
     "openProfileMenu": "Open profile menu",
     "openCart": "Open cart",
@@ -67,8 +68,8 @@
       "description": "View and manage your orders"
     },
     "profile": {
-      "title": "Profile",
-      "description": "View account details and preferences"
+      "title": "Manage account",
+      "description": "View and update account details and preferences"
     },
     "messages": {
       "title": "Messages",
@@ -85,6 +86,25 @@
     "startOrderGuide": "Start Order Guide",
     "browseCatalog": "Browse Catalog",
     "viewOrders": "View Orders"
+  },
+  "profilePage": {
+    "title": "Manage account",
+    "description": "Update your name, email, phone number, and profile image.",
+    "active": "Active",
+    "editing": "Editing",
+    "edit": "Edit profile",
+    "save": "Save changes",
+    "cancel": "Cancel",
+    "changePhoto": "Change profile photo",
+    "accountDetails": "Account details",
+    "accountDetailsDescription": "Keep your core contact information up to date.",
+    "contactCardTitle": "Contact summary",
+    "contactCardDescription": "A quick view of the account information on file.",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone number",
+    "accountStatus": "Account status",
+    "saved": "Profile saved"
   },
   "overview": {
     "recentOrders": "Recent Orders",
@@ -117,11 +137,16 @@
     "selectOrder": "Select an order to view details.",
     "orderNumber": "Order #{number}",
     "placedOn": "Placed on {date} at {time}",
+    "placedOnLabel": "Placed on",
+    "at": "at",
     "delivery": "Delivery",
     "total": "Total",
     "deliveryDate": "Delivery Date",
     "type": "Type",
     "totalOrders": "Total Orders",
+    "allOrders": "All Orders",
+    "upcoming": "Upcoming",
+    "past": "Past",
     "ordersDelivered": "Orders Delivered",
     "upcomingOrders": "Upcoming Orders",
     "totalSpend": "Total Spend",
@@ -203,6 +228,8 @@
     "cutoffTime": "Cutoff Time",
     "prev": "Prev",
     "next": "Next",
+    "subcategory": "Subcategory",
+    "sortBy": "Sort by",
     "showFilters": "Show Filters",
     "catalogFilters": "Catalog Filters",
     "showingProducts": "Showing {start} to {end} of {total} products",

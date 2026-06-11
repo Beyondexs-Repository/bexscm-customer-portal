@@ -20,9 +20,6 @@ import {
   GalleryVerticalEndIcon,
   AudioLinesIcon,
   TerminalIcon,
-  FrameIcon,
-  PieChartIcon,
-  MapIcon,
   Star,
   MessageCircle,
   Users,
@@ -52,85 +49,6 @@ const data = {
       name: "Evil Corp.",
       logo: <TerminalIcon />,
       plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Overview",
-      url: "/",
-      icon: <RxDashboard />,
-      isActive: true,
-    },
-    {
-      title: "Order Guide",
-      url: "/order-guide",
-      icon: <Star />,
-      isActive: false,
-    },
-    {
-      title: "Catalog",
-      url: "/catalog",
-      icon: <BookOpenIcon />,
-      // items: [
-      //   {
-      //     title: "Genesis",
-      //     url: "#",
-      //   },
-      //   {
-      //     title: "Explorer",
-      //     url: "#",
-      //   },
-      //   {
-      //     title: "Quantum",
-      //     url: "#",
-      //   },
-      // ],
-    },
-    {
-      title: "My Orders",
-      url: "/my-orders",
-      icon: <LuNotepadText />,
-      // items: [
-      //   {
-      //     title: "Genesis",
-      //     url: "#",
-      //   },
-      //   {
-      //     title: "Explorer",
-      //     url: "#",
-      //   },
-      //   {
-      //     title: "Quantum",
-      //     url: "#",
-      //   },
-      // ],
-    },
-    {
-      title: "Messages",
-      url: "/messages",
-      icon: <MessageCircle />,
-    },
-    {
-      title: "Employees",
-      url: "/employees",
-      icon: <Users />,
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: <FrameIcon />,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: <PieChartIcon />,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: <MapIcon />,
     },
   ],
 };

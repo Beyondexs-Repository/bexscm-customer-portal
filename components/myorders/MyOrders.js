@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 import OrderList from "./OrderList"
 import OrderDetails from "./OrderDetails"
 
-export const statusFilters = ["All Orders", "Upcoming", "Past"]
+export const statusFilters = ["all", "upcoming", "past"]
 export const typeFilters = ["App/Web", "Others"]
 
 export const statusStyles = {
@@ -33,21 +33,21 @@ export function formatCurrency(value) {
 }
 
 export function getOrderBucket(order) {
-  if (order.status === "Order Sent") return "Upcoming"
-  return "Past"
+  if (order.status === "Order Sent") return "upcoming"
+  return "past"
 }
 
 export default function MyOrders() {
   const t = useTranslations("myOrders")
   const [selectedOrderId, setSelectedOrderId] = useState(null)
-  const [statusFilter, setStatusFilter] = useState("All Orders")
+  const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("All Types")
 
   const filteredOrders = useMemo(
     () =>
       myOrders.filter((order) => {
         const matchesStatus =
-          statusFilter === "All Orders" || getOrderBucket(order) === statusFilter
+          statusFilter === "all" || getOrderBucket(order) === statusFilter
 
         const matchesType = typeFilter === "All Types" || order.type === typeFilter
 

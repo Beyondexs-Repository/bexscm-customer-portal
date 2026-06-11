@@ -8,25 +8,41 @@ import { AppShell } from "@/components/app-shell";
 export function DashboardShell({ children }) {
   const pathname = usePathname();
   const t = useTranslations("dashboard");
-  const meta =
+  const title =
     pathname === "/"
-      ? t.raw("overview")
+      ? t("overview.title")
       : pathname.startsWith("/catalog/")
-        ? t.raw("catalog")
+        ? t("catalog.title")
         : pathname === "/order-guide"
-          ? t.raw("orderGuide")
+          ? t("orderGuide.title")
           : pathname === "/my-orders"
-            ? t.raw("myOrders")
+            ? t("myOrders.title")
             : pathname === "/profile"
-              ? t.raw("profile")
+              ? t("profile.title")
               : pathname === "/messages"
-                ? t.raw("messages")
+                ? t("messages.title")
                 : pathname === "/employees"
-                  ? t.raw("employees")
-                  : t.raw("overview");
+                  ? t("employees.title")
+                  : t("overview.title");
+  const description =
+    pathname === "/"
+      ? t("overview.description")
+      : pathname.startsWith("/catalog/")
+        ? t("catalog.description")
+        : pathname === "/order-guide"
+          ? t("orderGuide.description")
+          : pathname === "/my-orders"
+            ? t("myOrders.description")
+            : pathname === "/profile"
+              ? t("profile.description")
+              : pathname === "/messages"
+                ? t("messages.description")
+                : pathname === "/employees"
+                  ? t("employees.description")
+                  : t("overview.description");
 
   return (
-    <AppShell title={meta.title} description={meta.description}>
+    <AppShell title={title} description={description}>
       {children}
     </AppShell>
   );

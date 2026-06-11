@@ -66,13 +66,13 @@ export default function OrderDetails({ order, onBack, onClose }) {
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <div className="min-w-0 rounded-lg bg-emerald-50 p-2 text-foreground dark:bg-emerald-800/5 dark:ring-1 dark:ring-emerald-900/80 sm:p-3">
             <CalendarClock className="mb-2 size-4 text-emerald-600" />
-            <p className="text-[10px] text-muted-foreground dark:text-emerald-100/70 sm:text-[11px]">
-              {t("placedOn")}
-            </p>
-            <p className="break-words text-[11px] font-bold leading-snug sm:text-xs">
+            <p className="text-[10px] leading-snug sm:text-[11px]">
+              <span className="text-muted-foreground dark:text-emerald-100/70">
+                {t("placedOnLabel")}{" "}
+              </span>
+              <p className="break-words text-[11px] font-bold leading-snug sm:text-xs">
               {order.placedOn}
-              <br />
-              {order.placedAt}
+              </p>
             </p>
           </div>
 

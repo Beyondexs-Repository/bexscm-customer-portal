@@ -1,6 +1,6 @@
 {
   "sidebar": {
-    "translate": "Traducir",
+    "language": "Idioma",
     "english": "Inglés",
     "spanish": "Español",
     "darkMode": "Modo oscuro",
@@ -24,7 +24,7 @@
     "messages": "Chat"
   },
   "userMenu": {
-    "myProfile": "Mi perfil",
+    "myProfile": "Administrar cuenta",
     "logOut": "Cerrar sesión"
   },
   "header": {
@@ -32,7 +32,7 @@
     "cutoffTime": "Hora límite",
     "prev": "Anterior",
     "next": "Siguiente",
-    "myProfile": "Mi perfil",
+    "myProfile": "Administrar cuenta",
     "logOut": "Cerrar sesión",
     "openProfileMenu": "Abrir menú de perfil",
     "openCart": "Abrir carrito",
@@ -67,8 +67,8 @@
       "description": "Ve y administra tus pedidos"
     },
     "profile": {
-      "title": "Perfil",
-      "description": "Ve los detalles y preferencias de la cuenta"
+      "title": "Administrar cuenta",
+      "description": "Ve y actualiza los detalles y preferencias de la cuenta"
     },
     "messages": {
       "title": "Mensajes",
@@ -85,6 +85,25 @@
     "startOrderGuide": "Iniciar guía",
     "browseCatalog": "Ver catálogo",
     "viewOrders": "Ver pedidos"
+  },
+  "profilePage": {
+    "title": "Administrar cuenta",
+    "description": "Actualiza tu nombre, correo, número de teléfono e imagen de perfil.",
+    "active": "Activo",
+    "editing": "Editando",
+    "edit": "Editar perfil",
+    "save": "Guardar cambios",
+    "cancel": "Cancelar",
+    "changePhoto": "Cambiar foto de perfil",
+    "accountDetails": "Detalles de la cuenta",
+    "accountDetailsDescription": "Mantén actualizada tu información de contacto principal.",
+    "contactCardTitle": "Resumen de contacto",
+    "contactCardDescription": "Una vista rápida de la información registrada.",
+    "name": "Nombre",
+    "email": "Correo",
+    "phone": "Número de teléfono",
+    "accountStatus": "Estado de la cuenta",
+    "saved": "Perfil guardado"
   },
   "overview": {
     "recentOrders": "Pedidos recientes",
@@ -117,11 +136,16 @@
     "selectOrder": "Selecciona un pedido para ver los detalles.",
     "orderNumber": "Pedido #{number}",
     "placedOn": "Realizado el {date} a las {time}",
+    "placedOnLabel": "Realizado el",
+    "at": "a las",
     "delivery": "Entrega",
     "total": "Total",
     "deliveryDate": "Fecha de entrega",
     "type": "Tipo",
     "totalOrders": "Total de pedidos",
+    "allOrders": "Todos los pedidos",
+    "upcoming": "Próximos",
+    "past": "Anteriores",
     "ordersDelivered": "Pedidos entregados",
     "upcomingOrders": "Pedidos próximos",
     "totalSpend": "Gasto total",
@@ -203,6 +227,8 @@
     "cutoffTime": "Hora límite",
     "prev": "Anterior",
     "next": "Siguiente",
+    "subcategory": "Subcategoría",
+    "sortBy": "Ordenar por",
     "showFilters": "Mostrar filtros",
     "catalogFilters": "Filtros del catálogo",
     "showingProducts": "Mostrando {start} a {end} de {total} productos",
@@ -243,3 +269,4 @@
     "footerNote": "Inicio de sesión rápido, privado y protegido"
   }
 }
+

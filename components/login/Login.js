@@ -316,7 +316,7 @@ export default function Login() {
 							<button
 								type="button"
 								className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-2.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
-								aria-label="Language"
+								aria-label={t("language")}
 							>
 								<LanguagesIcon className="size-4" />
 								<span>{localeLabels[locale] ?? "English"}</span>

@@ -388,14 +388,14 @@ function CatalogFilterControls({
           searchable
         />
         <SelectMenu
-          label="Subcategory"
+          label={t("subcategory")}
           value={subcategoryName}
           options={subcategoryNames}
           onChange={onSubcategoryChange}
           searchable
         />
         <SelectMenu
-          label="Sort by"
+          label={t("sortBy")}
           value={sortBy}
           options={sortOptions}
           onChange={onSortChange}

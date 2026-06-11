@@ -65,19 +65,19 @@ function Reorders() {
   const t = useTranslations("overview")
 
   return (
-    <section className="rounded-lg border bg-background p-3 shadow-sm">
-      <div className="flex items-center justify-between gap-3 py-2">
-        <div className="flex items-center gap-2">
+    <section className="rounded-lg border bg-background p-2 shadow-sm sm:p-3">
+      <div className="flex flex-col gap-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2">
           <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
             <PackageCheck className="size-4" />
           </div>
-          <div>
-            <h2 className="text-lg font-bold">{t("recentOrders")}</h2>
-            <p className="text-xs text-muted-foreground">{t("recentOrdersDescription")}</p>
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold leading-tight">{t("recentOrders")}</h2>
+            <p className="text-xs leading-snug text-muted-foreground">{t("recentOrdersDescription")}</p>
           </div>
         </div>
 
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm" className="w-full justify-center sm:w-auto">
           <Link href="/my-orders">
             {t("viewOrders")}
             <ChevronRight className="size-4" />

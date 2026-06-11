@@ -19,6 +19,7 @@ import { localeCookieName, locales } from "@/lib/i18n"
 const localeLabels = {
   en: "English",
   es: "Spanish",
+  ta: "Tamil",
 }
 
 export function LocaleSwitcher() {
@@ -39,11 +40,11 @@ export function LocaleSwitcher() {
             <button
               type="button"
               className="flex h-8 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&_svg]:size-4 [&_svg]:shrink-0"
-              aria-label={t("translate")}
+              aria-label={t("language")}
             >
               <LanguagesIcon />
               <span className="truncate group-data-[collapsible=icon]:hidden">
-                {t("translate")}
+                {t("language")}
               </span>
               <span className="ml-auto truncate group-data-[collapsible=icon]:hidden">
                 {localeLabels[locale] ?? "English"}
