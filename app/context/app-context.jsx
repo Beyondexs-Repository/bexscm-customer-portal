@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
 
 import catalog from "@/data/data.json"
-import { findCatalogProduct } from "@/lib/catalog-products"
+import { findCatalogProduct, getProductGalleryImages } from "@/lib/catalog-products"
 
 const AppContext = createContext(null)
 const CART_STORAGE_KEY = "aloha.cart.v1"
@@ -15,6 +15,21 @@ function createDefaultGroup() {
     name: "Default Group",
     products: [],
   }
+}
+
+function getCartItemImage(product) {
+  const catalogItem = findCatalogProduct(product.id)
+  const storedImage = product.image || ""
+
+  if (storedImage && !storedImage.startsWith("/images/products/")) {
+    return storedImage
+  }
+
+  return (
+    getProductGalleryImages({ ...catalogItem, ...product })[0] ||
+    catalogItem?.image ||
+    storedImage
+  )
 }
 
 function getInitialCartItems() {
@@ -30,7 +45,7 @@ function getInitialCartItems() {
 
           return {
             ...item,
-            image: item.image || catalogItem?.image || "",
+            image: getCartItemImage(catalogItem ? { ...catalogItem, ...item } : item),
           }
         })
       : []
@@ -111,7 +126,7 @@ export function AppProvider({ children }) {
           price: product.price,
           unit: product.unit,
           sku: product.sku,
-          image: product.image || "",
+          image: getCartItemImage(product),
           quantity,
         },
       ]

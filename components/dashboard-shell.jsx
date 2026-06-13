@@ -8,10 +8,11 @@ import { AppShell } from "@/components/app-shell";
 export function DashboardShell({ children }) {
   const pathname = usePathname();
   const t = useTranslations("dashboard");
+  const isCatalogPage = pathname === "/catalog" || pathname.startsWith("/catalog/");
   const title =
     pathname === "/"
       ? t("overview.title")
-      : pathname.startsWith("/catalog/")
+      : isCatalogPage
         ? t("catalog.title")
         : pathname === "/order-guide"
           ? t("orderGuide.title")
@@ -27,7 +28,7 @@ export function DashboardShell({ children }) {
   const description =
     pathname === "/"
       ? t("overview.description")
-      : pathname.startsWith("/catalog/")
+      : isCatalogPage
         ? t("catalog.description")
         : pathname === "/order-guide"
           ? t("orderGuide.description")

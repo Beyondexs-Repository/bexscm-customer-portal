@@ -80,16 +80,20 @@ export function CartSidebar({
                   className="rounded-md border bg-card p-3 text-card-foreground"
                 >
                   <div className="flex items-start gap-3">
-                    <div
-                      role="img"
-                      aria-label={item.name}
-                      className="size-16 shrink-0 overflow-hidden rounded-md border bg-muted bg-cover bg-center"
-                      style={
-                        item.image
-                          ? { backgroundImage: `url(${item.image})` }
-                          : undefined
-                      }
-                    />
+                    <div className="relative size-16 shrink-0 overflow-hidden rounded-md border bg-muted">
+                      {item.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <div className="grid size-full place-items-center text-primary/70">
+                          <ShoppingBagIcon className="size-6" />
+                        </div>
+                      )}
+                    </div>
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
