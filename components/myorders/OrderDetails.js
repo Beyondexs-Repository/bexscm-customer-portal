@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useTranslations } from "next-intl"
 import {
   CalendarClock,
@@ -12,6 +13,11 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  PAGE_ACTIONS,
+  canAccessPageAction,
+  getBrowserRole,
+} from "@/lib/security/role-access"
 import { cn } from "@/lib/utils"
 import { DownloadInvoice } from "@/lib/PdfGenerators/DownloadInvoice"
 
@@ -19,7 +25,13 @@ import { formatCurrency, statusStyles } from "./MyOrders"
 
 export default function OrderDetails({ order, onBack, onClose }) {
   const t = useTranslations("myOrders")
+  const [loginRole] = useState(getBrowserRole)
   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
+  const canDownloadInvoice = canAccessPageAction(
+    loginRole,
+    "/my-orders",
+    PAGE_ACTIONS.DOWNLOAD_INVOICE
+  )
 
   return (
     <section className="flex h-full min-h-0 flex-col rounded-lg border bg-card shadow-sm">
@@ -143,7 +155,7 @@ export default function OrderDetails({ order, onBack, onClose }) {
         </div>
       </div>
 
-      {order.status !== "Order Sent" && (
+      {canDownloadInvoice && order.status !== "Order Sent" && (
         <div className="border-t p-3 sm:p-4">
           <Button variant="outline" className="h-11 w-full text-primary" onClick={() => DownloadInvoice(order)}>
             <Download className="size-4" />

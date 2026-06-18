@@ -10,7 +10,11 @@ export function AppShell({ title, description, children, initialRole }) {
       <AppProvider>
         <AppSidebar initialRole={initialRole} />
         <SidebarInset className="h-svh min-w-0 overflow-hidden">
-          <SiteHeader title={title} description={description} />
+          <SiteHeader
+            title={title}
+            description={description}
+            initialRole={initialRole}
+          />
           <div className="no-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+5.75rem)] md:pb-0">
             {children}
           </div>

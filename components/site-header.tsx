@@ -17,6 +17,10 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import {
+  PAGE_ACTIONS,
+  canAccessPageAction,
+} from "@/lib/security/role-access"
 import { CartSidebar } from "@/components/cart-sidebar"
 import { useCart } from "@/app/context/app-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -101,16 +105,28 @@ function SiteHeader({
   className,
   title,
   description,
+  initialRole = "",
   children,
   ...props
 }: React.ComponentProps<"header"> & {
   title?: React.ReactNode
   description?: React.ReactNode
+  initialRole?: string
 }) {
   const router = useRouter()
   const pathname = usePathname()
   const t = useTranslations("header")
   const isMessagesPage = pathname === "/messages"
+  const canSearchMessages = canAccessPageAction(
+    initialRole,
+    "/messages",
+    PAGE_ACTIONS.SEARCH_MESSAGES
+  )
+  const canClearChat = canAccessPageAction(
+    initialRole,
+    "/messages",
+    PAGE_ACTIONS.CLEAR_CHAT
+  )
   const profileUrl =
     pathname === "/backoffice" || pathname.startsWith("/backoffice/")
       ? "/backoffice/profile"
@@ -309,20 +325,24 @@ function SiteHeader({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem
-                className="px-3 py-2.5"
-                onClick={() => dispatchMessagesAction("search")}
-              >
-                <SearchIcon />
-                Search
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="px-3 py-2.5 text-destructive focus:text-destructive"
-                onClick={() => dispatchMessagesAction("clear")}
-              >
-                <Trash2Icon />
-                Clear Chat
-              </DropdownMenuItem>
+              {canSearchMessages && (
+                <DropdownMenuItem
+                  className="px-3 py-2.5"
+                  onClick={() => dispatchMessagesAction("search")}
+                >
+                  <SearchIcon />
+                  Search
+                </DropdownMenuItem>
+              )}
+              {canClearChat && (
+                <DropdownMenuItem
+                  className="px-3 py-2.5 text-destructive focus:text-destructive"
+                  onClick={() => dispatchMessagesAction("clear")}
+                >
+                  <Trash2Icon />
+                  Clear Chat
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
