@@ -138,7 +138,7 @@ export function ProductDetails({ productId }) {
           </h1>
 
           <p className="mt-2 text-sm text-muted-foreground">
-            SKU {product.sku}
+            SKU: {product.sku}
           </p>
 
           <div className="mt-4 border-b pb-4">
