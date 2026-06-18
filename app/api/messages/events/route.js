@@ -8,6 +8,8 @@ import { db } from "@/lib/db";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const MESSAGE_CHECK_INTERVAL_MS = 1000;
+
 function getPositiveInteger(value) {
   const number = Number(value);
 
@@ -76,7 +78,7 @@ export async function GET(request) {
           controller.enqueue(encoder.encode(": keepalive\n\n"));
         }
 
-        await wait(2500);
+        await wait(MESSAGE_CHECK_INTERVAL_MS);
       }
 
       controller.close();

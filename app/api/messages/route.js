@@ -17,6 +17,8 @@ import { db } from "@/lib/db";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const MESSAGE_PAGE_SIZE = 20;
+
 function getPositiveInteger(value) {
   const number = Number(value);
 
@@ -31,7 +33,22 @@ function sanitizeFileName(fileName) {
     .slice(0, 180);
 }
 
-async function loadMessages(conversationId, currentUserId) {
+async function loadMessages(
+  conversationId,
+  currentUserId,
+  { afterMessageId = null, beforeMessageId = null } = {}
+) {
+  const isOlderPage = Boolean(beforeMessageId);
+  const messageFilter = afterMessageId
+    ? "AND m.id > ?"
+    : beforeMessageId
+      ? "AND m.id < ?"
+      : "";
+  const values = [conversationId];
+
+  if (afterMessageId) values.push(afterMessageId);
+  if (beforeMessageId) values.push(beforeMessageId);
+
   const [messageRows] = await db.execute(
     `
     SELECT
@@ -49,16 +66,27 @@ async function loadMessages(conversationId, currentUserId) {
     INNER JOIN roles r ON u.role_id = r.id
     WHERE m.conversation_id = ?
       AND m.deleted_at IS NULL
-    ORDER BY m.created_at ASC, m.id ASC
-    LIMIT 200
+      ${messageFilter}
+    ORDER BY m.id ${isOlderPage || !afterMessageId ? "DESC" : "ASC"}
+    LIMIT ${MESSAGE_PAGE_SIZE + 1}
     `,
-    [conversationId]
+    values
   );
 
-  const messages = messageRows.map((row) => formatMessage(row, currentUserId));
+  const hasMoreOlder = isOlderPage
+    ? messageRows.length > MESSAGE_PAGE_SIZE
+    : !afterMessageId && messageRows.length > MESSAGE_PAGE_SIZE;
+  const pageRows = messageRows.slice(0, MESSAGE_PAGE_SIZE);
+  const orderedRows = isOlderPage || !afterMessageId ? pageRows.reverse() : pageRows;
+  const messages = orderedRows.map((row) => formatMessage(row, currentUserId));
   const messageIds = messages.map((message) => message.id);
 
-  if (!messageIds.length) return messages;
+  if (!messageIds.length) {
+    return {
+      messages,
+      hasMoreOlder,
+    };
+  }
 
   const placeholders = messageIds.map(() => "?").join(", ");
   const [attachmentRows] = await db.execute(
@@ -86,10 +114,13 @@ async function loadMessages(conversationId, currentUserId) {
     attachmentsByMessageId.set(row.message_id, attachments);
   }
 
-  return messages.map((message) => ({
-    ...message,
-    attachments: attachmentsByMessageId.get(message.id) ?? [],
-  }));
+  return {
+    messages: messages.map((message) => ({
+      ...message,
+      attachments: attachmentsByMessageId.get(message.id) ?? [],
+    })),
+    hasMoreOlder,
+  };
 }
 
 async function prepareAttachments(files) {
@@ -138,12 +169,21 @@ export async function GET(request) {
   }
 
   const conversationId = await getOrCreateStoreTeamConversation(currentUser.id);
-  const messages = await loadMessages(conversationId, currentUser.id);
+  const url = new URL(request.url);
+  const afterMessageId = getPositiveInteger(url.searchParams.get("afterMessageId"));
+  const beforeMessageId = getPositiveInteger(
+    url.searchParams.get("beforeMessageId")
+  );
+  const { messages, hasMoreOlder } = await loadMessages(conversationId, currentUser.id, {
+    afterMessageId,
+    beforeMessageId: afterMessageId ? null : beforeMessageId,
+  });
 
   return Response.json({
     currentUser,
     conversationId,
     messages,
+    hasMoreOlder,
   });
 }
 
@@ -200,7 +240,7 @@ export async function POST(request) {
     );
   }
 
-  const messageId = await db.transaction(async (connection) => {
+  const message = await db.transaction(async (connection) => {
     const [messageResult] = await connection.execute(
       `
       INSERT INTO chat_messages (
@@ -220,8 +260,10 @@ export async function POST(request) {
       ]
     );
 
+    const messageAttachments = [];
+
     for (const attachment of attachments) {
-      await connection.execute(
+      const [attachmentResult] = await connection.execute(
         `
         INSERT INTO chat_message_attachments (
           message_id,
@@ -248,6 +290,15 @@ export async function POST(request) {
           attachment.checksum,
         ]
       );
+
+      messageAttachments.push({
+        id: attachmentResult.insertId,
+        messageId: messageResult.insertId,
+        fileName: attachment.originalFileName,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+        url: attachment.storageUrl,
+      });
     }
 
     await connection.execute(
@@ -259,11 +310,20 @@ export async function POST(request) {
       [messageResult.insertId, targetConversationId]
     );
 
-    return messageResult.insertId;
+    return {
+      id: messageResult.insertId,
+      conversationId: targetConversationId,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      senderRoleKey: currentUser.roleKey,
+      senderAvatar: currentUser.avatar,
+      type: "sent",
+      text: body,
+      status: "sent",
+      createdAt: new Date().toISOString(),
+      attachments: messageAttachments,
+    };
   });
-
-  const messages = await loadMessages(targetConversationId, currentUser.id);
-  const message = messages.find((item) => item.id === messageId);
 
   return Response.json(
     {
