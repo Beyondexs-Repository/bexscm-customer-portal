@@ -151,6 +151,8 @@
     "emailPlaceholder": "Ingresa el correo electrónico",
     "contactPlaceholder": "Ingresa el número de contacto",
     "edit": "Editar",
+    "disable": "Desactivar",
+    "enable": "Activar",
     "delete": "Eliminar",
     "cancel": "Cancelar",
     "saveEmployee": "Guardar empleado",
@@ -175,8 +177,11 @@
     "actions": "Acciones",
     "active": "Activo",
     "inactive": "Inactivo",
+    "removed": "Eliminado",
     "openActions": "Abrir menú de acciones",
     "edit": "Editar",
+    "disable": "Desactivar",
+    "enable": "Activar",
     "delete": "Eliminar",
     "cancel": "Cancelar",
     "saveChanges": "Guardar cambios",
@@ -306,6 +311,7 @@
     "addedToCart": "Agregado al carrito"
   },
   "auth": {
+    "language": "Idioma",
     "phoneRequired": "Ingresa tu número de teléfono.",
     "countryMismatch": "Ingresa un número de teléfono para el país seleccionado.",
     "lengthMismatch": "La longitud del número no coincide con el país seleccionado.",

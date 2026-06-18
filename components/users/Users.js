@@ -11,13 +11,20 @@ import {
   UserX,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
-
 import { UserActionsMenu } from "@/components/users/UserActionsMenu"
 import { UserFormDialog } from "@/components/users/UserFormDialog"
 import { EmployeesPagination } from "@/components/employees/EmployeesPagination"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
@@ -98,24 +105,29 @@ function FilterSelect({ className = "", label, options, value, onChange }) {
 function StatusBadge({ status }) {
   const t = useTranslations("users")
   const isActive = status === "active"
+  const isRemoved = status === "removed"
 
   return (
     <Badge
-      variant={isActive ? "secondary" : "outline"}
+      variant={isRemoved ? "destructive" : isActive ? "secondary" : "outline"}
       className={
-        isActive
+        isRemoved
+          ? ""
+          : isActive
           ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
           : "text-muted-foreground"
       }
     >
       <span
         className={
-          isActive
+          isRemoved
+            ? "size-1.5 rounded-full bg-destructive-foreground"
+            : isActive
             ? "size-1.5 rounded-full bg-emerald-500"
             : "size-1.5 rounded-full bg-muted-foreground"
         }
       />
-      {isActive ? t("active") : t("inactive")}
+      {isRemoved ? t("removed") : isActive ? t("active") : t("inactive")}
     </Badge>
   )
 }
@@ -150,6 +162,12 @@ export default function Users() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
+  const [disableUserTarget, setDisableUserTarget] = useState(null)
+  const [deleteUserTarget, setDeleteUserTarget] = useState(null)
+  const [isDisabling, setIsDisabling] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [statusActionError, setStatusActionError] = useState("")
+  const [deleteError, setDeleteError] = useState("")
   const [dialogMode, setDialogMode] = useState("edit")
   const [error, setError] = useState("")
   const listTopRef = useRef(null)
@@ -198,6 +216,7 @@ export default function Users() {
     { label: t("allStatus"), value: "all" },
     { label: t("active"), value: "active" },
     { label: t("inactive"), value: "inactive" },
+    { label: t("removed"), value: "removed" },
   ]
   const userTypeOptions = [
     { label: "All Types", value: "all" },
@@ -276,16 +295,65 @@ export default function Users() {
     setDialogOpen(true)
   }
 
-  async function handleDeleteUser(userId) {
+  function handleStatusChange(user) {
+    setStatusActionError("")
+    setDisableUserTarget(user)
+  }
+
+  function handleDeleteUser(user) {
+    setDeleteError("")
+    setDeleteUserTarget(user)
+  }
+
+  async function confirmDisableUser() {
+    if (!disableUserTarget) return
+
+    setIsDisabling(true)
+    const action =
+      disableUserTarget.status === "inactive" ? "enable" : "disable"
+
     try {
-      const savedUser = await deleteUser(userId)
+      const savedUser = await updateUserStatus(disableUserTarget.id, action)
 
       setUsers((current) =>
-        current.map((user) => (user.id === userId ? savedUser : user)),
+        current.map((user) =>
+          user.id === disableUserTarget.id ? savedUser : user,
+        ),
       )
-      setError("")
+      setDisableUserTarget(null)
+      setStatusActionError("")
+    } catch (disableError) {
+      setStatusActionError(disableError.message)
+    } finally {
+      setIsDisabling(false)
+    }
+  }
+
+  async function confirmDeleteUser() {
+    if (!deleteUserTarget) return
+
+    setIsDeleting(true)
+
+    try {
+      await deleteUser(deleteUserTarget.id)
+      setUsers((current) =>
+        current.map((user) =>
+          user.id === deleteUserTarget.id
+            ? {
+                ...user,
+                status: "removed",
+                isActive: false,
+                isRemoved: true,
+              }
+            : user,
+        ),
+      )
+      setDeleteUserTarget(null)
+      setDeleteError("")
     } catch (deleteError) {
-      setError(deleteError.message)
+      setDeleteError(deleteError.message)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -468,8 +536,11 @@ export default function Users() {
                   <td className="px-4 py-3 lg:px-5">
                     <div className="flex justify-end">
                       <UserActionsMenu
-                        onDelete={() => handleDeleteUser(user.id)}
+                        isInactive={user.status === "inactive"}
+                        isRemoved={user.status === "removed"}
+                        onDelete={() => handleDeleteUser(user)}
                         onEdit={() => handleEditUser(user)}
+                        onStatusChange={() => handleStatusChange(user)}
                       />
                     </div>
                   </td>
@@ -501,8 +572,11 @@ export default function Users() {
                       </p>
                     </div>
                     <UserActionsMenu
-                      onDelete={() => handleDeleteUser(user.id)}
+                      isInactive={user.status === "inactive"}
+                      isRemoved={user.status === "removed"}
+                      onDelete={() => handleDeleteUser(user)}
                       onEdit={() => handleEditUser(user)}
+                      onStatusChange={() => handleStatusChange(user)}
                     />
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -553,6 +627,116 @@ export default function Users() {
         }}
         onSave={handleSaveUser}
       />
+
+      <Dialog
+        open={Boolean(disableUserTarget)}
+        onOpenChange={(open) => {
+          if (!open && !isDisabling) {
+            setDisableUserTarget(null)
+            setStatusActionError("")
+          }
+        }}
+      >
+        <DialogContent showCloseButton={!isDisabling}>
+          <DialogHeader>
+            <DialogTitle>
+              {disableUserTarget?.status === "inactive"
+                ? "Enable user?"
+                : "Disable user?"}
+            </DialogTitle>
+            <DialogDescription>
+              {disableUserTarget?.status === "inactive"
+                ? `${getFullName(disableUserTarget)} will regain access to the application.`
+                : disableUserTarget
+                ? `${getFullName(disableUserTarget)} will no longer be able to access the application. You can reactivate this user later by editing their status.`
+                : "This user will no longer be able to access the application."}
+            </DialogDescription>
+          </DialogHeader>
+          {statusActionError ? (
+            <div
+              role="alert"
+              className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm font-medium text-destructive"
+            >
+              {statusActionError}
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isDisabling}
+              onClick={() => setDisableUserTarget(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant={
+                disableUserTarget?.status === "inactive"
+                  ? "default"
+                  : "destructive"
+              }
+              disabled={isDisabling}
+              onClick={confirmDisableUser}
+            >
+              {isDisabling
+                ? disableUserTarget?.status === "inactive"
+                  ? "Enabling..."
+                  : "Disabling..."
+                : disableUserTarget?.status === "inactive"
+                  ? "Enable"
+                  : "Disable"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(deleteUserTarget)}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) {
+            setDeleteUserTarget(null)
+            setDeleteError("")
+          }
+        }}
+      >
+        <DialogContent showCloseButton={!isDeleting}>
+          <DialogHeader>
+            <DialogTitle>Remove user?</DialogTitle>
+            <DialogDescription>
+              {deleteUserTarget
+                ? `${getFullName(deleteUserTarget)} will be marked as removed and will lose access. Their chat history will be preserved.`
+                : "This user will be marked as removed and their chat history will be preserved."}
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError ? (
+            <div
+              role="alert"
+              className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm font-medium text-destructive"
+            >
+              {deleteError}
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isDeleting}
+              onClick={() => setDeleteUserTarget(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={confirmDeleteUser}
+            >
+              {isDeleting ? "Removing..." : "Remove user"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -614,6 +798,23 @@ async function deleteUser(userId) {
     credentials: "same-origin",
   })
   const data = await readJsonResponse(response, "Failed to delete user")
+
+  return data.user
+}
+
+async function updateUserStatus(userId, action) {
+  const response = await fetch(`/api/users/${userId}`, {
+    method: "PATCH",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ action }),
+  })
+  const data = await readJsonResponse(
+    response,
+    `Failed to ${action} user`,
+  )
 
   return data.user
 }

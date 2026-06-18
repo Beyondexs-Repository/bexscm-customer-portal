@@ -16,6 +16,8 @@ function formatRole(row) {
 }
 
 function formatUser(row) {
+  const isRemoved = Boolean(row.deleted_at);
+
   return {
     id: row.id,
     firstName: row.first_name,
@@ -27,8 +29,9 @@ function formatUser(row) {
     roleKey: row.role_key,
     roleName: row.role_name,
     userType: getUserType(row.role_key),
-    status: row.is_active ? "active" : "inactive",
-    isActive: Boolean(row.is_active),
+    status: isRemoved ? "removed" : row.is_active ? "active" : "inactive",
+    isActive: Boolean(row.is_active) && !isRemoved,
+    isRemoved,
   };
 }
 
@@ -110,6 +113,7 @@ export async function GET() {
       u.role_id,
       u.user_type,
       u.is_active,
+      u.deleted_at,
       r.role_key,
       r.role_name
     FROM users u
@@ -187,6 +191,7 @@ export async function POST(request) {
       u.role_id,
       u.user_type,
       u.is_active,
+      u.deleted_at,
       r.role_key,
       r.role_name
     FROM users u

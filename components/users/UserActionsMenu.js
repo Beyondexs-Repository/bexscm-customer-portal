@@ -1,6 +1,12 @@
 "use client"
 
-import { MoreHorizontal, PencilLine, Trash2 } from "lucide-react"
+import {
+  MoreHorizontal,
+  PencilLine,
+  Trash2,
+  UserCheck,
+  UserX,
+} from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
@@ -11,7 +17,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export function UserActionsMenu({ onDelete, onEdit }) {
+export function UserActionsMenu({
+  isInactive,
+  isRemoved,
+  onDelete,
+  onEdit,
+  onStatusChange,
+}) {
   const t = useTranslations("users")
 
   return (
@@ -26,11 +38,23 @@ export function UserActionsMenu({ onDelete, onEdit }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-36">
-        <DropdownMenuItem onSelect={onEdit}>
+        <DropdownMenuItem disabled={isRemoved} onSelect={onEdit}>
           <PencilLine className="size-4" />
           {t("edit")}
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={onDelete} variant="destructive">
+        <DropdownMenuItem disabled={isRemoved} onSelect={onStatusChange}>
+          {isInactive ? (
+            <UserCheck className="size-4" />
+          ) : (
+            <UserX className="size-4" />
+          )}
+          {isInactive ? t("enable") : t("disable")}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={isRemoved}
+          onSelect={onDelete}
+          variant="destructive"
+        >
           <Trash2 className="size-4" />
           {t("delete")}
         </DropdownMenuItem>

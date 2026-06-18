@@ -60,7 +60,9 @@ async function loadMessages(
       m.created_at,
       CONCAT_WS(' ', u.first_name, u.last_name) AS sender_name,
       r.role_key AS sender_role_key,
-      u.avatar AS sender_avatar
+      u.avatar AS sender_avatar,
+      u.is_active AS sender_is_active,
+      u.deleted_at AS sender_deleted_at
     FROM chat_messages m
     INNER JOIN users u ON m.sender_user_id = u.id
     INNER JOIN roles r ON u.role_id = r.id
@@ -316,6 +318,7 @@ export async function POST(request) {
       senderId: currentUser.id,
       senderName: currentUser.name,
       senderRoleKey: currentUser.roleKey,
+      senderAccountStatus: "active",
       senderAvatar: currentUser.avatar,
       type: "sent",
       text: body,

@@ -1,6 +1,12 @@
 "use client"
 
-import { MoreHorizontal, PencilLine, Trash2 } from "lucide-react"
+import {
+  MoreHorizontal,
+  PencilLine,
+  Trash2,
+  UserCheck,
+  UserX,
+} from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
@@ -11,7 +17,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export function EmployeeActionsMenu({ onDelete, onEdit }) {
+export function EmployeeActionsMenu({
+  isInactive,
+  onDelete,
+  onEdit,
+  onStatusChange,
+}) {
   const t = useTranslations("employees")
 
   return (
@@ -29,6 +40,14 @@ export function EmployeeActionsMenu({ onDelete, onEdit }) {
         <DropdownMenuItem onSelect={onEdit}>
           <PencilLine className="size-4" />
           {t("edit")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onStatusChange}>
+          {isInactive ? (
+            <UserCheck className="size-4" />
+          ) : (
+            <UserX className="size-4" />
+          )}
+          {isInactive ? t("enable") : t("disable")}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={onDelete} variant="destructive">
           <Trash2 className="size-4" />

@@ -1,5 +1,12 @@
+import { cookies } from "next/headers"
+
 import { DashboardShell } from "@/components/dashboard-shell"
 
-export default function DashboardLayout({ children }) {
-  return <DashboardShell>{children}</DashboardShell>
+export default async function DashboardLayout({ children }) {
+  const cookieStore = await cookies()
+  const initialRole = cookieStore.get("aloha-login-role")?.value ?? ""
+
+  return (
+    <DashboardShell initialRole={initialRole}>{children}</DashboardShell>
+  )
 }

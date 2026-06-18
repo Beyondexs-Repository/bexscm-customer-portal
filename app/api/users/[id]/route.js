@@ -8,6 +8,8 @@ function normalizePhone(value) {
 }
 
 function formatUser(row) {
+  const isRemoved = Boolean(row.deleted_at);
+
   return {
     id: row.id,
     firstName: row.first_name,
@@ -19,8 +21,9 @@ function formatUser(row) {
     roleKey: row.role_key,
     roleName: row.role_name,
     userType: getUserType(row.role_key),
-    status: row.is_active ? "active" : "inactive",
-    isActive: Boolean(row.is_active),
+    status: isRemoved ? "removed" : row.is_active ? "active" : "inactive",
+    isActive: Boolean(row.is_active) && !isRemoved,
+    isRemoved,
   };
 }
 
@@ -90,6 +93,7 @@ async function getUser(id) {
       u.role_id,
       u.user_type,
       u.is_active,
+      u.deleted_at,
       r.role_key,
       r.role_name
     FROM users u
@@ -118,6 +122,13 @@ export async function PUT(request, { params }) {
 
   if (!existingUser) {
     return Response.json({ message: "User not found." }, { status: 404 });
+  }
+
+  if (existingUser.deleted_at) {
+    return Response.json(
+      { message: "Removed users cannot be edited." },
+      { status: 409 }
+    );
   }
 
   const body = await request.json().catch(() => ({}));
@@ -170,6 +181,62 @@ export async function PUT(request, { params }) {
   });
 }
 
+export async function PATCH(request, { params }) {
+  const permissionError = await requireUserManager(request);
+  if (permissionError) return permissionError;
+
+  const { id: userId } = await params;
+  const id = Number(userId);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return Response.json({ message: "Invalid user id." }, { status: 400 });
+  }
+
+  const existingUser = await getUser(id);
+
+  if (!existingUser) {
+    return Response.json({ message: "User not found." }, { status: 404 });
+  }
+
+  if (existingUser.deleted_at) {
+    return Response.json(
+      { message: "Removed users cannot be enabled or disabled." },
+      { status: 409 }
+    );
+  }
+
+  const body = await request.json().catch(() => ({}));
+
+  const action = body.action;
+
+  if (action !== "disable" && action !== "enable") {
+    return Response.json({ message: "Unsupported user action." }, { status: 400 });
+  }
+
+  if (action === "disable" && getLoginUserId(request) === id) {
+    return Response.json(
+      { message: "You cannot disable your own account." },
+      { status: 409 }
+    );
+  }
+
+  await db.execute(
+    `
+    UPDATE users
+    SET is_active = ?
+    WHERE id = ?
+    `,
+    [action === "enable", id]
+  );
+
+  const updatedUser = await getUser(id);
+
+  return Response.json({
+    message: `User ${action}d successfully.`,
+    user: formatUser(updatedUser),
+  });
+}
+
 export async function DELETE(request, { params }) {
   const permissionError = await requireUserManager(request);
   if (permissionError) return permissionError;
@@ -187,19 +254,35 @@ export async function DELETE(request, { params }) {
     return Response.json({ message: "User not found." }, { status: 404 });
   }
 
+  if (getLoginUserId(request) === id) {
+    return Response.json(
+      { message: "You cannot remove your own account." },
+      { status: 409 }
+    );
+  }
+
+  if (existingUser.deleted_at) {
+    return Response.json(
+      { message: "User has already been removed." },
+      { status: 409 }
+    );
+  }
+
   await db.execute(
     `
     UPDATE users
-    SET is_active = FALSE
+    SET
+      is_active = FALSE,
+      deleted_at = CURRENT_TIMESTAMP
     WHERE id = ?
     `,
     [id]
   );
 
-  const updatedUser = await getUser(id);
+  const removedUser = await getUser(id);
 
   return Response.json({
-    message: "User disabled successfully.",
-    user: formatUser(updatedUser),
+    message: "User removed successfully. Chat history was preserved.",
+    user: formatUser(removedUser),
   });
 }

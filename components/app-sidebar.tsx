@@ -57,32 +57,16 @@ const data = {
   ],
 };
 
-function getCookieValue(name: string) {
-  if (typeof document === "undefined") return "";
-
-  return (
-    document.cookie
-      .split("; ")
-      .find((cookie) => cookie.startsWith(`${name}=`))
-      ?.split("=")[1] ?? ""
-  );
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+  initialRole?: string
 }
 
-function getLoginRole() {
-  return decodeURIComponent(getCookieValue("aloha-login-role"));
-}
-
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ initialRole = "", ...props }: AppSidebarProps) {
   const pathname = usePathname()
   const t = useTranslations("nav")
   const isBackoffice = pathname === "/backoffice" || pathname.startsWith("/backoffice/")
-  const [role, setRole] = React.useState(getLoginRole)
-
-  React.useEffect(() => {
-    setRole(getLoginRole())
-  }, [pathname])
-
-  const effectiveRole = role || (isBackoffice ? "global-admin" : "store-employee")
+  const effectiveRole =
+    initialRole || (isBackoffice ? "global-admin" : "store-employee")
   const pageIcons: Record<string, React.ReactNode> = {
     "customer-overview": <RxDashboard />,
     "customer-order-guide": <Star />,

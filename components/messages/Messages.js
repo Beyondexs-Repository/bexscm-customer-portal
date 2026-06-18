@@ -13,9 +13,12 @@ import {
   Loader2,
   Maximize2,
   Paperclip,
+  Search,
   Send,
   X,
 } from "lucide-react"
+
+import { Badge } from "@/components/ui/badge"
 
 const fallbackAvatar = "https://api.dicebear.com/9.x/adventurer/svg?seed=Aloha"
 
@@ -118,9 +121,12 @@ export default function Messages({ fullscreen = false }) {
   const [loading, setLoading] = useState(true)
   const [loadingOlder, setLoadingOlder] = useState(false)
   const [hasMoreOlder, setHasMoreOlder] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
   const [error, setError] = useState("")
   const messageAreaRef = useRef(null)
   const messageInputRef = useRef(null)
+  const searchInputRef = useRef(null)
   const attachmentInputRef = useRef(null)
   const cameraInputRef = useRef(null)
   const mountedRef = useRef(false)
@@ -140,6 +146,30 @@ export default function Messages({ fullscreen = false }) {
 
       optimisticUrlsRef.current.clear()
       mountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    function handleSearch() {
+      setSearchOpen(true)
+      requestAnimationFrame(() => searchInputRef.current?.focus())
+    }
+
+    function handleClear() {
+      if (!window.confirm("Clear this chat from your screen?")) return
+
+      setMessages([])
+      setSearchQuery("")
+      setSearchOpen(false)
+      setHasMoreOlder(false)
+    }
+
+    window.addEventListener("aloha-messages-search", handleSearch)
+    window.addEventListener("aloha-messages-clear", handleClear)
+
+    return () => {
+      window.removeEventListener("aloha-messages-search", handleSearch)
+      window.removeEventListener("aloha-messages-clear", handleClear)
     }
   }, [])
 
@@ -299,6 +329,7 @@ export default function Messages({ fullscreen = false }) {
       senderId: currentUser?.id,
       senderName: currentUser?.name,
       senderRoleKey: currentUser?.roleKey,
+      senderAccountStatus: "active",
       senderAvatar: currentUser?.avatar,
       type: "sent",
       text,
@@ -412,6 +443,19 @@ export default function Messages({ fullscreen = false }) {
   const chatBoxClass = fullscreen
     ? "flex h-full min-h-0 flex-col overflow-hidden bg-background "
     : "fixed bottom-0 right-6 z-50 flex h-[620px] w-[430px] flex-col overflow-hidden rounded-t-xl border bg-background shadow-2xl"
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase()
+  const visibleMessages = normalizedSearchQuery
+    ? messages.filter((item) => {
+        const text = item.text ?? ""
+        const attachmentText = (item.attachments ?? [])
+          .map((attachment) => attachment.fileName)
+          .join(" ")
+
+        return `${text} ${attachmentText}`
+          .toLowerCase()
+          .includes(normalizedSearchQuery)
+      })
+    : messages
 
   return (
     <>
@@ -458,14 +502,41 @@ export default function Messages({ fullscreen = false }) {
             onScroll={handleMessageAreaScroll}
             className="min-h-0 flex-1 overflow-y-auto px-2 py-3 sm:px-5 sm:py-4"
           >
+            {searchOpen && (
+              <div className="sticky top-0 z-10 -mx-2 mb-3 border-b bg-background/95 px-2 pb-3 backdrop-blur sm:-mx-5 sm:px-5">
+                <div className="flex min-h-10 items-center gap-2 rounded-full border bg-muted/35 px-3">
+                  <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <input
+                    ref={searchInputRef}
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Search messages"
+                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  />
+                  <button
+                    type="button"
+                    className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label="Close search"
+                    onClick={() => {
+                      setSearchOpen(false)
+                      setSearchQuery("")
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
             {loading ? (
               <div className="flex h-full items-center justify-center text-muted-foreground">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Loading messages
               </div>
-            ) : messages.length === 0 ? (
+            ) : visibleMessages.length === 0 ? (
               <div className="flex h-full items-center justify-center px-8 text-center text-sm text-muted-foreground">
-                Start a team conversation between store managers and employees.
+                {normalizedSearchQuery
+                  ? "No messages found."
+                  : "Start a team conversation between store managers and employees."}
               </div>
             ) : (
               <div className="flex min-h-full flex-col">
@@ -478,13 +549,13 @@ export default function Messages({ fullscreen = false }) {
                 <div className="mt-auto flex items-center gap-2 pb-4 sm:gap-3 sm:pb-5">
                   <div className="h-px flex-1 bg-border" />
                   <span className="text-xs font-semibold text-muted-foreground">
-                    {formatDate(messages[messages.length - 1]?.createdAt)}
+                    {formatDate(visibleMessages[visibleMessages.length - 1]?.createdAt)}
                   </span>
                   <div className="h-px flex-1 bg-border" />
                 </div>
 
                 <div className="space-y-4 sm:space-y-5">
-                  {messages.map((item) => (
+                  {visibleMessages.map((item) => (
                     <div
                       key={item.id}
                       className={`flex min-w-0 gap-2 sm:gap-3 ${
@@ -511,11 +582,25 @@ export default function Messages({ fullscreen = false }) {
                             <span className="truncate text-sm font-semibold text-foreground">
                               {item.senderName || t("customer")}
                             </span>
-                            {item.senderRoleKey && (
+                            {item.senderAccountStatus === "removed" ? (
+                              <Badge
+                                variant="destructive"
+                                className="shrink-0 text-[10px]"
+                              >
+                                Removed
+                              </Badge>
+                            ) : item.senderAccountStatus === "inactive" ? (
+                              <Badge
+                                variant="outline"
+                                className="shrink-0 text-[10px] text-muted-foreground"
+                              >
+                                Inactive
+                              </Badge>
+                            ) : item.senderRoleKey ? (
                               <span className="shrink-0 text-[11px] font-normal text-muted-foreground">
                                 ~ {formatRole(item.senderRoleKey)}
                               </span>
-                            )}
+                            ) : null}
                           </div>
                         )}
 

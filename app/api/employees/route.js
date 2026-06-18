@@ -24,6 +24,7 @@ function formatEmployee(row) {
     email: row.email,
     contact: row.phone,
     avatarImage: row.avatar ?? "",
+    status: row.is_active ? "active" : "inactive",
   };
 }
 
@@ -101,11 +102,12 @@ export async function GET(request) {
       u.last_name,
       u.email,
       u.phone,
-      u.avatar
+      u.avatar,
+      u.is_active
     FROM users u
     INNER JOIN roles r ON u.role_id = r.id
     WHERE r.role_key = ?
-      AND u.is_active = TRUE
+      AND u.deleted_at IS NULL
     ORDER BY u.id DESC
     `,
     [STORE_EMPLOYEE]
@@ -166,7 +168,7 @@ export async function POST(request) {
 
   const [rows] = await db.execute(
     `
-    SELECT id, first_name, last_name, email, phone, avatar
+    SELECT id, first_name, last_name, email, phone, avatar, is_active
     FROM users
     WHERE id = ?
     LIMIT 1

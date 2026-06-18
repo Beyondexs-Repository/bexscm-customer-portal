@@ -152,6 +152,8 @@
     "emailPlaceholder": "Enter email address",
     "contactPlaceholder": "Enter contact number",
     "edit": "Edit",
+    "disable": "Disable",
+    "enable": "Enable",
     "delete": "Delete",
     "cancel": "Cancel",
     "saveEmployee": "Save employee",
@@ -176,8 +178,11 @@
     "actions": "Actions",
     "active": "Active",
     "inactive": "Inactive",
+    "removed": "Removed",
     "openActions": "Open actions menu",
     "edit": "Edit",
+    "disable": "Disable",
+    "enable": "Enable",
     "delete": "Delete",
     "cancel": "Cancel",
     "saveChanges": "Save changes",
@@ -307,6 +312,7 @@
     "addedToCart": "Added to Cart"
   },
   "auth": {
+    "language": "Language",
     "phoneRequired": "Enter your phone number.",
     "countryMismatch": "Enter a phone number for the selected country.",
     "lengthMismatch": "Phone number length does not match the selected country.",

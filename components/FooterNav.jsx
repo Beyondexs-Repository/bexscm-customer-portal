@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -15,32 +14,12 @@ import {
 import { getVisiblePagesForRole } from "@/config/role-pages";
 import { cn } from "@/lib/utils";
 
-function getCookieValue(name) {
-  if (typeof document === "undefined") return "";
-
-  return (
-    document.cookie
-      .split("; ")
-      .find((cookie) => cookie.startsWith(`${name}=`))
-      ?.split("=")[1] ?? ""
-  );
-}
-
-function getLoginRole() {
-  return decodeURIComponent(getCookieValue("aloha-login-role"));
-}
-
-export function FooterNav() {
+export function FooterNav({ initialRole = "" }) {
   const pathname = usePathname();
   const t = useTranslations("footerNav");
   const isBackoffice = pathname === "/backoffice" || pathname.startsWith("/backoffice/");
-  const [role, setRole] = React.useState(getLoginRole);
-
-  React.useEffect(() => {
-    setRole(getLoginRole());
-  }, [pathname]);
-
-  const effectiveRole = role || (isBackoffice ? "global-admin" : "store-employee");
+  const effectiveRole =
+    initialRole || (isBackoffice ? "global-admin" : "store-employee");
   const pageIcons = {
     "customer-overview": LayoutDashboardIcon,
     "customer-order-guide": StarIcon,

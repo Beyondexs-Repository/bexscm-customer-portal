@@ -92,19 +92,32 @@ function touchQuickOrder(order) {
 }
 
 export function AppProvider({ children }) {
-  const [cartItems, setCartItems] = useState(getInitialCartItems)
-  const [quickOrders, setQuickOrders] = useState(getInitialQuickOrders)
+  const [cartItems, setCartItems] = useState([])
+  const [quickOrders, setQuickOrders] = useState([])
+  const [storageHydrated, setStorageHydrated] = useState(false)
 
   useEffect(() => {
+    queueMicrotask(() => {
+      setCartItems(getInitialCartItems())
+      setQuickOrders(getInitialQuickOrders())
+      setStorageHydrated(true)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!storageHydrated) return
+
     window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems))
-  }, [cartItems])
+  }, [cartItems, storageHydrated])
 
   useEffect(() => {
+    if (!storageHydrated) return
+
     window.localStorage.setItem(
       QUICK_ORDERS_STORAGE_KEY,
       JSON.stringify(quickOrders)
     )
-  }, [quickOrders])
+  }, [quickOrders, storageHydrated])
 
   function addCartItem(product, quantity = 1) {
     setCartItems((currentItems) => {

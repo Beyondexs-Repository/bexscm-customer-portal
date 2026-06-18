@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Check,
   ChevronLeft,
-  Package2,
   ShoppingCart,
   Star,
 } from "lucide-react";
@@ -20,7 +19,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 function formatPrice(price, unit) {

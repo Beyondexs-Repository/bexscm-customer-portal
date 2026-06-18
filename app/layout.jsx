@@ -31,6 +31,7 @@ export default async function RootLayout({children}) {
   return (
     <html
       lang={locale}
+      suppressHydrationWarning
       className={`${poppins.variable} ${notoSansTamil.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

@@ -8,6 +8,7 @@ import { EmployeeActionsMenu } from "@/components/employees/EmployeeActionsMenu"
 import { EmployeeFormDialog } from "@/components/employees/EmployeeFormDialog"
 import { EmployeesPagination } from "@/components/employees/EmployeesPagination"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -16,7 +17,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+
 
 
 const DEFAULT_PAGE_SIZE = 10
@@ -25,6 +35,7 @@ const EMPLOYEE_MANAGER_ROLES = new Set([
   "global-admin",
   "application-admin",
 ])
+const EMPLOYEE_REFRESH_INTERVAL_MS = 15_000
 
 function getLoginRole() {
   if (typeof window === "undefined") return ""
@@ -56,6 +67,90 @@ function EmployeesLoadingState() {
   )
 }
 
+async function loadEmployees() {
+  const response = await fetch("/api/employees", {
+    cache: "no-store",
+    credentials: "same-origin",
+  })
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    throw new Error(data.message ?? "Failed to load employees")
+  }
+
+  const data = await response.json()
+  return data.employees ?? []
+}
+
+async function createEmployee(employeeData) {
+  const response = await fetch("/api/employees", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(employeeData),
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to create employee")
+  }
+
+  const data = await response.json()
+  return data.employee
+}
+
+async function updateEmployee(employeeId, employeeData) {
+  const response = await fetch(`/api/employees/${employeeId}`, {
+    method: "PUT",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(employeeData),
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to update employee")
+  }
+
+  const data = await response.json()
+  return data.employee
+}
+
+async function deleteEmployee(employeeId) {
+  const response = await fetch(`/api/employees/${employeeId}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to delete employee")
+  }
+
+  const data = await response.json()
+  return data.employee
+}
+
+async function updateEmployeeStatus(employeeId, action) {
+  const response = await fetch(`/api/employees/${employeeId}`, {
+    method: "PATCH",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ action }),
+  })
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    throw new Error(data.message ?? `Failed to ${action} employee`)
+  }
+
+  const data = await response.json()
+  return data.employee
+}
+
 export default function Employees() {
   const t = useTranslations("employees")
   const [employees, setEmployees] = useState([])
@@ -65,6 +160,9 @@ export default function Employees() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState(null)
+  const [statusEmployeeTarget, setStatusEmployeeTarget] = useState(null)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [statusActionError, setStatusActionError] = useState("")
   const [loginRole] = useState(getLoginRole)
   const listTopRef = useRef(null)
   const canManageEmployees = EMPLOYEE_MANAGER_ROLES.has(loginRole)
@@ -72,7 +170,11 @@ export default function Employees() {
   useEffect(() => {
     let active = true
 
-    async function syncEmployees() {
+    async function syncEmployees({ showLoading = false } = {}) {
+      if (showLoading) {
+        setIsLoading(true)
+      }
+
       try {
         const nextEmployees = await loadEmployees()
 
@@ -88,10 +190,25 @@ export default function Employees() {
       }
     }
 
-    syncEmployees()
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        syncEmployees()
+      }
+    }
+
+    syncEmployees({ showLoading: true })
+    window.addEventListener("focus", syncEmployees)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    const refreshInterval = window.setInterval(
+      syncEmployees,
+      EMPLOYEE_REFRESH_INTERVAL_MS,
+    )
 
     return () => {
       active = false
+      window.removeEventListener("focus", syncEmployees)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.clearInterval(refreshInterval)
     }
   }, [])
 
@@ -155,10 +272,46 @@ export default function Employees() {
   async function handleDeleteEmployee(employeeId) {
     if (!canManageEmployees) return
 
-    await deleteEmployee(employeeId)
+    const savedEmployee = await deleteEmployee(employeeId)
     setEmployees((current) =>
-      current.filter((employee) => employee.id !== employeeId),
+      current.map((employee) =>
+        employee.id === employeeId ? savedEmployee : employee,
+      ),
     )
+  }
+
+  function handleStatusChange(employee) {
+    if (!canManageEmployees) return
+
+    setStatusActionError("")
+    setStatusEmployeeTarget(employee)
+  }
+
+  async function confirmStatusChange() {
+    if (!statusEmployeeTarget) return
+
+    setIsUpdatingStatus(true)
+    const action =
+      statusEmployeeTarget.status === "inactive" ? "enable" : "disable"
+
+    try {
+      const savedEmployee = await updateEmployeeStatus(
+        statusEmployeeTarget.id,
+        action,
+      )
+
+      setEmployees((current) =>
+        current.map((employee) =>
+          employee.id === statusEmployeeTarget.id ? savedEmployee : employee,
+        ),
+      )
+      setStatusEmployeeTarget(null)
+      setStatusActionError("")
+    } catch (error) {
+      setStatusActionError(error.message)
+    } finally {
+      setIsUpdatingStatus(false)
+    }
   }
 
   async function handleSaveEmployee(employeeData) {
@@ -184,69 +337,6 @@ export default function Employees() {
     setDialogOpen(false)
     setEditingEmployee(null)
   }
-
-  async function loadEmployees() {
-  const response = await fetch("/api/employees", {
-    cache: "no-store",
-    credentials: "same-origin",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to load employees");
-  }
-
-  const data = await response.json();
-  return data.employees ?? [];
-}
-
-async function createEmployee(employeeData) {
-  const response = await fetch("/api/employees", {
-    method: "POST",
-    credentials: "same-origin",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(employeeData),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to create employee");
-  }
-
-  const data = await response.json();
-  return data.employee;
-}
-
-async function updateEmployee(employeeId, employeeData) {
-  const response = await fetch(`/api/employees/${employeeId}`, {
-    method: "PUT",
-    credentials: "same-origin",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(employeeData),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to update employee");
-  }
-
-  const data = await response.json();
-  return data.employee;
-}
-
-async function deleteEmployee(employeeId) {
-  const response = await fetch(`/api/employees/${employeeId}`, {
-    method: "DELETE",
-    credentials: "same-origin",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to delete employee");
-  }
-
-  return true;
-}
 
   if (isLoading) {
     return <EmployeesLoadingState />
@@ -343,6 +433,9 @@ async function deleteEmployee(employeeId) {
               <th className="px-5 py-4 text-left text-sm font-semibold">
                 {t("contact")}
               </th>
+              <th className="px-5 py-4 text-left text-sm font-semibold">
+                Status
+              </th>
               {canManageEmployees && (
                 <th className="px-5 py-4 text-right text-sm font-semibold">
                   {t("actions")}
@@ -372,12 +465,28 @@ async function deleteEmployee(employeeId) {
                 </td>
                 <td className="px-5 py-3 text-sm">{employee.email}</td>
                 <td className="px-5 py-3 text-sm">{employee.contact}</td>
+                <td className="px-5 py-3">
+                  <Badge
+                    variant={
+                      employee.status === "active" ? "secondary" : "outline"
+                    }
+                    className={
+                      employee.status === "active"
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "text-muted-foreground"
+                    }
+                  >
+                    {employee.status === "active" ? "Active" : "Inactive"}
+                  </Badge>
+                </td>
                 {canManageEmployees && (
                   <td className="px-5 py-3">
                     <div className="flex justify-end">
                       <EmployeeActionsMenu
+                        isInactive={employee.status === "inactive"}
                         onDelete={() => handleDeleteEmployee(employee.id)}
                         onEdit={() => handleEditEmployee(employee)}
+                        onStatusChange={() => handleStatusChange(employee)}
                       />
                     </div>
                   </td>
@@ -407,8 +516,10 @@ async function deleteEmployee(employeeId) {
                   <h3 className="font-semibold">{getFullName(employee)}</h3>
                   {canManageEmployees && (
                     <EmployeeActionsMenu
+                      isInactive={employee.status === "inactive"}
                       onDelete={() => handleDeleteEmployee(employee.id)}
                       onEdit={() => handleEditEmployee(employee)}
+                      onStatusChange={() => handleStatusChange(employee)}
                     />
                   )}
                 </div>
@@ -418,6 +529,18 @@ async function deleteEmployee(employeeId) {
                 <p className="mt-1 text-sm text-muted-foreground">
                   {employee.contact}
                 </p>
+                <Badge
+                  variant={
+                    employee.status === "active" ? "secondary" : "outline"
+                  }
+                  className={
+                    employee.status === "active"
+                      ? "mt-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "mt-2 text-muted-foreground"
+                  }
+                >
+                  {employee.status === "active" ? "Active" : "Inactive"}
+                </Badge>
               </div>
             </div>
           </div>
@@ -459,6 +582,69 @@ async function deleteEmployee(employeeId) {
           onSave={handleSaveEmployee}
         />
       )}
+
+      <Dialog
+        open={Boolean(statusEmployeeTarget)}
+        onOpenChange={(open) => {
+          if (!open && !isUpdatingStatus) {
+            setStatusEmployeeTarget(null)
+            setStatusActionError("")
+          }
+        }}
+      >
+        <DialogContent showCloseButton={!isUpdatingStatus}>
+          <DialogHeader>
+            <DialogTitle>
+              {statusEmployeeTarget?.status === "inactive"
+                ? "Enable employee?"
+                : "Disable employee?"}
+            </DialogTitle>
+            <DialogDescription>
+              {statusEmployeeTarget?.status === "inactive"
+                ? `${getFullName(statusEmployeeTarget)} will regain access to the application.`
+                : statusEmployeeTarget
+                ? `${getFullName(statusEmployeeTarget)} will no longer be able to access the application. You can enable this employee later.`
+                : "This employee will no longer be able to access the application."}
+            </DialogDescription>
+          </DialogHeader>
+          {statusActionError ? (
+            <div
+              role="alert"
+              className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm font-medium text-destructive"
+            >
+              {statusActionError}
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isUpdatingStatus}
+              onClick={() => setStatusEmployeeTarget(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant={
+                statusEmployeeTarget?.status === "inactive"
+                  ? "default"
+                  : "destructive"
+              }
+              disabled={isUpdatingStatus}
+              onClick={confirmStatusChange}
+            >
+              {isUpdatingStatus
+                ? statusEmployeeTarget?.status === "inactive"
+                  ? "Enabling..."
+                  : "Disabling..."
+                : statusEmployeeTarget?.status === "inactive"
+                  ? "Enable"
+                  : "Disable"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

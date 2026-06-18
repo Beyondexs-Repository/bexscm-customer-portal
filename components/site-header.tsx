@@ -10,7 +10,10 @@ import {
   ChevronDownIcon,
   Clock3Icon,
   LogOutIcon,
+  MoreVerticalIcon,
+  SearchIcon,
   ShoppingCartIcon,
+  Trash2Icon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -107,6 +110,7 @@ function SiteHeader({
   const router = useRouter()
   const pathname = usePathname()
   const t = useTranslations("header")
+  const isMessagesPage = pathname === "/messages"
   const profileUrl =
     pathname === "/backoffice" || pathname.startsWith("/backoffice/")
       ? "/backoffice/profile"
@@ -258,6 +262,10 @@ function SiteHeader({
     router.replace("/login")
   }
 
+  function dispatchMessagesAction(action: "search" | "clear") {
+    window.dispatchEvent(new CustomEvent(`aloha-messages-${action}`))
+  }
+
   return (
     <header
       data-slot="site-header"
@@ -289,103 +297,135 @@ function SiteHeader({
         )}
       </div>
       <div className="flex shrink-0 items-center gap-2 pr-1 sm:gap-4 sm:pr-3">
-        <button
-          ref={calendarTriggerRef}
-          type="button"
-          className="hidden rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:block"
-          onClick={() => setCalendarOpen((open) => !open)}
-          aria-expanded={calendarOpen}
-        >
-          <HeaderInfoItem
-            icon={CalendarDaysIcon}
-            caption={t("deliveryDate")}
-            label={formatDeliveryDate(deliveryDate)}
-            contentClassName="pr-5"
-          >
-            <ChevronDownIcon className="absolute right-0 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
-          </HeaderInfoItem>
-        </button>
-        {calendarOpen && (
-          <div
-            ref={calendarRef}
-            className="absolute top-14 right-28 z-40 w-64 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg"
-          >
-            <div className="mb-3 flex items-center justify-between">
+        {isMessagesPage ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted"
-                onClick={() =>
-                  setCalendarMonth(
-                    new Date(
-                      calendarMonth.getFullYear(),
-                      calendarMonth.getMonth() - 1,
-                      1
-                    )
-                  )
-                }
+                className="grid size-9 place-items-center rounded-md outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Open message options"
               >
-                {t("prev")}
+                <MoreVerticalIcon className="size-5" />
               </button>
-              <p className="text-sm font-semibold">{calendarTitle}</p>
-              <button
-                type="button"
-                className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted"
-                onClick={() =>
-                  setCalendarMonth(
-                    new Date(
-                      calendarMonth.getFullYear(),
-                      calendarMonth.getMonth() + 1,
-                      1
-                    )
-                  )
-                }
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem
+                className="px-3 py-2.5"
+                onClick={() => dispatchMessagesAction("search")}
               >
-                {t("next")}
-              </button>
-            </div>
-            <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
-              {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
-                <span key={`${day}-${index}`}>{day}</span>
-              ))}
-            </div>
-            <div className="mt-1 grid grid-cols-7 gap-1">
-              {calendarDays.map((date, index) => {
-                const disabled = date ? startOfDay(date) < today : true
-                const selected = date ? isSameDay(date, deliveryDate) : false
-
-                return date ? (
+                <SearchIcon />
+                Search
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="px-3 py-2.5 text-destructive focus:text-destructive"
+                onClick={() => dispatchMessagesAction("clear")}
+              >
+                <Trash2Icon />
+                Clear Chat
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <>
+            <button
+              ref={calendarTriggerRef}
+              type="button"
+              className="hidden rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:block"
+              onClick={() => setCalendarOpen((open) => !open)}
+              aria-expanded={calendarOpen}
+            >
+              <HeaderInfoItem
+                icon={CalendarDaysIcon}
+                caption={t("deliveryDate")}
+                label={formatDeliveryDate(deliveryDate)}
+                contentClassName="pr-5"
+              >
+                <ChevronDownIcon className="absolute right-0 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+              </HeaderInfoItem>
+            </button>
+            {calendarOpen && (
+              <div
+                ref={calendarRef}
+                className="absolute top-14 right-28 z-40 w-64 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg"
+              >
+                <div className="mb-3 flex items-center justify-between">
                   <button
-                    key={date.toISOString()}
                     type="button"
-                    disabled={disabled}
-                    className={cn(
-                      "flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors",
-                      selected && "bg-primary text-primary-foreground",
-                      !selected && !disabled && "hover:bg-muted",
-                      disabled && "cursor-not-allowed text-muted-foreground/35"
-                    )}
-                    onClick={() => {
-                      setDeliveryDate(date)
-                      setCalendarOpen(false)
-                    }}
+                    className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted"
+                    onClick={() =>
+                      setCalendarMonth(
+                        new Date(
+                          calendarMonth.getFullYear(),
+                          calendarMonth.getMonth() - 1,
+                          1
+                        )
+                      )
+                    }
                   >
-                    {date.getDate()}
+                    {t("prev")}
                   </button>
-                ) : (
-                  <span key={`empty-${index}`} />
-                )
-              })}
-            </div>
-          </div>
+                  <p className="text-sm font-semibold">{calendarTitle}</p>
+                  <button
+                    type="button"
+                    className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted"
+                    onClick={() =>
+                      setCalendarMonth(
+                        new Date(
+                          calendarMonth.getFullYear(),
+                          calendarMonth.getMonth() + 1,
+                          1
+                        )
+                      )
+                    }
+                  >
+                    {t("next")}
+                  </button>
+                </div>
+                <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
+                  {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
+                    <span key={`${day}-${index}`}>{day}</span>
+                  ))}
+                </div>
+                <div className="mt-1 grid grid-cols-7 gap-1">
+                  {calendarDays.map((date, index) => {
+                    const disabled = date ? startOfDay(date) < today : true
+                    const selected = date ? isSameDay(date, deliveryDate) : false
+
+                    return date ? (
+                      <button
+                        key={date.toISOString()}
+                        type="button"
+                        disabled={disabled}
+                        className={cn(
+                          "flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors",
+                          selected && "bg-primary text-primary-foreground",
+                          !selected && !disabled && "hover:bg-muted",
+                          disabled && "cursor-not-allowed text-muted-foreground/35"
+                        )}
+                        onClick={() => {
+                          setDeliveryDate(date)
+                          setCalendarOpen(false)
+                        }}
+                      >
+                        {date.getDate()}
+                      </button>
+                    ) : (
+                      <span key={`empty-${index}`} />
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            <Separator orientation="vertical" className="hidden h-8 sm:block" />
+            <HeaderInfoItem
+              icon={Clock3Icon}
+              caption={t("cutoffTime")}
+              label={`${CUTOFF_TIME} ${CUTOFF_DATE}`}
+              className="hidden sm:block"
+            />
+            <Separator orientation="vertical" className="hidden h-8 sm:block" />
+          </>
         )}
-        <Separator orientation="vertical" className="hidden h-8 sm:block" />
-        <HeaderInfoItem
-          icon={Clock3Icon}
-          caption={t("cutoffTime")}
-          label={`${CUTOFF_TIME} ${CUTOFF_DATE}`}
-          className="hidden sm:block"
-        />
-        <Separator orientation="vertical" className="hidden h-8 sm:block" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -429,23 +469,25 @@ function SiteHeader({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <button
-          type="button"
-          className="relative flex size-9 items-center justify-center rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:size-auto sm:px-1"
-          onClick={() => setCartOpen(true)}
-          aria-label={t("openCart")}
-        >
-          <ShoppingCartIcon className="size-5 text-primary sm:hidden" />
-          <HeaderInfoItem
-            icon={ShoppingCartIcon}
-            caption={t("cart")}
-            label={cartTotal}
-            className="hidden sm:block"
-          />
-          <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-primary text-[10px] font-semibold leading-none text-primary-foreground sm:right-1">
-            {itemCount}
-          </span>
-        </button>
+        {!isMessagesPage && (
+          <button
+            type="button"
+            className="relative flex size-9 items-center justify-center rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:size-auto sm:px-1"
+            onClick={() => setCartOpen(true)}
+            aria-label={t("openCart")}
+          >
+            <ShoppingCartIcon className="size-5 text-primary sm:hidden" />
+            <HeaderInfoItem
+              icon={ShoppingCartIcon}
+              caption={t("cart")}
+              label={cartTotal}
+              className="hidden sm:block"
+            />
+            <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-primary text-[10px] font-semibold leading-none text-primary-foreground sm:right-1">
+              {itemCount}
+            </span>
+          </button>
+        )}
         {children}
       </div>
       <CartSidebar
