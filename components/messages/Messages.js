@@ -19,6 +19,15 @@ import {
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 const fallbackAvatar = "https://api.dicebear.com/9.x/adventurer/svg?seed=Aloha"
 
@@ -124,6 +133,9 @@ export default function Messages({ fullscreen = false }) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [error, setError] = useState("")
+  const [clearDialogOpen, setClearDialogOpen] = useState(false)
+  const [clearError, setClearError] = useState("")
+  const [isClearing, setIsClearing] = useState(false)
   const messageAreaRef = useRef(null)
   const messageInputRef = useRef(null)
   const searchInputRef = useRef(null)
@@ -156,12 +168,8 @@ export default function Messages({ fullscreen = false }) {
     }
 
     function handleClear() {
-      if (!window.confirm("Clear this chat from your screen?")) return
-
-      setMessages([])
-      setSearchQuery("")
-      setSearchOpen(false)
-      setHasMoreOlder(false)
+      setClearError("")
+      setClearDialogOpen(true)
     }
 
     window.addEventListener("aloha-messages-search", handleSearch)
@@ -172,6 +180,35 @@ export default function Messages({ fullscreen = false }) {
       window.removeEventListener("aloha-messages-clear", handleClear)
     }
   }, [])
+
+  async function confirmClearChat() {
+    setIsClearing(true)
+    setClearError("")
+    setError("")
+
+    try {
+      const response = await fetch("/api/messages", {
+        method: "DELETE",
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || "Could not clear the chat.")
+      }
+
+      setMessages([])
+      setSearchQuery("")
+      setSearchOpen(false)
+      setHasMoreOlder(false)
+      messagesSignatureRef.current = ""
+      latestMessageIdRef.current = 0
+      setClearDialogOpen(false)
+    } catch (clearChatError) {
+      setClearError(clearChatError.message || "Could not clear the chat.")
+    } finally {
+      setIsClearing(false)
+    }
+  }
 
   async function loadConversation({
     silent = false,
@@ -258,6 +295,14 @@ export default function Messages({ fullscreen = false }) {
 
     events.addEventListener("message", (event) => {
       const data = JSON.parse(event.data)
+
+      if (data.cleared) {
+        latestMessageIdRef.current = 0
+        messagesSignatureRef.current = ""
+        setMessages([])
+        setHasMoreOlder(false)
+        return
+      }
 
       if (data.latestMessageId > latestMessageIdRef.current) {
         loadConversation({
@@ -459,6 +504,57 @@ export default function Messages({ fullscreen = false }) {
 
   return (
     <>
+      <Dialog
+        open={clearDialogOpen}
+        onOpenChange={(nextOpen) => {
+          if (!isClearing) {
+            setClearDialogOpen(nextOpen)
+            if (!nextOpen) setClearError("")
+          }
+        }}
+      >
+        <DialogContent showCloseButton={!isClearing}>
+          <DialogHeader>
+            <DialogTitle>Clear all chats?</DialogTitle>
+            <DialogDescription>
+              This permanently deletes every message for all users from the
+              database. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {clearError ? (
+            <div
+              role="alert"
+              className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm font-medium text-destructive"
+            >
+              {clearError}
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isClearing}
+              onClick={() => setClearDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isClearing}
+              onClick={confirmClearChat}
+            >
+              {isClearing ? (
+                <Loader2 className="animate-spin" />
+              ) : null}
+              {isClearing ? "Clearing..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {open ? (
         <div className={chatBoxClass}>
           {!fullscreen && (

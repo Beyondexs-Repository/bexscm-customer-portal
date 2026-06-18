@@ -67,11 +67,14 @@ export async function GET(request) {
       while (!request.signal.aborted) {
         const latestMessageId = await getLatestMessageId(conversationId);
 
-        if (latestMessageId > lastMessageId) {
+        if (latestMessageId !== lastMessageId) {
           lastMessageId = latestMessageId;
           controller.enqueue(
             encoder.encode(
-              `data: ${JSON.stringify({ latestMessageId })}\n\n`
+              `data: ${JSON.stringify({
+                latestMessageId,
+                cleared: latestMessageId === 0,
+              })}\n\n`
             )
           );
         } else {

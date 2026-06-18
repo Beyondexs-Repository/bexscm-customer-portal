@@ -336,7 +336,8 @@ function SiteHeader({
               )}
               {canClearChat && (
                 <DropdownMenuItem
-                  className="px-3 py-2.5 text-destructive focus:text-destructive"
+                  variant="destructive"
+                  className="cursor-pointer px-3 py-2.5 focus:[&_svg]:text-destructive"
                   onClick={() => dispatchMessagesAction("clear")}
                 >
                   <Trash2Icon />

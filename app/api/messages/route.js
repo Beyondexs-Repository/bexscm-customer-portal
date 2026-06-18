@@ -6,6 +6,7 @@ import {
   ALLOWED_ATTACHMENT_TYPES,
   MAX_ATTACHMENT_BYTES,
   MAX_ATTACHMENTS_PER_MESSAGE,
+  STORE_MANAGER,
   formatAttachment,
   formatMessage,
   getCurrentChatUser,
@@ -335,4 +336,41 @@ export async function POST(request) {
     },
     { status: 201 }
   );
+}
+
+export async function DELETE(request) {
+  const currentUser = await getCurrentChatUser(request);
+
+  if (!currentUser) {
+    return Response.json({ message: "Not authorized." }, { status: 401 });
+  }
+
+  if (currentUser.roleKey !== STORE_MANAGER) {
+    return Response.json(
+      { message: "Only store managers can clear the chat." },
+      { status: 403 }
+    );
+  }
+
+  const deletedMessageCount = await db.transaction(async (connection) => {
+    await connection.execute(
+      `
+      UPDATE chat_conversations
+      SET last_message_id = NULL
+      `
+    );
+
+    const [result] = await connection.execute(
+      `
+      DELETE FROM chat_messages
+      `
+    );
+
+    return result.affectedRows;
+  });
+
+  return Response.json({
+    message: "All chats cleared permanently.",
+    deletedMessageCount,
+  });
 }
