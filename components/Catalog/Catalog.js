@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   SlidersHorizontal,
   Mic,
+  Loader2,
 } from "lucide-react";
 
 import { useCart, useCatalog, useQuickOrders } from "@/app/context/app-context";
@@ -42,7 +43,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
-import { useRouter } from "next/navigation";
 
 const productImages = [
   "https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=720&q=80",
@@ -632,10 +632,12 @@ export function Catalog() {
   const [sortBy, setSortBy] = useState(DEFAULT_SORT);
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
+  const [voiceStatus, setVoiceStatus] = useState("idle");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const catalogScrollRef = useRef(null);
+  const voiceSearchRequestIdRef = useRef(0);
 
 function CatalogFilterControls({
     searchQuery,
@@ -655,39 +657,33 @@ function CatalogFilterControls({
     const isMobile = layout === "mobile";
     const t = useTranslations("catalog");
     //=========================VOICE SEARCH=========================
-    const [searchText, setSearchText] = useState("");
-    const [isListening, setIsListening] = useState(false);
-    const router = useRouter();
     const startListening = () => {
       const SpeechRecognition =
         window.SpeechRecognition || window.webkitSpeechRecognition;
- 
+
       if (!SpeechRecognition) {
         alert("Speech Recognition not supported");
         return;
       }
- 
+
       const recognition = new SpeechRecognition();
- 
+
       recognition.lang = "en-US";
       recognition.continuous = false;
       recognition.interimResults = false;
- 
-      setIsListening(true);
- 
+      setVoiceStatus("listening");
       recognition.start();
- 
-      recognition.onstart = () => {
-        console.log("Listening...");
-      };
- 
+
       recognition.onresult = async (event) => {
         const transcript = event.results[0][0].transcript;
- 
- 
-        //setSearchText(transcript);
-setSearchQuery(transcript);
-setAppliedSearchQuery(transcript);
+        const requestId = voiceSearchRequestIdRef.current + 1;
+
+        voiceSearchRequestIdRef.current = requestId;
+        setSearchQuery(transcript);
+        setAppliedSearchQuery(transcript);
+        setCurrentPage(1);
+        setVoiceStatus("searching");
+
         try {
           const response = await fetch("/api/voice-search", {
             method: "POST",
@@ -698,26 +694,37 @@ setAppliedSearchQuery(transcript);
               text: transcript,
             }),
           });
- 
           const data = await response.json();
-          console.log("🚀 ~ startListening ~ data:", data.products);
-          if (data.success) {
-            setVoiceProducts(data.products);
+
+          if (!response.ok) {
+            throw new Error("Voice search failed.");
+          }
+
+          if (voiceSearchRequestIdRef.current === requestId) {
+            setVoiceProducts(data.success ? (data.products ?? []) : []);
           }
         } catch (error) {
           console.error(error);
+
+          if (voiceSearchRequestIdRef.current === requestId) {
+            setVoiceProducts([]);
+          }
+        } finally {
+          if (voiceSearchRequestIdRef.current === requestId) {
+            setVoiceStatus("idle");
+          }
         }
- 
-        setIsListening(false);
       };
- 
+
       recognition.onerror = (event) => {
         console.error(event);
-        setIsListening(false);
+        setVoiceStatus("idle");
       };
- 
+
       recognition.onend = () => {
-        setIsListening(false);
+        setVoiceStatus((current) =>
+          current === "listening" ? "idle" : current,
+        );
       };
     };
     return (
@@ -743,17 +750,22 @@ setAppliedSearchQuery(transcript);
             <button
               type="button"
               onClick={startListening}
+              disabled={voiceStatus !== "idle"}
+              aria-label={
+                voiceStatus === "listening"
+                  ? "Listening"
+                  : voiceStatus === "searching"
+                    ? "Searching products"
+                    : "Search products by voice"
+              }
               className="absolute right-2 top-1/2 z-50 -translate-y-1/2 rounded-full bg-green-500 p-2 text-white"
             >
-              <Mic size={18} />
+              {voiceStatus === "idle" ? (
+                <Mic size={18} />
+              ) : (
+                <Loader2 className="size-[18px] animate-spin" />
+              )}
             </button>
-            {isListening && (
-              <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
-                <div className="rounded-xl bg-white p-8">
-                  <h2>Listening...</h2>
-                </div>
-              </div>
-            )}
           </div>
  
           <Button
@@ -1034,10 +1046,16 @@ setAppliedSearchQuery(transcript);
   }
 
   function handleSearchChange(event) {
+    voiceSearchRequestIdRef.current += 1;
+    setVoiceProducts([]);
+    setVoiceStatus("idle");
     setSearchQuery(event.target.value);
   }
 
   function handleClearAll() {
+    voiceSearchRequestIdRef.current += 1;
+    setVoiceProducts([]);
+    setVoiceStatus("idle");
     setSearchQuery("");
     setAppliedSearchQuery("");
     setCategoryName("All");
@@ -1060,6 +1078,23 @@ setAppliedSearchQuery(transcript);
 
   return (
     <main className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden p-2 sm:p-3 lg:p-4">
+      {voiceStatus !== "idle" ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"
+        >
+          <div className="flex min-w-52 items-center justify-center gap-3 rounded-lg border bg-background px-6 py-5 text-foreground shadow-xl">
+            <Loader2 className="size-5 animate-spin text-primary" />
+            <p className="text-sm font-semibold">
+              {voiceStatus === "listening"
+                ? "Listening..."
+                : "Searching products..."}
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       <div className="mb-3 md:hidden">
         <MobileDeliveryInfo />
       </div>
