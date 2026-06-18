@@ -1,18 +1,25 @@
 import { db } from "@/lib/db";
 
 const USER_MANAGER_ROLES = new Set(["global-admin", "application-admin"]);
-const CUSTOMER_ROLE_KEYS = new Set(["store-manager", "store-employee"]);
 
 function normalizePhone(value) {
   return String(value ?? "").replace(/\D/g, "");
 }
 
-function formatRole(row) {
-  return {
-    id: row.id,
-    key: row.role_key,
-    name: row.role_name,
-  };
+function getDuplicateUserMessage(error) {
+  if (error?.code !== "ER_DUP_ENTRY") return null;
+
+  const duplicateKey = String(error.sqlMessage ?? error.message ?? "").toLowerCase();
+
+  if (duplicateKey.includes("phone")) {
+    return "Phone number already exists.";
+  }
+
+  if (duplicateKey.includes("email")) {
+    return "Email already exists.";
+  }
+
+  return "A user with this email or phone number already exists.";
 }
 
 function formatUser(row) {
@@ -28,15 +35,11 @@ function formatUser(row) {
     roleId: row.role_id,
     roleKey: row.role_key,
     roleName: row.role_name,
-    userType: getUserType(row.role_key),
+    userType: row.user_type,
     status: isRemoved ? "removed" : row.is_active ? "active" : "inactive",
     isActive: Boolean(row.is_active) && !isRemoved,
     isRemoved,
   };
-}
-
-function getUserType(roleKey) {
-  return CUSTOMER_ROLE_KEYS.has(roleKey) ? "customer" : "internal";
 }
 
 function decodeCookieValue(value) {
@@ -88,18 +91,6 @@ async function requireUserManager(request) {
   return null;
 }
 
-async function getRoles() {
-  const [rows] = await db.execute(
-    `
-    SELECT id, role_key, role_name
-    FROM roles
-    ORDER BY role_name ASC
-    `
-  );
-
-  return rows.map(formatRole);
-}
-
 export async function GET() {
   const [rows] = await db.execute(
     `
@@ -118,89 +109,107 @@ export async function GET() {
       r.role_name
     FROM users u
     INNER JOIN roles r ON u.role_id = r.id
+    WHERE u.deleted_at IS NULL
     ORDER BY u.id DESC
     `
   );
 
-  const roles = await getRoles();
-
   return Response.json({
     users: rows.map(formatUser),
-    roles,
   });
 }
 
 export async function POST(request) {
-  const permissionError = await requireUserManager(request);
-  if (permissionError) return permissionError;
+  try {
+    const permissionError = await requireUserManager(request);
+    if (permissionError) return permissionError;
 
-  const body = await request.json().catch(() => ({}));
+    const body = await request.json().catch(() => ({}));
 
-  const firstName = String(body.firstName ?? "").trim();
-  const lastName = String(body.lastName ?? "").trim();
-  const email = String(body.email ?? "").trim();
-  const phone = normalizePhone(body.phone);
-  const avatar = String(body.avatar ?? "");
-  const roleId = Number(body.roleId);
-  const isActive = body.status ? body.status === "active" : Boolean(body.isActive ?? true);
+    const firstName = String(body.firstName ?? "").trim();
+    const lastName = String(body.lastName ?? "").trim();
+    const email = String(body.email ?? "").trim();
+    const phone = normalizePhone(body.phone);
+    const avatar = String(body.avatar ?? "");
+    const roleId = Number(body.roleId);
+    const isActive = body.status
+      ? body.status === "active"
+      : Boolean(body.isActive ?? true);
 
-  if (!firstName || !lastName || !email || !phone || !Number.isInteger(roleId) || roleId <= 0) {
+    if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !phone ||
+      !Number.isInteger(roleId) ||
+      roleId <= 0
+    ) {
+      return Response.json(
+        { message: "First name, last name, email, phone, and role are required." },
+        { status: 400 }
+      );
+    }
+
+    const [roleRows] = await db.execute(
+      `SELECT id, role_key, user_type FROM roles WHERE id = ? LIMIT 1`,
+      [roleId]
+    );
+
+    if (!roleRows[0]) {
+      return Response.json({ message: "Role not found." }, { status: 404 });
+    }
+
+    const userType = roleRows[0].user_type;
+
+    const [result] = await db.execute(
+      `
+      INSERT INTO users (
+        first_name,
+        last_name,
+        email,
+        phone,
+        avatar,
+        role_id,
+        user_type,
+        is_active
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [firstName, lastName, email, phone, avatar, roleId, userType, isActive]
+    );
+
+    const [rows] = await db.execute(
+      `
+      SELECT
+        u.id,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.phone,
+        u.avatar,
+        u.role_id,
+        u.user_type,
+        u.is_active,
+        u.deleted_at,
+        r.role_key,
+        r.role_name
+      FROM users u
+      INNER JOIN roles r ON u.role_id = r.id
+      WHERE u.id = ?
+      LIMIT 1
+      `,
+      [result.insertId]
+    );
+
+    return Response.json({ user: formatUser(rows[0]) }, { status: 201 });
+  } catch (error) {
+    console.error("Create user error:", error);
+
+    const duplicateMessage = getDuplicateUserMessage(error);
+
     return Response.json(
-      { message: "First name, last name, email, phone, and role are required." },
-      { status: 400 }
+      { message: duplicateMessage ?? "Failed to create user." },
+      { status: duplicateMessage ? 409 : 500 }
     );
   }
-
-  const [roleRows] = await db.execute(
-    `SELECT id, role_key FROM roles WHERE id = ? LIMIT 1`,
-    [roleId]
-  );
-
-  if (!roleRows[0]) {
-    return Response.json({ message: "Role not found." }, { status: 404 });
-  }
-
-  const userType = getUserType(roleRows[0].role_key);
-
-  const [result] = await db.execute(
-    `
-    INSERT INTO users (
-      first_name,
-      last_name,
-      email,
-      phone,
-      avatar,
-      role_id,
-      user_type,
-      is_active
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `,
-    [firstName, lastName, email, phone, avatar, roleId, userType, isActive]
-  );
-
-  const [rows] = await db.execute(
-    `
-    SELECT
-      u.id,
-      u.first_name,
-      u.last_name,
-      u.email,
-      u.phone,
-      u.avatar,
-      u.role_id,
-      u.user_type,
-      u.is_active,
-      u.deleted_at,
-      r.role_key,
-      r.role_name
-    FROM users u
-    INNER JOIN roles r ON u.role_id = r.id
-    WHERE u.id = ?
-    LIMIT 1
-    `,
-    [result.insertId]
-  );
-
-  return Response.json({ user: formatUser(rows[0]) }, { status: 201 });
 }

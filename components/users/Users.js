@@ -162,6 +162,7 @@ export default function Users() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
+  const [saveError, setSaveError] = useState("")
   const [disableUserTarget, setDisableUserTarget] = useState(null)
   const [deleteUserTarget, setDeleteUserTarget] = useState(null)
   const [isDisabling, setIsDisabling] = useState(false)
@@ -177,11 +178,14 @@ export default function Users() {
 
     async function syncUsers() {
       try {
-        const data = await loadUsers()
+        const [usersData, rolesData] = await Promise.all([
+          loadUsers(),
+          loadRoles(),
+        ])
 
         if (active) {
-          setUsers(data.users)
-          setRoles(data.roles)
+          setUsers(usersData.users)
+          setRoles(rolesData.roles)
           setError("")
         }
       } catch (loadError) {
@@ -216,7 +220,6 @@ export default function Users() {
     { label: t("allStatus"), value: "all" },
     { label: t("active"), value: "active" },
     { label: t("inactive"), value: "inactive" },
-    { label: t("removed"), value: "removed" },
   ]
   const userTypeOptions = [
     { label: "All Types", value: "all" },
@@ -284,12 +287,14 @@ export default function Users() {
   }
 
   function handleEditUser(user) {
+    setSaveError("")
     setDialogMode("edit")
     setEditingUser(user)
     setDialogOpen(true)
   }
 
   function handleAddUser() {
+    setSaveError("")
     setDialogMode("add")
     setEditingUser(null)
     setDialogOpen(true)
@@ -337,16 +342,7 @@ export default function Users() {
     try {
       await deleteUser(deleteUserTarget.id)
       setUsers((current) =>
-        current.map((user) =>
-          user.id === deleteUserTarget.id
-            ? {
-                ...user,
-                status: "removed",
-                isActive: false,
-                isRemoved: true,
-              }
-            : user,
-        ),
+        current.filter((user) => user.id !== deleteUserTarget.id),
       )
       setDeleteUserTarget(null)
       setDeleteError("")
@@ -375,9 +371,10 @@ export default function Users() {
 
       setDialogOpen(false)
       setEditingUser(null)
+      setSaveError("")
       setError("")
     } catch (saveError) {
-      setError(saveError.message)
+      setSaveError(saveError.message)
     }
   }
 
@@ -389,7 +386,7 @@ export default function Users() {
     <div className="space-y-3 p-2 sm:space-y-4 sm:p-4">
       <section className="rounded-xl border bg-gradient-to-br from-card to-muted/30 p-3 shadow-sm sm:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <h2 className="text-xl font-bold tracking-tight">Users & Roles</h2>
+          <h2 className="text-xl font-bold tracking-tight"></h2>
 
           <div className="grid gap-2 sm:flex sm:items-center">
             <Button className="h-10 justify-center" onClick={handleAddUser}>
@@ -619,10 +616,12 @@ export default function Users() {
         mode={dialogMode}
         roles={roles}
         open={dialogOpen}
+        error={saveError}
         onOpenChange={(nextOpen) => {
           setDialogOpen(nextOpen)
           if (!nextOpen) {
             setEditingUser(null)
+            setSaveError("")
           }
         }}
         onSave={handleSaveUser}
@@ -705,8 +704,8 @@ export default function Users() {
             <DialogTitle>Remove user?</DialogTitle>
             <DialogDescription>
               {deleteUserTarget
-                ? `${getFullName(deleteUserTarget)} will be marked as removed and will lose access. Their chat history will be preserved.`
-                : "This user will be marked as removed and their chat history will be preserved."}
+                ? `${getFullName(deleteUserTarget)} will be removed from this table and will lose access. Their chat history will be preserved.`
+                : "This user will be removed from this table and their chat history will be preserved."}
             </DialogDescription>
           </DialogHeader>
           {deleteError ? (
@@ -760,6 +759,17 @@ async function loadUsers() {
 
   return {
     users: data.users ?? [],
+  }
+}
+
+async function loadRoles() {
+  const response = await fetch("/api/roles", {
+    cache: "no-store",
+    credentials: "same-origin",
+  })
+  const data = await readJsonResponse(response, "Failed to load roles")
+
+  return {
     roles: data.roles ?? [],
   }
 }

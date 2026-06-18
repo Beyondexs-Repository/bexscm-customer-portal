@@ -138,7 +138,7 @@ export async function POST(request) {
   }
 
   const [roleRows] = await db.execute(
-    `SELECT id FROM roles WHERE role_key = ? LIMIT 1`,
+    `SELECT id, user_type FROM roles WHERE role_key = ? LIMIT 1`,
     [STORE_EMPLOYEE]
   );
 
@@ -163,7 +163,15 @@ export async function POST(request) {
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)
     `,
-    [firstName, lastName, email, phone, avatar, roleRows[0].id, "customer"]
+    [
+      firstName,
+      lastName,
+      email,
+      phone,
+      avatar,
+      roleRows[0].id,
+      roleRows[0].user_type,
+    ]
   );
 
   const [rows] = await db.execute(

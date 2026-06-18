@@ -26,6 +26,7 @@ import {
   MessageCircle,
   Users,
   UserCog,
+  ShieldCheckIcon,
   BookOpenIcon,
   ClipboardListIcon,
 } from "lucide-react";
@@ -79,6 +80,7 @@ export function AppSidebar({ initialRole = "", ...props }: AppSidebarProps) {
     "backoffice-catalog": <BookOpenIcon />,
     "backoffice-users": <UserCog />,
     "backoffice-employees": <Users />,
+    "backoffice-roles-permissions": <ShieldCheckIcon />,
   }
   const navMain = getVisiblePagesForRole(effectiveRole, {
     area: isBackoffice ? "backoffice" : "customer",

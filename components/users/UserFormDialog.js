@@ -61,6 +61,7 @@ function SelectMenu({ label, options, value, onChange }) {
 }
 
 export function UserFormDialog({
+  error = "",
   mode = "edit",
   onOpenChange,
   onSave,
@@ -202,6 +203,15 @@ export function UserFormDialog({
               />
             </div>
           </div>
+
+          {error ? (
+            <div
+              role="alert"
+              className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm font-medium text-destructive"
+            >
+              {error}
+            </div>
+          ) : null}
 
           <DialogFooter>
             <Button

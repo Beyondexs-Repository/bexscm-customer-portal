@@ -225,6 +225,15 @@
       }
     },
     {
+      "id": "backoffice-roles-permissions",
+      "area": "backoffice",
+      "path": "/backoffice/roles-permissions",
+      "title": "Roles and Permissions",
+      "nav": true,
+      "footerNav": false,
+      "roles": ["global-admin", "application-admin"]
+    },
+    {
       "id": "backoffice-profile",
       "area": "backoffice",
       "path": "/backoffice/profile",

@@ -1,7 +1,6 @@
 import { db } from "@/lib/db";
 
 const USER_MANAGER_ROLES = new Set(["global-admin", "application-admin"]);
-const CUSTOMER_ROLE_KEYS = new Set(["store-manager", "store-employee"]);
 
 function normalizePhone(value) {
   return String(value ?? "").replace(/\D/g, "");
@@ -20,15 +19,11 @@ function formatUser(row) {
     roleId: row.role_id,
     roleKey: row.role_key,
     roleName: row.role_name,
-    userType: getUserType(row.role_key),
+    userType: row.user_type,
     status: isRemoved ? "removed" : row.is_active ? "active" : "inactive",
     isActive: Boolean(row.is_active) && !isRemoved,
     isRemoved,
   };
-}
-
-function getUserType(roleKey) {
-  return CUSTOMER_ROLE_KEYS.has(roleKey) ? "customer" : "internal";
 }
 
 function decodeCookieValue(value) {
@@ -148,7 +143,7 @@ export async function PUT(request, { params }) {
   }
 
   const [roleRows] = await db.execute(
-    `SELECT id, role_key FROM roles WHERE id = ? LIMIT 1`,
+    `SELECT id, role_key, user_type FROM roles WHERE id = ? LIMIT 1`,
     [roleId]
   );
 
@@ -156,7 +151,7 @@ export async function PUT(request, { params }) {
     return Response.json({ message: "Role not found." }, { status: 404 });
   }
 
-  const userType = getUserType(roleRows[0].role_key);
+  const userType = roleRows[0].user_type;
 
   await db.execute(
     `

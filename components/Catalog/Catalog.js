@@ -15,6 +15,7 @@ import {
   Search,
   ShoppingCart,
   SlidersHorizontal,
+  Mic,
 } from "lucide-react";
 
 import { useCart, useCatalog, useQuickOrders } from "@/app/context/app-context";
@@ -41,6 +42,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
+import { useRouter } from "next/navigation";
 
 const productImages = [
   "https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=720&q=80",
@@ -311,121 +313,123 @@ function ProductCard({
   );
 }
 
-function CatalogFilterControls({
-  searchQuery,
-  categoryName,
-  categoryNames,
-  subcategoryName,
-  subcategoryNames,
-  sortBy,
-  activeFilterCount,
-  onSearchChange,
-  onCategoryChange,
-  onSubcategoryChange,
-  onSortChange,
-  onClearAll,
-  layout = "desktop",
-}) {
-  const isMobile = layout === "mobile";
-  const t = useTranslations("catalog")
+// function CatalogFilterControls({
+//   searchQuery,
+//   categoryName,
+//   categoryNames,
+//   subcategoryName,
+//   subcategoryNames,
+//   sortBy,
+//   activeFilterCount,
+//   onSearchChange,
+//   onCategoryChange,
+//   onSubcategoryChange,
+//   onSortChange,
+//   onClearAll,
+//   layout = "desktop",
+// }) {
+//   const isMobile = layout === "mobile";
+//   const t = useTranslations("catalog")
 
-  return (
-    <div className="min-w-0 space-y-4">
-      <div
-        className={cn(
-          "grid min-w-0 gap-2",
-          isMobile ? "grid-cols-1" : "sm:grid-cols-[minmax(0,1fr)_8.5rem_auto]",
-        )}
-      >
-        <div className="relative min-w-0">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            value={searchQuery}
-            onChange={onSearchChange}
-            placeholder={t("searchProducts")}
-            className="h-10 rounded-md pl-9 text-sm"
-          />
-        </div>
+//   return (
+//     <div className="min-w-0 space-y-4">
+//       <div
+//         className={cn(
+//           "grid min-w-0 gap-2",
+//           isMobile ? "grid-cols-1" : "sm:grid-cols-[minmax(0,1fr)_8.5rem_auto]",
+//         )}
+//       >
+//         <div className="relative min-w-0">
+//           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+//           <Input
+//             type="search"
+//             value={searchQuery}
+//             onChange={onSearchChange}
+//             placeholder={t("searchProducts")}
+//             className="h-10 rounded-md pl-9 text-sm"
+//           />
+//         </div>
 
-        <Button
-          variant="outline"
-          className="relative h-10 min-w-0 mt-1 sm:mt-0 justify-start rounded-md text-xs font-semibold"
-        >
-          <SlidersHorizontal className="shrink-0" />
-          <span className="truncate">{t("filters")}</span>
-          {activeFilterCount > 0 && (
-            <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
-              {activeFilterCount}
-            </span>
-          )}
-        </Button>
+//         <Button
+//           variant="outline"
+//           className="relative h-10 min-w-0 mt-1 sm:mt-0 justify-start rounded-md text-xs font-semibold"
+//         >
+//           <SlidersHorizontal className="shrink-0" />
+//           <span className="truncate">{t("filters")}</span>
+//           {activeFilterCount > 0 && (
+//             <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
+//               {activeFilterCount}
+//             </span>
+//           )}
+//         </Button>
 
-        {!isMobile && (
-          <Button
-            variant="ghost"
-            className="h-10 justify-start px-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
-            onClick={onClearAll}
-            disabled={activeFilterCount === 0}
-          >
-            <RotateCcw className="size-4" />
-            {t("clearAll")}
-          </Button>
-        )}
-      </div>
+//         {!isMobile && (
+//           <Button
+//             variant="ghost"
+//             className="h-10 justify-start px-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
+//             onClick={onClearAll}
+//             disabled={activeFilterCount === 0}
+//           >
+//             <RotateCcw className="size-4" />
+//             {t("clearAll")}
+//           </Button>
+//         )}
+//       </div>
 
-      <div
-        className={cn(
-          "grid min-w-0 gap-2",
-          isMobile ? "grid-cols-2" : "md:grid-cols-3 md:gap-3",
-        )}
-      >
-        <SelectMenu
-          label={t("category")}
-          value={categoryName}
-          options={categoryNames}
-          onChange={onCategoryChange}
-          searchable
-        />
-        <SelectMenu
-          label={t("subcategory")}
-          value={subcategoryName}
-          options={subcategoryNames}
-          onChange={onSubcategoryChange}
-          searchable
-        />
-        <SelectMenu
-          label={t("sortBy")}
-          value={sortBy}
-          options={sortOptions}
-          onChange={onSortChange}
-        />
+//       <div
+//         className={cn(
+//           "grid min-w-0 gap-2",
+//           isMobile ? "grid-cols-2" : "md:grid-cols-3 md:gap-3",
+//         )}
+//       >
+//         <SelectMenu
+//           label={t("category")}
+//           value={categoryName}
+//           options={categoryNames}
+//           onChange={onCategoryChange}
+//           searchable
+//         />
+//         <SelectMenu
+//           label={t("subcategory")}
+//           value={subcategoryName}
+//           options={subcategoryNames}
+//           onChange={onSubcategoryChange}
+//           searchable
+//         />
+//         <SelectMenu
+//           label={t("sortBy")}
+//           value={sortBy}
+//           options={sortOptions}
+//           onChange={onSortChange}
+//         />
 
-        {isMobile && (
-          <Button
-            variant="outline"
-            className="mt-auto h-9 min-w-0 justify-start rounded-md text-xs font-semibold"
-          >
-            <SlidersHorizontal className="shrink-0" />
-            <span className="truncate">{t("filters")}</span>
-          </Button>
-        )}
-      </div>
+//         {isMobile && (
+//           <Button
+//             variant="outline"
+//             className="mt-auto h-9 min-w-0 justify-start rounded-md text-xs font-semibold"
+//           >
+//             <SlidersHorizontal className="shrink-0" />
+//             <span className="truncate">{t("filters")}</span>
+//           </Button>
+//         )}
+//       </div>
 
-      {isMobile && (
-        <Button
-          variant="ghost"
-          className="h-9 w-full justify-center text-xs font-semibold text-muted-foreground hover:text-foreground"
-          onClick={onClearAll}
-          disabled={activeFilterCount === 0}
-        >
-          <RotateCcw className="size-4" />
-          {t("clearAll")}
-        </Button>
-      )}
-    </div>
-  );
-}
+//       {isMobile && (
+//         <Button
+//           variant="ghost"
+//           className="h-9 w-full justify-center text-xs font-semibold text-muted-foreground hover:text-foreground"
+//           onClick={onClearAll}
+//           disabled={activeFilterCount === 0}
+//         >
+//           <RotateCcw className="size-4" />
+//           {t("clearAll")}
+//         </Button>
+//       )}
+//     </div>
+//   );
+// }
+
+
 
 function MobileDeliveryInfo() {
   const t = useTranslations("catalog")
@@ -612,6 +616,7 @@ export function Catalog() {
     useQuickOrders();
   const [quickOrderProduct, setQuickOrderProduct] = useState(null);
   const categoryNames = ["All", ...catalog.map((category) => category.name)];
+  const [voiceProducts, setVoiceProducts] = useState([]);
   const [categoryName, setCategoryName] = useState("All");
   const activeCategory =
     categoryName === "All"
@@ -632,6 +637,211 @@ export function Catalog() {
   const [currentPage, setCurrentPage] = useState(1);
   const catalogScrollRef = useRef(null);
 
+function CatalogFilterControls({
+    searchQuery,
+    categoryName,
+    categoryNames,
+    subcategoryName,
+    subcategoryNames,
+    sortBy,
+    activeFilterCount,
+    onSearchChange,
+    onCategoryChange,
+    onSubcategoryChange,
+    onSortChange,
+    onClearAll,
+    layout = "desktop",
+  }) {
+    const isMobile = layout === "mobile";
+    const t = useTranslations("catalog");
+    //=========================VOICE SEARCH=========================
+    const [searchText, setSearchText] = useState("");
+    const [isListening, setIsListening] = useState(false);
+    const router = useRouter();
+    const startListening = () => {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+ 
+      if (!SpeechRecognition) {
+        alert("Speech Recognition not supported");
+        return;
+      }
+ 
+      const recognition = new SpeechRecognition();
+ 
+      recognition.lang = "en-US";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+ 
+      setIsListening(true);
+ 
+      recognition.start();
+ 
+      recognition.onstart = () => {
+        console.log("Listening...");
+      };
+ 
+      recognition.onresult = async (event) => {
+        const transcript = event.results[0][0].transcript;
+ 
+ 
+        //setSearchText(transcript);
+setSearchQuery(transcript);
+setAppliedSearchQuery(transcript);
+        try {
+          const response = await fetch("/api/voice-search", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text: transcript,
+            }),
+          });
+ 
+          const data = await response.json();
+          console.log("🚀 ~ startListening ~ data:", data.products);
+          if (data.success) {
+            setVoiceProducts(data.products);
+          }
+        } catch (error) {
+          console.error(error);
+        }
+ 
+        setIsListening(false);
+      };
+ 
+      recognition.onerror = (event) => {
+        console.error(event);
+        setIsListening(false);
+      };
+ 
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+    };
+    return (
+      <div className="min-w-0 space-y-4">
+        <div
+          className={cn(
+            "grid min-w-0 gap-2",
+            isMobile
+              ? "grid-cols-1"
+              : "sm:grid-cols-[minmax(0,1fr)_8.5rem_auto]",
+          )}
+        >
+          <div className="relative min-w-0">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              value={searchQuery}
+              onChange={onSearchChange}
+              placeholder={t("searchProducts")}
+              className="h-10 rounded-md pl-9 text-sm"
+            />
+ 
+            <button
+              type="button"
+              onClick={startListening}
+              className="absolute right-2 top-1/2 z-50 -translate-y-1/2 rounded-full bg-green-500 p-2 text-white"
+            >
+              <Mic size={18} />
+            </button>
+            {isListening && (
+              <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+                <div className="rounded-xl bg-white p-8">
+                  <h2>Listening...</h2>
+                </div>
+              </div>
+            )}
+          </div>
+ 
+          <Button
+            variant="outline"
+            className="relative h-10 min-w-0 mt-1 sm:mt-0 justify-start rounded-md text-xs font-semibold"
+          >
+            <SlidersHorizontal className="shrink-0" />
+            <span className="truncate">{t("filters")}</span>
+            {activeFilterCount > 0 && (
+              <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
+ 
+          {!isMobile && (
+            <Button
+              variant="ghost"
+              className="h-10 justify-start px-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
+              onClick={onClearAll}
+              disabled={activeFilterCount === 0}
+            >
+              <RotateCcw className="size-4" />
+              {t("clearAll")}
+            </Button>
+          )}
+        </div>
+ 
+        <div
+          className={cn(
+            "grid min-w-0 gap-2",
+            isMobile ? "grid-cols-2" : "md:grid-cols-3 md:gap-3",
+          )}
+        >
+          <SelectMenu
+            label={t("category")}
+            value={categoryName}
+            options={categoryNames}
+            onChange={(value) => {
+              setCategoryName(value);
+              setVoiceProducts([]);
+            }}
+            searchable
+          />
+          <SelectMenu
+            label={t("subcategory")}
+            value={subcategoryName}
+            options={subcategoryNames}
+            onChange={(value) => {
+              setSubcategoryName(value);
+              setVoiceProducts([]);
+            }}
+            searchable
+          />
+          <SelectMenu
+            label={t("sortBy")}
+            value={sortBy}
+            options={sortOptions}
+            onChange={onSortChange}
+          />
+ 
+          {isMobile && (
+            <Button
+              variant="outline"
+              className="mt-auto h-9 min-w-0 justify-start rounded-md text-xs font-semibold"
+            >
+              <SlidersHorizontal className="shrink-0" />
+              <span className="truncate">{t("filters")}</span>
+            </Button>
+          )}
+        </div>
+ 
+        {isMobile && (
+          <Button
+            variant="ghost"
+            className="h-9 w-full justify-center text-xs font-semibold text-muted-foreground hover:text-foreground"
+            onClick={onClearAll}
+            disabled={activeFilterCount === 0}
+          >
+            <RotateCcw className="size-4" />
+            {t("clearAll")}
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+
   function scrollCatalogToTop() {
     catalogScrollRef.current?.scrollTo({
       top: 0,
@@ -648,10 +858,42 @@ export function Catalog() {
     return () => window.clearTimeout(searchDelay);
   }, [searchQuery]);
 
+
+  // const products = useMemo(() => {
+  //   let filtered = [];
+
+  //   if (categoryName === "All") {
+  //     filtered = catalog.flatMap((category) =>
+  //       category.subcategories.flatMap((subcategory) =>
+  //         subcategory.products.map((product) => ({
+  //           ...product,
+  //           category: category.name,
+  //           subcategory: subcategory.name,
+  //         })),
+  //       ),
+  //     );
+  //   } else if (subcategoryName === "All") {
+  //     filtered =
+  //       activeCategory?.subcategories.flatMap((subcategory) =>
+  //         subcategory.products.map((product) => ({
+  //           ...product,
+  //           category: activeCategory.name,
+  //           subcategory: subcategory.name,
+  //         })),
+  //       ) ?? [];
+  //   } else {
+  //     const selectedSubcategory = activeCategory?.subcategories.find(
+  //       (subcategory) => subcategory.name === subcategoryName,
+  //     );
+
+  //     filtered = selectedSubcategory?.products ?? [];
+  //   }
+
   const products = useMemo(() => {
     let filtered = [];
-
-    if (categoryName === "All") {
+    if (voiceProducts.length > 0) {
+      filtered = [...voiceProducts];
+    } else if (categoryName === "All") {
       filtered = catalog.flatMap((category) =>
         category.subcategories.flatMap((subcategory) =>
           subcategory.products.map((product) => ({
@@ -674,13 +916,13 @@ export function Catalog() {
       const selectedSubcategory = activeCategory?.subcategories.find(
         (subcategory) => subcategory.name === subcategoryName,
       );
-
+ 
       filtered = selectedSubcategory?.products ?? [];
     }
-
+ 
     const normalizedSearch = appliedSearchQuery.trim().toLowerCase();
-
-    if (normalizedSearch) {
+ 
+    if(normalizedSearch && voiceProducts.length === 0) {
       filtered = filtered.filter((product) =>
         [
           product.name,
@@ -695,7 +937,7 @@ export function Catalog() {
           ),
       );
     }
-
+ 
     if (sortBy === "Price Low to High") {
       filtered.sort((a, b) => a.price - b.price);
     } else if (sortBy === "Price High to Low") {
@@ -703,7 +945,7 @@ export function Catalog() {
     } else {
       filtered.sort((a, b) => a.name.localeCompare(b.name));
     }
-
+ 
     return filtered;
   }, [
     catalog,
@@ -712,7 +954,45 @@ export function Catalog() {
     sortBy,
     appliedSearchQuery,
     activeCategory,
+    voiceProducts,
   ]);
+
+
+  //   const normalizedSearch = appliedSearchQuery.trim().toLowerCase();
+
+  //   if (normalizedSearch) {
+  //     filtered = filtered.filter((product) =>
+  //       [
+  //         product.name,
+  //         product.category,
+  //         product.subcategory,
+  //         product.unit,
+  //         product.id,
+  //       ]
+  //         .filter(Boolean)
+  //         .some((value) =>
+  //           String(value).toLowerCase().includes(normalizedSearch),
+  //         ),
+  //     );
+  //   }
+
+  //   if (sortBy === "Price Low to High") {
+  //     filtered.sort((a, b) => a.price - b.price);
+  //   } else if (sortBy === "Price High to Low") {
+  //     filtered.sort((a, b) => b.price - a.price);
+  //   } else {
+  //     filtered.sort((a, b) => a.name.localeCompare(b.name));
+  //   }
+
+  //   return filtered;
+  // }, [
+  //   catalog,
+  //   categoryName,
+  //   subcategoryName,
+  //   sortBy,
+  //   appliedSearchQuery,
+  //   activeCategory,
+  // ]);
 
   const totalPages = Math.max(1, Math.ceil(products.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
