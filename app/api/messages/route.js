@@ -1,6 +1,6 @@
-import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { createHash, randomUUID } from "crypto";
+import { put } from "@vercel/blob";
 
 import {
   ALLOWED_ATTACHMENT_TYPES,
@@ -16,9 +16,6 @@ import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "chat");
-const PUBLIC_UPLOAD_PATH = "/uploads/chat";
 
 function getPositiveInteger(value) {
   const number = Number(value);
@@ -100,8 +97,6 @@ async function prepareAttachments(files) {
     throw new Error(`Maximum ${MAX_ATTACHMENTS_PER_MESSAGE} attachments allowed.`);
   }
 
-  await mkdir(UPLOAD_DIR, { recursive: true });
-
   return Promise.all(
     files.map(async (file) => {
       if (!ALLOWED_ATTACHMENT_TYPES.has(file.type)) {
@@ -115,19 +110,20 @@ async function prepareAttachments(files) {
       const originalFileName = sanitizeFileName(file.name);
       const extension = path.extname(originalFileName).toLowerCase();
       const storedFileName = `${randomUUID()}${extension}`;
-      const storagePath = path.join(UPLOAD_DIR, storedFileName);
-      const storageUrl = `${PUBLIC_UPLOAD_PATH}/${storedFileName}`;
+      const storagePath = `chat/${storedFileName}`;
       const buffer = Buffer.from(await file.arrayBuffer());
       const checksum = createHash("sha256").update(buffer).digest("hex");
-
-      await writeFile(storagePath, buffer);
+      const blob = await put(storagePath, buffer, {
+        access: "public",
+        contentType: file.type,
+      });
 
       return {
         originalFileName,
         mimeType: file.type,
         sizeBytes: file.size,
-        storagePath,
-        storageUrl,
+        storagePath: blob.pathname,
+        storageUrl: blob.url,
         checksum,
       };
     })
@@ -239,7 +235,7 @@ export async function POST(request) {
           checksum_sha256,
           scan_status
         )
-        VALUES (?, ?, ?, ?, ?, 'local', ?, ?, ?, 'pending')
+        VALUES (?, ?, ?, ?, ?, 's3', ?, ?, ?, 'pending')
         `,
         [
           messageResult.insertId,
