@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import {
   BadgeCheckIcon,
@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils"
 import { CartSidebar } from "@/components/cart-sidebar"
 import { useCart } from "@/app/context/app-context"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +31,22 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 
 const CUTOFF_TIME = "8:00 AM"
 const CUTOFF_DATE = "6/6"
+const DEFAULT_PROFILE = {
+  firstName: "Store",
+  lastName: "Manager",
+  email: "",
+  avatar: "",
+}
+
+type HeaderProfile = typeof DEFAULT_PROFILE
+
+function getFullName(profile: HeaderProfile) {
+  return [profile.firstName, profile.lastName].filter(Boolean).join(" ")
+}
+
+function getInitials(profile: HeaderProfile) {
+  return `${profile.firstName[0] ?? ""}${profile.lastName[0] ?? ""}`.toUpperCase()
+}
 
 const formatDeliveryDate = (date: Date) =>
   date.toLocaleDateString("en-US", {
@@ -89,7 +105,15 @@ function SiteHeader({
   description?: React.ReactNode
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const t = useTranslations("header")
+  const profileUrl =
+    pathname === "/backoffice" || pathname.startsWith("/backoffice/")
+      ? "/backoffice/profile"
+      : "/profile"
+  const [profile, setProfile] = React.useState<HeaderProfile>(DEFAULT_PROFILE)
+  const profileName = getFullName(profile)
+  const profileInitials = getInitials(profile)
   const {
     items,
     itemCount,
@@ -147,6 +171,56 @@ function SiteHeader({
   })
 
   React.useEffect(() => {
+    let active = true
+
+    function applyProfile(nextProfile: Partial<HeaderProfile>) {
+      setProfile({
+        firstName: nextProfile.firstName ?? "",
+        lastName: nextProfile.lastName ?? "",
+        email: nextProfile.email ?? "",
+        avatar: nextProfile.avatar ?? "",
+      })
+    }
+
+    async function loadProfile() {
+      try {
+        const response = await fetch("/api/profile", {
+          cache: "no-store",
+          credentials: "same-origin",
+        })
+
+        if (!response.ok) return
+
+        const data = await response.json()
+
+        if (active && data.profile) {
+          applyProfile(data.profile)
+        }
+      } catch {
+        if (active) {
+          setProfile(DEFAULT_PROFILE)
+        }
+      }
+    }
+
+    function handleProfileUpdated(event: Event) {
+      const profileEvent = event as CustomEvent<Partial<HeaderProfile>>
+
+      if (active && profileEvent.detail) {
+        applyProfile(profileEvent.detail)
+      }
+    }
+
+    window.addEventListener("aloha-profile-updated", handleProfileUpdated)
+    loadProfile()
+
+    return () => {
+      active = false
+      window.removeEventListener("aloha-profile-updated", handleProfileUpdated)
+    }
+  }, [])
+
+  React.useEffect(() => {
     if (!calendarOpen) {
       return
     }
@@ -171,9 +245,16 @@ function SiteHeader({
     }
   }, [calendarOpen])
 
+  function clearCookie(value: string) {
+    window.document.cookie = value
+  }
+
   function handleLogout() {
-    window.sessionStorage.removeItem("aloha-login-verified")
-    document.cookie = "aloha-login-verified=; path=/; max-age=0; SameSite=Lax"
+    clearCookie("aloha-login-verified=; path=/; max-age=0; SameSite=Lax")
+    clearCookie("aloha-login-route=; path=/; max-age=0; SameSite=Lax")
+    clearCookie("aloha-login-user-id=; path=/; max-age=0; SameSite=Lax")
+    clearCookie("aloha-login-role=; path=/; max-age=0; SameSite=Lax")
+    clearCookie("aloha-login-phone=; path=/; max-age=0; SameSite=Lax")
     router.replace("/login")
   }
 
@@ -313,7 +394,10 @@ function SiteHeader({
               aria-label={t("openProfileMenu")}
             >
               <Avatar className="size-8">
-                <AvatarFallback className="text-xs font-semibold">CN</AvatarFallback>
+                <AvatarImage src={profile.avatar} alt={profileName} />
+                <AvatarFallback className="text-xs font-semibold">
+                  {profileInitials}
+                </AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>
@@ -321,15 +405,18 @@ function SiteHeader({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-3 px-3 py-2 text-left text-sm">
                 <Avatar className="size-9">
-                  <AvatarFallback className="text-xs font-semibold">CN</AvatarFallback>
+                  <AvatarImage src={profile.avatar} alt={profileName} />
+                  <AvatarFallback className="text-xs font-semibold">
+                    {profileInitials}
+                  </AvatarFallback>
                 </Avatar>
-                <span className="truncate font-medium">Crate Inc.</span>
+                <span className="truncate font-medium">{profileName}</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild className="px-3 py-2.5">
-                <Link href="/profile">
+                <Link href={profileUrl}>
                   <BadgeCheckIcon />
                   {t("myProfile")}
                 </Link>

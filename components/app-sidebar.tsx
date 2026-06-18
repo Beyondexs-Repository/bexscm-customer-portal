@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { NavMain } from "@/components/nav-main";
@@ -8,6 +9,7 @@ import { NavUser } from "@/components/nav-user";
 import { TeamSwitcher } from "@/components/team-switcher";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ModeToggle } from "@/components/mode-toggle";
+import { getVisiblePagesForRole } from "@/config/role-pages";
 import {
   Sidebar,
   SidebarContent,
@@ -23,7 +25,9 @@ import {
   Star,
   MessageCircle,
   Users,
+  UserCog,
   BookOpenIcon,
+  ClipboardListIcon,
 } from "lucide-react";
 import { RxDashboard } from "react-icons/rx";
 import { LuNotepadText } from "react-icons/lu";
@@ -53,43 +57,53 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const t = useTranslations("nav")
+function getCookieValue(name: string) {
+  if (typeof document === "undefined") return "";
 
-  const navMain = [
-    {
-      title: t("overview"),
-      url: "/",
-      icon: <RxDashboard />,
-      isActive: true,
-    },
-    {
-      title: t("orderGuide"),
-      url: "/order-guide",
-      icon: <Star />,
-      isActive: false,
-    },
-    {
-      title: t("catalog"),
-      url: "/catalog",
-      icon: <BookOpenIcon />,
-    },
-    {
-      title: t("myOrders"),
-      url: "/my-orders",
-      icon: <LuNotepadText />,
-    },
-    {
-      title: t("messages"),
-      url: "/messages",
-      icon: <MessageCircle />,
-    },
-    {
-      title: t("employees"),
-      url: "/employees",
-      icon: <Users />,
-    },
-  ]
+  return (
+    document.cookie
+      .split("; ")
+      .find((cookie) => cookie.startsWith(`${name}=`))
+      ?.split("=")[1] ?? ""
+  );
+}
+
+function getLoginRole() {
+  return decodeURIComponent(getCookieValue("aloha-login-role"));
+}
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname()
+  const t = useTranslations("nav")
+  const isBackoffice = pathname === "/backoffice" || pathname.startsWith("/backoffice/")
+  const [role, setRole] = React.useState(getLoginRole)
+
+  React.useEffect(() => {
+    setRole(getLoginRole())
+  }, [pathname])
+
+  const effectiveRole = role || (isBackoffice ? "global-admin" : "store-employee")
+  const pageIcons: Record<string, React.ReactNode> = {
+    "customer-overview": <RxDashboard />,
+    "customer-order-guide": <Star />,
+    "customer-catalog": <BookOpenIcon />,
+    "customer-my-orders": <LuNotepadText />,
+    "customer-messages": <MessageCircle />,
+    "customer-employees": <Users />,
+    "backoffice-overview": <RxDashboard />,
+    "backoffice-orders": <ClipboardListIcon />,
+    "backoffice-catalog": <BookOpenIcon />,
+    "backoffice-users": <UserCog />,
+    "backoffice-employees": <Users />,
+  }
+  const navMain = getVisiblePagesForRole(effectiveRole, {
+    area: isBackoffice ? "backoffice" : "customer",
+    nav: true,
+  }).map((page) => ({
+    title: page.titleKey ? t(page.titleKey) : page.title,
+    url: page.path,
+    icon: pageIcons[page.id],
+  }))
 
   return (
     <Sidebar collapsible="icon" {...props}>

@@ -48,10 +48,12 @@ export function NavMain({
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
-      <SidebarMenu className="gap-2">
+      <SidebarMenu className="gap-1">
         {items.map((item) => {
           const isActive =
-            item.url === "/" ? pathname === "/" : pathname.startsWith(item.url)
+            item.url === "/" || item.url === "/backoffice"
+              ? pathname === item.url
+              : pathname.startsWith(item.url)
 
           return (
             <SidebarMenuItem key={item.title}>

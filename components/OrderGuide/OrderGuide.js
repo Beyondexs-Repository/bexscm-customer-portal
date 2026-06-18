@@ -96,7 +96,7 @@ export function OrderGuide() {
           </CardHeader>
 
           <CardContent className="flex justify-center pb-8 pt-2 md:pb-12 md:pt-4">
-            <Button size="lg" onClick={() => setOpen(true)} className="w-full sm:min-w-[220px]">
+            <Button size="lg" onClick={() => setOpen(true)} className="w-auto">
               <Plus className="size-4" />
               {t("create")}
             </Button>

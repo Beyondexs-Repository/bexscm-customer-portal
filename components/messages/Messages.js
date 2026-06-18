@@ -6,40 +6,143 @@ import { useTranslations } from "next-intl"
 import {
   Camera,
   ChevronUp,
+  FileText,
+  Loader2,
   Maximize2,
   Paperclip,
   Send,
   X,
 } from "lucide-react"
 
-const avatarUrl = "https://api.dicebear.com/9.x/adventurer/svg?seed=Phoebe"
+const fallbackAvatar = "https://api.dicebear.com/9.x/adventurer/svg?seed=Aloha"
 
-const initialMessages = [
-  {
-    id: 1,
-    type: "received",
-    text: "Hi <name>, can you confirm whether the Premium Incense Sticks are available in stock?",
-    time: "10:15 AM",
-    date: "Today",
-  },
-  {
-    id: 2,
-    type: "sent",
-    text: "Yes, it is available. Currently we have 120 packs in stock.",
-    time: "10:17 AM",
-    date: "Today",
-  },
-]
+function formatTime(value) {
+  if (!value) return ""
+
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value))
+}
+
+function formatDate(value) {
+  if (!value) return ""
+
+  const date = new Date(value)
+  const today = new Date()
+
+  if (date.toDateString() === today.toDateString()) return "Today"
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  }).format(date)
+}
+
+function getAvatar(user) {
+  return user?.avatar || fallbackAvatar
+}
+
+function formatRole(roleKey) {
+  return String(roleKey ?? "")
+    .replaceAll("-", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
 
 export default function Messages({ fullscreen = false }) {
   const t = useTranslations("messages")
   const [open, setOpen] = useState(fullscreen)
   const [message, setMessage] = useState("")
-  const [messages, setMessages] = useState(initialMessages)
+  const [messages, setMessages] = useState([])
+  const [conversationId, setConversationId] = useState(null)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [selectedFiles, setSelectedFiles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState("")
   const messageAreaRef = useRef(null)
   const messageInputRef = useRef(null)
   const attachmentInputRef = useRef(null)
   const cameraInputRef = useRef(null)
+  const mountedRef = useRef(false)
+  const messagesSignatureRef = useRef("")
+  const latestMessageIdRef = useRef(0)
+
+  useEffect(() => {
+    mountedRef.current = true
+
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  async function loadConversation({ silent = false } = {}) {
+    if (!silent) {
+      setLoading(true)
+      setError("")
+    }
+
+    try {
+      const response = await fetch("/api/messages", { cache: "no-store" })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || "Could not load messages.")
+      }
+
+      if (!mountedRef.current) return
+
+      const nextMessages = data.messages ?? []
+      const latestMessageId = nextMessages.at(-1)?.id ?? 0
+      const signature = `${nextMessages.length}:${latestMessageId}`
+
+      if (messagesSignatureRef.current !== signature) {
+        messagesSignatureRef.current = signature
+        latestMessageIdRef.current = latestMessageId
+        setMessages(nextMessages)
+      }
+
+      setConversationId((currentId) =>
+        currentId === data.conversationId ? currentId : data.conversationId
+      )
+      setCurrentUser((currentUserValue) =>
+        currentUserValue?.id === data.currentUser?.id
+          ? currentUserValue
+          : data.currentUser
+      )
+    } catch (loadError) {
+      if (mountedRef.current) {
+        setError(loadError.message || "Could not load messages.")
+      }
+    } finally {
+      if (mountedRef.current && !silent) setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (open) loadConversation()
+  }, [open])
+
+  useEffect(() => {
+    if (!open || !conversationId) return
+
+    const events = new EventSource(
+      `/api/messages/events?conversationId=${conversationId}&lastMessageId=${latestMessageIdRef.current}`
+    )
+
+    events.addEventListener("message", (event) => {
+      const data = JSON.parse(event.data)
+
+      if (data.latestMessageId > latestMessageIdRef.current) {
+        latestMessageIdRef.current = data.latestMessageId
+        loadConversation({ silent: true })
+      }
+    })
+
+    return () => {
+      events.close()
+    }
+  }, [open, conversationId])
 
   useEffect(() => {
     if (!messageAreaRef.current) return
@@ -56,29 +159,67 @@ export default function Messages({ fullscreen = false }) {
     input.style.overflowY = input.scrollHeight > 72 ? "auto" : "hidden"
   }, [message])
 
-  function handleSend() {
-    if (!message.trim()) return
+  async function handleSend() {
+    if ((!message.trim() && selectedFiles.length === 0) || sending) return
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        type: "sent",
-        text: message.trim(),
-        time: t("now"),
-        date: t("today"),
-      },
-    ])
+    const formData = new FormData()
+    formData.append("body", message.trim())
 
-    setMessage("")
+    if (conversationId) {
+      formData.append("conversationId", String(conversationId))
+    }
+
+    for (const file of selectedFiles) {
+      formData.append("attachments", file)
+    }
+
+    setSending(true)
+    setError("")
+
+    try {
+      const response = await fetch("/api/messages", {
+        method: "POST",
+        body: formData,
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || "Could not send message.")
+      }
+
+      latestMessageIdRef.current = data.message?.id ?? latestMessageIdRef.current
+      setMessages((prev) => {
+        if (!data.message || prev.some((item) => item.id === data.message.id)) {
+          return prev
+        }
+
+        const nextMessages = [...prev, data.message]
+        messagesSignatureRef.current = `${nextMessages.length}:${data.message.id}`
+        return nextMessages
+      })
+      setConversationId(data.conversationId)
+      setMessage("")
+      setSelectedFiles([])
+
+      if (attachmentInputRef.current) attachmentInputRef.current.value = ""
+      if (cameraInputRef.current) cameraInputRef.current.value = ""
+    } catch (sendError) {
+      setError(sendError.message || "Could not send message.")
+    } finally {
+      setSending(false)
+    }
   }
 
   function handleSelectedFiles(event) {
-    event.target.value = ""
+    setSelectedFiles((files) => [...files, ...Array.from(event.target.files ?? [])])
+  }
+
+  function removeSelectedFile(index) {
+    setSelectedFiles((files) => files.filter((_, fileIndex) => fileIndex !== index))
   }
 
   const chatBoxClass = fullscreen
-    ? "flex h-full min-h-0 flex-col overflow-hidden bg-background"
+    ? "flex h-full min-h-0 flex-col overflow-hidden bg-background "
     : "fixed bottom-0 right-6 z-50 flex h-[620px] w-[430px] flex-col overflow-hidden rounded-t-xl border bg-background shadow-2xl"
 
   return (
@@ -87,13 +228,15 @@ export default function Messages({ fullscreen = false }) {
         <div className={chatBoxClass}>
           {!fullscreen && (
             <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-3">
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <img
-                  src={avatarUrl}
+                  src={getAvatar(currentUser)}
                   alt={t("customer")}
-                  className="h-9 w-9 rounded-full"
+                  className="h-9 w-9 rounded-full object-cover"
                 />
-                <h3 className="font-semibold">{t("newMessage")}</h3>
+                <div className="min-w-0">
+                  <h3 className="truncate font-semibold">{t("newMessage")}</h3>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -123,59 +266,146 @@ export default function Messages({ fullscreen = false }) {
             ref={messageAreaRef}
             className="min-h-0 flex-1 overflow-y-auto px-2 py-3 sm:px-5 sm:py-4"
           >
-            <div className="flex min-h-full flex-col">
-              <div className="mt-auto flex items-center gap-2 pb-4 sm:gap-3 sm:pb-5">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs font-semibold text-muted-foreground">
-                  {t("today")}
-                </span>
-                <div className="h-px flex-1 bg-border" />
+            {loading ? (
+              <div className="flex h-full items-center justify-center text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading messages
               </div>
+            ) : messages.length === 0 ? (
+              <div className="flex h-full items-center justify-center px-8 text-center text-sm text-muted-foreground">
+                Start a team conversation between store managers and employees.
+              </div>
+            ) : (
+              <div className="flex min-h-full flex-col">
+                <div className="mt-auto flex items-center gap-2 pb-4 sm:gap-3 sm:pb-5">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {formatDate(messages[messages.length - 1]?.createdAt)}
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
 
-              <div className="space-y-4 sm:space-y-5">
-                {messages.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`flex min-w-0 gap-2 sm:gap-3 ${
-                      item.type === "sent" ? "justify-end" : "items-start"
-                    }`}
-                  >
-                    {item.type === "received" && (
-                      <img
-                        src={avatarUrl}
-                        alt={t("customer")}
-                        className="h-8 w-8 shrink-0 rounded-full sm:h-10 sm:w-10"
-                      />
-                    )}
-
+                <div className="space-y-4 sm:space-y-5">
+                  {messages.map((item) => (
                     <div
-                      className={`min-w-0 max-w-[82%] sm:max-w-[520px] ${
-                        item.type === "sent"
-                          ? "rounded-2xl bg-primary px-3 py-2 text-primary-foreground sm:px-4"
-                          : "rounded-2xl bg-muted px-3 py-2 sm:px-4"
+                      key={item.id}
+                      className={`flex min-w-0 gap-2 sm:gap-3 ${
+                        item.type === "sent" ? "justify-end" : "items-start"
                       }`}
                     >
-                      <p className="whitespace-pre-line break-words text-sm leading-relaxed">
-                        {item.text}
-                      </p>
+                      {item.type === "received" && (
+                        <img
+                          src={item.senderAvatar || fallbackAvatar}
+                          alt={item.senderName || t("customer")}
+                          className="h-8 w-8 shrink-0 rounded-full object-cover sm:h-10 sm:w-10"
+                        />
+                      )}
 
                       <div
-                        className={`mt-1 text-right text-[11px] ${
+                        className={`min-w-0 max-w-[82%] sm:max-w-[520px] ${
                           item.type === "sent"
-                            ? "text-primary-foreground/70"
-                            : "text-muted-foreground"
+                            ? "rounded-2xl bg-primary px-3 py-2 text-primary-foreground sm:px-4"
+                            : "rounded-2xl bg-muted px-3 py-2 sm:px-4"
                         }`}
                       >
-                        {item.date} - {item.time}
+                        {item.type !== "sent" && (
+                          <div className="mb-1 flex min-w-0 items-baseline gap-2 leading-5 justify-between">
+                            <span className="truncate text-sm font-semibold text-foreground">
+                              {item.senderName || t("customer")}
+                            </span>
+                            {item.senderRoleKey && (
+                              <span className="shrink-0 text-[11px] font-normal text-muted-foreground">
+                                ~ {formatRole(item.senderRoleKey)}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {item.text && (
+                          <p className="whitespace-pre-line break-words text-sm leading-relaxed">
+                            {item.text}
+                          </p>
+                        )}
+
+                        {item.attachments?.length > 0 && (
+                          <div className="mt-2 space-y-2">
+                            {item.attachments.map((attachment) => {
+                              const isImage = attachment.mimeType?.startsWith("image/")
+
+                              return (
+                                <a
+                                  key={attachment.id}
+                                  href={attachment.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className={`block overflow-hidden rounded-lg border ${
+                                    item.type === "sent"
+                                      ? "border-primary-foreground/20 bg-primary-foreground/10"
+                                      : "border-border bg-background"
+                                  }`}
+                                >
+                                  {isImage ? (
+                                    <img
+                                      src={attachment.url}
+                                      alt={attachment.fileName}
+                                      className="max-h-56 w-full object-cover"
+                                    />
+                                  ) : (
+                                    <span className="flex items-center gap-2 px-3 py-2 text-xs">
+                                      <FileText className="h-4 w-4 shrink-0" />
+                                      <span className="truncate">
+                                        {attachment.fileName}
+                                      </span>
+                                    </span>
+                                  )}
+                                </a>
+                              )
+                            })}
+                          </div>
+                        )}
+
+                        <div
+                          className={`mt-1 text-right text-[11px] ${
+                            item.type === "sent"
+                              ? "text-primary-foreground/70"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {formatDate(item.createdAt)} - {formatTime(item.createdAt)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="shrink-0 border-t bg-background px-1.5 py-1.5 sm:px-3 sm:py-2">
+            {error && (
+              <div className="px-2 pb-2 text-xs font-medium text-destructive">
+                {error}
+              </div>
+            )}
+
+            {selectedFiles.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto px-2 pb-2">
+                {selectedFiles.map((file, index) => (
+                  <button
+                    key={`${file.name}-${file.lastModified}-${index}`}
+                    type="button"
+                    onClick={() => removeSelectedFile(index)}
+                    className="flex max-w-[180px] shrink-0 items-center gap-2 rounded-full border bg-muted/60 px-3 py-1.5 text-xs"
+                    title="Remove file"
+                  >
+                    <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{file.name}</span>
+                    <X className="h-3.5 w-3.5 shrink-0" />
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
               <div className="flex min-h-11 min-w-0 flex-1 items-center gap-1 rounded-full border bg-muted/35 px-1.5 py-1.5 focus-within:ring-2 focus-within:ring-primary/30 sm:px-2">
                 <button
@@ -190,6 +420,7 @@ export default function Messages({ fullscreen = false }) {
                   ref={attachmentInputRef}
                   type="file"
                   className="hidden"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
                   multiple
                   onChange={handleSelectedFiles}
                 />
@@ -231,10 +462,14 @@ export default function Messages({ fullscreen = false }) {
                 type="button"
                 onClick={handleSend}
                 className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60 sm:size-11"
-                disabled={!message.trim()}
+                disabled={sending || (!message.trim() && selectedFiles.length === 0)}
                 aria-label={t("sendMessage")}
               >
-                <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+                {sending ? (
+                  <Loader2 className="h-4 w-4 animate-spin sm:h-5 sm:w-5" />
+                ) : (
+                  <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+                )}
               </button>
             </div>
           </div>
@@ -247,16 +482,16 @@ export default function Messages({ fullscreen = false }) {
             className="fixed bottom-0 right-6 z-50 flex w-[280px] items-center justify-between rounded-t-xl border bg-background px-4 py-2 shadow-lg"
           >
             <div className="flex w-full items-center justify-between gap-2">
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <img
-                  src={avatarUrl}
+                  src={getAvatar(currentUser)}
                   alt={t("avatar")}
-                  className="h-8 w-8 rounded-full"
+                  className="h-8 w-8 rounded-full object-cover"
                 />
-                <span className="font-semibold">{t("newMessage")}</span>
+                <span className="truncate font-semibold">{t("newMessage")}</span>
               </div>
 
-              <ChevronUp className="h-5 w-5" />
+              <ChevronUp className="h-5 w-5 shrink-0" />
             </div>
           </button>
         )

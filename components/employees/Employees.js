@@ -1,113 +1,387 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Plus, Search } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { Search, ChevronLeft, ChevronRight } from "lucide-react"
 
-const EMPLOYEES = [
-  { id: 1, name: "John Smith", email: "john.smith@alohaproduce.com", phone: "(808) 555-1001", role: "Manager", avatar: "JS" },
-  { id: 2, name: "Emily Johnson", email: "emily.johnson@alohaproduce.com", phone: "(808) 555-1002", role: "Sales Executive", avatar: "EJ" },
-  { id: 3, name: "Michael Brown", email: "michael.brown@alohaproduce.com", phone: "(808) 555-1003", role: "Warehouse Staff", avatar: "MB" },
-  { id: 4, name: "Sarah Wilson", email: "sarah.wilson@alohaproduce.com", phone: "(808) 555-1004", role: "Accountant", avatar: "SW" },
-  { id: 5, name: "David Lee", email: "david.lee@alohaproduce.com", phone: "(808) 555-1005", role: "Delivery Driver", avatar: "DL" },
-  { id: 6, name: "Jessica Taylor", email: "jessica.taylor@alohaproduce.com", phone: "(808) 555-1006", role: "Customer Support", avatar: "JT" },
-  { id: 7, name: "Chris Martin", email: "chris.martin@alohaproduce.com", phone: "(808) 555-1007", role: "Supervisor", avatar: "CM" },
-  { id: 8, name: "Olivia Davis", email: "olivia.davis@alohaproduce.com", phone: "(808) 555-1008", role: "Purchase Executive", avatar: "OD" },
-  { id: 9, name: "James Moore", email: "james.moore@alohaproduce.com", phone: "(808) 555-1009", role: "Inventory Staff", avatar: "JM" },
-  { id: 10, name: "Sophia White", email: "sophia.white@alohaproduce.com", phone: "(808) 555-1010", role: "Sales Executive", avatar: "SW" },
-  { id: 11, name: "Daniel Harris", email: "daniel.harris@alohaproduce.com", phone: "(808) 555-1011", role: "Delivery Driver", avatar: "DH" },
-  { id: 12, name: "Emma Clark", email: "emma.clark@alohaproduce.com", phone: "(808) 555-1012", role: "Admin", avatar: "EC" },
-]
+import { EmployeeActionsMenu } from "@/components/employees/EmployeeActionsMenu"
+import { EmployeeFormDialog } from "@/components/employees/EmployeeFormDialog"
+import { EmployeesPagination } from "@/components/employees/EmployeesPagination"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 
-const PAGE_SIZE = 6
+
+const DEFAULT_PAGE_SIZE = 10
+const EMPLOYEE_MANAGER_ROLES = new Set([
+  "store-manager",
+  "global-admin",
+  "application-admin",
+])
+
+function getLoginRole() {
+  if (typeof window === "undefined") return ""
+
+  return (
+    window.document.cookie
+      .split("; ")
+      .find((cookie) => cookie.startsWith("aloha-login-role="))
+      ?.split("=")[1] ?? ""
+  )
+}
+
+function getFullName(employee) {
+  return `${employee.firstName} ${employee.lastName}`.trim()
+}
+
+function getInitials(employee) {
+  return `${employee.firstName?.[0] ?? ""}${employee.lastName?.[0] ?? ""}`.toUpperCase()
+}
+
+function EmployeesLoadingState() {
+  return (
+    <div className="flex min-h-[calc(100svh-13rem)] items-center justify-center p-4 md:min-h-[calc(100vh-8rem)] md:p-6">
+      <div className="flex flex-col items-center gap-4">
+        <div className="size-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin transition-transform" />
+        <p className="text-sm font-medium text-muted-foreground">Loading employees...</p>
+      </div>
+    </div>
+  )
+}
 
 export default function Employees() {
   const t = useTranslations("employees")
+  const [employees, setEmployees] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingEmployee, setEditingEmployee] = useState(null)
+  const [loginRole] = useState(getLoginRole)
   const listTopRef = useRef(null)
+  const canManageEmployees = EMPLOYEE_MANAGER_ROLES.has(loginRole)
+
+  useEffect(() => {
+    let active = true
+
+    async function syncEmployees() {
+      try {
+        const nextEmployees = await loadEmployees()
+
+        if (active) {
+          setEmployees(nextEmployees)
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        if (active) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    syncEmployees()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   const filteredEmployees = useMemo(() => {
     const query = search.toLowerCase().trim()
-    return EMPLOYEES.filter(
-      (employee) =>
-        employee.name.toLowerCase().includes(query) ||
-        employee.email.toLowerCase().includes(query) ||
-        employee.phone.toLowerCase().includes(query) ||
-        employee.role.toLowerCase().includes(query),
-    )
-  }, [search])
 
-  const totalPages = Math.ceil(filteredEmployees.length / PAGE_SIZE)
+    return employees.filter((employee) => {
+      const fullName = getFullName(employee).toLowerCase()
+
+      return (
+        fullName.includes(query) ||
+        employee.email.toLowerCase().includes(query) ||
+        employee.contact.toLowerCase().includes(query)
+      )
+    })
+  }, [employees, search])
+
+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / pageSize))
+  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const hasEmployees = employees.length > 0
 
   const paginatedEmployees = filteredEmployees.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
+    (safeCurrentPage - 1) * pageSize,
+    safeCurrentPage * pageSize,
   )
 
-  function handlePageChange(page) {
-    setCurrentPage(page)
-
-    setTimeout(() => {
+  function scrollListToTop() {
+    window.requestAnimationFrame(() => {
       listTopRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       })
-    }, 0)
+    })
+  }
+
+  function handlePageChange(page) {
+    setCurrentPage(page)
+    scrollListToTop()
+  }
+
+  function handlePageSizeChange(nextPageSize) {
+    setPageSize(nextPageSize)
+    setCurrentPage(1)
+    scrollListToTop()
+  }
+
+  function handleAddEmployee() {
+    if (!canManageEmployees) return
+
+    setEditingEmployee(null)
+    setDialogOpen(true)
+  }
+
+  function handleEditEmployee(employee) {
+    if (!canManageEmployees) return
+
+    setEditingEmployee(employee)
+    setDialogOpen(true)
+  }
+
+  async function handleDeleteEmployee(employeeId) {
+    if (!canManageEmployees) return
+
+    await deleteEmployee(employeeId)
+    setEmployees((current) =>
+      current.filter((employee) => employee.id !== employeeId),
+    )
+  }
+
+  async function handleSaveEmployee(employeeData) {
+    if (!canManageEmployees) return
+
+    if (editingEmployee) {
+      const savedEmployee = await updateEmployee(editingEmployee.id, employeeData)
+
+      setEmployees((current) =>
+        current.map((employee) =>
+          employee.id === editingEmployee.id ? savedEmployee : employee,
+        ),
+      )
+    } else {
+      const savedEmployee = await createEmployee(employeeData)
+
+      setEmployees((current) => [
+        savedEmployee,
+        ...current,
+      ])
+    }
+
+    setDialogOpen(false)
+    setEditingEmployee(null)
+  }
+
+  async function loadEmployees() {
+  const response = await fetch("/api/employees", {
+    cache: "no-store",
+    credentials: "same-origin",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load employees");
+  }
+
+  const data = await response.json();
+  return data.employees ?? [];
+}
+
+async function createEmployee(employeeData) {
+  const response = await fetch("/api/employees", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(employeeData),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create employee");
+  }
+
+  const data = await response.json();
+  return data.employee;
+}
+
+async function updateEmployee(employeeId, employeeData) {
+  const response = await fetch(`/api/employees/${employeeId}`, {
+    method: "PUT",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(employeeData),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update employee");
+  }
+
+  const data = await response.json();
+  return data.employee;
+}
+
+async function deleteEmployee(employeeId) {
+  const response = await fetch(`/api/employees/${employeeId}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete employee");
+  }
+
+  return true;
+}
+
+  if (isLoading) {
+    return <EmployeesLoadingState />
+  }
+
+  if (!hasEmployees) {
+    return (
+      <>
+        <div className="flex min-h-[calc(100svh-13rem)] items-center justify-center p-4 md:min-h-[calc(100vh-8rem)] md:p-6">
+          <Card className="w-full max-w-xl shadow-sm md:min-h-[320px]">
+            <CardHeader className="flex flex-col items-center justify-center pt-8 text-center md:pt-12">
+              <CardTitle className="text-2xl font-bold md:text-3xl">
+                {t("noEmployeesFound")}
+              </CardTitle>
+              <CardDescription className="mt-3 max-w-md text-sm leading-relaxed md:mt-4 md:text-base">
+                {t("noEmployeesHint")}
+              </CardDescription>
+            </CardHeader>
+
+            {canManageEmployees && (
+              <CardContent className="flex justify-center pb-8 pt-2 md:pb-12 md:pt-4">
+                <Button
+                  size="lg"
+                  onClick={handleAddEmployee}
+                  className="w-auto"
+                >
+                  <Plus className="size-4" />
+                  {t("addEmployee")}
+                </Button>
+              </CardContent>
+            )}
+          </Card>
+        </div>
+
+        {canManageEmployees && (
+          <EmployeeFormDialog
+            employee={editingEmployee}
+            mode={editingEmployee ? "edit" : "add"}
+            open={dialogOpen}
+            onOpenChange={(nextOpen) => {
+              setDialogOpen(nextOpen)
+              if (!nextOpen) {
+                setEditingEmployee(null)
+              }
+            }}
+            onSave={handleSaveEmployee}
+          />
+        )}
+      </>
+    )
   }
 
   return (
     <div className="space-y-5 p-4">
       <div
         ref={listTopRef}
-        className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-start"
+        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
       >
-        <div className="relative w-full lg:max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
+        <div className="relative w-full sm:max-w-md">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
             placeholder={t("searchPlaceholder")}
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
+            onChange={(event) => {
+              setSearch(event.target.value)
               setCurrentPage(1)
             }}
-            className="h-11 w-full rounded-lg border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2"
+            className="h-11 pl-10 pr-4"
           />
         </div>
+
+        {canManageEmployees && (
+          <Button
+            className="h-11 w-full sm:w-auto"
+            onClick={handleAddEmployee}
+          >
+            <Plus className="size-4" />
+            {t("addEmployee")}
+          </Button>
+        )}
       </div>
 
       <div className="hidden overflow-hidden rounded-xl border bg-card md:block">
         <table className="w-full">
           <thead>
             <tr className="border-b bg-muted/40">
-              <th className="px-5 py-4 text-left text-sm font-semibold">{t("employee")}</th>
-              <th className="px-5 py-4 text-left text-sm font-semibold">{t("role")}</th>
-              <th className="px-5 py-4 text-left text-sm font-semibold">{t("email")}</th>
-              <th className="px-5 py-4 text-left text-sm font-semibold">{t("phone")}</th>
+              <th className="px-5 py-4 text-left text-sm font-semibold">
+                {t("employee")}
+              </th>
+              <th className="px-5 py-4 text-left text-sm font-semibold">
+                {t("email")}
+              </th>
+              <th className="px-5 py-4 text-left text-sm font-semibold">
+                {t("contact")}
+              </th>
+              {canManageEmployees && (
+                <th className="px-5 py-4 text-right text-sm font-semibold">
+                  {t("actions")}
+                </th>
+              )}
             </tr>
           </thead>
 
           <tbody>
             {paginatedEmployees.map((employee) => (
               <tr key={employee.id} className="border-b last:border-0">
-                <td className="px-5 py-4">
+                <td className="px-5 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-                      {employee.avatar}
+                    <Avatar className="size-10">
+                      <AvatarImage
+                        src={employee.avatarImage}
+                        alt={getFullName(employee)}
+                      />
+                      <AvatarFallback className="bg-primary/10 font-semibold text-primary">
+                        {getInitials(employee)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="font-medium text-sm">
+                      {getFullName(employee)}
                     </div>
-                    <div className="font-medium">{employee.name}</div>
                   </div>
                 </td>
-
-                <td className="px-5 py-4">
-                  <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                    {employee.role}
-                  </span>
-                </td>
-
-                <td className="px-5 py-4 text-sm">{employee.email}</td>
-                <td className="px-5 py-4 text-sm">{employee.phone}</td>
+                <td className="px-5 py-3 text-sm">{employee.email}</td>
+                <td className="px-5 py-3 text-sm">{employee.contact}</td>
+                {canManageEmployees && (
+                  <td className="px-5 py-3">
+                    <div className="flex justify-end">
+                      <EmployeeActionsMenu
+                        onDelete={() => handleDeleteEmployee(employee.id)}
+                        onEdit={() => handleEditEmployee(employee)}
+                      />
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -118,19 +392,32 @@ export default function Employees() {
         {paginatedEmployees.map((employee) => (
           <div key={employee.id} className="rounded-xl border bg-card p-4">
             <div className="flex items-start gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-                {employee.avatar}
-              </div>
+              <Avatar className="size-12 shrink-0">
+                <AvatarImage
+                  src={employee.avatarImage}
+                  alt={getFullName(employee)}
+                />
+                <AvatarFallback className="bg-primary/10 font-semibold text-primary">
+                  {getInitials(employee)}
+                </AvatarFallback>
+              </Avatar>
 
               <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold">{employee.name}</h3>
-                  <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                    {employee.role}
-                  </span>
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="font-semibold">{getFullName(employee)}</h3>
+                  {canManageEmployees && (
+                    <EmployeeActionsMenu
+                      onDelete={() => handleDeleteEmployee(employee.id)}
+                      onEdit={() => handleEditEmployee(employee)}
+                    />
+                  )}
                 </div>
-                <p className="mt-2 truncate text-sm text-muted-foreground">{employee.email}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{employee.phone}</p>
+                <p className="mt-2 truncate text-sm text-muted-foreground">
+                  {employee.email}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {employee.contact}
+                </p>
               </div>
             </div>
           </div>
@@ -140,40 +427,37 @@ export default function Employees() {
       {filteredEmployees.length === 0 && (
         <div className="rounded-xl border bg-card p-8 text-center">
           <p className="font-semibold">{t("noEmployeesFound")}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{t("noEmployeesHint")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t("noEmployeesHint")}
+          </p>
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <button
-            className="flex h-9 w-9 items-center justify-center rounded-md border disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={currentPage === 1}
-            onClick={() => handlePageChange(currentPage - 1)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
+      {filteredEmployees.length > 0 && (
+        <EmployeesPagination
+          currentPage={safeCurrentPage}
+          pageSize={pageSize}
+          selectedRows={0}
+          totalPages={totalPages}
+          totalRows={filteredEmployees.length}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
+      )}
 
-          {Array.from({ length: totalPages }, (_, index) => (
-            <button
-              key={index}
-              onClick={() => handlePageChange(index + 1)}
-              className={`h-9 w-9 rounded-md border text-sm font-medium ${
-                currentPage === index + 1 ? "bg-primary text-primary-foreground" : ""
-              }`}
-            >
-              {index + 1}
-            </button>
-          ))}
-
-          <button
-            className="flex h-9 w-9 items-center justify-center rounded-md border disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={currentPage === totalPages}
-            onClick={() => handlePageChange(currentPage + 1)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
+      {canManageEmployees && (
+        <EmployeeFormDialog
+          employee={editingEmployee}
+          mode={editingEmployee ? "edit" : "add"}
+          open={dialogOpen}
+          onOpenChange={(nextOpen) => {
+            setDialogOpen(nextOpen)
+            if (!nextOpen) {
+              setEditingEmployee(null)
+            }
+          }}
+          onSave={handleSaveEmployee}
+        />
       )}
     </div>
   )

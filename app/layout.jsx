@@ -18,7 +18,7 @@ const notoSansTamil = Noto_Sans_Tamil({
 });
 
 export const metadata = {
-  title: "Crate Inc. Web App",
+  title: "Crate Inc.",
   description: "Crate Inc. - Fresh Produce Delivered to Your Doorstep",
 };
 

@@ -1,0 +1,241 @@
+{
+  "defaultRoutes": {
+    "global-admin": "/backoffice",
+    "application-admin": "/backoffice",
+    "sales-reps": "/backoffice",
+    "sales-associate": "/backoffice",
+    "gm-owners": "/backoffice",
+    "ar": "/backoffice",
+    "ar-manager": "/backoffice",
+    "store-manager": "/",
+    "store-employee": "/"
+  },
+  "pages": [
+    {
+      "id": "customer-overview",
+      "area": "customer",
+      "path": "/",
+      "title": "Overview",
+      "titleKey": "overview",
+      "nav": true,
+      "footerNav": true,
+      "roles": ["store-manager", "store-employee"]
+    },
+    {
+      "id": "customer-order-guide",
+      "area": "customer",
+      "path": "/order-guide",
+      "title": "Order Guide",
+      "titleKey": "orderGuide",
+      "nav": true,
+      "footerNav": true,
+      "roles": ["store-manager", "store-employee"],
+      "actions": {
+        "createOrderGuide": ["store-manager", "store-employee"],
+        "editOrderGuide": ["store-manager", "store-employee"],
+        "deleteOrderGuide": ["store-manager"],
+        "addProductToOrderGuide": ["store-manager", "store-employee"],
+        "placeOrder": ["store-manager", "store-employee"]
+      }
+    },
+    {
+      "id": "customer-catalog",
+      "area": "customer",
+      "path": "/catalog",
+      "title": "Catalog",
+      "titleKey": "catalog",
+      "matchPrefix": true,
+      "nav": true,
+      "footerNav": true,
+      "roles": ["store-manager", "store-employee"],
+      "actions": {
+        "addToCart": ["store-manager", "store-employee"],
+        "addToOrderGuide": ["store-manager", "store-employee"],
+        "placeOrder": ["store-manager", "store-employee"]
+      }
+    },
+    {
+      "id": "customer-my-orders",
+      "area": "customer",
+      "path": "/my-orders",
+      "title": "My Orders",
+      "titleKey": "myOrders",
+      "nav": true,
+      "footerNav": true,
+      "roles": ["store-manager", "store-employee"],
+      "actions": {
+        "viewOrderDetails": ["store-manager", "store-employee"],
+        "reorder": ["store-manager", "store-employee"],
+        "placeOrder": ["store-manager", "store-employee"]
+      }
+    },
+    {
+      "id": "customer-messages",
+      "area": "customer",
+      "path": "/messages",
+      "title": "Messages",
+      "titleKey": "messages",
+      "nav": true,
+      "footerNav": true,
+      "roles": ["store-manager", "store-employee"]
+    },
+    {
+      "id": "customer-employees",
+      "area": "customer",
+      "path": "/employees",
+      "title": "Employees",
+      "titleKey": "employees",
+      "nav": true,
+      "footerNav": false,
+      "roles": ["store-manager", "store-employee"],
+      "actions": {
+        "createEmployee": ["store-manager"],
+        "editEmployee": ["store-manager"],
+        "deleteEmployee": ["store-manager"]
+      }
+    },
+    {
+      "id": "customer-profile",
+      "area": "customer",
+      "path": "/profile",
+      "title": "Profile",
+      "titleKey": "profile",
+      "nav": false,
+      "footerNav": false,
+      "roles": ["store-manager", "store-employee"]
+    },
+    {
+      "id": "backoffice-overview",
+      "area": "backoffice",
+      "path": "/backoffice",
+      "title": "Overview",
+      "nav": true,
+      "footerNav": true,
+      "roles": [
+        "global-admin",
+        "application-admin",
+        "sales-reps",
+        "sales-associate",
+        "gm-owners",
+        "ar",
+        "ar-manager"
+      ],
+      "actions": {
+        "viewAllOrders": [
+          "global-admin",
+          "application-admin",
+          "sales-reps",
+          "sales-associate",
+          "gm-owners",
+          "ar",
+          "ar-manager"
+        ],
+        "editOrder": [
+          "global-admin",
+          "application-admin",
+          "sales-reps",
+          "sales-associate",
+          "gm-owners"
+        ],
+        "placeOrder": [
+          "global-admin",
+          "application-admin",
+          "sales-reps",
+          "sales-associate",
+          "gm-owners"
+        ]
+      }
+    },
+    {
+      "id": "backoffice-overview-page",
+      "area": "backoffice",
+      "path": "/backoffice/overview",
+      "title": "Overview",
+      "nav": false,
+      "footerNav": false,
+      "roles": [
+        "global-admin",
+        "application-admin",
+        "sales-reps",
+        "sales-associate",
+        "gm-owners",
+        "ar",
+        "ar-manager"
+      ],
+      "actions": {
+        "createCatalog": ["global-admin", "application-admin"],
+        "editCatalog": ["global-admin", "application-admin"],
+        "deleteCatalog": ["global-admin"],
+        "publishCatalog": ["global-admin", "application-admin"]
+      }
+    },
+    {
+      "id": "backoffice-orders",
+      "area": "backoffice",
+      "path": "/backoffice/orders",
+      "title": "Orders",
+      "nav": true,
+      "footerNav": true,
+      "roles": [
+        "global-admin",
+        "application-admin",
+        "sales-reps",
+        "sales-associate",
+        "gm-owners",
+        "ar",
+        "ar-manager"
+      ]
+    },
+    {
+      "id": "backoffice-catalog",
+      "area": "backoffice",
+      "path": "/backoffice/catalog",
+      "title": "Catalog",
+      "matchPrefix": true,
+      "nav": true,
+      "footerNav": true,
+      "roles": [
+        "global-admin",
+        "application-admin",
+        "sales-reps",
+        "sales-associate",
+        "gm-owners",
+        "ar",
+        "ar-manager"
+      ]
+    },
+    {
+      "id": "backoffice-users",
+      "area": "backoffice",
+      "path": "/backoffice/users",
+      "title": "Users",
+      "titleKey": "users",
+      "nav": true,
+      "footerNav": false,
+      "roles": ["global-admin", "application-admin"],
+      "actions": {
+        "createUser": ["global-admin", "application-admin"],
+        "editUser": ["global-admin", "application-admin"],
+        "deleteUser": ["global-admin", "application-admin"]
+      }
+    },
+    {
+      "id": "backoffice-profile",
+      "area": "backoffice",
+      "path": "/backoffice/profile",
+      "title": "Profile",
+      "titleKey": "profile",
+      "nav": false,
+      "footerNav": false,
+      "roles": [
+        "global-admin",
+        "application-admin",
+        "sales-reps",
+        "sales-associate",
+        "gm-owners",
+        "ar",
+        "ar-manager"
+      ]
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -11,50 +12,71 @@ import {
   StarIcon,
 } from "lucide-react";
 
+import { getVisiblePagesForRole } from "@/config/role-pages";
 import { cn } from "@/lib/utils";
+
+function getCookieValue(name) {
+  if (typeof document === "undefined") return "";
+
+  return (
+    document.cookie
+      .split("; ")
+      .find((cookie) => cookie.startsWith(`${name}=`))
+      ?.split("=")[1] ?? ""
+  );
+}
+
+function getLoginRole() {
+  return decodeURIComponent(getCookieValue("aloha-login-role"));
+}
 
 export function FooterNav() {
   const pathname = usePathname();
   const t = useTranslations("footerNav");
+  const isBackoffice = pathname === "/backoffice" || pathname.startsWith("/backoffice/");
+  const [role, setRole] = React.useState(getLoginRole);
 
-  const footerNavItems = [
-    {
-      title: t("overview"),
-      url: "/",
-      icon: LayoutDashboardIcon,
-    },
-    {
-      title: t("orderGuide"),
-      url: "/order-guide",
-      icon: StarIcon,
-    },
-    {
-      title: t("catalog"),
-      url: "/catalog",
-      icon: BookOpenIcon,
-    },
-    {
-      title: t("myOrders"),
-      url: "/my-orders",
-      icon: ClipboardListIcon,
-    },
-    {
-      title: t("messages"),
-      url: "/messages",
-      icon: MessageCircleIcon,
-    },
-  ];
+  React.useEffect(() => {
+    setRole(getLoginRole());
+  }, [pathname]);
+
+  const effectiveRole = role || (isBackoffice ? "global-admin" : "store-employee");
+  const pageIcons = {
+    "customer-overview": LayoutDashboardIcon,
+    "customer-order-guide": StarIcon,
+    "customer-catalog": BookOpenIcon,
+    "customer-my-orders": ClipboardListIcon,
+    "customer-messages": MessageCircleIcon,
+    "backoffice-overview": LayoutDashboardIcon,
+    "backoffice-orders": ClipboardListIcon,
+    "backoffice-catalog": BookOpenIcon,
+  };
+  const footerNavItems = getVisiblePagesForRole(effectiveRole, {
+    area: isBackoffice ? "backoffice" : "customer",
+    footerNav: true,
+  }).map((page) => ({
+    title: page.titleKey ? t(page.titleKey) : page.title,
+    url: page.path,
+    icon: pageIcons[page.id],
+  }));
 
   return (
     <nav
       aria-label={t("ariaLabel")}
       className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:hidden"
     >
-      <div className="grid grid-cols-5 items-stretch gap-1">
+      <div
+        className={cn(
+          "grid items-stretch gap-1",
+          isBackoffice ? "grid-cols-3" : "grid-cols-5",
+        )}
+      >
         {footerNavItems.map((item) => {
           const Icon = item.icon;
           const isActive =
-            item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
+            item.url === "/" || item.url === "/backoffice"
+              ? pathname === item.url
+              : pathname.startsWith(item.url);
 
           return (
             <Link

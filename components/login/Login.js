@@ -8,7 +8,6 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   ChevronDownIcon,
-  ChevronDown,
   CheckIcon,
   LanguagesIcon,
   PhoneIcon,
@@ -42,6 +41,18 @@ const countryNameFormatter =
     : null
 
 const preferredCountries = ["US", "IN", "GB", "AE", "CA", "AU"]
+
+function setCookie(value) {
+  window.document.cookie = value
+}
+
+function getCookieSafeValue(value) {
+  return encodeURIComponent(String(value ?? ""))
+}
+
+function getLoginPhone(phone, parsedPhone) {
+  return (parsedPhone?.number ?? phone).replace(/\D/g, "")
+}
 
 function getCountryName(country) {
   return countryNameFormatter?.of(country) ?? country
@@ -107,7 +118,7 @@ export default function Login() {
   const phoneId = useId()
   const otpLabelId = useId()
   const countrySearchId = useId()
-  const [selectedCountry, setSelectedCountry] = useState("US")
+  const [selectedCountry, setSelectedCountry] = useState("IN")
   const [countryPickerOpen, setCountryPickerOpen] = useState(false)
   const [countrySearch, setCountrySearch] = useState("")
   const [phone, setPhone] = useState("")
@@ -115,6 +126,8 @@ export default function Login() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
   const [step, setStep] = useState("phone")
   const [message, setMessage] = useState("")
+  const [pendingRole, setPendingRole] = useState(null)
+  const [isSendingOtp, setIsSendingOtp] = useState(false)
   const otpRefs = useRef([])
   const countryPickerRef = useRef(null)
 
@@ -169,7 +182,7 @@ export default function Login() {
 	}
 }, [])
 
-  function handleSendOtp(event) {
+  async function handleSendOtp(event) {
     event.preventDefault()
 
     const nextError = getPhoneError(phone, selectedCountry, t)
@@ -181,11 +194,41 @@ export default function Login() {
     }
 
     setPhoneError("")
-    setStep("otp")
-    setMessage(
-      t("otpSent", { phone: formattedPhone ?? maskedPhone }),
-    )
-    window.setTimeout(() => otpRefs.current[0]?.focus(), 0)
+    setMessage("")
+    setIsSendingOtp(true)
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phoneNumber: getLoginPhone(phone, parsedPhone),
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+
+        setPendingRole(null)
+        setPhoneError(data.message ?? t("rolePhoneRequired"))
+        return
+      }
+
+      const data = await response.json()
+      setPendingRole(data.role)
+      setStep("otp")
+      setMessage(
+        t("otpSent", { phone: formattedPhone ?? maskedPhone }),
+      )
+      window.setTimeout(() => otpRefs.current[0]?.focus(), 0)
+    } catch {
+      setPendingRole(null)
+      setPhoneError(t("roleLookupFailed"))
+    } finally {
+      setIsSendingOtp(false)
+    }
   }
 
   function handlePhoneChange(event) {
@@ -244,22 +287,32 @@ export default function Login() {
       return
     }
 
+    const navigateTo = pendingRole?.navigateTo ?? "/"
+    const loginRole = pendingRole?.id ?? "store-manager"
+    const loginUserId = pendingRole?.userId ?? ""
+    const loginPhone = getLoginPhone(pendingRole?.phoneNumber ?? phone, parsedPhone)
+
     setMessage(t("phoneVerified"))
-    window.sessionStorage.setItem("aloha-login-verified", "true")
-    document.cookie =
+    setCookie(
       "aloha-login-verified=true; path=/; max-age=604800; SameSite=Lax"
-    router.replace("/")
+    )
+    setCookie(`aloha-login-route=${getCookieSafeValue(navigateTo)}; path=/; max-age=604800; SameSite=Lax`)
+    setCookie(`aloha-login-user-id=${getCookieSafeValue(loginUserId)}; path=/; max-age=604800; SameSite=Lax`)
+    setCookie(`aloha-login-role=${getCookieSafeValue(loginRole)}; path=/; max-age=604800; SameSite=Lax`)
+    setCookie(`aloha-login-phone=${getCookieSafeValue(loginPhone)}; path=/; max-age=604800; SameSite=Lax`)
+    router.replace(navigateTo)
   }
 
   function handleChangePhone() {
     setStep("phone")
     setOtp(["", "", "", "", "", ""])
+    setPendingRole(null)
     setMessage("")
     window.setTimeout(() => document.getElementById(phoneId)?.focus(), 0)
   }
 
   function handleLocaleChange(nextLocale) {
-    document.cookie = `${localeCookieName}=${nextLocale}; path=/; max-age=31536000; SameSite=Lax`
+    setCookie(`${localeCookieName}=${nextLocale}; path=/; max-age=31536000; SameSite=Lax`)
     router.refresh()
   }
 
@@ -437,10 +490,11 @@ export default function Login() {
 
 						<Button
 							className="h-12 w-full rounded-lg bg-orange-500 text-base font-extrabold text-white shadow-lg shadow-orange-500/25 hover:bg-orange-600"
+							disabled={isSendingOtp}
 							size="lg"
 							type="submit"
 						>
-							{t("sendOtp")}
+							{isSendingOtp ? t("checkingRole") : t("sendOtp")}
 							<ArrowRightIcon className="size-5" />
 						</Button>
 					</form>
