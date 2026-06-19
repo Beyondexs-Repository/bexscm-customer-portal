@@ -26,27 +26,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { PAGE_ACTIONS } from "@/lib/security/role-access"
+import { usePagePermission } from "@/lib/security/use-page-permission"
 
 
 
 const DEFAULT_PAGE_SIZE = 10
-const EMPLOYEE_MANAGER_ROLES = new Set([
-  "store-manager",
-  "global-admin",
-  "application-admin",
-])
 const EMPLOYEE_REFRESH_INTERVAL_MS = 15_000
-
-function getLoginRole() {
-  if (typeof window === "undefined") return ""
-
-  return (
-    window.document.cookie
-      .split("; ")
-      .find((cookie) => cookie.startsWith("aloha-login-role="))
-      ?.split("=")[1] ?? ""
-  )
-}
 
 function getFullName(employee) {
   return `${employee.firstName} ${employee.lastName}`.trim()
@@ -153,6 +139,10 @@ async function updateEmployeeStatus(employeeId, action) {
 
 export default function Employees() {
   const t = useTranslations("employees")
+  const canCreateEmployee = usePagePermission(PAGE_ACTIONS.CREATE_EMPLOYEE)
+  const canEditEmployee = usePagePermission(PAGE_ACTIONS.EDIT_EMPLOYEE)
+  const canDeleteEmployee = usePagePermission(PAGE_ACTIONS.DELETE_EMPLOYEE)
+  const canManageEmployees = canEditEmployee || canDeleteEmployee
   const [employees, setEmployees] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -163,9 +153,7 @@ export default function Employees() {
   const [statusEmployeeTarget, setStatusEmployeeTarget] = useState(null)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [statusActionError, setStatusActionError] = useState("")
-  const [loginRole] = useState(getLoginRole)
   const listTopRef = useRef(null)
-  const canManageEmployees = EMPLOYEE_MANAGER_ROLES.has(loginRole)
 
   useEffect(() => {
     let active = true
@@ -256,21 +244,21 @@ export default function Employees() {
   }
 
   function handleAddEmployee() {
-    if (!canManageEmployees) return
+    if (!canCreateEmployee) return
 
     setEditingEmployee(null)
     setDialogOpen(true)
   }
 
   function handleEditEmployee(employee) {
-    if (!canManageEmployees) return
+    if (!canEditEmployee) return
 
     setEditingEmployee(employee)
     setDialogOpen(true)
   }
 
   async function handleDeleteEmployee(employeeId) {
-    if (!canManageEmployees) return
+    if (!canDeleteEmployee) return
 
     const savedEmployee = await deleteEmployee(employeeId)
     setEmployees((current) =>
@@ -281,7 +269,7 @@ export default function Employees() {
   }
 
   function handleStatusChange(employee) {
-    if (!canManageEmployees) return
+    if (!canEditEmployee) return
 
     setStatusActionError("")
     setStatusEmployeeTarget(employee)
@@ -315,7 +303,12 @@ export default function Employees() {
   }
 
   async function handleSaveEmployee(employeeData) {
-    if (!canManageEmployees) return
+    if (
+      (editingEmployee && !canEditEmployee) ||
+      (!editingEmployee && !canCreateEmployee)
+    ) {
+      return
+    }
 
     if (editingEmployee) {
       const savedEmployee = await updateEmployee(editingEmployee.id, employeeData)
@@ -356,7 +349,7 @@ export default function Employees() {
               </CardDescription>
             </CardHeader>
 
-            {canManageEmployees && (
+            {canCreateEmployee && (
               <CardContent className="flex justify-center pb-8 pt-2 md:pb-12 md:pt-4">
                 <Button
                   size="lg"
@@ -371,7 +364,7 @@ export default function Employees() {
           </Card>
         </div>
 
-        {canManageEmployees && (
+        {(canCreateEmployee || canEditEmployee) && (
           <EmployeeFormDialog
             employee={editingEmployee}
             mode={editingEmployee ? "edit" : "add"}
@@ -409,7 +402,7 @@ export default function Employees() {
           />
         </div>
 
-        {canManageEmployees && (
+        {canCreateEmployee && (
           <Button
             className="h-11 w-full sm:w-auto"
             onClick={handleAddEmployee}
@@ -483,6 +476,8 @@ export default function Employees() {
                   <td className="px-5 py-3">
                     <div className="flex justify-end">
                       <EmployeeActionsMenu
+                        canDelete={canDeleteEmployee}
+                        canEdit={canEditEmployee}
                         isInactive={employee.status === "inactive"}
                         onDelete={() => handleDeleteEmployee(employee.id)}
                         onEdit={() => handleEditEmployee(employee)}
@@ -516,6 +511,8 @@ export default function Employees() {
                   <h3 className="font-semibold">{getFullName(employee)}</h3>
                   {canManageEmployees && (
                     <EmployeeActionsMenu
+                      canDelete={canDeleteEmployee}
+                      canEdit={canEditEmployee}
                       isInactive={employee.status === "inactive"}
                       onDelete={() => handleDeleteEmployee(employee.id)}
                       onEdit={() => handleEditEmployee(employee)}
@@ -568,7 +565,7 @@ export default function Employees() {
         />
       )}
 
-      {canManageEmployees && (
+      {(canCreateEmployee || canEditEmployee) && (
         <EmployeeFormDialog
           employee={editingEmployee}
           mode={editingEmployee ? "edit" : "add"}

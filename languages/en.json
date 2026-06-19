@@ -195,7 +195,7 @@
     "firstNamePlaceholder": "Enter first name",
     "lastNamePlaceholder": "Enter last name",
     "emailPlaceholder": "Enter email address",
-    "phonePlaceholder": "Enter phone number",
+    "phonePlaceholder": "Enter phone number with country code",
     "selectRole": "Select role",
     "selectStatus": "Select status",
     "noUsersFound": "No Users Found",

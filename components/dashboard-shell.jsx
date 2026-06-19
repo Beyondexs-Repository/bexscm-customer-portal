@@ -30,6 +30,10 @@ export function DashboardShell({ children, initialRole }) {
         title: t("users.title"),
         description: t("users.description"),
       },
+      "/backoffice/employees": {
+        title: t("employees.title"),
+        description: t("employees.description"),
+      },
       "/backoffice/roles-permissions": {
         title: "Roles and Permissions",
         description: "Review access rules and role-based capabilities",

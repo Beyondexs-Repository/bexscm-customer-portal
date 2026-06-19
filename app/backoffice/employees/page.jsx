@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import Employees from "@/components/employees/Employees";
 
 export default function EmployeesPage() {
-  redirect("/backoffice/users");
+  return <Employees />;
 }

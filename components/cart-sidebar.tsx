@@ -21,6 +21,7 @@ export function CartSidebar({
   onIncrement,
   onDecrement,
   onRemove,
+  onCheckout,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -38,6 +39,7 @@ export function CartSidebar({
   onIncrement?: (id: string) => void
   onDecrement?: (id: string) => void
   onRemove?: (id: string) => void
+  onCheckout?: () => void
 }) {
   const isEmpty = items.length === 0
   const t = useTranslations("cart")
@@ -157,7 +159,11 @@ export function CartSidebar({
             <span>{t("total")}</span>
             <span>{total}</span>
           </div>
-          <Button className="h-11 w-full" disabled={isEmpty}>
+          <Button
+            className="h-11 w-full"
+            disabled={isEmpty}
+            onClick={onCheckout}
+          >
             {t("proceed")}
           </Button>
         </SheetFooter>

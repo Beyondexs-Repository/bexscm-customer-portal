@@ -15,6 +15,7 @@ import {
   ShoppingCartIcon,
   Trash2Icon,
 } from "lucide-react"
+import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import {
@@ -141,6 +142,7 @@ function SiteHeader({
     incrementItem,
     decrementItem,
     removeItem,
+    clearCart,
   } = useCart() as {
     items: {
       id: string
@@ -155,6 +157,7 @@ function SiteHeader({
     incrementItem: (id: string) => void
     decrementItem: (id: string) => void
     removeItem: (id: string) => void
+    clearCart: () => void
   }
   const cartTotal = `$${total.toFixed(2)}`
   const today = startOfDay(new Date())
@@ -168,6 +171,23 @@ function SiteHeader({
   const [calendarMonth, setCalendarMonth] = React.useState(
     () => new Date(2026, 5, 1)
   )
+
+  function handleCheckout() {
+    const canPlaceOrder = canAccessPageAction(
+      initialRole,
+      pathname,
+      PAGE_ACTIONS.PLACE_ORDER
+    )
+
+    if (!canPlaceOrder) {
+      toast.error("You do not have permission to place an order.")
+      return
+    }
+
+    clearCart()
+    setCartOpen(false)
+    toast.success("Your order has been placed successfully.")
+  }
 
   const calendarDays = React.useMemo(() => {
     const year = calendarMonth.getFullYear()
@@ -520,6 +540,7 @@ function SiteHeader({
         onIncrement={incrementItem}
         onDecrement={decrementItem}
         onRemove={removeItem}
+        onCheckout={handleCheckout}
       />
     </header>
   )

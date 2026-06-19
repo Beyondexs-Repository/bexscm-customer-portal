@@ -94,6 +94,8 @@ function OrderGuideCard({
   onOpenDeleteGroup,
   onAddGroup,
   onDownloadPARSheet,
+  canEdit,
+  canDelete,
 }) {
   const t = useTranslations("orderGuide")
   const {
@@ -127,8 +129,8 @@ function OrderGuideCard({
           ref={setActivatorNodeRef}
           aria-label={`Drag ${order.name}`}
           className="mt-1 grid size-7 shrink-0 cursor-grab place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
-          {...attributes}
-          {...listeners}
+          {...(canEdit ? attributes : {})}
+          {...(canEdit ? listeners : {})}
         >
           <GripVertical className="size-4" />
         </button>
@@ -184,7 +186,7 @@ function OrderGuideCard({
                   {group.products.length}
                 </span>
 
-                <DropdownMenu>
+                {(canEdit || canDelete) ? <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
@@ -195,43 +197,43 @@ function OrderGuideCard({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-36">
-                    <DropdownMenuItem onSelect={() => onOpenRenameGroup(order, group)}>
+                    {canEdit ? <DropdownMenuItem onSelect={() => onOpenRenameGroup(order, group)}>
                       <Pencil className="size-4" />
                       {t("rename")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
+                    </DropdownMenuItem> : null}
+                    {canDelete ? <DropdownMenuItem
                       variant="destructive"
                       disabled={order.groups.length <= 1}
                       onSelect={() => onOpenDeleteGroup(order, group)}
                     >
                       <Trash2 className="size-4" />
                       {t("delete")}
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> : null}
                   </DropdownMenuContent>
-                </DropdownMenu>
+                </DropdownMenu> : null}
               </div>
             );
           })}
 
-          <Button
+          {canEdit ? <Button
             variant="outline"
             className="h-10 w-full border-dashed bg-transparent"
             onClick={() => onAddGroup(order)}
           >
             <Plus className="size-4" />
             {t("addGroup")}
-          </Button>
+          </Button> : null}
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <Button variant="outline" size="sm" onClick={() => onOpenRenameOrder(order)}>
+          {(canEdit || canDelete) ? <div className="grid grid-cols-2 gap-2 pt-1">
+            {canEdit ? <Button variant="outline" size="sm" onClick={() => onOpenRenameOrder(order)}>
               <Pencil className="size-4" />
               {t("rename")}
-            </Button>
-            <Button variant="destructive" size="sm" onClick={() => onOpenDeleteOrder(order)}>
+            </Button> : null}
+            {canDelete ? <Button variant="destructive" size="sm" onClick={() => onOpenDeleteOrder(order)}>
               <Trash2 className="size-4" />
               {t("delete")}
-            </Button>
-          </div>
+            </Button> : null}
+          </div> : null}
           <Button size="sm" className="mt-0 h-8 w-full" onClick={() => onDownloadPARSheet(order)}>
             <Download className="size-4" />
             {t("downloadPARSheet")}
@@ -250,6 +252,9 @@ export function OrderGuideList({
   selectedGroupId,
   setSelectedGroupId,
   onCreate,
+  canCreate,
+  canEdit,
+  canDelete,
 }) {
   const t = useTranslations("orderGuide")
   const [dialog, setDialog] = useState(null);
@@ -389,6 +394,8 @@ export function OrderGuideList({
   }
 
   function handleDragEnd(event) {
+    if (!canEdit) return
+
     const { active, over } = event;
 
     setActiveOrderId(null);
@@ -424,10 +431,10 @@ export function OrderGuideList({
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-base font-semibold lg:text-lg">Order Guides</h2>
 
-          <Button size="sm" className="h-8" onClick={onCreate}>
+          {canCreate ? <Button size="sm" className="h-8" onClick={onCreate}>
             <Plus className="size-4" />
             Create
-          </Button>
+          </Button> : null}
         </div>
 
         <DndContext
@@ -455,6 +462,8 @@ export function OrderGuideList({
                     isSelectedOrder={isSelectedOrder}
                     isExpandedOrder={isExpandedOrder}
                     selectedGroupId={selectedGroupId}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
                     onToggleExpand={() => {
                       if (isExpandedOrder) {
                         setExpandedOrderId(null);

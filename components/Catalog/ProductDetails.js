@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
@@ -20,6 +21,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
 import { cn } from "@/lib/utils";
+import { PAGE_ACTIONS } from "@/lib/security/role-access";
+import { usePagePermission } from "@/lib/security/use-page-permission";
 
 function formatPrice(price, unit) {
   return `$${Number(price).toFixed(2)} / ${unit}`;
@@ -69,6 +72,12 @@ function ProductGallery({ product, images }) {
 
 export function ProductDetails({ productId }) {
   const t = useTranslations("catalog")
+  const pathname = usePathname()
+  const canAddToCart = usePagePermission(PAGE_ACTIONS.ADD_TO_CART)
+  const canAddToOrderGuide = usePagePermission(PAGE_ACTIONS.ADD_TO_ORDER_GUIDE)
+  const catalogPath = pathname.startsWith("/backoffice")
+    ? "/backoffice/catalog"
+    : "/catalog"
   const product = findCatalogProduct(productId);
   const { items, addItem, incrementItem, decrementItem } = useCart();
   const { quickOrders, addProductToQuickOrder, removeProductFromQuickOrder } =
@@ -101,7 +110,7 @@ export function ProductDetails({ productId }) {
             The product you are looking for is unavailable or has been removed.
           </p>
           <Button asChild>
-            <Link href="/catalog">
+            <Link href={catalogPath}>
               <ChevronLeft className="size-4" />
               {t("backToCatalog")}
             </Link>
@@ -115,7 +124,7 @@ export function ProductDetails({ productId }) {
     <main className="min-h-screen bg-background">
       <div className="sticky top-0 z-30 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <Button asChild variant="ghost" size="sm" className="px-0">
-          <Link href="/catalog">
+          <Link href={catalogPath}>
             <ArrowLeft className="size-4" />
             Back
           </Link>
@@ -164,7 +173,7 @@ export function ProductDetails({ productId }) {
               <span>{product.category}</span>
             </div>
           </div>
-          <div className="mt-6 flex items-center gap-2">
+          {canAddToCart ? <div className="mt-6 flex items-center gap-2">
             <div className="flex h-9 w-[100px] shrink-0 overflow-hidden rounded-md border bg-background">
               <Button
                 variant="ghost"
@@ -223,9 +232,9 @@ export function ProductDetails({ productId }) {
               )}
               {cartQuantity > 0 ? t("addedToCartCount", { count: cartQuantity }) : t("addToCart")}
             </Button>
-          </div>
+          </div> : null}
 
-          <div className="mt-3">
+          {canAddToOrderGuide ? <div className="mt-3">
             <Button
               variant="outline"
               className="h-10 w-full rounded-full text-sm font-bold"
@@ -239,7 +248,7 @@ export function ProductDetails({ productId }) {
               />
               {isInOrderGuide ? t("updateOrderGuide") : t("addToOrderGuide")}
             </Button>
-          </div>
+          </div> : null}
         </section>
       </div>
 
@@ -260,14 +269,14 @@ export function ProductDetails({ productId }) {
         </ul>
       </section>
 
-      <OrderGuidePickerDialog
+      {canAddToOrderGuide ? <OrderGuidePickerDialog
         product={product}
         quickOrders={quickOrders}
         open={orderGuideOpen}
         onOpenChange={setOrderGuideOpen}
         onAdd={addProductToQuickOrder}
         onRemove={removeProductFromQuickOrder}
-      />
+      /> : null}
     </main>
   );
 }

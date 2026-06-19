@@ -71,7 +71,7 @@ function ProductImage({ product, index }) {
   );
 }
 
-function EmptyProductsCard() {
+function EmptyProductsCard({ canAddProducts }) {
   const t = useTranslations("orderGuide")
   return (
     <div className="flex min-h-[320px] items-center justify-center">
@@ -86,12 +86,12 @@ function EmptyProductsCard() {
           Add products from the catalog to build this order guide group.
         </p>
 
-        <Button asChild className="mt-5 h-9">
+        {canAddProducts ? <Button asChild className="mt-5 h-9">
           <Link href="/catalog">
             <Plus className="size-4" />
             {t("addProducts")}
           </Link>
-        </Button>
+        </Button> : null}
       </div>
     </div>
   );
@@ -107,6 +107,8 @@ function SavedProductCard({
   onChangeGroup,
   onEditPar,
   onRequestDelete,
+  canEdit,
+  canPlaceOrder,
 }) {
   const t = useTranslations("orderGuide")
   const [draftQuantity, setDraftQuantity] = useState(1);
@@ -125,7 +127,7 @@ function SavedProductCard({
           <ProductImage product={product} index={index} />
         </Link>
 
-        <DropdownMenu>
+        {canEdit ? <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
@@ -153,7 +155,7 @@ function SavedProductCard({
               {t("delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu> : null}
       </div>
 
       <div className="relative space-y-1.5 p-2 lg:space-y-2 lg:p-2.5 relative">
@@ -178,7 +180,7 @@ function SavedProductCard({
           {formatPrice(product.price, product.unit)}
         </p>
 
-        <div className="grid gap-2 min-[460px]:grid-cols-[4rem_1fr] lg:grid-cols-[4.5rem_1fr]">
+        {canPlaceOrder ? <div className="grid gap-2 min-[460px]:grid-cols-[4rem_1fr] lg:grid-cols-[4.5rem_1fr]">
           <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
             <Button
               variant="ghost"
@@ -236,7 +238,7 @@ function SavedProductCard({
               {isInCart ? t("added") : t("addToCart")}
             </span>
           </Button>
-        </div>
+        </div> : null}
         {parValue != null && parValue !== "" && (
               <p className="shrink-0 text-right leading-tight absolute right-2 top-2 flex flex-col items-center text-sm text-muted-foreground">
                 {t("par")} <span className="font-medium text-xs">{parValue}</span>
@@ -252,6 +254,9 @@ export function OrderGuideProductsList({
   selectedGroup,
   setQuickOrders,
   onBack,
+  canEdit,
+  canAddProducts,
+  canPlaceOrder,
 }) {
   const t = useTranslations("orderGuide")
   const { items, addItem, incrementItem, decrementItem, removeItem } =
@@ -466,14 +471,14 @@ export function OrderGuideProductsList({
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:w-auto">
-            <Button asChild variant="outline" size="sm" className="h-8">
+            {canAddProducts ? <Button asChild variant="outline" size="sm" className="h-8">
               <Link href="/catalog">
                 <Plus className="size-4" />
                 {t("addProducts")}
               </Link>
-            </Button>
+            </Button> : null}
 
-            {products.length > 0 && (
+            {canPlaceOrder && products.length > 0 && (
               <Button
                 size="sm"
                 variant={allProductsInCart ? "secondary" : "default"}
@@ -489,7 +494,7 @@ export function OrderGuideProductsList({
 
         <div className="min-h-0 flex-1 p-2 lg:p-3">
           {products.length === 0 ? (
-            <EmptyProductsCard />
+            <EmptyProductsCard canAddProducts={canAddProducts} />
           ) : (
             <div className="no-scrollbar h-full overflow-y-auto">
               <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3 2xl:grid-cols-4">
@@ -505,6 +510,8 @@ export function OrderGuideProductsList({
                     onChangeGroup={setProductToMove}
                     onEditPar={openEditParDialog}
                     onRequestDelete={setProductToDelete}
+                    canEdit={canEdit}
+                    canPlaceOrder={canPlaceOrder}
                   />
                 ))}
               </div>

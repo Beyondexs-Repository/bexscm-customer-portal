@@ -95,14 +95,6 @@ export async function proxy(request) {
 
 export const config = {
   matcher: [
-    "/backoffice/:path*",
-    "/order-guide/:path*",
-    "/catalog/:path*",
-    "/my-orders/:path*",
-    "/messages/:path*",
-    "/employees/:path*",
-    "/profile/:path*",
-    "/login",
-    "/",
+    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\..*$).*)",
   ],
 };

@@ -1,6 +1,10 @@
 import { db } from "@/lib/db";
+import {
+  getLoginUserId,
+  requirePageAction,
+} from "@/lib/security/server-role-access";
 
-const USER_MANAGER_ROLES = new Set(["global-admin", "application-admin"]);
+const USERS_PATH = "/backoffice/users";
 
 function normalizePhone(value) {
   return String(value ?? "").replace(/\D/g, "");
@@ -24,55 +28,6 @@ function formatUser(row) {
     isActive: Boolean(row.is_active) && !isRemoved,
     isRemoved,
   };
-}
-
-function decodeCookieValue(value) {
-  try {
-    return decodeURIComponent(value ?? "");
-  } catch {
-    return value ?? "";
-  }
-}
-
-function getLoginUserId(request) {
-  const userId = Number(
-    decodeCookieValue(request.cookies.get("aloha-login-user-id")?.value)
-  );
-
-  return Number.isInteger(userId) && userId > 0 ? userId : null;
-}
-
-async function getLoginRole(request) {
-  const userId = getLoginUserId(request);
-
-  if (!userId) return "";
-
-  const [rows] = await db.execute(
-    `
-    SELECT r.role_key
-    FROM users u
-    INNER JOIN roles r ON u.role_id = r.id
-    WHERE u.id = ?
-      AND u.is_active = TRUE
-    LIMIT 1
-    `,
-    [userId]
-  );
-
-  return rows[0]?.role_key ?? "";
-}
-
-async function requireUserManager(request) {
-  const role = await getLoginRole(request);
-
-  if (!USER_MANAGER_ROLES.has(role)) {
-    return Response.json(
-      { message: "Only administrators can manage users." },
-      { status: 403 }
-    );
-  }
-
-  return null;
 }
 
 async function getUser(id) {
@@ -103,7 +58,11 @@ async function getUser(id) {
 }
 
 export async function PUT(request, { params }) {
-  const permissionError = await requireUserManager(request);
+  const permissionError = await requirePageAction(
+    request,
+    USERS_PATH,
+    "editUser"
+  );
   if (permissionError) return permissionError;
 
   const { id: userId } = await params;
@@ -177,7 +136,11 @@ export async function PUT(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
-  const permissionError = await requireUserManager(request);
+  const permissionError = await requirePageAction(
+    request,
+    USERS_PATH,
+    "editUser"
+  );
   if (permissionError) return permissionError;
 
   const { id: userId } = await params;
@@ -233,7 +196,11 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const permissionError = await requireUserManager(request);
+  const permissionError = await requirePageAction(
+    request,
+    USERS_PATH,
+    "deleteUser"
+  );
   if (permissionError) return permissionError;
 
   const { id: userId } = await params;

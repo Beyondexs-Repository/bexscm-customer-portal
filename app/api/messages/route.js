@@ -6,7 +6,6 @@ import {
   ALLOWED_ATTACHMENT_TYPES,
   MAX_ATTACHMENT_BYTES,
   MAX_ATTACHMENTS_PER_MESSAGE,
-  STORE_MANAGER,
   formatAttachment,
   formatMessage,
   getCurrentChatUser,
@@ -14,11 +13,16 @@ import {
   userCanAccessConversation,
 } from "@/lib/chat";
 import { db } from "@/lib/db";
+import {
+  requirePageAccess,
+  requirePageAction,
+} from "@/lib/security/server-role-access";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const MESSAGE_PAGE_SIZE = 20;
+const MESSAGES_PATH = "/messages";
 
 function getPositiveInteger(value) {
   const number = Number(value);
@@ -165,6 +169,9 @@ async function prepareAttachments(files) {
 }
 
 export async function GET(request) {
+  const permissionError = await requirePageAccess(request, MESSAGES_PATH);
+  if (permissionError) return permissionError;
+
   const currentUser = await getCurrentChatUser(request);
 
   if (!currentUser) {
@@ -191,6 +198,9 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const permissionError = await requirePageAccess(request, MESSAGES_PATH);
+  if (permissionError) return permissionError;
+
   const currentUser = await getCurrentChatUser(request);
 
   if (!currentUser) {
@@ -339,17 +349,17 @@ export async function POST(request) {
 }
 
 export async function DELETE(request) {
+  const permissionError = await requirePageAction(
+    request,
+    MESSAGES_PATH,
+    "clearChat"
+  );
+  if (permissionError) return permissionError;
+
   const currentUser = await getCurrentChatUser(request);
 
   if (!currentUser) {
     return Response.json({ message: "Not authorized." }, { status: 401 });
-  }
-
-  if (currentUser.roleKey !== STORE_MANAGER) {
-    return Response.json(
-      { message: "Only store managers can clear the chat." },
-      { status: 403 }
-    );
   }
 
   const deletedMessageCount = await db.transaction(async (connection) => {

@@ -66,8 +66,7 @@ export function AppSidebar({ initialRole = "", ...props }: AppSidebarProps) {
   const pathname = usePathname()
   const t = useTranslations("nav")
   const isBackoffice = pathname === "/backoffice" || pathname.startsWith("/backoffice/")
-  const effectiveRole =
-    initialRole || (isBackoffice ? "global-admin" : "store-employee")
+  const effectiveRole = initialRole
   const pageIcons: Record<string, React.ReactNode> = {
     "customer-overview": <RxDashboard />,
     "customer-order-guide": <Star />,

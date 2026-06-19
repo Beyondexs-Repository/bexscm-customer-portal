@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function UserActionsMenu({
+  canDelete = true,
+  canEdit = true,
   isInactive,
   isRemoved,
   onDelete,
@@ -25,6 +27,8 @@ export function UserActionsMenu({
   onStatusChange,
 }) {
   const t = useTranslations("users")
+
+  if (!canEdit && !canDelete) return null
 
   return (
     <DropdownMenu>
@@ -38,26 +42,32 @@ export function UserActionsMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-36">
-        <DropdownMenuItem disabled={isRemoved} onSelect={onEdit}>
-          <PencilLine className="size-4" />
-          {t("edit")}
-        </DropdownMenuItem>
-        <DropdownMenuItem disabled={isRemoved} onSelect={onStatusChange}>
-          {isInactive ? (
-            <UserCheck className="size-4" />
-          ) : (
-            <UserX className="size-4" />
-          )}
-          {isInactive ? t("enable") : t("disable")}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={isRemoved}
-          onSelect={onDelete}
-          variant="destructive"
-        >
-          <Trash2 className="size-4" />
-          {t("delete")}
-        </DropdownMenuItem>
+        {canEdit ? (
+          <>
+            <DropdownMenuItem disabled={isRemoved} onSelect={onEdit}>
+              <PencilLine className="size-4" />
+              {t("edit")}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={isRemoved} onSelect={onStatusChange}>
+              {isInactive ? (
+                <UserCheck className="size-4" />
+              ) : (
+                <UserX className="size-4" />
+              )}
+              {isInactive ? t("enable") : t("disable")}
+            </DropdownMenuItem>
+          </>
+        ) : null}
+        {canDelete ? (
+          <DropdownMenuItem
+            disabled={isRemoved}
+            onSelect={onDelete}
+            variant="destructive"
+          >
+            <Trash2 className="size-4" />
+            {t("delete")}
+          </DropdownMenuItem>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   )

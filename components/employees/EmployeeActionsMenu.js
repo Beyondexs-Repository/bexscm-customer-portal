@@ -18,12 +18,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function EmployeeActionsMenu({
+  canDelete = true,
+  canEdit = true,
   isInactive,
   onDelete,
   onEdit,
   onStatusChange,
 }) {
   const t = useTranslations("employees")
+
+  if (!canEdit && !canDelete) return null
 
   return (
     <DropdownMenu>
@@ -37,22 +41,28 @@ export function EmployeeActionsMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-36">
-        <DropdownMenuItem onSelect={onEdit}>
-          <PencilLine className="size-4" />
-          {t("edit")}
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={onStatusChange}>
-          {isInactive ? (
-            <UserCheck className="size-4" />
-          ) : (
-            <UserX className="size-4" />
-          )}
-          {isInactive ? t("enable") : t("disable")}
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={onDelete} variant="destructive">
-          <Trash2 className="size-4" />
-          {t("delete")}
-        </DropdownMenuItem>
+        {canEdit ? (
+          <>
+            <DropdownMenuItem onSelect={onEdit}>
+              <PencilLine className="size-4" />
+              {t("edit")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={onStatusChange}>
+              {isInactive ? (
+                <UserCheck className="size-4" />
+              ) : (
+                <UserX className="size-4" />
+              )}
+              {isInactive ? t("enable") : t("disable")}
+            </DropdownMenuItem>
+          </>
+        ) : null}
+        {canDelete ? (
+          <DropdownMenuItem onSelect={onDelete} variant="destructive">
+            <Trash2 className="size-4" />
+            {t("delete")}
+          </DropdownMenuItem>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   )

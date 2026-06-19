@@ -32,6 +32,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { PAGE_ACTIONS } from "@/lib/security/role-access"
+import { usePagePermission } from "@/lib/security/use-page-permission"
 
 const DEFAULT_PAGE_SIZE = 10
 
@@ -151,6 +153,10 @@ function UserTypeBadge({ userType }) {
 
 export default function Users() {
   const t = useTranslations("users")
+  const canCreateUser = usePagePermission(PAGE_ACTIONS.CREATE_USER)
+  const canEditUser = usePagePermission(PAGE_ACTIONS.EDIT_USER)
+  const canDeleteUser = usePagePermission(PAGE_ACTIONS.DELETE_USER)
+  const canManageUsers = canEditUser || canDeleteUser
   const [users, setUsers] = useState([])
   const [roles, setRoles] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -287,6 +293,7 @@ export default function Users() {
   }
 
   function handleEditUser(user) {
+    if (!canEditUser) return
     setSaveError("")
     setDialogMode("edit")
     setEditingUser(user)
@@ -294,6 +301,7 @@ export default function Users() {
   }
 
   function handleAddUser() {
+    if (!canCreateUser) return
     setSaveError("")
     setDialogMode("add")
     setEditingUser(null)
@@ -301,11 +309,13 @@ export default function Users() {
   }
 
   function handleStatusChange(user) {
+    if (!canEditUser) return
     setStatusActionError("")
     setDisableUserTarget(user)
   }
 
   function handleDeleteUser(user) {
+    if (!canDeleteUser) return
     setDeleteError("")
     setDeleteUserTarget(user)
   }
@@ -354,6 +364,13 @@ export default function Users() {
   }
 
   async function handleSaveUser(userData) {
+    if (
+      (dialogMode === "add" && !canCreateUser) ||
+      (dialogMode === "edit" && !canEditUser)
+    ) {
+      return
+    }
+
     try {
       if (dialogMode === "add") {
         const savedUser = await createUser(userData)
@@ -389,10 +406,12 @@ export default function Users() {
           <h2 className="text-xl font-bold tracking-tight"></h2>
 
           <div className="grid gap-2 sm:flex sm:items-center">
-            <Button className="h-10 justify-center" onClick={handleAddUser}>
-              <Plus className="size-4" />
-              Add User
-            </Button>
+            {canCreateUser ? (
+              <Button className="h-10 justify-center" onClick={handleAddUser}>
+                <Plus className="size-4" />
+                Add User
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -496,9 +515,11 @@ export default function Users() {
                 <th className="px-4 py-3 text-left text-sm font-semibold lg:px-5 lg:py-4">
                   {t("status")}
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold lg:px-5 lg:py-4">
-                  {t("actions")}
-                </th>
+                {canManageUsers ? (
+                  <th className="px-4 py-3 text-right text-sm font-semibold lg:px-5 lg:py-4">
+                    {t("actions")}
+                  </th>
+                ) : null}
               </tr>
             </thead>
 
@@ -530,17 +551,21 @@ export default function Users() {
                   <td className="px-4 py-3 lg:px-5">
                     <StatusBadge status={user.status} />
                   </td>
-                  <td className="px-4 py-3 lg:px-5">
-                    <div className="flex justify-end">
-                      <UserActionsMenu
-                        isInactive={user.status === "inactive"}
-                        isRemoved={user.status === "removed"}
-                        onDelete={() => handleDeleteUser(user)}
-                        onEdit={() => handleEditUser(user)}
-                        onStatusChange={() => handleStatusChange(user)}
-                      />
-                    </div>
-                  </td>
+                  {canManageUsers ? (
+                    <td className="px-4 py-3 lg:px-5">
+                      <div className="flex justify-end">
+                        <UserActionsMenu
+                          canDelete={canDeleteUser}
+                          canEdit={canEditUser}
+                          isInactive={user.status === "inactive"}
+                          isRemoved={user.status === "removed"}
+                          onDelete={() => handleDeleteUser(user)}
+                          onEdit={() => handleEditUser(user)}
+                          onStatusChange={() => handleStatusChange(user)}
+                        />
+                      </div>
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
@@ -568,13 +593,17 @@ export default function Users() {
                         {user.email}
                       </p>
                     </div>
-                    <UserActionsMenu
-                      isInactive={user.status === "inactive"}
-                      isRemoved={user.status === "removed"}
-                      onDelete={() => handleDeleteUser(user)}
-                      onEdit={() => handleEditUser(user)}
-                      onStatusChange={() => handleStatusChange(user)}
-                    />
+                    {canManageUsers ? (
+                      <UserActionsMenu
+                        canDelete={canDeleteUser}
+                        canEdit={canEditUser}
+                        isInactive={user.status === "inactive"}
+                        isRemoved={user.status === "removed"}
+                        onDelete={() => handleDeleteUser(user)}
+                        onEdit={() => handleEditUser(user)}
+                        onStatusChange={() => handleStatusChange(user)}
+                      />
+                    ) : null}
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <Badge variant="outline">{user.roleName}</Badge>

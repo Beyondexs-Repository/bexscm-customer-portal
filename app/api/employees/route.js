@@ -1,16 +1,11 @@
 import { db } from "@/lib/db";
+import {
+  requireAnyPageAccess,
+  requireAnyPageAction,
+} from "@/lib/security/server-role-access";
 
-const STORE_MANAGER = "store-manager";
 const STORE_EMPLOYEE = "store-employee";
-const EMPLOYEE_MANAGER_ROLES = new Set([
-  STORE_MANAGER,
-  "global-admin",
-  "application-admin",
-]);
-const EMPLOYEE_VIEWER_ROLES = new Set([
-  ...EMPLOYEE_MANAGER_ROLES,
-  STORE_EMPLOYEE,
-]);
+const EMPLOYEE_PATHS = ["/employees", "/backoffice/employees"];
 
 function normalizePhone(value) {
   return String(value ?? "").replace(/\D/g, "");
@@ -28,70 +23,8 @@ function formatEmployee(row) {
   };
 }
 
-function decodeCookieValue(value) {
-  try {
-    return decodeURIComponent(value ?? "");
-  } catch {
-    return value ?? "";
-  }
-}
-
-function getLoginUserId(request) {
-  const userId = Number(
-    decodeCookieValue(request.cookies.get("aloha-login-user-id")?.value)
-  );
-
-  return Number.isInteger(userId) && userId > 0 ? userId : null;
-}
-
-async function getLoginRole(request) {
-  const userId = getLoginUserId(request);
-
-  if (!userId) return "";
-
-  const [rows] = await db.execute(
-    `
-    SELECT r.role_key
-    FROM users u
-    INNER JOIN roles r ON u.role_id = r.id
-    WHERE u.id = ?
-      AND u.is_active = TRUE
-    LIMIT 1
-    `,
-    [userId]
-  );
-
-  return rows[0]?.role_key ?? "";
-}
-
-async function requireEmployeeManager(request) {
-  const role = await getLoginRole(request);
-
-  if (!EMPLOYEE_MANAGER_ROLES.has(role)) {
-    return Response.json(
-      { message: "Only employee managers can manage employees." },
-      { status: 403 }
-    );
-  }
-
-  return null;
-}
-
-async function requireEmployeeViewer(request) {
-  const role = await getLoginRole(request);
-
-  if (!EMPLOYEE_VIEWER_ROLES.has(role)) {
-    return Response.json(
-      { message: "Only employee viewers can view employees." },
-      { status: 403 }
-    );
-  }
-
-  return null;
-}
-
 export async function GET(request) {
-  const permissionError = await requireEmployeeViewer(request);
+  const permissionError = await requireAnyPageAccess(request, EMPLOYEE_PATHS);
   if (permissionError) return permissionError;
 
   const [rows] = await db.execute(
@@ -119,7 +52,11 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const permissionError = await requireEmployeeManager(request);
+  const permissionError = await requireAnyPageAction(
+    request,
+    EMPLOYEE_PATHS,
+    "createEmployee"
+  );
   if (permissionError) return permissionError;
 
   const body = await request.json().catch(() => ({}));

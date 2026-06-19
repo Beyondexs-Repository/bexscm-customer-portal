@@ -1,5 +1,8 @@
 import { db } from "@/lib/db";
 import { cookies } from "next/headers";
+import { requireAnyPageAccess } from "@/lib/security/server-role-access";
+
+const PROFILE_PATHS = ["/profile", "/backoffice/profile"];
 
 function normalizePhone(value) {
   return String(value ?? "").replace(/\D/g, "");
@@ -126,7 +129,10 @@ async function getProfileById(id) {
   return rows[0] ?? null;
 }
 
-export async function GET() {
+export async function GET(request) {
+  const permissionError = await requireAnyPageAccess(request, PROFILE_PATHS);
+  if (permissionError) return permissionError;
+
   const cookieStore = await cookies();
   const userId = getLoginUserId(cookieStore);
   const phone = getLoginPhone(cookieStore);
@@ -149,6 +155,9 @@ export async function GET() {
 }
 
 export async function PUT(request) {
+  const permissionError = await requireAnyPageAccess(request, PROFILE_PATHS);
+  if (permissionError) return permissionError;
+
   const cookieStore = await cookies();
   const userId = getLoginUserId(cookieStore);
   const phone = getLoginPhone(cookieStore);

@@ -18,8 +18,7 @@ export function FooterNav({ initialRole = "" }) {
   const pathname = usePathname();
   const t = useTranslations("footerNav");
   const isBackoffice = pathname === "/backoffice" || pathname.startsWith("/backoffice/");
-  const effectiveRole =
-    initialRole || (isBackoffice ? "global-admin" : "store-employee");
+  const effectiveRole = initialRole;
   const pageIcons = {
     "customer-overview": LayoutDashboardIcon,
     "customer-order-guide": StarIcon,

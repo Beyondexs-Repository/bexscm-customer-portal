@@ -13,9 +13,18 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { OrderGuideList } from "./OrderGuideList"
 import { OrderGuideProductsList } from "./OrderGuideProductsList"
+import { PAGE_ACTIONS } from "@/lib/security/role-access"
+import { usePagePermission } from "@/lib/security/use-page-permission"
 
 export function OrderGuide() {
   const t = useTranslations("orderGuide")
+  const canCreate = usePagePermission(PAGE_ACTIONS.CREATE_ORDER_GUIDE)
+  const canEdit = usePagePermission(PAGE_ACTIONS.EDIT_ORDER_GUIDE)
+  const canDelete = usePagePermission(PAGE_ACTIONS.DELETE_ORDER_GUIDE)
+  const canAddProducts = usePagePermission(
+    PAGE_ACTIONS.ADD_PRODUCT_TO_ORDER_GUIDE,
+  )
+  const canPlaceOrder = usePagePermission(PAGE_ACTIONS.PLACE_ORDER)
   const { quickOrders, setQuickOrders, createQuickOrder } = useQuickOrders()
   const [open, setOpen] = useState(false)
   const [quickOrderName, setQuickOrderName] = useState("")
@@ -32,6 +41,7 @@ export function OrderGuide() {
     null
 
   function handleSave() {
+    if (!canCreate) return
     if (!quickOrderName.trim()) return
 
     const newOrder = createQuickOrder(quickOrderName.trim())
@@ -54,6 +64,9 @@ export function OrderGuide() {
             selectedGroupId={selectedGroup?.id ?? null}
             setSelectedGroupId={setSelectedGroupId}
             onCreate={() => setOpen(true)}
+            canCreate={canCreate}
+            canEdit={canEdit}
+            canDelete={canDelete}
           />
         </div>
 
@@ -66,16 +79,19 @@ export function OrderGuide() {
               setSelectedOrderId(null)
               setSelectedGroupId(null)
             }}
+            canEdit={canEdit}
+            canAddProducts={canAddProducts}
+            canPlaceOrder={canPlaceOrder}
           />
         </div>
 
-        <CreateQuickOrderDialog
+        {canCreate ? <CreateQuickOrderDialog
           open={open}
           setOpen={setOpen}
           quickOrderName={quickOrderName}
           setQuickOrderName={setQuickOrderName}
           handleSave={handleSave}
-        />
+        /> : null}
       </div>
     )
   }
@@ -95,22 +111,22 @@ export function OrderGuide() {
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="flex justify-center pb-8 pt-2 md:pb-12 md:pt-4">
+          {canCreate ? <CardContent className="flex justify-center pb-8 pt-2 md:pb-12 md:pt-4">
             <Button size="lg" onClick={() => setOpen(true)} className="w-auto">
               <Plus className="size-4" />
               {t("create")}
             </Button>
-          </CardContent>
+          </CardContent> : null}
         </Card>
       </div>
 
-      <CreateQuickOrderDialog
+      {canCreate ? <CreateQuickOrderDialog
         open={open}
         setOpen={setOpen}
         quickOrderName={quickOrderName}
         setQuickOrderName={setQuickOrderName}
         handleSave={handleSave}
-      />
+      /> : null}
     </>
   )
 }

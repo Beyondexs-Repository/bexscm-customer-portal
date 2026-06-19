@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import homeData from "../../../data/data.json";
 import { NextResponse } from "next/server";
+import { requireAnyPageAccess } from "@/lib/security/server-role-access";
  
 const openai = new OpenAI({
   apiKey: "REMOVED_OPENAI_API_KEY"
@@ -8,6 +9,12 @@ const openai = new OpenAI({
  
 export async function POST(req) {
   try {
+    const permissionError = await requireAnyPageAccess(req, [
+      "/catalog",
+      "/backoffice/catalog",
+    ]);
+    if (permissionError) return permissionError;
+
     const { text } = await req.json();
  
     const categories = homeData.map((cat) => cat.slug);
@@ -106,4 +113,3 @@ If not found:
     );
   }
 }
- 

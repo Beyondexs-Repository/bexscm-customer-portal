@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils"
 
 import OrderList from "./OrderList"
 import OrderDetails from "./OrderDetails"
+import { PAGE_ACTIONS } from "@/lib/security/role-access"
+import { usePagePermission } from "@/lib/security/use-page-permission"
 
 export const statusFilters = ["all", "upcoming", "past"]
 export const typeFilters = ["App/Web", "Others"]
@@ -39,6 +41,9 @@ export function getOrderBucket(order) {
 
 export default function MyOrders() {
   const t = useTranslations("myOrders")
+  const canViewOrderDetails = usePagePermission(
+    PAGE_ACTIONS.VIEW_ORDER_DETAILS,
+  )
   const [selectedOrderId, setSelectedOrderId] = useState(null)
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("All Types")
@@ -70,7 +75,10 @@ export default function MyOrders() {
           typeFilter={typeFilter}
           onStatusFilterChange={setStatusFilter}
           onTypeFilterChange={setTypeFilter}
-          onSelectOrder={setSelectedOrderId}
+          onSelectOrder={
+            canViewOrderDetails ? setSelectedOrderId : () => {}
+          }
+          canViewOrderDetails={canViewOrderDetails}
         />
       </div>
 

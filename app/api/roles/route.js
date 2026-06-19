@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { requireAnyPageAccess } from "@/lib/security/server-role-access";
 
 function formatRole(row) {
   return {
@@ -9,7 +10,13 @@ function formatRole(row) {
   };
 }
 
-export async function GET() {
+export async function GET(request) {
+  const permissionError = await requireAnyPageAccess(request, [
+    "/backoffice/users",
+    "/backoffice/roles-permissions",
+  ]);
+  if (permissionError) return permissionError;
+
   const [rows] = await db.execute(
     `
     SELECT id, role_key, role_name, user_type

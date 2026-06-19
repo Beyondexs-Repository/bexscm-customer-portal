@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ChevronDown,
@@ -43,6 +44,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
+import { PAGE_ACTIONS } from "@/lib/security/role-access";
+import { usePagePermission } from "@/lib/security/use-page-permission";
 
 const productImages = [
   "https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=720&q=80",
@@ -185,6 +188,9 @@ function ProductCard({
   index,
   cartQuantity,
   isInQuickOrder,
+  canAddToCart,
+  canAddToOrderGuide,
+  productHref,
   onAdd,
   onIncrement,
   onDecrement,
@@ -199,13 +205,13 @@ function ProductCard({
     <article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
       <div className="relative">
         <Link
-          href={`/catalog/${product.id}`}
+          href={`${productHref}/${product.id}`}
           aria-label={`View details for ${product.name}`}
           className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ProductImage product={product} index={index} />
         </Link>
-        <TooltipProvider>
+        {canAddToOrderGuide ? <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -228,13 +234,13 @@ function ProductCard({
               <p>{t("addToOrderGuide")}</p>
             </TooltipContent>
           </Tooltip>
-        </TooltipProvider>
+        </TooltipProvider> : null}
       </div>
 
       <div className="space-y-2 p-2 lg:space-y-3 lg:p-3">
         <div className="min-w-0 space-y-1">
           <Link
-            href={`/catalog/${product.id}`}
+            href={`${productHref}/${product.id}`}
             className="block truncate text-xs font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
           >
             {product.name}
@@ -251,7 +257,7 @@ function ProductCard({
           {formatPrice(product.price, product.unit)}
         </p>
 
-        <div className="grid gap-2 min-[460px]:grid-cols-[4.25rem_1fr] lg:grid-cols-[4.75rem_1fr]">
+        {canAddToCart ? <div className="grid gap-2 min-[460px]:grid-cols-[4.25rem_1fr] lg:grid-cols-[4.75rem_1fr]">
           <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
             <Button
               variant="ghost"
@@ -307,7 +313,7 @@ function ProductCard({
               {isInCart ? t("addedToCart") : t("addToCart")}
             </span>
           </Button>
-        </div>
+        </div> : null}
       </div>
     </article>
   );
@@ -610,6 +616,12 @@ function getVisiblePages(currentPage, totalPages) {
 
 export function Catalog() {
   const t = useTranslations("catalog")
+  const pathname = usePathname()
+  const canAddToCart = usePagePermission(PAGE_ACTIONS.ADD_TO_CART)
+  const canAddToOrderGuide = usePagePermission(PAGE_ACTIONS.ADD_TO_ORDER_GUIDE)
+  const productHref = pathname.startsWith("/backoffice")
+    ? "/backoffice/catalog"
+    : "/catalog"
   const { items, addItem, incrementItem, decrementItem } = useCart();
   const { catalog } = useCatalog();
   const { quickOrders, addProductToQuickOrder, removeProductFromQuickOrder } =
@@ -662,7 +674,7 @@ function CatalogFilterControls({
         window.SpeechRecognition || window.webkitSpeechRecognition;
 
       if (!SpeechRecognition) {
-        alert("Speech Recognition not supported");
+        alert("Speech recognition is not supported in this browser.");
         return;
       }
 
@@ -1177,6 +1189,9 @@ function CatalogFilterControls({
               index={startIndex + index}
               cartQuantity={cartQuantities.get(product.id) ?? 0}
               isInQuickOrder={quickOrderProductIds.has(product.id)}
+              canAddToCart={canAddToCart}
+              canAddToOrderGuide={canAddToOrderGuide}
+              productHref={productHref}
               onAdd={addItem}
               onIncrement={incrementItem}
               onDecrement={decrementItem}
@@ -1271,7 +1286,7 @@ function CatalogFilterControls({
         </div>
       </div>
 
-      <OrderGuidePickerDialog
+      {canAddToOrderGuide ? <OrderGuidePickerDialog
         product={quickOrderProduct}
         quickOrders={quickOrders}
         open={Boolean(quickOrderProduct)}
@@ -1280,7 +1295,7 @@ function CatalogFilterControls({
         }}
         onAdd={addProductToQuickOrder}
         onRemove={removeProductFromQuickOrder}
-      />
+      /> : null}
     </main>
   );
 }

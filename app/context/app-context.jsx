@@ -172,6 +172,10 @@ export function AppProvider({ children }) {
     )
   }
 
+  function clearCart() {
+    setCartItems([])
+  }
+
   function createQuickOrder(name) {
     const defaultGroup = createDefaultGroup()
     const newOrder = {
@@ -269,6 +273,7 @@ export function AppProvider({ children }) {
       incrementCartItem,
       decrementCartItem,
       removeCartItem,
+      clearCart,
       createQuickOrder,
       addProductToQuickOrder,
       removeProductFromQuickOrder,
@@ -321,6 +326,7 @@ export function useCart() {
     incrementCartItem,
     decrementCartItem,
     removeCartItem,
+    clearCart,
   } = useAppContext()
 
   return {
@@ -331,5 +337,6 @@ export function useCart() {
     incrementItem: incrementCartItem,
     decrementItem: decrementCartItem,
     removeItem: removeCartItem,
+    clearCart,
   }
 }

@@ -44,15 +44,16 @@ function StatCard({ icon: Icon, value, label, tone }) {
   )
 }
 
-function OrderRow({ order, selected, onSelect }) {
+function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
   const t = useTranslations("myOrders")
 
   return (
     <button
       type="button"
+      disabled={!canViewOrderDetails}
       onClick={() => onSelect(order.id)}
       className={cn(
-        "grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-lg border bg-card p-3 text-left shadow-sm transition-colors hover:bg-muted/50 sm:p-4 md:grid-cols-[minmax(0,2fr)_minmax(7rem,1.2fr)_minmax(5rem,1fr)_minmax(5.5rem,1fr)_auto] md:items-center md:gap-4 lg:gap-6",
+        "grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-lg border bg-card p-3 text-left shadow-sm transition-colors enabled:hover:bg-muted/50 disabled:cursor-default sm:p-4 md:grid-cols-[minmax(0,2fr)_minmax(7rem,1.2fr)_minmax(5rem,1fr)_minmax(5.5rem,1fr)_auto] md:items-center md:gap-4 lg:gap-6",
         selected && "border-primary",
       )}
     >
@@ -115,6 +116,7 @@ export default function OrderList({
   onStatusFilterChange,
   onTypeFilterChange,
   onSelectOrder,
+  canViewOrderDetails,
 }) {
   const t = useTranslations("myOrders")
   const deliveredCount = orders.filter((order) => order.status === "Delivered").length
@@ -192,6 +194,7 @@ export default function OrderList({
                 order={order}
                 selected={selectedOrder?.id === order.id}
                 onSelect={onSelectOrder}
+                canViewOrderDetails={canViewOrderDetails}
               />
             ))
           ) : (

@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl"
 import { Noto_Sans_Tamil, Poppins } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "sonner"
 import { defaultLocale, loadMessages, localeCookieName, locales } from "@/lib/i18n"
 
 const poppins = Poppins({
@@ -43,6 +44,7 @@ export default async function RootLayout({children}) {
             disableTransitionOnChange
           >
             {children}
+            <Toaster richColors position="top-center" />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useTranslations } from "next-intl"
 import {
   CalendarClock,
@@ -13,11 +12,8 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  PAGE_ACTIONS,
-  canAccessPageAction,
-  getBrowserRole,
-} from "@/lib/security/role-access"
+import { PAGE_ACTIONS } from "@/lib/security/role-access"
+import { usePagePermission } from "@/lib/security/use-page-permission"
 import { cn } from "@/lib/utils"
 import { DownloadInvoice } from "@/lib/PdfGenerators/DownloadInvoice"
 
@@ -25,12 +21,10 @@ import { formatCurrency, statusStyles } from "./MyOrders"
 
 export default function OrderDetails({ order, onBack, onClose }) {
   const t = useTranslations("myOrders")
-  const [loginRole] = useState(getBrowserRole)
   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
-  const canDownloadInvoice = canAccessPageAction(
-    loginRole,
+  const canDownloadInvoice = usePagePermission(
+    PAGE_ACTIONS.DOWNLOAD_INVOICE,
     "/my-orders",
-    PAGE_ACTIONS.DOWNLOAD_INVOICE
   )
 
   return (

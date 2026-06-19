@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
@@ -71,6 +71,8 @@ export function UserFormDialog({
 }) {
   const t = useTranslations("users")
   const [form, setForm] = useState(EMPTY_FORM)
+  const [isSaving, setIsSaving] = useState(false)
+  const [validationError, setValidationError] = useState("")
 
   useEffect(() => {
     if (!open) {
@@ -96,19 +98,47 @@ export function UserFormDialog({
       ...current,
       [key]: value,
     }))
+
+    if (key === "roleId") {
+      setValidationError("")
+    }
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
 
-    onSave({
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-      roleId: Number(form.roleId),
-      status: form.status,
-    })
+    if (isSaving) {
+      return
+    }
+
+    if (!form.roleId) {
+      setValidationError("Please select a role.")
+      return
+    }
+
+    setValidationError("")
+    setIsSaving(true)
+
+    try {
+      await onSave({
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        roleId: Number(form.roleId),
+        status: form.status,
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  function handleOpenChange(nextOpen) {
+    if (!nextOpen) {
+      setValidationError("")
+    }
+
+    onOpenChange(nextOpen)
   }
 
   const roleOptions = roles.map((role) => ({
@@ -126,7 +156,7 @@ export function UserFormDialog({
       : t("editUserDescription")
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
@@ -204,12 +234,12 @@ export function UserFormDialog({
             </div>
           </div>
 
-          {error ? (
+          {validationError || error ? (
             <div
               role="alert"
               className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm font-medium text-destructive"
             >
-              {error}
+              {validationError || error}
             </div>
           ) : null}
 
@@ -217,11 +247,21 @@ export function UserFormDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              disabled={isSaving}
+              onClick={() => handleOpenChange(false)}
             >
               {t("cancel")}
             </Button>
-            <Button type="submit">{t("saveChanges")}</Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  {mode === "add" ? "Creating..." : "Saving..."}
+                </>
+              ) : (
+                t("saveChanges")
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

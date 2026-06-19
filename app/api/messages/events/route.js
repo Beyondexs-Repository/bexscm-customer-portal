@@ -4,11 +4,13 @@ import {
   userCanAccessConversation,
 } from "@/lib/chat";
 import { db } from "@/lib/db";
+import { requirePageAccess } from "@/lib/security/server-role-access";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const MESSAGE_CHECK_INTERVAL_MS = 1000;
+const MESSAGES_PATH = "/messages";
 
 function getPositiveInteger(value) {
   const number = Number(value);
@@ -37,6 +39,9 @@ async function getLatestMessageId(conversationId) {
 }
 
 export async function GET(request) {
+  const permissionError = await requirePageAccess(request, MESSAGES_PATH);
+  if (permissionError) return permissionError;
+
   const currentUser = await getCurrentChatUser(request);
 
   if (!currentUser) {

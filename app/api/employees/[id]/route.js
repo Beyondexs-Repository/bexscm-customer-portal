@@ -1,12 +1,8 @@
 import { db } from "@/lib/db";
+import { requireAnyPageAction } from "@/lib/security/server-role-access";
 
-const STORE_MANAGER = "store-manager";
 const STORE_EMPLOYEE = "store-employee";
-const EMPLOYEE_MANAGER_ROLES = new Set([
-  STORE_MANAGER,
-  "global-admin",
-  "application-admin",
-]);
+const EMPLOYEE_PATHS = ["/employees", "/backoffice/employees"];
 
 function normalizePhone(value) {
   return String(value ?? "").replace(/\D/g, "");
@@ -22,55 +18,6 @@ function formatEmployee(row) {
     avatarImage: row.avatar ?? "",
     status: row.is_active ? "active" : "inactive",
   };
-}
-
-function decodeCookieValue(value) {
-  try {
-    return decodeURIComponent(value ?? "");
-  } catch {
-    return value ?? "";
-  }
-}
-
-function getLoginUserId(request) {
-  const userId = Number(
-    decodeCookieValue(request.cookies.get("aloha-login-user-id")?.value)
-  );
-
-  return Number.isInteger(userId) && userId > 0 ? userId : null;
-}
-
-async function getLoginRole(request) {
-  const userId = getLoginUserId(request);
-
-  if (!userId) return "";
-
-  const [rows] = await db.execute(
-    `
-    SELECT r.role_key
-    FROM users u
-    INNER JOIN roles r ON u.role_id = r.id
-    WHERE u.id = ?
-      AND u.is_active = TRUE
-    LIMIT 1
-    `,
-    [userId]
-  );
-
-  return rows[0]?.role_key ?? "";
-}
-
-async function requireEmployeeManager(request) {
-  const role = await getLoginRole(request);
-
-  if (!EMPLOYEE_MANAGER_ROLES.has(role)) {
-    return Response.json(
-      { message: "Only employee managers can manage employees." },
-      { status: 403 }
-    );
-  }
-
-  return null;
 }
 
 async function getStoreEmployee(id) {
@@ -98,7 +45,11 @@ async function getStoreEmployee(id) {
 }
 
 export async function PUT(request, { params }) {
-  const permissionError = await requireEmployeeManager(request);
+  const permissionError = await requireAnyPageAction(
+    request,
+    EMPLOYEE_PATHS,
+    "editEmployee"
+  );
   if (permissionError) return permissionError;
 
   const { id: employeeId } = await params;
@@ -151,7 +102,11 @@ export async function PUT(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
-  const permissionError = await requireEmployeeManager(request);
+  const permissionError = await requireAnyPageAction(
+    request,
+    EMPLOYEE_PATHS,
+    "editEmployee"
+  );
   if (permissionError) return permissionError;
 
   const { id: employeeId } = await params;
@@ -195,7 +150,11 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const permissionError = await requireEmployeeManager(request);
+  const permissionError = await requireAnyPageAction(
+    request,
+    EMPLOYEE_PATHS,
+    "deleteEmployee"
+  );
   if (permissionError) return permissionError;
 
   const { id: employeeId } = await params;

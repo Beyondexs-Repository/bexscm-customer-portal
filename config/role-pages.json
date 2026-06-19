@@ -2,7 +2,7 @@
   "defaultRoutes": {
     "global-admin": "/backoffice",
     "application-admin": "/backoffice",
-    "sales-reps": "/backoffice",
+    "sales-rep": "/backoffice",
     "sales-associate": "/backoffice",
     "gm-owners": "/backoffice",
     "ar": "/backoffice",
@@ -119,7 +119,7 @@
       "roles": [
         "global-admin",
         "application-admin",
-        "sales-reps",
+        "sales-rep",
         "sales-associate",
         "gm-owners",
         "ar",
@@ -129,7 +129,7 @@
         "viewAllOrders": [
           "global-admin",
           "application-admin",
-          "sales-reps",
+          "sales-rep",
           "sales-associate",
           "gm-owners",
           "ar",
@@ -138,14 +138,14 @@
         "editOrder": [
           "global-admin",
           "application-admin",
-          "sales-reps",
+          "sales-rep",
           "sales-associate",
           "gm-owners"
         ],
         "placeOrder": [
           "global-admin",
           "application-admin",
-          "sales-reps",
+          "sales-rep",
           "sales-associate",
           "gm-owners"
         ]
@@ -161,7 +161,7 @@
       "roles": [
         "global-admin",
         "application-admin",
-        "sales-reps",
+        "sales-rep",
         "sales-associate",
         "gm-owners",
         "ar",
@@ -184,7 +184,7 @@
       "roles": [
         "global-admin",
         "application-admin",
-        "sales-reps",
+        "sales-rep",
         "sales-associate",
         "gm-owners",
         "ar",
@@ -202,12 +202,17 @@
       "roles": [
         "global-admin",
         "application-admin",
-        "sales-reps",
+        "sales-rep",
         "sales-associate",
         "gm-owners",
         "ar",
         "ar-manager"
-      ]
+      ],
+      "actions": {
+        "addToCart": ["global-admin"],
+        "addToOrderGuide": ["global-admin"],
+        "placeOrder": ["global-admin"]
+      }
     },
     {
       "id": "backoffice-users",
@@ -222,6 +227,21 @@
         "createUser": ["global-admin", "application-admin"],
         "editUser": ["global-admin", "application-admin"],
         "deleteUser": ["global-admin", "application-admin"]
+      }
+    },
+    {
+      "id": "backoffice-employees",
+      "area": "backoffice",
+      "path": "/backoffice/employees",
+      "title": "Employees",
+      "titleKey": "employees",
+      "nav": true,
+      "footerNav": false,
+      "roles": ["global-admin", "application-admin", "sales-rep"],
+      "actions": {
+        "createEmployee": ["global-admin", "application-admin"],
+        "editEmployee": ["global-admin", "application-admin"],
+        "deleteEmployee": ["global-admin", "application-admin"]
       }
     },
     {
@@ -244,7 +264,7 @@
       "roles": [
         "global-admin",
         "application-admin",
-        "sales-reps",
+        "sales-rep",
         "sales-associate",
         "gm-owners",
         "ar",

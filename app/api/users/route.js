@@ -1,6 +1,10 @@
 import { db } from "@/lib/db";
+import {
+  requirePageAccess,
+  requirePageAction,
+} from "@/lib/security/server-role-access";
 
-const USER_MANAGER_ROLES = new Set(["global-admin", "application-admin"]);
+const USERS_PATH = "/backoffice/users";
 
 function normalizePhone(value) {
   return String(value ?? "").replace(/\D/g, "");
@@ -42,56 +46,10 @@ function formatUser(row) {
   };
 }
 
-function decodeCookieValue(value) {
-  try {
-    return decodeURIComponent(value ?? "");
-  } catch {
-    return value ?? "";
-  }
-}
+export async function GET(request) {
+  const permissionError = await requirePageAccess(request, USERS_PATH);
+  if (permissionError) return permissionError;
 
-function getLoginUserId(request) {
-  const userId = Number(
-    decodeCookieValue(request.cookies.get("aloha-login-user-id")?.value)
-  );
-
-  return Number.isInteger(userId) && userId > 0 ? userId : null;
-}
-
-async function getLoginRole(request) {
-  const userId = getLoginUserId(request);
-
-  if (!userId) return "";
-
-  const [rows] = await db.execute(
-    `
-    SELECT r.role_key
-    FROM users u
-    INNER JOIN roles r ON u.role_id = r.id
-    WHERE u.id = ?
-      AND u.is_active = TRUE
-    LIMIT 1
-    `,
-    [userId]
-  );
-
-  return rows[0]?.role_key ?? "";
-}
-
-async function requireUserManager(request) {
-  const role = await getLoginRole(request);
-
-  if (!USER_MANAGER_ROLES.has(role)) {
-    return Response.json(
-      { message: "Only administrators can manage users." },
-      { status: 403 }
-    );
-  }
-
-  return null;
-}
-
-export async function GET() {
   const [rows] = await db.execute(
     `
     SELECT
@@ -121,7 +79,11 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const permissionError = await requireUserManager(request);
+    const permissionError = await requirePageAction(
+      request,
+      USERS_PATH,
+      "createUser"
+    );
     if (permissionError) return permissionError;
 
     const body = await request.json().catch(() => ({}));
