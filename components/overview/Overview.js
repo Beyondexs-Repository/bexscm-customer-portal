@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 
 import { myOrders } from "@/data/my-orders"
-import QuickOrderQuide from "./QuickOrderQuide"
+import QuickOrderGuide from "./QuickOrderGuide"
 import WelcomeCard from "./WelcomeCard"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -219,7 +219,7 @@ export default function Overview() {
       <QuickActions />
       <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-3">
         <div className="order-1 h-full min-w-0 lg:order-2 lg:col-span-1">
-          <QuickOrderQuide />
+          <QuickOrderGuide />
         </div>
         <div className="order-2 h-full min-w-0 lg:order-1 lg:col-span-2">
           <RecentOrdersTable />

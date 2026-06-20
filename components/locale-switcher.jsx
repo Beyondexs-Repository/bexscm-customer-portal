@@ -20,6 +20,9 @@ const localeLabels = {
   en: "English",
   es: "Spanish",
   ta: "Tamil",
+  zh: "Chinese",
+  ja: "Japanese",
+  ko: "Korean",
 }
 
 export function LocaleSwitcher() {
@@ -53,10 +56,11 @@ export function LocaleSwitcher() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            {locales.map((item) => (
+            {Object.keys(localeLabels).map((item) => (
               <DropdownMenuItem
                 key={item}
                 onSelect={() => handleChange(item)}
+                disabled={!locales.includes(item)}
                 className="justify-between"
               >
                 <span>{localeLabels[item]}</span>

@@ -140,7 +140,7 @@ export default function WelcomeCard() {
         </div>
       ))}
 
-      <Button
+      {/* <Button
         type="button"
         variant="secondary"
         size="icon-sm"
@@ -159,7 +159,7 @@ export default function WelcomeCard() {
         aria-label="Show next promotion"
       >
         <ChevronRight />
-      </Button>
+      </Button> */}
 
       <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">
         {slides.map((slide, index) => (

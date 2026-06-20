@@ -19,7 +19,7 @@ function getGuideProducts(guide) {
   return guide.groups.flatMap((group) => group.products)
 }
 
-export default function QuickOrderQuide() {
+export default function QuickOrderGuide() {
   const { quickOrders, dashboardQuickOrderIds } = useQuickOrders()
   const { items, addItem } = useCart()
 
@@ -179,7 +179,7 @@ export default function QuickOrderQuide() {
             <div className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
               <BookOpen className="size-5" />
             </div>
-            <p className="mt-3 text-sm font-semibold">No order guides yet</p>
+            <p className="mt-3 text-sm font-semibold">No Order Guides Yet</p>
             <p className="mt-1 max-w-48 text-xs leading-relaxed text-muted-foreground">
               Create a reusable guide for products you order regularly.
             </p>
