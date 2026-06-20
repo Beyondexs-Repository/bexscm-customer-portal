@@ -31,6 +31,6 @@
     "**/*.mts",
     "app/page.jsx",
     "app/layout.jsx"
-, "components/team-switcher.jsx", "components/nav-user.jsx"  ],
+, "components/team-switcher.jsx", "components/nav-user.jsx", "components/mode-toggle.jsx"  ],
   "exclude": ["node_modules"]
 }
