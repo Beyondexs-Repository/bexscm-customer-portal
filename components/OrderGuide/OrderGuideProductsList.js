@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   ChevronLeft,
   MoveRight,
@@ -14,7 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { useCart } from "@/app/context/app-context";
+import { useCart, useQuickOrders } from "@/app/context/app-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -261,6 +262,8 @@ export function OrderGuideProductsList({
   const t = useTranslations("orderGuide")
   const { items, addItem, incrementItem, decrementItem, removeItem } =
     useCart();
+  const { dashboardQuickOrderIds, setDashboardQuickOrderIds } =
+    useQuickOrders();
   const [productToMove, setProductToMove] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
   const [productToEditPar, setProductToEditPar] = useState(null);
@@ -276,10 +279,32 @@ export function OrderGuideProductsList({
   const allProductsInCart =
     products.length > 0 &&
     products.every((product) => (cartQuantities.get(product.id) ?? 0) > 0);
-
   const selectedCount = products.filter(
     (product) => (cartQuantities.get(product.id) ?? 0) > 0,
   ).length;
+  const isOnDashboard =
+    Boolean(selectedOrder) &&
+    dashboardQuickOrderIds.includes(selectedOrder.id);
+
+  function toggleDashboardQuickOrder() {
+    if (!selectedOrder) return;
+
+    if (isOnDashboard) {
+      setDashboardQuickOrderIds((ids) =>
+        ids.filter((id) => id !== selectedOrder.id),
+      );
+      toast.success("Removed from the Quick Order card.");
+      return;
+    }
+
+    if (dashboardQuickOrderIds.length >= 4) {
+      toast.error("You can show only 4 quick orders on the overview.");
+      return;
+    }
+
+    setDashboardQuickOrderIds((ids) => [...ids, selectedOrder.id]);
+    toast.success("Added to the Quick Order card.");
+  }
 
   function handleSelectAllAndAddToCart() {
     if (products.length === 0) return;
@@ -470,7 +495,7 @@ export function OrderGuideProductsList({
             </div>
           </div>
 
-          <div className="flex w-full flex-col gap-2 sm:w-auto">
+          <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto sm:self-center">
             {canAddProducts ? <Button asChild variant="outline" size="sm" className="h-8">
               <Link href="/catalog">
                 <Plus className="size-4" />
@@ -478,12 +503,27 @@ export function OrderGuideProductsList({
               </Link>
             </Button> : null}
 
+            {canAddProducts ? (
+              <Button
+                type="button"
+                variant={isOnDashboard ? "destructive" : "outline"}
+                size="sm"
+              className="h-8"
+              onClick={toggleDashboardQuickOrder}
+            >
+                {!isOnDashboard ? <Plus className="size-4" /> : null}
+                {isOnDashboard
+                  ? "Remove from Quick Order"
+                  : "Add to Quick Order"}
+              </Button>
+            ) : null}
+
             {canPlaceOrder && products.length > 0 && (
               <Button
                 size="sm"
                 variant={allProductsInCart ? "secondary" : "default"}
                 onClick={handleSelectAllAndAddToCart}
-                className="h-8 flex items-center gap-1"
+                className="flex h-8 items-center gap-1"
               >
                 <ShoppingCart className="size-4" />
                 {allProductsInCart ? `Selected (${selectedCount})` : "Select All"}

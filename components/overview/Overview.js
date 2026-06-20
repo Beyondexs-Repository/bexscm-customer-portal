@@ -5,13 +5,13 @@ import {
   BookOpen,
   ChevronRight,
   ClipboardList,
-  FileText,
   MessageSquareText,
   PackageCheck,
   ShoppingBag,
 } from "lucide-react"
 
 import { myOrders } from "@/data/my-orders"
+import QuickOrderQuide from "./QuickOrderQuide"
 import WelcomeCard from "./WelcomeCard"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -56,14 +56,6 @@ const quickActions = [
       "bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-300",
   },
   {
-    title: "Invoices",
-    description: "View and manage invoices",
-    href: "/my-orders",
-    icon: FileText,
-    iconClassName:
-      "bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-300",
-  },
-  {
     title: "Messages",
     description: "Contact your team",
     href: "/messages",
@@ -83,7 +75,7 @@ function formatCurrency(value) {
 function QuickActions() {
   return (
     <section aria-label="Quick actions">
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
         {quickActions.map((action) => {
           const Icon = action.icon
 
@@ -121,7 +113,7 @@ function RecentOrdersTable() {
   const recentOrders = myOrders.slice(0, 5)
 
   return (
-    <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
+    <section className="h-full overflow-hidden rounded-xl border bg-card shadow-sm">
       <div className="flex flex-col gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -225,7 +217,14 @@ export default function Overview() {
     <main className="grid gap-3 sm:gap-4">
       <WelcomeCard />
       <QuickActions />
-      <RecentOrdersTable />
+      <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-3">
+        <div className="order-1 h-full min-w-0 lg:order-2 lg:col-span-1">
+          <QuickOrderQuide />
+        </div>
+        <div className="order-2 h-full min-w-0 lg:order-1 lg:col-span-2">
+          <RecentOrdersTable />
+        </div>
+      </div>
     </main>
   )
 }

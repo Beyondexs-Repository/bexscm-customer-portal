@@ -8,6 +8,7 @@ import { findCatalogProduct, getProductGalleryImages } from "@/lib/catalog-produ
 const AppContext = createContext(null)
 const CART_STORAGE_KEY = "aloha.cart.v1"
 const QUICK_ORDERS_STORAGE_KEY = "aloha.quickOrders.v1"
+const DASHBOARD_QUICK_ORDERS_STORAGE_KEY = "aloha.dashboardQuickOrders.v1"
 
 function createDefaultGroup() {
   return {
@@ -84,6 +85,22 @@ function getInitialQuickOrders() {
   }
 }
 
+function getInitialDashboardQuickOrderIds() {
+  if (typeof window === "undefined") {
+    return []
+  }
+
+  try {
+    const ids = JSON.parse(
+      window.localStorage.getItem(DASHBOARD_QUICK_ORDERS_STORAGE_KEY)
+    )
+
+    return Array.isArray(ids) ? ids.slice(0, 4) : []
+  } catch {
+    return []
+  }
+}
+
 function touchQuickOrder(order) {
   return {
     ...order,
@@ -94,12 +111,14 @@ function touchQuickOrder(order) {
 export function AppProvider({ children }) {
   const [cartItems, setCartItems] = useState([])
   const [quickOrders, setQuickOrders] = useState([])
+  const [dashboardQuickOrderIds, setDashboardQuickOrderIds] = useState([])
   const [storageHydrated, setStorageHydrated] = useState(false)
 
   useEffect(() => {
     queueMicrotask(() => {
       setCartItems(getInitialCartItems())
       setQuickOrders(getInitialQuickOrders())
+      setDashboardQuickOrderIds(getInitialDashboardQuickOrderIds())
       setStorageHydrated(true)
     })
   }, [])
@@ -118,6 +137,15 @@ export function AppProvider({ children }) {
       JSON.stringify(quickOrders)
     )
   }, [quickOrders, storageHydrated])
+
+  useEffect(() => {
+    if (!storageHydrated) return
+
+    window.localStorage.setItem(
+      DASHBOARD_QUICK_ORDERS_STORAGE_KEY,
+      JSON.stringify(dashboardQuickOrderIds)
+    )
+  }, [dashboardQuickOrderIds, storageHydrated])
 
   function addCartItem(product, quantity = 1) {
     setCartItems((currentItems) => {
@@ -269,6 +297,8 @@ export function AppProvider({ children }) {
       cartTotal,
       quickOrders,
       setQuickOrders,
+      dashboardQuickOrderIds,
+      setDashboardQuickOrderIds,
       addCartItem,
       incrementCartItem,
       decrementCartItem,
@@ -278,7 +308,7 @@ export function AppProvider({ children }) {
       addProductToQuickOrder,
       removeProductFromQuickOrder,
     }
-  }, [cartItems, quickOrders])
+  }, [cartItems, dashboardQuickOrderIds, quickOrders])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }
@@ -287,6 +317,8 @@ export function useQuickOrders() {
   const {
     quickOrders,
     setQuickOrders,
+    dashboardQuickOrderIds,
+    setDashboardQuickOrderIds,
     createQuickOrder,
     addProductToQuickOrder,
     removeProductFromQuickOrder,
@@ -295,6 +327,8 @@ export function useQuickOrders() {
   return {
     quickOrders,
     setQuickOrders,
+    dashboardQuickOrderIds,
+    setDashboardQuickOrderIds,
     createQuickOrder,
     addProductToQuickOrder,
     removeProductFromQuickOrder,
