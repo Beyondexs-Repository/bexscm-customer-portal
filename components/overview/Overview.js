@@ -1,11 +1,17 @@
 "use client"
 
 import Link from "next/link"
-import { useTranslations } from "next-intl"
-import { ChevronRight, PackageCheck, Truck } from "lucide-react"
+import {
+  BookOpen,
+  ChevronRight,
+  ClipboardList,
+  FileText,
+  MessageSquareText,
+  PackageCheck,
+  ShoppingBag,
+} from "lucide-react"
 
 import { myOrders } from "@/data/my-orders"
-import Messages from "../messages/Messages"
 import WelcomeCard from "./WelcomeCard"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,10 +24,54 @@ const statusStyles = {
     "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-800",
   violet:
     "bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-200 dark:ring-violet-800",
-  blue: "bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-950/40 dark:text-sky-200 dark:ring-sky-800",
+  blue:
+    "bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-950/40 dark:text-sky-200 dark:ring-sky-800",
   slate:
     "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700",
 }
+
+const quickActions = [
+  {
+    title: "Order Guide",
+    description: "Step-by-step ordering",
+    href: "/order-guide",
+    icon: BookOpen,
+    iconClassName:
+      "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300",
+  },
+  {
+    title: "Browse Catalog",
+    description: "Explore all products",
+    href: "/catalog",
+    icon: ShoppingBag,
+    iconClassName:
+      "bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300",
+  },
+  {
+    title: "Recent Orders",
+    description: "View your past orders",
+    href: "/my-orders",
+    icon: ClipboardList,
+    iconClassName:
+      "bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-300",
+  },
+  {
+    title: "Invoices",
+    description: "View and manage invoices",
+    href: "/my-orders",
+    icon: FileText,
+    iconClassName:
+      "bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-300",
+  },
+  {
+    title: "Messages",
+    description: "Contact your team",
+    href: "/messages",
+    icon: MessageSquareText,
+    iconClassName:
+      "bg-cyan-50 text-cyan-600 dark:bg-cyan-950/50 dark:text-cyan-300",
+  },
+]
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("en-US", {
@@ -30,65 +80,141 @@ function formatCurrency(value) {
   }).format(value)
 }
 
-function ReorderRow({ order }) {
+function QuickActions() {
   return (
-    <Link
-      href="/my-orders"
-      className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border bg-card p-3 text-left shadow-sm transition-colors hover:bg-muted/50"
-    >
-      <div className="flex size-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
-        <Truck className="size-4" />
+    <section aria-label="Quick actions">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-5">
+        {quickActions.map((action) => {
+          const Icon = action.icon
+
+          return (
+            <Link
+              key={action.title}
+              href={action.href}
+              className="group flex min-w-0 items-center gap-2 rounded-xl border bg-card p-2.5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md sm:gap-3 sm:p-3"
+            >
+              <div
+                className={cn(
+                  "flex size-9 shrink-0 items-center justify-center rounded-full sm:size-10",
+                  action.iconClassName,
+                )}
+              >
+                <Icon className="size-4 sm:size-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-semibold sm:text-sm">
+                  {action.title}
+                </p>
+                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
+                  {action.description}
+                </p>
+              </div>
+            </Link>
+          )
+        })}
       </div>
-      <div className="min-w-0">
-        <div className="flex min-w-0 items-center gap-2">
-          <p className="truncate text-xs font-bold">Order #{order.orderNumber}</p>
-          <Badge
-            className={cn(
-              "h-5 px-2 text-[10px] ring-1",
-              statusStyles[order.statusTone],
-            )}
-          >
-            {order.status}
-          </Badge>
-        </div>
-        <p className="mt-1 truncate text-[11px] text-muted-foreground">
-          {order.items.length} items - {order.type} - {formatCurrency(order.total)}
-        </p>
-      </div>
-      <ChevronRight className="size-4 text-muted-foreground" />
-    </Link>
+    </section>
   )
 }
 
-function Reorders() {
+function RecentOrdersTable() {
   const recentOrders = myOrders.slice(0, 5)
-  const t = useTranslations("overview")
 
   return (
-    <section className="rounded-lg border bg-background p-2 shadow-sm sm:p-3">
-      <div className="flex flex-col gap-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-2">
-          <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <PackageCheck className="size-4" />
+    <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="flex flex-col gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <PackageCheck className="size-5" />
           </div>
-          <div className="min-w-0">
-            <h2 className="text-lg font-bold leading-tight">{t("recentOrders")}</h2>
-            <p className="text-xs leading-snug text-muted-foreground">{t("recentOrdersDescription")}</p>
+          <div>
+            <h2 className="text-base font-bold sm:text-lg">Recent Orders</h2>
+            <p className="text-xs text-muted-foreground">
+              View and manage your latest orders
+            </p>
           </div>
         </div>
 
-        <Button asChild variant="outline" size="sm" className="w-full justify-center sm:w-auto">
+        <Button asChild variant="outline" size="sm">
           <Link href="/my-orders">
-            {t("viewOrders")}
+            View all orders
             <ChevronRight className="size-4" />
           </Link>
         </Button>
       </div>
 
-      <div className="mt-3 grid gap-3">
-        {recentOrders.map((order) => (
-          <ReorderRow key={order.id} order={order} />
-        ))}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-left text-sm">
+          <thead className="bg-muted/50 text-[11px] uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3 font-semibold">Order</th>
+              <th className="px-4 py-3 font-semibold">Placed on</th>
+              <th className="px-4 py-3 font-semibold">Delivery</th>
+              <th className="px-4 py-3 font-semibold">Items</th>
+              <th className="px-4 py-3 font-semibold">Total</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="w-12 px-4 py-3" aria-label="Actions" />
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {recentOrders.map((order) => (
+              <tr
+                key={order.id}
+                className="transition-colors hover:bg-muted/40"
+              >
+                <td className="px-4 py-2">
+                  <Link
+                    href="/my-orders"
+                    className="font-semibold text-foreground hover:text-primary"
+                  >
+                    #{order.orderNumber}
+                  </Link>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {order.type}
+                  </p>
+                </td>
+                <td className="whitespace-nowrap px-4 py-2 text-xs">
+                  {order.placedOn}
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {order.placedAt}
+                  </p>
+                </td>
+                <td className="whitespace-nowrap px-4 py-2 text-xs">
+                  {order.deliveryDate}
+                </td>
+                <td className="px-4 py-2 text-xs">
+                  {order.items.length} products
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {order.units} units
+                  </p>
+                </td>
+                <td className="whitespace-nowrap px-4 py-2 font-semibold">
+                  {formatCurrency(order.total)}
+                </td>
+                <td className="px-4 py-2">
+                  <Badge
+                    className={cn(
+                      "whitespace-nowrap px-2 text-[10px] ring-1",
+                      statusStyles[order.statusTone],
+                    )}
+                  >
+                    {order.status}
+                  </Badge>
+                </td>
+                <td className="px-4 py-2 text-right">
+                  <Button asChild variant="ghost" size="icon-sm">
+                    <Link
+                      href="/my-orders"
+                      aria-label={`View order ${order.orderNumber}`}
+                    >
+                      <ChevronRight className="size-4" />
+                    </Link>
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </section>
   )
@@ -96,11 +222,10 @@ function Reorders() {
 
 export default function Overview() {
   return (
-    <>
+    <main className="grid gap-3 sm:gap-4">
       <WelcomeCard />
-      <div>
-        <Reorders />
-      </div>
-    </>
+      <QuickActions />
+      <RecentOrdersTable />
+    </main>
   )
 }

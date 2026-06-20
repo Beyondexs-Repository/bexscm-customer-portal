@@ -1,17 +1,16 @@
 import { db } from "@/lib/db";
 import { cookies } from "next/headers";
 import { requireAnyPageAccess } from "@/lib/security/server-role-access";
+import {
+  formatProfile,
+  getProfileById,
+  getProfileByPhone,
+} from "@/lib/server-profile";
 
 const PROFILE_PATHS = ["/profile", "/backoffice/profile"];
 
 function normalizePhone(value) {
   return String(value ?? "").replace(/\D/g, "");
-}
-
-function getPhoneSearchTerms(phoneNumber) {
-  const lastTenDigits = phoneNumber.slice(-10);
-
-  return Array.from(new Set([phoneNumber, lastTenDigits].filter(Boolean)));
 }
 
 function decodeCookieValue(value) {
@@ -34,99 +33,6 @@ function getLoginUserId(cookieStore) {
   );
 
   return Number.isInteger(userId) && userId > 0 ? userId : null;
-}
-
-function normalizedPhoneSql(alias = "u") {
-  return `
-    REPLACE(
-      REPLACE(
-        REPLACE(
-          REPLACE(
-            REPLACE(
-              REPLACE(${alias}.phone, '+', ''),
-              '-', ''
-            ),
-            ' ',
-            ''
-          ),
-          '(',
-          ''
-        ),
-        ')',
-        ''
-      ),
-      '.',
-      ''
-    )
-  `;
-}
-
-function formatProfile(user) {
-  return {
-    id: user.id,
-    firstName: user.first_name,
-    lastName: user.last_name,
-    email: user.email,
-    phone: user.phone,
-    avatar: user.avatar ?? "",
-    roleKey: user.role_key,
-    roleName: user.role_name,
-    isActive: Boolean(user.is_active),
-  };
-}
-
-async function getProfileByPhone(phone) {
-  const phoneSearchTerms = getPhoneSearchTerms(phone);
-
-  const [rows] = await db.execute(
-    `
-    SELECT
-      u.id,
-      u.first_name,
-      u.last_name,
-      u.email,
-      u.phone,
-      u.avatar,
-      u.is_active,
-      r.role_key,
-      r.role_name
-    FROM users u
-    INNER JOIN roles r ON u.role_id = r.id
-    WHERE ${normalizedPhoneSql("u")} LIKE ?
-      OR ${normalizedPhoneSql("u")} LIKE ?
-    LIMIT 1
-    `,
-    [
-      `%${phoneSearchTerms[0]}`,
-      `%${phoneSearchTerms[1] ?? phoneSearchTerms[0]}`,
-    ]
-  );
-
-  return rows[0] ?? null;
-}
-
-async function getProfileById(id) {
-  const [rows] = await db.execute(
-    `
-    SELECT
-      u.id,
-      u.first_name,
-      u.last_name,
-      u.email,
-      u.phone,
-      u.avatar,
-      u.is_active,
-      r.role_key,
-      r.role_name
-    FROM users u
-    INNER JOIN roles r ON u.role_id = r.id
-    WHERE u.id = ?
-    LIMIT 1
-    `,
-    [id]
-  );
-
-  return rows[0] ?? null;
 }
 
 export async function GET(request) {

@@ -10,15 +10,9 @@ import {
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 
-export function TeamSwitcher({
-  teams,
-}) {
+export function TeamSwitcher() {
   const { isMobile } = useSidebar();
-  const [activeTeam, setActiveTeam] = React.useState(teams[0]);
 
-  if (!activeTeam) {
-    return null;
-  }
 
   return (
     <SidebarMenu>

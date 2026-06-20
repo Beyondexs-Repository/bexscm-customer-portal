@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { AppShell } from "@/components/app-shell";
 
-export function DashboardShell({ children, initialRole }) {
+export function DashboardShell({ children, initialRole, initialProfile }) {
   const pathname = usePathname();
   const t = useTranslations("dashboard");
   const isCatalogPage = pathname === "/catalog" || pathname.startsWith("/catalog/");
@@ -54,6 +54,7 @@ export function DashboardShell({ children, initialRole }) {
         title={page.title}
         description={page.description}
         initialRole={initialRole}
+        initialProfile={initialProfile}
       >
         {children}
       </AppShell>
@@ -94,7 +95,12 @@ export function DashboardShell({ children, initialRole }) {
                   : t("overview.description");
 
   return (
-    <AppShell title={title} description={description} initialRole={initialRole}>
+    <AppShell
+      title={title}
+      description={description}
+      initialRole={initialRole}
+      initialProfile={initialProfile}
+    >
       {children}
     </AppShell>
   );

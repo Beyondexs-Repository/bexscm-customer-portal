@@ -26,14 +26,15 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-export function getFallbackProfile() {
+export function getEmptyProfile() {
   return {
-    firstName: "Store",
-    lastName: "Manager",
+    firstName: "",
+    lastName: "",
+    phone: "",
     email: "",
     avatar: "",
-    roleName: "Store Manager",
-    roleKey: "store-manager",
+    roleName: "",
+    roleKey: "",
   };
 }
 
@@ -45,12 +46,14 @@ export function getInitials(profile) {
   return `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase();
 }
 
-export function NavUser({ user }) {
+export function NavUser({ user, initialProfile }) {
   const { isMobile } = useSidebar();
   const router = useRouter();
   const t = useTranslations("userMenu");
 
-  const [profile, setProfile] = useState(getFallbackProfile);
+  const [profile, setProfile] = useState(
+    () => initialProfile ?? getEmptyProfile()
+  );
 
   const profileUser = {
     name: getFullName(profile) || user?.name || "User",
@@ -89,9 +92,7 @@ export function NavUser({ user }) {
           applyProfile(data.profile);
         }
       } catch {
-        if (active) {
-          setProfile(getFallbackProfile());
-        }
+        // Keep the server-rendered profile if the background refresh fails.
       }
     }
 

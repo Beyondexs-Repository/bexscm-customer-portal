@@ -40,8 +40,8 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 const CUTOFF_TIME = "8:00 AM"
 const CUTOFF_DATE = "6/6"
 const DEFAULT_PROFILE = {
-  firstName: "Store",
-  lastName: "Manager",
+  firstName: "",
+  lastName: "",
   email: "",
   avatar: "",
 }
@@ -107,12 +107,14 @@ function SiteHeader({
   title,
   description,
   initialRole = "",
+  initialProfile = null,
   children,
   ...props
 }: React.ComponentProps<"header"> & {
   title?: React.ReactNode
   description?: React.ReactNode
   initialRole?: string
+  initialProfile?: Partial<HeaderProfile> | null
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -132,7 +134,10 @@ function SiteHeader({
     pathname === "/backoffice" || pathname.startsWith("/backoffice/")
       ? "/backoffice/profile"
       : "/profile"
-  const [profile, setProfile] = React.useState<HeaderProfile>(DEFAULT_PROFILE)
+  const [profile, setProfile] = React.useState<HeaderProfile>(() => ({
+    ...DEFAULT_PROFILE,
+    ...initialProfile,
+  }))
   const profileName = getFullName(profile)
   const profileInitials = getInitials(profile)
   const {
@@ -237,9 +242,7 @@ function SiteHeader({
           applyProfile(data.profile)
         }
       } catch {
-        if (active) {
-          setProfile(DEFAULT_PROFILE)
-        }
+        // Keep the server-rendered profile if the background refresh fails.
       }
     }
 

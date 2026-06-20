@@ -38,31 +38,26 @@ const data = {
   user: {
     name: "Crate Inc.",
     avatar: "",
-  },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: <GalleryVerticalEndIcon />,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: <AudioLinesIcon />,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: <TerminalIcon />,
-      plan: "Free",
-    },
-  ],
+  }
 };
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   initialRole?: string
+  initialProfile?: {
+    firstName?: string
+    lastName?: string
+    phone?: string
+    avatar?: string
+    roleName?: string
+    roleKey?: string
+  } | null
 }
 
-export function AppSidebar({ initialRole = "", ...props }: AppSidebarProps) {
+export function AppSidebar({
+  initialRole = "",
+  initialProfile = null,
+  ...props
+}: AppSidebarProps) {
   const pathname = usePathname()
   const t = useTranslations("nav")
   const isBackoffice = pathname === "/backoffice" || pathname.startsWith("/backoffice/")
@@ -93,7 +88,7 @@ export function AppSidebar({ initialRole = "", ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} label={t("main")} />
@@ -102,7 +97,7 @@ export function AppSidebar({ initialRole = "", ...props }: AppSidebarProps) {
         <LocaleSwitcher />
         <ModeToggle />
         <Separator className="my-1" />
-        <NavUser user={data.user} />
+        <NavUser user={data.user} initialProfile={initialProfile} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

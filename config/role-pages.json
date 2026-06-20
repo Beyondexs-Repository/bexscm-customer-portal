@@ -230,30 +230,6 @@
       }
     },
     {
-      "id": "backoffice-employees",
-      "area": "backoffice",
-      "path": "/backoffice/employees",
-      "title": "Employees",
-      "titleKey": "employees",
-      "nav": true,
-      "footerNav": false,
-      "roles": ["global-admin", "application-admin", "sales-rep"],
-      "actions": {
-        "createEmployee": ["global-admin", "application-admin"],
-        "editEmployee": ["global-admin", "application-admin"],
-        "deleteEmployee": ["global-admin", "application-admin"]
-      }
-    },
-    {
-      "id": "backoffice-roles-permissions",
-      "area": "backoffice",
-      "path": "/backoffice/roles-permissions",
-      "title": "Roles and Permissions",
-      "nav": true,
-      "footerNav": false,
-      "roles": ["global-admin", "application-admin"]
-    },
-    {
       "id": "backoffice-profile",
       "area": "backoffice",
       "path": "/backoffice/profile",

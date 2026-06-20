@@ -82,6 +82,10 @@ export async function proxy(request) {
     return redirectTo(allowedRoute, request);
   }
 
+  if (!isProtectedRoute && !isLoginPage && pathname !== "/") {
+  return redirectTo("/", request);
+}
+
   if (!isProtectedRoute || !role) {
     return NextResponse.next();
   }
