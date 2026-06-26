@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
 import {
   getLoginUserId,
-  requirePageAction,
+  requireAnyPageAction,
 } from "@/lib/security/server-role-access";
 
-const USERS_PATH = "/backoffice/users";
+const USER_PATHS = ["/users", "/backoffice/users"];
 
 function normalizePhone(value) {
   return String(value ?? "").replace(/\D/g, "");
@@ -58,9 +58,9 @@ async function getUser(id) {
 }
 
 export async function PUT(request, { params }) {
-  const permissionError = await requirePageAction(
+  const permissionError = await requireAnyPageAction(
     request,
-    USERS_PATH,
+    USER_PATHS,
     "editUser"
   );
   if (permissionError) return permissionError;
@@ -136,9 +136,9 @@ export async function PUT(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
-  const permissionError = await requirePageAction(
+  const permissionError = await requireAnyPageAction(
     request,
-    USERS_PATH,
+    USER_PATHS,
     "editUser"
   );
   if (permissionError) return permissionError;
@@ -196,9 +196,9 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const permissionError = await requirePageAction(
+  const permissionError = await requireAnyPageAction(
     request,
-    USERS_PATH,
+    USER_PATHS,
     "deleteUser"
   );
   if (permissionError) return permissionError;

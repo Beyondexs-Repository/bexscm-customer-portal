@@ -70,6 +70,8 @@ export function DashboardShell({ children, initialRole, initialProfile }) {
           ? t("orderGuide.title")
           : pathname === "/my-orders"
             ? t("myOrders.title")
+            : pathname === "/users"
+              ? t("users.title")
             : pathname === "/profile"
               ? t("profile.title")
               : pathname === "/messages"
@@ -86,6 +88,8 @@ export function DashboardShell({ children, initialRole, initialProfile }) {
           ? t("orderGuide.description")
           : pathname === "/my-orders"
             ? t("myOrders.description")
+            : pathname === "/users"
+              ? t("users.description")
             : pathname === "/profile"
               ? t("profile.description")
               : pathname === "/messages"

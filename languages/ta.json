@@ -22,7 +22,9 @@
     "orderGuide": "ஆர்டர் வழிகாட்டி",
     "catalog": "பட்டியல்",
     "myOrders": "என் ஆர்டர்கள்",
-    "messages": "அரட்டை"
+    "messages": "அரட்டை",
+    "employees": "ஊழியர்கள்",
+    "users": "பயனர்கள்"
   },
   "userMenu": {
     "myProfile": "கணக்கை நிர்வகி",

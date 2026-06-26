@@ -12,6 +12,7 @@ function formatRole(row) {
 
 export async function GET(request) {
   const permissionError = await requireAnyPageAccess(request, [
+    "/users",
     "/backoffice/users",
     "/backoffice/roles-permissions",
   ]);

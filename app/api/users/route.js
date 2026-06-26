@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
 import {
-  requirePageAccess,
-  requirePageAction,
+  requireAnyPageAccess,
+  requireAnyPageAction,
 } from "@/lib/security/server-role-access";
 
-const USERS_PATH = "/backoffice/users";
+const USER_PATHS = ["/users", "/backoffice/users"];
 
 function normalizePhone(value) {
   return String(value ?? "").replace(/\D/g, "");
@@ -47,7 +47,7 @@ function formatUser(row) {
 }
 
 export async function GET(request) {
-  const permissionError = await requirePageAccess(request, USERS_PATH);
+  const permissionError = await requireAnyPageAccess(request, USER_PATHS);
   if (permissionError) return permissionError;
 
   const [rows] = await db.execute(
@@ -79,9 +79,9 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const permissionError = await requirePageAction(
+    const permissionError = await requireAnyPageAction(
       request,
-      USERS_PATH,
+      USER_PATHS,
       "createUser"
     );
     if (permissionError) return permissionError;

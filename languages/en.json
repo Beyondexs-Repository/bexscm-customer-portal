@@ -22,7 +22,9 @@
     "orderGuide": "Order Guide",
     "catalog": "Catalog",
     "myOrders": "My Orders",
-    "messages": "Chat"
+    "messages": "Chat",
+    "employees": "Employees",
+    "users": "Users"
   },
   
   "userMenu": {

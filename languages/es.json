@@ -22,7 +22,9 @@
     "orderGuide": "Guía",
     "catalog": "Catálogo",
     "myOrders": "Pedidos",
-    "messages": "Chat"
+    "messages": "Chat",
+    "employees": "Empleados",
+    "users": "Usuarios"
   },
   "userMenu": {
     "myProfile": "Administrar cuenta",

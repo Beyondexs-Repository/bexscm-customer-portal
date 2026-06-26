@@ -5,14 +5,27 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   BookOpenIcon,
+  CircleIcon,
   ClipboardListIcon,
   LayoutDashboardIcon,
   MessageCircleIcon,
   StarIcon,
+  UsersIcon,
+  UserCogIcon,
 } from "lucide-react";
 
 import { getVisiblePagesForRole } from "@/config/role-pages";
 import { cn } from "@/lib/utils";
+
+function getPageTitle(t, page) {
+  if (!page.titleKey) return page.title;
+
+  try {
+    return t(page.titleKey);
+  } catch {
+    return page.title;
+  }
+}
 
 export function FooterNav({ initialRole = "" }) {
   const pathname = usePathname();
@@ -20,22 +33,22 @@ export function FooterNav({ initialRole = "" }) {
   const isBackoffice = pathname === "/backoffice" || pathname.startsWith("/backoffice/");
   const effectiveRole = initialRole;
   const pageIcons = {
-    "customer-overview": LayoutDashboardIcon,
-    "customer-order-guide": StarIcon,
-    "customer-catalog": BookOpenIcon,
-    "customer-my-orders": ClipboardListIcon,
-    "customer-messages": MessageCircleIcon,
-    "backoffice-overview": LayoutDashboardIcon,
-    "backoffice-orders": ClipboardListIcon,
-    "backoffice-catalog": BookOpenIcon,
+    overview: LayoutDashboardIcon,
+    "order-guide": StarIcon,
+    catalog: BookOpenIcon,
+    "my-orders": ClipboardListIcon,
+    messages: MessageCircleIcon,
+    orders: ClipboardListIcon,
+    employees: UsersIcon,
+    users: UserCogIcon,
   };
   const footerNavItems = getVisiblePagesForRole(effectiveRole, {
     area: isBackoffice ? "backoffice" : "customer",
     footerNav: true,
   }).map((page) => ({
-    title: page.titleKey ? t(page.titleKey) : page.title,
+    title: getPageTitle(t, page),
     url: page.path,
-    icon: pageIcons[page.id],
+    icon: pageIcons[page.id] ?? CircleIcon,
   }));
 
   return (
@@ -46,7 +59,7 @@ export function FooterNav({ initialRole = "" }) {
       <div
         className={cn(
           "grid items-stretch gap-1",
-          isBackoffice ? "grid-cols-3" : "grid-cols-5",
+          "grid-cols-5",
         )}
       >
         {footerNavItems.map((item) => {

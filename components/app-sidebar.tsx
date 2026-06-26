@@ -22,6 +22,7 @@ import {
   GalleryVerticalEndIcon,
   AudioLinesIcon,
   TerminalIcon,
+  CircleIcon,
   Star,
   MessageCircle,
   Users,
@@ -40,6 +41,16 @@ const data = {
     avatar: "",
   }
 };
+
+function getPageTitle(t: (key: string) => string, page: { titleKey?: string; title: string }) {
+  if (!page.titleKey) return page.title;
+
+  try {
+    return t(page.titleKey);
+  } catch {
+    return page.title;
+  }
+}
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   initialRole?: string
@@ -63,26 +74,23 @@ export function AppSidebar({
   const isBackoffice = pathname === "/backoffice" || pathname.startsWith("/backoffice/")
   const effectiveRole = initialRole
   const pageIcons: Record<string, React.ReactNode> = {
-    "customer-overview": <RxDashboard />,
-    "customer-order-guide": <Star />,
-    "customer-catalog": <BookOpenIcon />,
-    "customer-my-orders": <LuNotepadText />,
-    "customer-messages": <MessageCircle />,
-    "customer-employees": <Users />,
-    "backoffice-overview": <RxDashboard />,
-    "backoffice-orders": <ClipboardListIcon />,
-    "backoffice-catalog": <BookOpenIcon />,
-    "backoffice-users": <UserCog />,
-    "backoffice-employees": <Users />,
-    "backoffice-roles-permissions": <ShieldCheckIcon />,
+    overview: <RxDashboard />,
+    "order-guide": <Star />,
+    catalog: <BookOpenIcon />,
+    "my-orders": <LuNotepadText />,
+    messages: <MessageCircle />,
+    employees: <Users />,
+    users: <UserCog />,
+    orders: <ClipboardListIcon />,
+    "roles-permissions": <ShieldCheckIcon />,
   }
   const navMain = getVisiblePagesForRole(effectiveRole, {
     area: isBackoffice ? "backoffice" : "customer",
     nav: true,
   }).map((page) => ({
-    title: page.titleKey ? t(page.titleKey) : page.title,
+    title: getPageTitle(t, page),
     url: page.path,
-    icon: pageIcons[page.id],
+    icon: pageIcons[page.id] ?? <CircleIcon />,
   }))
 
   return (
