@@ -79,9 +79,9 @@ export default async function InvoicesPage({ searchParams }) {
                     <tr key={invoice.id} className="hover:bg-muted/30">
                       <td className="px-6 py-4">
                         <p className="font-semibold">#{invoice.invoiceNumber}</p>
-                        <p className="text-xs text-muted-foreground">
+                        {/* <p className="text-xs text-muted-foreground">
                           Customer {invoice.customerId}
-                        </p>
+                        </p> */}
                       </td>
                       <td className="whitespace-nowrap px-4 py-4">
                         {invoice.invoiceDateLabel}

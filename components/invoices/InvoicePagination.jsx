@@ -41,7 +41,7 @@ export default function InvoicePagination({
           ))}
         </select>
       </label>
-<span className="px-2">
+      <span className="px-2">
         Page {currentPage} of {totalPages}
       </span>
       <Button

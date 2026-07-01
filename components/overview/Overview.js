@@ -163,9 +163,9 @@ async function RecentOrdersTable() {
                   <span className="font-semibold text-foreground">
                     #{order.invoiceNumber}
                   </span>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  {/* <p className="mt-0.5 text-[11px] text-muted-foreground">
                     Customer {order.customerId}
-                  </p>
+                  </p> */}
                 </td>
                 <td className="whitespace-nowrap px-4 py-2 text-xs">
                   {order.invoiceDateLabel}
