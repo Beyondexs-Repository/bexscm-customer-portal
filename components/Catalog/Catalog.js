@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ChevronDown,
@@ -20,7 +18,7 @@ import {
   Loader2,
 } from "lucide-react";
 
-import { useCart, useCatalog, useQuickOrders } from "@/app/context/app-context";
+import items from "@/data/livedata/Items.json";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -37,30 +35,15 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
-import { PAGE_ACTIONS } from "@/lib/security/role-access";
-import { usePagePermission } from "@/lib/security/use-page-permission";
 
-const productImages = [
-  "https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1586444248902-2f64eddc13df?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1551028150-64b9f398f678?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1519996529931-28324d5a630e?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1518843875459-f738682238a6?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=720&q=80",
-];
+
 
 const pageSizeOptions = [10, 20, 40, 60];
 const sortOptions = ["Name A-Z", "Price Low to High", "Price High to Low"];
@@ -165,8 +148,8 @@ function SelectMenu({
   );
 }
 
-function ProductImage({ product, index }) {
-  const image = productImages[index % productImages.length];
+function ProductImage({ product }) {
+  const image = getCategoryPlaceholderImage(product.category);
 
   return (
     <div className="relative aspect-[1.25] overflow-hidden bg-muted sm:aspect-[1.35] xl:aspect-[1.45]">
@@ -185,33 +168,17 @@ function ProductImage({ product, index }) {
 
 function ProductCard({
   product,
-  index,
-  cartQuantity,
-  isInQuickOrder,
-  canAddToCart,
-  canAddToOrderGuide,
-  productHref,
-  onAdd,
-  onIncrement,
-  onDecrement,
-  onOpenQuickOrder,
 }) {
   const t = useTranslations("catalog")
   const [draftQuantity, setDraftQuantity] = useState(1);
-  const isInCart = cartQuantity > 0;
-  const quantity = isInCart ? cartQuantity : draftQuantity;
 
   return (
     <article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
       <div className="relative">
-        <Link
-          href={`${productHref}/${product.id}`}
-          aria-label={`View details for ${product.name}`}
-          className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <ProductImage product={product} index={index} />
-        </Link>
-        {canAddToOrderGuide ? <TooltipProvider>
+        <div className="block">
+          <ProductImage product={product} />
+        </div>
+        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -219,14 +186,8 @@ function ProductCard({
                 size="icon-sm"
                 aria-label={`Order Guide ${product.name}`}
                 className="absolute right-1.5 top-1.5 rounded-full border bg-card text-muted-foreground shadow-md hover:text-primary dark:border-border dark:bg-card hover:dark:bg-card/60 sm:right-2 sm:top-2"
-                onClick={() => onOpenQuickOrder(product)}
               >
-                <Star
-                  className={cn(
-                    "h-4 w-4",
-                    isInQuickOrder && "fill-primary text-primary",
-                  )}
-                />
+                <Star className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
 
@@ -234,19 +195,19 @@ function ProductCard({
               <p>{t("addToOrderGuide")}</p>
             </TooltipContent>
           </Tooltip>
-        </TooltipProvider> : null}
+        </TooltipProvider>
       </div>
 
       <div className="space-y-2 p-2 lg:space-y-3 lg:p-3">
         <div className="min-w-0 space-y-1">
-          <Link
-            href={`${productHref}/${product.id}`}
-            className="block truncate text-xs font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
-          >
+          <p className="block truncate text-xs text-muted-foreground uppercase font-bold lg:text-sm">
+            {product.brand}
+          </p>
+          <p className="block truncate text-xs font-bold lg:text-sm">
             {product.name}
-          </Link>
+          </p>
           <p className="truncate text-[0.68rem] font-semibold text-muted-foreground lg:text-xs">
-            {product.subcategory}
+            {product.category}
           </p>
           <div className="grid gap-0.5 text-[0.62rem] font-medium text-muted-foreground lg:text-[0.7rem]">
             <span className="truncate">{t("packSize", { unit: product.unit })}</span>
@@ -257,26 +218,19 @@ function ProductCard({
           {formatPrice(product.price, product.unit)}
         </p>
 
-        {canAddToCart ? <div className="grid gap-2 min-[460px]:grid-cols-[4.25rem_1fr] lg:grid-cols-[4.75rem_1fr]">
+        <div className="grid gap-2 min-[460px]:grid-cols-[4.25rem_1fr] lg:grid-cols-[4.75rem_1fr]">
           <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
             <Button
               variant="ghost"
               size="icon-sm"
               aria-label={`Decrease ${product.name} quantity`}
               className="h-full rounded-none"
-              onClick={() => {
-                if (isInCart) {
-                  onDecrement(product.id);
-                  return;
-                }
-
-                setDraftQuantity((current) => Math.max(1, current - 1));
-              }}
+              onClick={() => setDraftQuantity((current) => Math.max(1, current - 1))}
             >
               <span className="grid size-full place-items-center">-</span>
             </Button>
             <Input
-              value={quantity}
+              value={draftQuantity}
               readOnly
               aria-label={`${product.name} quantity`}
               className="h-full rounded-none border-0 px-0 text-center text-xs font-normal shadow-none focus-visible:ring-0"
@@ -286,156 +240,24 @@ function ProductCard({
               size="icon-sm"
               aria-label={`Increase ${product.name} quantity`}
               className="h-full rounded-none"
-              onClick={() => {
-                if (isInCart) {
-                  onIncrement(product.id);
-                  return;
-                }
-
-                setDraftQuantity((current) => current + 1);
-              }}
+              onClick={() => setDraftQuantity((current) => current + 1)}
             >
               <span className="grid size-full place-items-center">+</span>
             </Button>
           </div>
 
           <Button
-            variant={isInCart ? "secondary" : "default"}
+            variant="default"
             className="h-8 min-w-0 rounded-md px-2 text-[0.68rem] font-bold lg:text-xs"
-            onClick={() => {
-              if (!isInCart) {
-                onAdd(product, draftQuantity);
-              }
-            }}
           >
             <ShoppingCart />
-            <span className="truncate">
-              {isInCart ? t("addedToCart") : t("addToCart")}
-            </span>
+            <span className="truncate">{t("addToCart")}</span>
           </Button>
-        </div> : null}
+        </div>
       </div>
     </article>
   );
 }
-
-// function CatalogFilterControls({
-//   searchQuery,
-//   categoryName,
-//   categoryNames,
-//   subcategoryName,
-//   subcategoryNames,
-//   sortBy,
-//   activeFilterCount,
-//   onSearchChange,
-//   onCategoryChange,
-//   onSubcategoryChange,
-//   onSortChange,
-//   onClearAll,
-//   layout = "desktop",
-// }) {
-//   const isMobile = layout === "mobile";
-//   const t = useTranslations("catalog")
-
-//   return (
-//     <div className="min-w-0 space-y-4">
-//       <div
-//         className={cn(
-//           "grid min-w-0 gap-2",
-//           isMobile ? "grid-cols-1" : "sm:grid-cols-[minmax(0,1fr)_8.5rem_auto]",
-//         )}
-//       >
-//         <div className="relative min-w-0">
-//           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-//           <Input
-//             type="search"
-//             value={searchQuery}
-//             onChange={onSearchChange}
-//             placeholder={t("searchProducts")}
-//             className="h-10 rounded-md pl-9 text-sm"
-//           />
-//         </div>
-
-//         <Button
-//           variant="outline"
-//           className="relative h-10 min-w-0 mt-1 sm:mt-0 justify-start rounded-md text-xs font-semibold"
-//         >
-//           <SlidersHorizontal className="shrink-0" />
-//           <span className="truncate">{t("filters")}</span>
-//           {activeFilterCount > 0 && (
-//             <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
-//               {activeFilterCount}
-//             </span>
-//           )}
-//         </Button>
-
-//         {!isMobile && (
-//           <Button
-//             variant="ghost"
-//             className="h-10 justify-start px-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
-//             onClick={onClearAll}
-//             disabled={activeFilterCount === 0}
-//           >
-//             <RotateCcw className="size-4" />
-//             {t("clearAll")}
-//           </Button>
-//         )}
-//       </div>
-
-//       <div
-//         className={cn(
-//           "grid min-w-0 gap-2",
-//           isMobile ? "grid-cols-2" : "md:grid-cols-3 md:gap-3",
-//         )}
-//       >
-//         <SelectMenu
-//           label={t("category")}
-//           value={categoryName}
-//           options={categoryNames}
-//           onChange={onCategoryChange}
-//           searchable
-//         />
-//         <SelectMenu
-//           label={t("subcategory")}
-//           value={subcategoryName}
-//           options={subcategoryNames}
-//           onChange={onSubcategoryChange}
-//           searchable
-//         />
-//         <SelectMenu
-//           label={t("sortBy")}
-//           value={sortBy}
-//           options={sortOptions}
-//           onChange={onSortChange}
-//         />
-
-//         {isMobile && (
-//           <Button
-//             variant="outline"
-//             className="mt-auto h-9 min-w-0 justify-start rounded-md text-xs font-semibold"
-//           >
-//             <SlidersHorizontal className="shrink-0" />
-//             <span className="truncate">{t("filters")}</span>
-//           </Button>
-//         )}
-//       </div>
-
-//       {isMobile && (
-//         <Button
-//           variant="ghost"
-//           className="h-9 w-full justify-center text-xs font-semibold text-muted-foreground hover:text-foreground"
-//           onClick={onClearAll}
-//           disabled={activeFilterCount === 0}
-//         >
-//           <RotateCcw className="size-4" />
-//           {t("clearAll")}
-//         </Button>
-//       )}
-//     </div>
-//   );
-// }
-
-
 
 function MobileDeliveryInfo() {
   const t = useTranslations("catalog")
@@ -614,19 +436,179 @@ function getVisiblePages(currentPage, totalPages) {
   return [...pages].sort((a, b) => a - b);
 }
 
+function CatalogFilterControls({
+  searchQuery,
+  categoryName,
+  categoryNames,
+  subcategoryName,
+  subcategoryNames,
+  sortBy,
+  activeFilterCount,
+  voiceStatus,
+  onVoiceSearch,
+  onSearchChange,
+  onCategoryChange,
+  onSubcategoryChange,
+  onSortChange,
+  onClearAll,
+  layout = "desktop",
+}) {
+  const isMobile = layout === "mobile";
+  const t = useTranslations("catalog");
+
+  return (
+    <div className="min-w-0 space-y-4">
+      <div
+        className={cn(
+          "grid min-w-0 gap-2",
+          isMobile
+            ? "grid-cols-1"
+            : "sm:grid-cols-[minmax(0,1fr)_8.5rem_auto]",
+        )}
+      >
+        <div className="relative min-w-0">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            value={searchQuery}
+            onChange={onSearchChange}
+            placeholder={t("searchProducts")}
+            className="h-10 rounded-md pl-9 text-sm"
+          />
+          <button
+            type="button"
+            onClick={onVoiceSearch}
+            disabled={voiceStatus !== "idle"}
+            aria-label={
+              voiceStatus === "listening"
+                ? "Listening"
+                : "Search products by voice"
+            }
+            className="absolute right-2 top-1/2 z-50 -translate-y-1/2 rounded-full bg-green-500 p-2 text-white"
+          >
+            {voiceStatus === "idle" ? (
+              <Mic size={18} />
+            ) : (
+              <Loader2 className="size-[18px] animate-spin" />
+            )}
+          </button>
+        </div>
+
+        <Button
+          variant="outline"
+          className="relative mt-1 h-10 min-w-0 justify-start rounded-md text-xs font-semibold sm:mt-0"
+        >
+          <SlidersHorizontal className="shrink-0" />
+          <span className="truncate">{t("filters")}</span>
+          {activeFilterCount > 0 && (
+            <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
+              {activeFilterCount}
+            </span>
+          )}
+        </Button>
+
+        {!isMobile && (
+          <Button
+            variant="ghost"
+            className="h-10 justify-start px-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
+            onClick={onClearAll}
+            disabled={activeFilterCount === 0}
+          >
+            <RotateCcw className="size-4" />
+            {t("clearAll")}
+          </Button>
+        )}
+      </div>
+
+      <div
+        className={cn(
+          "grid min-w-0 gap-2",
+          isMobile ? "grid-cols-2" : "md:grid-cols-3 md:gap-3",
+        )}
+      >
+        <SelectMenu
+          label={t("category")}
+          value={categoryName}
+          options={categoryNames}
+          onChange={onCategoryChange}
+          searchable
+        />
+        <SelectMenu
+          label={t("subcategory")}
+          value={subcategoryName}
+          options={subcategoryNames}
+          onChange={onSubcategoryChange}
+          searchable
+        />
+        <SelectMenu
+          label={t("sortBy")}
+          value={sortBy}
+          options={sortOptions}
+          onChange={onSortChange}
+        />
+
+        {isMobile && (
+          <Button
+            variant="outline"
+            className="mt-auto h-9 min-w-0 justify-start rounded-md text-xs font-semibold"
+          >
+            <SlidersHorizontal className="shrink-0" />
+            <span className="truncate">{t("filters")}</span>
+          </Button>
+        )}
+      </div>
+
+      {isMobile && (
+        <Button
+          variant="ghost"
+          className="h-9 w-full justify-center text-xs font-semibold text-muted-foreground hover:text-foreground"
+          onClick={onClearAll}
+          disabled={activeFilterCount === 0}
+        >
+          <RotateCcw className="size-4" />
+          {t("clearAll")}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export function Catalog() {
   const t = useTranslations("catalog")
-  const pathname = usePathname()
-  const canAddToCart = usePagePermission(PAGE_ACTIONS.ADD_TO_CART)
-  const canAddToOrderGuide = usePagePermission(PAGE_ACTIONS.ADD_TO_ORDER_GUIDE)
-  const productHref = pathname.startsWith("/backoffice")
-    ? "/backoffice/catalog"
-    : "/catalog"
-  const { items, addItem, incrementItem, decrementItem } = useCart();
-  const { catalog } = useCatalog();
-  const { quickOrders, addProductToQuickOrder, removeProductFromQuickOrder } =
-    useQuickOrders();
-  const [quickOrderProduct, setQuickOrderProduct] = useState(null);
+  const catalog = useMemo(() => {
+    const categories = new Map();
+
+    items.forEach((item) => {
+      const categoryName = item.MainGroup?.trim() || "Other";
+      const subcategoryName = item["Sub-Group"]?.trim() || "Other";
+      const category = categories.get(categoryName) ?? {
+        name: categoryName,
+        subcategories: new Map(),
+      };
+      const products = category.subcategories.get(subcategoryName) ?? [];
+
+      products.push({
+        id: item.ITEMNMBR.trim(),
+        brand: item.ppc_Brand.trim(),
+        name: item.ItemName?.trim() || item.ITEMDESC.trim(),
+        sku: item.ITEMNMBR.trim(),
+        unit: item.UOMSCHDL?.trim() || "unit",
+        price: Number(item.QTYBSUOM) || 0,
+        category: categoryName,
+        subcategory: subcategoryName,
+      });
+      category.subcategories.set(subcategoryName, products);
+      categories.set(categoryName, category);
+    });
+
+    return Array.from(categories.values()).map((category) => ({
+      name: category.name,
+      subcategories: Array.from(category.subcategories, ([name, products]) => ({
+        name,
+        products,
+      })),
+    }));
+  }, []);
   const categoryNames = ["All", ...catalog.map((category) => category.name)];
   const [voiceProducts, setVoiceProducts] = useState([]);
   const [categoryName, setCategoryName] = useState("All");
@@ -638,7 +620,7 @@ export function Catalog() {
   const subcategoryNames =
     categoryName === "All"
       ? ["All"]
-      : ["All", ...(activeCategory?.subcategories.map((s) => s.name) ?? [])];
+      : ["All", ...(activeCategory?.subcategories.map((subcategory) => subcategory.name) ?? [])];
 
   const [subcategoryName, setSubcategoryName] = useState("All");
   const [sortBy, setSortBy] = useState(DEFAULT_SORT);
@@ -651,220 +633,37 @@ export function Catalog() {
   const catalogScrollRef = useRef(null);
   const voiceSearchRequestIdRef = useRef(0);
 
-function CatalogFilterControls({
-    searchQuery,
-    categoryName,
-    categoryNames,
-    subcategoryName,
-    subcategoryNames,
-    sortBy,
-    activeFilterCount,
-    onSearchChange,
-    onCategoryChange,
-    onSubcategoryChange,
-    onSortChange,
-    onClearAll,
-    layout = "desktop",
-  }) {
-    const isMobile = layout === "mobile";
-    const t = useTranslations("catalog");
-    //=========================VOICE SEARCH=========================
-    const startListening = () => {
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
+  function startListening() {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
-      if (!SpeechRecognition) {
-        alert("Speech recognition is not supported in this browser.");
-        return;
-      }
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
 
-      const recognition = new SpeechRecognition();
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    setVoiceStatus("listening");
+    recognition.start();
 
-      recognition.lang = "en-US";
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      setVoiceStatus("listening");
-      recognition.start();
-
-      recognition.onresult = async (event) => {
-        const transcript = event.results[0][0].transcript;
-        const requestId = voiceSearchRequestIdRef.current + 1;
-
-        voiceSearchRequestIdRef.current = requestId;
-        setSearchQuery(transcript);
-        setAppliedSearchQuery(transcript);
-        setCurrentPage(1);
-        setVoiceStatus("searching");
-
-        try {
-          const response = await fetch("/api/voice-search", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              text: transcript,
-            }),
-          });
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error("Voice search failed.");
-          }
-
-          if (voiceSearchRequestIdRef.current === requestId) {
-            setVoiceProducts(data.success ? (data.products ?? []) : []);
-          }
-        } catch (error) {
-          console.error(error);
-
-          if (voiceSearchRequestIdRef.current === requestId) {
-            setVoiceProducts([]);
-          }
-        } finally {
-          if (voiceSearchRequestIdRef.current === requestId) {
-            setVoiceStatus("idle");
-          }
-        }
-      };
-
-      recognition.onerror = (event) => {
-        console.error(event);
-        setVoiceStatus("idle");
-      };
-
-      recognition.onend = () => {
-        setVoiceStatus((current) =>
-          current === "listening" ? "idle" : current,
-        );
-      };
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setSearchQuery(transcript);
+      setAppliedSearchQuery(transcript);
+      setCurrentPage(1);
+      setVoiceProducts([]);
+      setVoiceStatus("idle");
     };
-    return (
-      <div className="min-w-0 space-y-4">
-        <div
-          className={cn(
-            "grid min-w-0 gap-2",
-            isMobile
-              ? "grid-cols-1"
-              : "sm:grid-cols-[minmax(0,1fr)_8.5rem_auto]",
-          )}
-        >
-          <div className="relative min-w-0">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              value={searchQuery}
-              onChange={onSearchChange}
-              placeholder={t("searchProducts")}
-              className="h-10 rounded-md pl-9 text-sm"
-            />
- 
-            <button
-              type="button"
-              onClick={startListening}
-              disabled={voiceStatus !== "idle"}
-              aria-label={
-                voiceStatus === "listening"
-                  ? "Listening"
-                  : voiceStatus === "searching"
-                    ? "Searching products"
-                    : "Search products by voice"
-              }
-              className="absolute right-2 top-1/2 z-50 -translate-y-1/2 rounded-full bg-green-500 p-2 text-white"
-            >
-              {voiceStatus === "idle" ? (
-                <Mic size={18} />
-              ) : (
-                <Loader2 className="size-[18px] animate-spin" />
-              )}
-            </button>
-          </div>
- 
-          <Button
-            variant="outline"
-            className="relative h-10 min-w-0 mt-1 sm:mt-0 justify-start rounded-md text-xs font-semibold"
-          >
-            <SlidersHorizontal className="shrink-0" />
-            <span className="truncate">{t("filters")}</span>
-            {activeFilterCount > 0 && (
-              <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
-                {activeFilterCount}
-              </span>
-            )}
-          </Button>
- 
-          {!isMobile && (
-            <Button
-              variant="ghost"
-              className="h-10 justify-start px-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
-              onClick={onClearAll}
-              disabled={activeFilterCount === 0}
-            >
-              <RotateCcw className="size-4" />
-              {t("clearAll")}
-            </Button>
-          )}
-        </div>
- 
-        <div
-          className={cn(
-            "grid min-w-0 gap-2",
-            isMobile ? "grid-cols-2" : "md:grid-cols-3 md:gap-3",
-          )}
-        >
-          <SelectMenu
-            label={t("category")}
-            value={categoryName}
-            options={categoryNames}
-            onChange={(value) => {
-              setCategoryName(value);
-              setVoiceProducts([]);
-            }}
-            searchable
-          />
-          <SelectMenu
-            label={t("subcategory")}
-            value={subcategoryName}
-            options={subcategoryNames}
-            onChange={(value) => {
-              setSubcategoryName(value);
-              setVoiceProducts([]);
-            }}
-            searchable
-          />
-          <SelectMenu
-            label={t("sortBy")}
-            value={sortBy}
-            options={sortOptions}
-            onChange={onSortChange}
-          />
- 
-          {isMobile && (
-            <Button
-              variant="outline"
-              className="mt-auto h-9 min-w-0 justify-start rounded-md text-xs font-semibold"
-            >
-              <SlidersHorizontal className="shrink-0" />
-              <span className="truncate">{t("filters")}</span>
-            </Button>
-          )}
-        </div>
- 
-        {isMobile && (
-          <Button
-            variant="ghost"
-            className="h-9 w-full justify-center text-xs font-semibold text-muted-foreground hover:text-foreground"
-            onClick={onClearAll}
-            disabled={activeFilterCount === 0}
-          >
-            <RotateCcw className="size-4" />
-            {t("clearAll")}
-          </Button>
-        )}
-      </div>
-    );
+    recognition.onerror = () => setVoiceStatus("idle");
+    recognition.onend = () => {
+      setVoiceStatus((current) =>
+        current === "listening" ? "idle" : current,
+      );
+    };
   }
-
 
   function scrollCatalogToTop() {
     catalogScrollRef.current?.scrollTo({
@@ -882,36 +681,6 @@ function CatalogFilterControls({
     return () => window.clearTimeout(searchDelay);
   }, [searchQuery]);
 
-
-  // const products = useMemo(() => {
-  //   let filtered = [];
-
-  //   if (categoryName === "All") {
-  //     filtered = catalog.flatMap((category) =>
-  //       category.subcategories.flatMap((subcategory) =>
-  //         subcategory.products.map((product) => ({
-  //           ...product,
-  //           category: category.name,
-  //           subcategory: subcategory.name,
-  //         })),
-  //       ),
-  //     );
-  //   } else if (subcategoryName === "All") {
-  //     filtered =
-  //       activeCategory?.subcategories.flatMap((subcategory) =>
-  //         subcategory.products.map((product) => ({
-  //           ...product,
-  //           category: activeCategory.name,
-  //           subcategory: subcategory.name,
-  //         })),
-  //       ) ?? [];
-  //   } else {
-  //     const selectedSubcategory = activeCategory?.subcategories.find(
-  //       (subcategory) => subcategory.name === subcategoryName,
-  //     );
-
-  //     filtered = selectedSubcategory?.products ?? [];
-  //   }
 
   const products = useMemo(() => {
     let filtered = [];
@@ -981,74 +750,23 @@ function CatalogFilterControls({
     voiceProducts,
   ]);
 
-
-  //   const normalizedSearch = appliedSearchQuery.trim().toLowerCase();
-
-  //   if (normalizedSearch) {
-  //     filtered = filtered.filter((product) =>
-  //       [
-  //         product.name,
-  //         product.category,
-  //         product.subcategory,
-  //         product.unit,
-  //         product.id,
-  //       ]
-  //         .filter(Boolean)
-  //         .some((value) =>
-  //           String(value).toLowerCase().includes(normalizedSearch),
-  //         ),
-  //     );
-  //   }
-
-  //   if (sortBy === "Price Low to High") {
-  //     filtered.sort((a, b) => a.price - b.price);
-  //   } else if (sortBy === "Price High to Low") {
-  //     filtered.sort((a, b) => b.price - a.price);
-  //   } else {
-  //     filtered.sort((a, b) => a.name.localeCompare(b.name));
-  //   }
-
-  //   return filtered;
-  // }, [
-  //   catalog,
-  //   categoryName,
-  //   subcategoryName,
-  //   sortBy,
-  //   appliedSearchQuery,
-  //   activeCategory,
-  // ]);
-
   const totalPages = Math.max(1, Math.ceil(products.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = products.length === 0 ? 0 : (safePage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, products.length);
   const visibleProducts = products.slice(startIndex, endIndex);
   const visiblePages = getVisiblePages(safePage, totalPages);
-  const cartQuantities = useMemo(
-    () => new Map(items.map((item) => [item.id, item.quantity])),
-    [items],
-  );
-  const quickOrderProductIds = useMemo(
-    () =>
-      new Set(
-        quickOrders.flatMap(
-          (order) =>
-            order.groups.flatMap((group) =>
-              group.products.map((product) => product.id),
-            ) ?? [],
-        ),
-      ),
-    [quickOrders],
-  );
 
   function handleCategoryChange(nextCategoryName) {
     setCategoryName(nextCategoryName);
     setSubcategoryName("All");
+    setVoiceProducts([]);
     setCurrentPage(1);
   }
 
   function handleSubcategoryChange(nextSubcategoryName) {
     setSubcategoryName(nextSubcategoryName);
+    setVoiceProducts([]);
     setCurrentPage(1);
   }
 
@@ -1144,6 +862,8 @@ function CatalogFilterControls({
               subcategoryNames={subcategoryNames}
               sortBy={sortBy}
               activeFilterCount={activeFilterCount}
+              voiceStatus={voiceStatus}
+              onVoiceSearch={startListening}
               onSearchChange={handleSearchChange}
               onCategoryChange={handleCategoryChange}
               onSubcategoryChange={handleSubcategoryChange}
@@ -1163,6 +883,8 @@ function CatalogFilterControls({
           subcategoryNames={subcategoryNames}
           sortBy={sortBy}
           activeFilterCount={activeFilterCount}
+          voiceStatus={voiceStatus}
+          onVoiceSearch={startListening}
           onSearchChange={handleSearchChange}
           onCategoryChange={handleCategoryChange}
           onSubcategoryChange={handleSubcategoryChange}
@@ -1182,20 +904,10 @@ function CatalogFilterControls({
         </div>
 
         <section className="grid min-w-0 auto-rows-min grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[1800px]:grid-cols-6">
-          {visibleProducts.map((product, index) => (
+          {visibleProducts.map((product) => (
             <ProductCard
               key={product.id}
               product={product}
-              index={startIndex + index}
-              cartQuantity={cartQuantities.get(product.id) ?? 0}
-              isInQuickOrder={quickOrderProductIds.has(product.id)}
-              canAddToCart={canAddToCart}
-              canAddToOrderGuide={canAddToOrderGuide}
-              productHref={productHref}
-              onAdd={addItem}
-              onIncrement={incrementItem}
-              onDecrement={decrementItem}
-              onOpenQuickOrder={setQuickOrderProduct}
             />
           ))}
         </section>
@@ -1286,16 +998,6 @@ function CatalogFilterControls({
         </div>
       </div>
 
-      {canAddToOrderGuide ? <OrderGuidePickerDialog
-        product={quickOrderProduct}
-        quickOrders={quickOrders}
-        open={Boolean(quickOrderProduct)}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) setQuickOrderProduct(null);
-        }}
-        onAdd={addProductToQuickOrder}
-        onRemove={removeProductFromQuickOrder}
-      /> : null}
     </main>
   );
 }

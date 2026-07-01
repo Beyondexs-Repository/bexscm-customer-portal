@@ -1,10 +1,9 @@
-import { cookies } from "next/headers"
 import { NextIntlClientProvider } from "next-intl"
 import { Noto_Sans_Tamil, Poppins } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "sonner"
-import { defaultLocale, loadMessages, localeCookieName, locales } from "@/lib/i18n"
+import { defaultLocale, loadMessages } from "@/lib/i18n"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -24,19 +23,16 @@ export const metadata = {
 };
 
 export default async function RootLayout({children}) {
-  const cookieStore = await cookies()
-  const storedLocale = cookieStore.get(localeCookieName)?.value
-  const locale = locales.includes(storedLocale) ? storedLocale : defaultLocale
-  const messages = await loadMessages(locale)
+  const messages = await loadMessages(defaultLocale)
 
   return (
     <html
-      lang={locale}
+      lang={defaultLocale}
       suppressHydrationWarning
       className={`${poppins.variable} ${notoSansTamil.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider locale={defaultLocale} messages={messages}>
 		<ThemeProvider
             attribute="class"
             defaultTheme="system"

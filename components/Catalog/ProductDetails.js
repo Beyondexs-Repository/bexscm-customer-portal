@@ -6,23 +6,16 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
-  Check,
   ChevronLeft,
   ShoppingCart,
   Star,
 } from "lucide-react";
 
-import { useCart, useQuickOrders } from "@/app/context/app-context";
-import {
-  findCatalogProduct,
-  getProductGalleryImages,
-} from "@/lib/catalog-products";
+import catalog from "@/data/data.json";
+import { getProductGalleryImages } from "@/lib/catalog-products";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
 import { cn } from "@/lib/utils";
-import { PAGE_ACTIONS } from "@/lib/security/role-access";
-import { usePagePermission } from "@/lib/security/use-page-permission";
 
 function formatPrice(price, unit) {
   return `$${Number(price).toFixed(2)} / ${unit}`;
@@ -73,33 +66,32 @@ function ProductGallery({ product, images }) {
 export function ProductDetails({ productId }) {
   const t = useTranslations("catalog")
   const pathname = usePathname()
-  const canAddToCart = usePagePermission(PAGE_ACTIONS.ADD_TO_CART)
-  const canAddToOrderGuide = usePagePermission(PAGE_ACTIONS.ADD_TO_ORDER_GUIDE)
   const catalogPath = pathname.startsWith("/backoffice")
     ? "/backoffice/catalog"
     : "/catalog"
-  const product = findCatalogProduct(productId);
-  const { items, addItem, incrementItem, decrementItem } = useCart();
-  const { quickOrders, addProductToQuickOrder, removeProductFromQuickOrder } =
-    useQuickOrders();
+  const product = useMemo(
+    () =>
+      catalog
+        .flatMap((category, categoryIndex) =>
+          category.subcategories.flatMap((subcategory, subcategoryIndex) =>
+            subcategory.products.map((item, productIndex) => ({
+              ...item,
+              category: item.category || category.name,
+              subcategory: item.subcategory || subcategory.name,
+              fallbackImageIndex:
+                categoryIndex + subcategoryIndex + productIndex,
+            })),
+          ),
+        )
+        .find((item) => item.id === productId || item.slug === productId),
+    [productId],
+  );
   const [draftQuantity, setDraftQuantity] = useState(1);
-  const [orderGuideOpen, setOrderGuideOpen] = useState(false);
 
   const galleryImages = useMemo(
     () => getProductGalleryImages(product),
     [product],
   );
-  const cartQuantity = product
-    ? (items.find((item) => item.id === product.id)?.quantity ?? 0)
-    : 0;
-  const quantity = cartQuantity > 0 ? cartQuantity : draftQuantity;
-  const isInOrderGuide = product
-    ? quickOrders.some((order) =>
-        order.groups.some((group) =>
-          group.products.some((item) => item.id === product.id),
-        ),
-      )
-    : false;
 
   if (!product) {
     return (
@@ -173,82 +165,49 @@ export function ProductDetails({ productId }) {
               <span>{product.category}</span>
             </div>
           </div>
-          {canAddToCart ? <div className="mt-6 flex items-center gap-2">
+          <div className="mt-6 flex items-center gap-2">
             <div className="flex h-9 w-[100px] shrink-0 overflow-hidden rounded-md border bg-background">
               <Button
                 variant="ghost"
                 size="icon-sm"
                 className="h-full w-8 shrink-0 rounded-none p-0 font-bold"
-                onClick={() => {
-                  if (cartQuantity > 0) {
-                    decrementItem(product.id);
-                    return;
-                  }
-
-                  setDraftQuantity((current) => Math.max(1, current - 1));
-                }}
+                onClick={() => setDraftQuantity((current) => Math.max(1, current - 1))}
               >
                 <span className="grid size-full place-items-center">-</span>
               </Button>
 
               <div className="flex flex-1 items-center justify-center text-sm font-bold">
-                {quantity}
+                {draftQuantity}
               </div>
 
               <Button
                 variant="ghost"
                 size="icon-sm"
                 className="h-full w-8 shrink-0 rounded-none p-0 font-bold"
-                onClick={() => {
-                  if (cartQuantity > 0) {
-                    incrementItem(product.id);
-                    return;
-                  }
-
-                  setDraftQuantity((current) => current + 1);
-                }}
+                onClick={() => setDraftQuantity((current) => current + 1)}
               >
                 <span className="grid size-full place-items-center">+</span>
               </Button>
             </div>
 
             <Button
-              className={cn(
-                "h-9 flex-1 rounded-full text-sm font-bold",
-                cartQuantity > 0 &&
-                  "border border-sky-200 bg-sky-100 text-sky-700 hover:bg-sky-200",
-              )}
-              variant={cartQuantity > 0 ? "ghost" : "default"}
-              onClick={() => {
-                if (cartQuantity === 0) {
-                  addItem(product, draftQuantity);
-                }
-              }}
+              className="h-9 flex-1 rounded-full text-sm font-bold"
+              variant="default"
             >
-              {cartQuantity > 0 ? (
-                <Check className="size-4" />
-              ) : (
-                <ShoppingCart />
-              )}
-              {cartQuantity > 0 ? t("addedToCartCount", { count: cartQuantity }) : t("addToCart")}
+              <ShoppingCart />
+              {t("addToCart")}
             </Button>
-          </div> : null}
+          </div>
 
-          {canAddToOrderGuide ? <div className="mt-3">
+          <div className="mt-3">
             <Button
               variant="outline"
               className="h-10 w-full rounded-full text-sm font-bold"
-              onClick={() => setOrderGuideOpen(true)}
             >
-              <Star
-                className={cn(
-                  "size-4",
-                  isInOrderGuide && "fill-primary text-primary",
-                )}
-              />
-              {isInOrderGuide ? t("updateOrderGuide") : t("addToOrderGuide")}
+              <Star className="size-4" />
+              {t("addToOrderGuide")}
             </Button>
-          </div> : null}
+          </div>
         </section>
       </div>
 
@@ -269,14 +228,6 @@ export function ProductDetails({ productId }) {
         </ul>
       </section>
 
-      {canAddToOrderGuide ? <OrderGuidePickerDialog
-        product={product}
-        quickOrders={quickOrders}
-        open={orderGuideOpen}
-        onOpenChange={setOrderGuideOpen}
-        onAdd={addProductToQuickOrder}
-        onRemove={removeProductFromQuickOrder}
-      /> : null}
     </main>
   );
 }

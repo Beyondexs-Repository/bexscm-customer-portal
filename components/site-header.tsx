@@ -18,12 +18,7 @@ import {
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
-import {
-  PAGE_ACTIONS,
-  canAccessPageAction,
-} from "@/lib/security/role-access"
 import { CartSidebar } from "@/components/cart-sidebar"
-import { useCart } from "@/app/context/app-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -39,10 +34,11 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 
 const CUTOFF_TIME = "8:00 AM"
 const CUTOFF_DATE = "6/6"
+const staticAction = () => {}
 const DEFAULT_PROFILE = {
-  firstName: "",
-  lastName: "",
-  email: "",
+  firstName: "Aloha",
+  lastName: "Customer",
+  email: "hello@crateinc.com",
   avatar: "",
 }
 
@@ -106,64 +102,40 @@ function SiteHeader({
   className,
   title,
   description,
-  initialRole = "",
   initialProfile = null,
   children,
   ...props
 }: React.ComponentProps<"header"> & {
   title?: React.ReactNode
   description?: React.ReactNode
-  initialRole?: string
   initialProfile?: Partial<HeaderProfile> | null
 }) {
   const router = useRouter()
   const pathname = usePathname()
   const t = useTranslations("header")
   const isMessagesPage = pathname === "/messages"
-  const canSearchMessages = canAccessPageAction(
-    initialRole,
-    "/messages",
-    PAGE_ACTIONS.SEARCH_MESSAGES
-  )
-  const canClearChat = canAccessPageAction(
-    initialRole,
-    "/messages",
-    PAGE_ACTIONS.CLEAR_CHAT
-  )
+  const canSearchMessages = true
+  const canClearChat = true
   const profileUrl =
     pathname === "/backoffice" || pathname.startsWith("/backoffice/")
       ? "/backoffice/profile"
       : "/profile"
-  const [profile, setProfile] = React.useState<HeaderProfile>(() => ({
+  const profile: HeaderProfile = {
     ...DEFAULT_PROFILE,
     ...initialProfile,
-  }))
+  }
   const profileName = getFullName(profile)
   const profileInitials = getInitials(profile)
-  const {
-    items,
-    itemCount,
-    total,
-    incrementItem,
-    decrementItem,
-    removeItem,
-    clearCart,
-  } = useCart() as {
-    items: {
-      id: string
-      name: string
-      price: number
-      quantity: number
-      sku: string
-      unit: string
-    }[]
-    itemCount: number
-    total: number
-    incrementItem: (id: string) => void
-    decrementItem: (id: string) => void
-    removeItem: (id: string) => void
-    clearCart: () => void
-  }
+  const items: {
+    id: string
+    name: string
+    price: number
+    quantity: number
+    sku: string
+    unit: string
+  }[] = []
+  const itemCount = 0
+  const total = 0
   const cartTotal = `$${total.toFixed(2)}`
   const today = startOfDay(new Date())
   const calendarRef = React.useRef<HTMLDivElement>(null)
@@ -178,20 +150,8 @@ function SiteHeader({
   )
 
   function handleCheckout() {
-    const canPlaceOrder = canAccessPageAction(
-      initialRole,
-      pathname,
-      PAGE_ACTIONS.PLACE_ORDER
-    )
-
-    if (!canPlaceOrder) {
-      toast.error("You do not have permission to place an order.")
-      return
-    }
-
-    clearCart()
     setCartOpen(false)
-    toast.success("Your order has been placed successfully.")
+    toast.success("This is a static frontend preview.")
   }
 
   const calendarDays = React.useMemo(() => {
@@ -214,54 +174,6 @@ function SiteHeader({
     month: "long",
     year: "numeric",
   })
-
-  React.useEffect(() => {
-    let active = true
-
-    function applyProfile(nextProfile: Partial<HeaderProfile>) {
-      setProfile({
-        firstName: nextProfile.firstName ?? "",
-        lastName: nextProfile.lastName ?? "",
-        email: nextProfile.email ?? "",
-        avatar: nextProfile.avatar ?? "",
-      })
-    }
-
-    async function loadProfile() {
-      try {
-        const response = await fetch("/api/profile", {
-          cache: "no-store",
-          credentials: "same-origin",
-        })
-
-        if (!response.ok) return
-
-        const data = await response.json()
-
-        if (active && data.profile) {
-          applyProfile(data.profile)
-        }
-      } catch {
-        // Keep the server-rendered profile if the background refresh fails.
-      }
-    }
-
-    function handleProfileUpdated(event: Event) {
-      const profileEvent = event as CustomEvent<Partial<HeaderProfile>>
-
-      if (active && profileEvent.detail) {
-        applyProfile(profileEvent.detail)
-      }
-    }
-
-    window.addEventListener("aloha-profile-updated", handleProfileUpdated)
-    loadProfile()
-
-    return () => {
-      active = false
-      window.removeEventListener("aloha-profile-updated", handleProfileUpdated)
-    }
-  }, [])
 
   React.useEffect(() => {
     if (!calendarOpen) {
@@ -288,16 +200,7 @@ function SiteHeader({
     }
   }, [calendarOpen])
 
-  function clearCookie(value: string) {
-    window.document.cookie = value
-  }
-
   function handleLogout() {
-    clearCookie("aloha-login-verified=; path=/; max-age=0; SameSite=Lax")
-    clearCookie("aloha-login-route=; path=/; max-age=0; SameSite=Lax")
-    clearCookie("aloha-login-user-id=; path=/; max-age=0; SameSite=Lax")
-    clearCookie("aloha-login-role=; path=/; max-age=0; SameSite=Lax")
-    clearCookie("aloha-login-phone=; path=/; max-age=0; SameSite=Lax")
     router.replace("/login")
   }
 
@@ -540,9 +443,9 @@ function SiteHeader({
         itemCount={itemCount}
         total={cartTotal}
         items={items}
-        onIncrement={incrementItem}
-        onDecrement={decrementItem}
-        onRemove={removeItem}
+        onIncrement={staticAction}
+        onDecrement={staticAction}
+        onRemove={staticAction}
         onCheckout={handleCheckout}
       />
     </header>

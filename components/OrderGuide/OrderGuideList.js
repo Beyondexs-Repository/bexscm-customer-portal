@@ -48,7 +48,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { downloadPARSheet } from "@/lib/PdfGenerators/PARSheet";
 
 function countOrderProducts(order) {
   return order.groups.reduce(
@@ -93,7 +92,6 @@ function OrderGuideCard({
   onOpenDeleteOrder,
   onOpenDeleteGroup,
   onAddGroup,
-  onDownloadPARSheet,
   canEdit,
   canDelete,
 }) {
@@ -234,7 +232,7 @@ function OrderGuideCard({
               {t("delete")}
             </Button> : null}
           </div> : null}
-          <Button size="sm" className="mt-0 h-8 w-full" onClick={() => onDownloadPARSheet(order)}>
+          <Button size="sm" className="mt-0 h-8 w-full">
             <Download className="size-4" />
             {t("downloadPARSheet")}
           </Button>
@@ -492,7 +490,6 @@ export function OrderGuideList({
                       })
                     }
                     onAddGroup={openAddGroup}
-                    onDownloadPARSheet={downloadPARSheet}
                   />
                 );
               })}

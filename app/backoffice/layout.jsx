@@ -1,19 +1,5 @@
-import { cookies } from "next/headers"
-
 import { DashboardShell } from "@/components/dashboard-shell";
-import { getCurrentProfile } from "@/lib/server-profile";
 
-export default async function BackofficeLayout({ children }) {
-  const cookieStore = await cookies()
-  const initialProfile = await getCurrentProfile(cookieStore)
-  const initialRole =
-    initialProfile?.roleKey ??
-    cookieStore.get("aloha-login-role")?.value ??
-    ""
-
-  return (
-    <DashboardShell initialRole={initialRole} initialProfile={initialProfile}>
-      {children}
-    </DashboardShell>
-  );
+export default function BackofficeLayout({ children }) {
+  return <DashboardShell>{children}</DashboardShell>;
 }

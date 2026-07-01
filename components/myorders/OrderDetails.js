@@ -12,20 +12,13 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PAGE_ACTIONS } from "@/lib/security/role-access"
-import { usePagePermission } from "@/lib/security/use-page-permission"
 import { cn } from "@/lib/utils"
-import { DownloadInvoice } from "@/lib/PdfGenerators/DownloadInvoice"
 
 import { formatCurrency, statusStyles } from "./MyOrders"
 
 export default function OrderDetails({ order, onBack, onClose }) {
   const t = useTranslations("myOrders")
   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
-  const canDownloadInvoice = usePagePermission(
-    PAGE_ACTIONS.DOWNLOAD_INVOICE,
-    "/my-orders",
-  )
 
   return (
     <section className="flex h-full min-h-0 flex-col rounded-lg border bg-card shadow-sm">
@@ -149,9 +142,9 @@ export default function OrderDetails({ order, onBack, onClose }) {
         </div>
       </div>
 
-      {canDownloadInvoice && order.status !== "Order Sent" && (
+      {order.status !== "Order Sent" && (
         <div className="border-t p-3 sm:p-4">
-          <Button variant="outline" className="h-11 w-full text-primary" onClick={() => DownloadInvoice(order)}>
+          <Button variant="outline" className="h-11 w-full text-primary">
             <Download className="size-4" />
             {t("downloadInvoice")}
           </Button>

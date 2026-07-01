@@ -14,24 +14,15 @@ import {
   UserCogIcon,
 } from "lucide-react";
 
-import { getVisiblePagesForRole } from "@/config/role-pages";
 import { cn } from "@/lib/utils";
+import routes from "@/data/routes.json";
 
-function getPageTitle(t, page) {
-  if (!page.titleKey) return page.title;
-
-  try {
-    return t(page.titleKey);
-  } catch {
-    return page.title;
-  }
-}
-
-export function FooterNav({ initialRole = "" }) {
+export function FooterNav() {
   const pathname = usePathname();
   const t = useTranslations("footerNav");
-  const isBackoffice = pathname === "/backoffice" || pathname.startsWith("/backoffice/");
-  const effectiveRole = initialRole;
+  const routeGroup = pathname.startsWith(routes.internal.basePath)
+    ? routes.internal
+    : routes.customer;
   const pageIcons = {
     overview: LayoutDashboardIcon,
     "order-guide": StarIcon,
@@ -42,11 +33,10 @@ export function FooterNav({ initialRole = "" }) {
     employees: UsersIcon,
     users: UserCogIcon,
   };
-  const footerNavItems = getVisiblePagesForRole(effectiveRole, {
-    area: isBackoffice ? "backoffice" : "customer",
-    footerNav: true,
-  }).map((page) => ({
-    title: getPageTitle(t, page),
+  const footerNavItems = routeGroup.routes
+    .filter((page) => page.footer)
+    .map((page) => ({
+    title: page.title,
     url: page.path,
     icon: pageIcons[page.id] ?? CircleIcon,
   }));

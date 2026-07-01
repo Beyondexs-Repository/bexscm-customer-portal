@@ -1,5 +1,3 @@
-"use client"
-
 import Link from "next/link"
 import {
   BookOpen,
@@ -10,9 +8,9 @@ import {
   ShoppingBag,
 } from "lucide-react"
 
-import { myOrders } from "@/data/my-orders"
 import QuickOrderGuide from "./QuickOrderGuide"
 import WelcomeCard from "./WelcomeCard"
+import { getRecentInvoices } from "./recent-invoices"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -109,8 +107,8 @@ function QuickActions() {
   )
 }
 
-function RecentOrdersTable() {
-  const recentOrders = myOrders.slice(0, 5)
+async function RecentOrdersTable() {
+  const recentOrders = await getRecentInvoices(5)
 
   return (
     <section className="h-full overflow-hidden rounded-xl border bg-card shadow-sm">
@@ -120,7 +118,8 @@ function RecentOrdersTable() {
             <PackageCheck className="size-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold sm:text-lg">Recent Orders</h2>
+            <h2 className="text-base font-bold sm:text-lg">Recent Invoices</h2>
+            {/* <h2 className="text-base font-bold sm:text-lg">Recent Orders</h2> */}
             <p className="text-xs text-muted-foreground">
               View and manage your latest orders
             </p>
@@ -128,8 +127,8 @@ function RecentOrdersTable() {
         </div>
 
         <Button asChild variant="outline" size="sm">
-          <Link href="/my-orders">
-            View all orders
+          <Link href="/invoices">
+            View all invoices
             <ChevronRight className="size-4" />
           </Link>
         </Button>
@@ -139,49 +138,55 @@ function RecentOrdersTable() {
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="bg-muted/50 text-[11px] uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="px-4 py-3 font-semibold">Order</th>
-              <th className="px-4 py-3 font-semibold">Placed on</th>
-              <th className="px-4 py-3 font-semibold">Delivery</th>
+              <th className="px-4 py-3 font-semibold">Invoice</th>
+              <th className="px-4 py-3 font-semibold">Invoice date</th>
+              <th className="px-4 py-3 font-semibold">Due date</th>
               <th className="px-4 py-3 font-semibold">Items</th>
               <th className="px-4 py-3 font-semibold">Total</th>
+              <th className="px-4 py-3 font-semibold">Paid amount</th>
+              <th className="px-4 py-3 font-semibold">Balance</th>
               <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="w-12 px-4 py-3" aria-label="Actions" />
             </tr>
           </thead>
           <tbody className="divide-y">
             {recentOrders.map((order) => (
               <tr
                 key={order.id}
-                className="transition-colors hover:bg-muted/40"
+                className="relative cursor-pointer transition-colors hover:bg-muted/40"
               >
                 <td className="px-4 py-2">
                   <Link
-                    href="/my-orders"
-                    className="font-semibold text-foreground hover:text-primary"
-                  >
-                    #{order.orderNumber}
-                  </Link>
+                    href="/invoices"
+                    aria-label={`View invoice ${order.invoiceNumber}`}
+                    className="absolute inset-0 z-10"
+                  />
+                  <span className="font-semibold text-foreground">
+                    #{order.invoiceNumber}
+                  </span>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    {order.type}
+                    Customer {order.customerId}
                   </p>
                 </td>
                 <td className="whitespace-nowrap px-4 py-2 text-xs">
-                  {order.placedOn}
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    {order.placedAt}
-                  </p>
+                  {order.invoiceDateLabel}
                 </td>
                 <td className="whitespace-nowrap px-4 py-2 text-xs">
-                  {order.deliveryDate}
+                  {order.dueDateLabel}
                 </td>
                 <td className="px-4 py-2 text-xs">
-                  {order.items.length} products
+                  {order.itemCount} products
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {order.units} units
                   </p>
                 </td>
                 <td className="whitespace-nowrap px-4 py-2 font-semibold">
                   {formatCurrency(order.total)}
+                </td>
+                <td className="whitespace-nowrap px-4 py-2 font-semibold">
+                  {formatCurrency(order.paidAmount)}
+                </td>
+                <td className="whitespace-nowrap px-4 py-2 font-semibold">
+                  {formatCurrency(order.balance)}
                 </td>
                 <td className="px-4 py-2">
                   <Badge
@@ -192,16 +197,6 @@ function RecentOrdersTable() {
                   >
                     {order.status}
                   </Badge>
-                </td>
-                <td className="px-4 py-2 text-right">
-                  <Button asChild variant="ghost" size="icon-sm">
-                    <Link
-                      href="/my-orders"
-                      aria-label={`View order ${order.orderNumber}`}
-                    >
-                      <ChevronRight className="size-4" />
-                    </Link>
-                  </Button>
                 </td>
               </tr>
             ))}

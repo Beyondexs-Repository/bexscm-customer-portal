@@ -31,10 +31,6 @@ import {
 
 const fallbackAvatar = "https://api.dicebear.com/9.x/adventurer/svg?seed=Aloha"
 
-function createTempMessageId() {
-  return `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`
-}
-
 function formatTime(value) {
   if (!value) return ""
 
@@ -68,32 +64,51 @@ function formatRole(roleKey) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
-function mergeMessages(serverMessages, currentMessages) {
-  const serverIds = new Set(serverMessages.map((item) => item.id))
-  const localMessages = currentMessages.filter(
-    (item) => item.localOnly && !serverIds.has(item.id)
-  )
-
-  return [...serverMessages, ...localMessages]
+const previewUser = {
+  id: 1,
+  name: "Aloha Customer",
+  roleKey: "store-manager",
+  avatar: "",
 }
 
-function appendServerMessages(currentMessages, serverMessages) {
-  const currentIds = new Set(currentMessages.map((item) => item.id))
-  const newMessages = serverMessages.filter((item) => !currentIds.has(item.id))
-
-  if (!newMessages.length) return currentMessages
-
-  return [...currentMessages, ...newMessages]
-}
-
-function prependServerMessages(currentMessages, serverMessages) {
-  const currentIds = new Set(currentMessages.map((item) => item.id))
-  const olderMessages = serverMessages.filter((item) => !currentIds.has(item.id))
-
-  if (!olderMessages.length) return currentMessages
-
-  return [...olderMessages, ...currentMessages]
-}
+const previewMessages = [
+  {
+    id: 1,
+    senderName: "Crate Support",
+    senderRoleKey: "sales-manager",
+    senderAccountStatus: "active",
+    senderAvatar: "",
+    type: "received",
+    text: "Good morning! Your produce order is packed and ready.",
+    status: "sent",
+    createdAt: "2026-06-30T09:12:00.000Z",
+    attachments: [],
+  },
+  {
+    id: 2,
+    senderName: "Aloha Customer",
+    senderRoleKey: "store-manager",
+    senderAccountStatus: "active",
+    senderAvatar: "",
+    type: "sent",
+    text: "Wonderful, thank you. Is the delivery window still 2–4 PM?",
+    status: "sent",
+    createdAt: "2026-06-30T09:14:00.000Z",
+    attachments: [],
+  },
+  {
+    id: 3,
+    senderName: "Crate Support",
+    senderRoleKey: "sales-manager",
+    senderAccountStatus: "active",
+    senderAvatar: "",
+    type: "received",
+    text: "Yes, your driver will arrive between 2:00 and 4:00 PM.",
+    status: "sent",
+    createdAt: "2026-06-30T09:15:00.000Z",
+    attachments: [],
+  },
+]
 
 function MessageStatus({ status }) {
   if (status === "failed") {
@@ -123,43 +138,16 @@ export default function Messages({ fullscreen = false }) {
   const t = useTranslations("messages")
   const [open, setOpen] = useState(fullscreen)
   const [message, setMessage] = useState("")
-  const [messages, setMessages] = useState([])
-  const [conversationId, setConversationId] = useState(null)
-  const [currentUser, setCurrentUser] = useState(null)
+  const [messages, setMessages] = useState(previewMessages)
   const [selectedFiles, setSelectedFiles] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [loadingOlder, setLoadingOlder] = useState(false)
-  const [hasMoreOlder, setHasMoreOlder] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [error, setError] = useState("")
   const [clearDialogOpen, setClearDialogOpen] = useState(false)
-  const [clearError, setClearError] = useState("")
-  const [isClearing, setIsClearing] = useState(false)
   const messageAreaRef = useRef(null)
   const messageInputRef = useRef(null)
   const searchInputRef = useRef(null)
   const attachmentInputRef = useRef(null)
   const cameraInputRef = useRef(null)
-  const mountedRef = useRef(false)
-  const messagesSignatureRef = useRef("")
-  const latestMessageIdRef = useRef(0)
-  const optimisticUrlsRef = useRef(new Set())
-  const skipNextAutoScrollRef = useRef(false)
-  const loadingOlderRef = useRef(false)
-
-  useEffect(() => {
-    mountedRef.current = true
-
-    return () => {
-      for (const url of optimisticUrlsRef.current) {
-        URL.revokeObjectURL(url)
-      }
-
-      optimisticUrlsRef.current.clear()
-      mountedRef.current = false
-    }
-  }, [])
 
   useEffect(() => {
     function handleSearch() {
@@ -168,7 +156,6 @@ export default function Messages({ fullscreen = false }) {
     }
 
     function handleClear() {
-      setClearError("")
       setClearDialogOpen(true)
     }
 
@@ -181,149 +168,8 @@ export default function Messages({ fullscreen = false }) {
     }
   }, [])
 
-  async function confirmClearChat() {
-    setIsClearing(true)
-    setClearError("")
-    setError("")
-
-    try {
-      const response = await fetch("/api/messages", {
-        method: "DELETE",
-      })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || "Could not clear the chat.")
-      }
-
-      setMessages([])
-      setSearchQuery("")
-      setSearchOpen(false)
-      setHasMoreOlder(false)
-      messagesSignatureRef.current = ""
-      latestMessageIdRef.current = 0
-      setClearDialogOpen(false)
-    } catch (clearChatError) {
-      setClearError(clearChatError.message || "Could not clear the chat.")
-    } finally {
-      setIsClearing(false)
-    }
-  }
-
-  async function loadConversation({
-    silent = false,
-    afterMessageId = null,
-    beforeMessageId = null,
-  } = {}) {
-    if (!silent) {
-      setLoading(true)
-      setError("")
-    }
-
-    try {
-      const params = new URLSearchParams()
-      if (afterMessageId) params.set("afterMessageId", String(afterMessageId))
-      if (beforeMessageId) params.set("beforeMessageId", String(beforeMessageId))
-      const query = params.toString() ? `?${params.toString()}` : ""
-      const response = await fetch(`/api/messages${query}`, { cache: "no-store" })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || "Could not load messages.")
-      }
-
-      if (!mountedRef.current) return
-
-      const nextMessages = data.messages ?? []
-      const latestMessageId = nextMessages.at(-1)?.id ?? 0
-      const signature = `${nextMessages.length}:${latestMessageId}`
-
-      if (beforeMessageId) {
-        setHasMoreOlder(Boolean(data.hasMoreOlder))
-        if (nextMessages.length) {
-          skipNextAutoScrollRef.current = true
-          setMessages((currentMessages) =>
-            prependServerMessages(currentMessages, nextMessages)
-          )
-        }
-      } else if (afterMessageId) {
-        if (nextMessages.length) {
-          latestMessageIdRef.current = Math.max(
-            latestMessageIdRef.current,
-            latestMessageId
-          )
-          setMessages((currentMessages) =>
-            appendServerMessages(currentMessages, nextMessages)
-          )
-        }
-      } else if (messagesSignatureRef.current !== signature) {
-        messagesSignatureRef.current = signature
-        latestMessageIdRef.current = latestMessageId
-        setHasMoreOlder(Boolean(data.hasMoreOlder))
-        setMessages((currentMessages) =>
-          mergeMessages(nextMessages, currentMessages)
-        )
-      }
-
-      setConversationId((currentId) =>
-        currentId === data.conversationId ? currentId : data.conversationId
-      )
-      setCurrentUser((currentUserValue) =>
-        currentUserValue?.id === data.currentUser?.id
-          ? currentUserValue
-          : data.currentUser
-      )
-    } catch (loadError) {
-      if (mountedRef.current) {
-        setError(loadError.message || "Could not load messages.")
-      }
-    } finally {
-      if (mountedRef.current && !silent) setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (open) loadConversation()
-  }, [open])
-
-  useEffect(() => {
-    if (!open || !conversationId) return
-
-    const events = new EventSource(
-      `/api/messages/events?conversationId=${conversationId}&lastMessageId=${latestMessageIdRef.current}`
-    )
-
-    events.addEventListener("message", (event) => {
-      const data = JSON.parse(event.data)
-
-      if (data.cleared) {
-        latestMessageIdRef.current = 0
-        messagesSignatureRef.current = ""
-        setMessages([])
-        setHasMoreOlder(false)
-        return
-      }
-
-      if (data.latestMessageId > latestMessageIdRef.current) {
-        loadConversation({
-          silent: true,
-          afterMessageId: latestMessageIdRef.current,
-        })
-      }
-    })
-
-    return () => {
-      events.close()
-    }
-  }, [open, conversationId])
-
   useEffect(() => {
     if (!messageAreaRef.current) return
-
-    if (skipNextAutoScrollRef.current) {
-      skipNextAutoScrollRef.current = false
-      return
-    }
 
     messageAreaRef.current.scrollTop = messageAreaRef.current.scrollHeight
   }, [messages, open])
@@ -337,144 +183,35 @@ export default function Messages({ fullscreen = false }) {
     input.style.overflowY = input.scrollHeight > 72 ? "auto" : "hidden"
   }, [message])
 
-  async function handleSend() {
+  function confirmClearChat() {
+    setMessages([])
+    setSearchQuery("")
+    setSearchOpen(false)
+    setClearDialogOpen(false)
+  }
+
+  function handleSend() {
     const text = message.trim()
-    const filesToSend = selectedFiles
 
-    if (!text && filesToSend.length === 0) return
+    if (!text && selectedFiles.length === 0) return
 
-    const formData = new FormData()
-    formData.append("body", text)
-
-    if (conversationId) {
-      formData.append("conversationId", String(conversationId))
-    }
-
-    for (const file of filesToSend) {
-      formData.append("attachments", file)
-    }
-
-    const tempId = createTempMessageId()
-    const optimisticAttachments = filesToSend.map((file, index) => {
-      const objectUrl = URL.createObjectURL(file)
-      optimisticUrlsRef.current.add(objectUrl)
-
-      return {
-        id: `${tempId}-attachment-${index}`,
-        fileName: file.name,
-        mimeType: file.type,
-        sizeBytes: file.size,
-        url: objectUrl,
-        localOnly: true,
-      }
-    })
-    const optimisticMessage = {
-      id: tempId,
-      conversationId,
-      senderId: currentUser?.id,
-      senderName: currentUser?.name,
-      senderRoleKey: currentUser?.roleKey,
+    setMessages((currentMessages) => [...currentMessages, {
+      id: Date.now(),
+      senderId: previewUser.id,
+      senderName: previewUser.name,
+      senderRoleKey: previewUser.roleKey,
       senderAccountStatus: "active",
-      senderAvatar: currentUser?.avatar,
+      senderAvatar: previewUser.avatar,
       type: "sent",
       text,
-      status: "sending",
+      status: "sent",
       createdAt: new Date().toISOString(),
-      attachments: optimisticAttachments,
-      localOnly: true,
-    }
-
-    setMessages((prev) => [...prev, optimisticMessage])
+      attachments: [],
+    }])
     setMessage("")
     setSelectedFiles([])
     if (attachmentInputRef.current) attachmentInputRef.current.value = ""
     if (cameraInputRef.current) cameraInputRef.current.value = ""
-    setError("")
-
-    try {
-      const response = await fetch("/api/messages", {
-        method: "POST",
-        body: formData,
-      })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || "Could not send message.")
-      }
-
-      latestMessageIdRef.current = data.message?.id ?? latestMessageIdRef.current
-      setMessages((prev) => {
-        if (!data.message) {
-          return prev
-        }
-
-        const hasServerMessage = prev.some((item) => item.id === data.message.id)
-        const nextMessages = hasServerMessage
-          ? prev.filter((item) => item.id !== tempId)
-          : prev.map((item) => (item.id === tempId ? data.message : item))
-
-        messagesSignatureRef.current = `${nextMessages.length}:${data.message.id}`
-        return nextMessages
-      })
-      setConversationId(data.conversationId)
-
-      for (const attachment of optimisticAttachments) {
-        URL.revokeObjectURL(attachment.url)
-        optimisticUrlsRef.current.delete(attachment.url)
-      }
-    } catch (sendError) {
-      setMessages((prev) =>
-        prev.map((item) =>
-          item.id === tempId
-            ? {
-                ...item,
-                status: "failed",
-              }
-            : item
-        )
-      )
-      setError(sendError.message || "Could not send message.")
-    }
-  }
-
-  async function loadOlderMessages() {
-    if (
-      loadingOlderRef.current ||
-      loadingOlder ||
-      !hasMoreOlder ||
-      messages.length === 0
-    ) {
-      return
-    }
-
-    const oldestServerMessage = messages.find((item) => !item.localOnly)
-    if (!oldestServerMessage) return
-
-    const messageArea = messageAreaRef.current
-    const previousScrollHeight = messageArea?.scrollHeight ?? 0
-
-    loadingOlderRef.current = true
-    setLoadingOlder(true)
-
-    await loadConversation({
-      silent: true,
-      beforeMessageId: oldestServerMessage.id,
-    })
-
-    requestAnimationFrame(() => {
-      if (!messageArea) return
-
-      messageArea.scrollTop = messageArea.scrollHeight - previousScrollHeight
-    })
-
-    setLoadingOlder(false)
-    loadingOlderRef.current = false
-  }
-
-  function handleMessageAreaScroll() {
-    if (messageAreaRef.current?.scrollTop <= 80) {
-      loadOlderMessages()
-    }
   }
 
   function handleSelectedFiles(event) {
@@ -501,6 +238,12 @@ export default function Messages({ fullscreen = false }) {
           .includes(normalizedSearchQuery)
       })
     : messages
+  const currentUser = previewUser
+  const loading = false
+  const loadingOlder = false
+  const error = ""
+  const clearError = ""
+  const isClearing = false
 
   return (
     <>
@@ -509,7 +252,6 @@ export default function Messages({ fullscreen = false }) {
         onOpenChange={(nextOpen) => {
           if (!isClearing) {
             setClearDialogOpen(nextOpen)
-            if (!nextOpen) setClearError("")
           }
         }}
       >
@@ -595,7 +337,6 @@ export default function Messages({ fullscreen = false }) {
 
           <div
             ref={messageAreaRef}
-            onScroll={handleMessageAreaScroll}
             className="min-h-0 flex-1 overflow-y-auto px-2 py-3 sm:px-5 sm:py-4"
           >
             {searchOpen && (

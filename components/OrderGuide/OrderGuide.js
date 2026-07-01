@@ -1,10 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { useTranslations } from "next-intl"
 import { Plus, Star } from "lucide-react"
 
-import { useQuickOrders } from "@/app/context/app-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -13,28 +12,40 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { OrderGuideList } from "./OrderGuideList"
 import { OrderGuideProductsList } from "./OrderGuideProductsList"
-import { PAGE_ACTIONS } from "@/lib/security/role-access"
-import { usePagePermission } from "@/lib/security/use-page-permission"
+
+const previewOrder = {
+  id: "weekly-produce",
+  name: "Weekly Produce",
+  createdAt: "2026-06-01T09:00:00.000Z",
+  updatedAt: "2026-06-01T09:00:00.000Z",
+  groups: [
+    {
+      id: "fresh-essentials",
+      name: "Fresh Essentials",
+      products: [],
+    },
+  ],
+}
+
+const quickOrders = [previewOrder]
+const staticAction = () => {}
 
 export function OrderGuide() {
   const t = useTranslations("orderGuide")
-  const canCreate = usePagePermission(PAGE_ACTIONS.CREATE_ORDER_GUIDE)
-  const canEdit = usePagePermission(PAGE_ACTIONS.EDIT_ORDER_GUIDE)
-  const canDelete = usePagePermission(PAGE_ACTIONS.DELETE_ORDER_GUIDE)
-  const canAddProducts = usePagePermission(
-    PAGE_ACTIONS.ADD_PRODUCT_TO_ORDER_GUIDE,
-  )
-  const canPlaceOrder = usePagePermission(PAGE_ACTIONS.PLACE_ORDER)
-  const { quickOrders, setQuickOrders, createQuickOrder } = useQuickOrders()
+  const canCreate = true
+  const canEdit = true
+  const canDelete = true
+  const canAddProducts = true
+  const canPlaceOrder = true
+  const setQuickOrders = staticAction
   const [open, setOpen] = useState(false)
   const [quickOrderName, setQuickOrderName] = useState("")
   const [selectedOrderId, setSelectedOrderId] = useState(null)
   const [selectedGroupId, setSelectedGroupId] = useState(null)
 
-  const selectedOrder = useMemo(
-    () => (selectedOrderId ? quickOrders.find((order) => order.id === selectedOrderId) ?? null : null),
-    [quickOrders, selectedOrderId],
-  )
+  const selectedOrder = selectedOrderId
+    ? quickOrders.find((order) => order.id === selectedOrderId) ?? null
+    : null
   const selectedGroup =
     selectedOrder?.groups.find((group) => group.id === selectedGroupId) ??
     selectedOrder?.groups[0] ??
@@ -44,7 +55,7 @@ export function OrderGuide() {
     if (!canCreate) return
     if (!quickOrderName.trim()) return
 
-    const newOrder = createQuickOrder(quickOrderName.trim())
+    const newOrder = previewOrder
 
     setSelectedOrderId(newOrder.id)
     setSelectedGroupId(newOrder.groups[0]?.id ?? null)

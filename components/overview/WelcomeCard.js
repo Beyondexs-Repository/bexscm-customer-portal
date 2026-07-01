@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -139,27 +139,6 @@ export default function WelcomeCard() {
           </div>
         </div>
       ))}
-
-      {/* <Button
-        type="button"
-        variant="secondary"
-        size="icon-sm"
-        className="absolute left-2 top-1/2 z-30 -translate-y-1/2 rounded-full bg-background/85 shadow-md backdrop-blur transition-opacity sm:left-3 sm:opacity-0 sm:group-hover:opacity-100 hidden md:flex"
-        onClick={showPreviousSlide}
-        aria-label="Show previous promotion"
-      >
-        <ChevronLeft />
-      </Button>
-      <Button
-        type="button"
-        variant="secondary"
-        size="icon-sm"
-        className="absolute right-2 top-1/2 z-30 -translate-y-1/2 rounded-full bg-background/85 shadow-md backdrop-blur transition-opacity sm:right-3 sm:opacity-0 sm:group-hover:opacity-100 hidden md:flex"
-        onClick={showNextSlide}
-        aria-label="Show next promotion"
-      >
-        <ChevronRight />
-      </Button> */}
 
       <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">
         {slides.map((slide, index) => (

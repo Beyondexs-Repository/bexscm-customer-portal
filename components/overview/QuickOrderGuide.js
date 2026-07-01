@@ -8,27 +8,29 @@ import {
   FolderOpen,
   ShoppingCart,
 } from "lucide-react"
-import { toast } from "sonner"
-
-import { useCart, useQuickOrders } from "@/app/context/app-context"
 import { Button } from "@/components/ui/button"
-import { PAGE_ACTIONS } from "@/lib/security/role-access"
-import { usePagePermission } from "@/lib/security/use-page-permission"
+
+const quickOrders = [
+  {
+    id: "weekly-produce",
+    name: "Weekly Produce",
+    groups: [
+      {
+        id: "fresh-essentials",
+        name: "Fresh Essentials",
+        products: [],
+      },
+    ],
+  },
+]
 
 function getGuideProducts(guide) {
   return guide.groups.flatMap((group) => group.products)
 }
 
 export default function QuickOrderGuide() {
-  const { quickOrders, dashboardQuickOrderIds } = useQuickOrders()
-  const { items, addItem } = useCart()
-
-  const canPlaceOrder = usePagePermission(
-    PAGE_ACTIONS.PLACE_ORDER,
-    "/order-guide",
-  )
-
   const [selectedGuideIds, setSelectedGuideIds] = useState([])
+  const dashboardQuickOrderIds = ["weekly-produce"]
 
   const visibleGuides = dashboardQuickOrderIds
     .map((id) => quickOrders.find((guide) => guide.id === id))
@@ -65,37 +67,6 @@ export default function QuickOrderGuide() {
 
   function toggleAllGuides() {
     setSelectedGuideIds(allSelected ? [] : visibleGuideIds)
-  }
-
-  function addSelectedGuidesToCart() {
-    if (!canPlaceOrder) {
-      toast.error("You do not have permission to add these products to cart.")
-      return
-    }
-
-    if (selectedProducts.length === 0) {
-      toast.error("Select an order guide that contains products.")
-      return
-    }
-
-    const cartProductIds = new Set(items.map((item) => item.id))
-
-    const productsToAdd = selectedProducts.filter(
-      (product) => !cartProductIds.has(product.id),
-    )
-
-    productsToAdd.forEach((product) => addItem(product, 1))
-
-    if (productsToAdd.length === 0) {
-      toast.success("All selected products are already in your cart.")
-      return
-    }
-
-    toast.success(
-      `${productsToAdd.length} ${
-        productsToAdd.length === 1 ? "product" : "products"
-      } added to cart.`,
-    )
   }
 
   return (
@@ -203,7 +174,6 @@ export default function QuickOrderGuide() {
             className="h-10 w-full"
             size="sm"
             disabled={selectedIds.length === 0}
-            onClick={addSelectedGuidesToCart}
           >
             <ShoppingCart className="size-4" />
             Add to cart

@@ -1,4 +1,4 @@
-import BackofficeOverview from "@/components/backoffice/Overview";
+import BackofficeOverview from "@/components/backoffice/overview/Overview";
 
 export default function Page() {
   return (

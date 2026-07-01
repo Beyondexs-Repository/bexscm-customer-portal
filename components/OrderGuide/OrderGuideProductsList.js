@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -15,7 +15,6 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { useCart, useQuickOrders } from "@/app/context/app-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +32,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+
+const staticAction = () => {};
 
 const productImages = [
   "https://images.unsplash.com/photo-1579653853027-5b305f13a7ca?auto=format&fit=crop&w=720&q=80",
@@ -260,10 +261,12 @@ export function OrderGuideProductsList({
   canPlaceOrder,
 }) {
   const t = useTranslations("orderGuide")
-  const { items, addItem, incrementItem, decrementItem, removeItem } =
-    useCart();
-  const { dashboardQuickOrderIds, setDashboardQuickOrderIds } =
-    useQuickOrders();
+  const addItem = staticAction;
+  const incrementItem = staticAction;
+  const decrementItem = staticAction;
+  const removeItem = staticAction;
+  const dashboardQuickOrderIds = selectedOrder ? [selectedOrder.id] : [];
+  const setDashboardQuickOrderIds = staticAction;
   const [productToMove, setProductToMove] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
   const [productToEditPar, setProductToEditPar] = useState(null);
@@ -271,10 +274,7 @@ export function OrderGuideProductsList({
 
   const products = selectedGroup?.products ?? [];
 
-  const cartQuantities = useMemo(
-    () => new Map(items.map((item) => [item.id, item.quantity])),
-    [items],
-  );
+  const cartQuantities = new Map();
 
   const allProductsInCart =
     products.length > 0 &&
