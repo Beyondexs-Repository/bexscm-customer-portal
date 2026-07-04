@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { BadgeCheckIcon, ChevronsUpDownIcon, LogOutIcon } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -17,6 +18,13 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/c
 
 export function NavUser() {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+
+  function handleLogout() {
+    document.cookie = "session=; path=/; max-age=0; samesite=lax"
+    router.replace("/login")
+    router.refresh()
+  }
 
   return (
     <SidebarMenu>
@@ -39,7 +47,10 @@ export function NavUser() {
               <DropdownMenuItem asChild><Link href="/profile"><BadgeCheckIcon />My Profile</Link></DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild><Link href="/login"><LogOutIcon />Log out</Link></DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOutIcon />
+              Log out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

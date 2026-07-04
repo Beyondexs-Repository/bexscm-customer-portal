@@ -244,6 +244,8 @@ export default function Login() {
     }
 
     setMessage(t("phoneVerified"))
+	document.cookie =
+    "session=demo; path=/; max-age=86400; samesite=lax"
     router.replace("/")
   }
 

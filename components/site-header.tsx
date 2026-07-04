@@ -201,7 +201,9 @@ function SiteHeader({
   }, [calendarOpen])
 
   function handleLogout() {
+    document.cookie = "session=; path=/; max-age=0; samesite=lax"
     router.replace("/login")
+    router.refresh()
   }
 
   function dispatchMessagesAction(action: "search" | "clear") {
