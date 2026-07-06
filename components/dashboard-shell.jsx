@@ -38,6 +38,14 @@ export function DashboardShell({ children }) {
         title: "Roles and Permissions",
         description: "Review access rules and role-based capabilities",
       },
+      "/backoffice/promotions": {
+        title: "Promotions",
+        description: "",
+      },
+      "/backoffice/promotions/create": {
+        title: "Create Promotion",
+        description: "",
+      },
       "/backoffice/profile": {
         title: t("profile.title"),
         description: t("profile.description"),
