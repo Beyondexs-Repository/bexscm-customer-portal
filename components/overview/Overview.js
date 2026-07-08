@@ -156,7 +156,7 @@ async function RecentOrdersTable() {
               >
                 <td className="px-4 py-2">
                   <Link
-                    href="/invoices"
+                    href={`/invoices/${order.invoiceNumber}`}
                     aria-label={`View invoice ${order.invoiceNumber}`}
                     className="absolute inset-0 z-10"
                   />

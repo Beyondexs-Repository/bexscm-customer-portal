@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
+import { useCart } from "@/app/context/app-context"
 import { CartSidebar } from "@/components/cart-sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -34,7 +35,6 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 
 const CUTOFF_TIME = "8:00 AM"
 const CUTOFF_DATE = "6/6"
-const staticAction = () => {}
 const DEFAULT_PROFILE = {
   firstName: "Aloha",
   lastName: "Customer",
@@ -126,17 +126,15 @@ function SiteHeader({
   }
   const profileName = getFullName(profile)
   const profileInitials = getInitials(profile)
-  const items: {
-    id: string
-    name: string
-    price: number
-    quantity: number
-    sku: string
-    unit: string
-  }[] = []
-  const itemCount = 0
-  const total = 0
-  const cartTotal = `$${total.toFixed(2)}`
+  const {
+    items,
+    itemCount,
+    total,
+    incrementItem,
+    decrementItem,
+    removeItem,
+  } = useCart()
+  const cartTotal = `$${Number(total).toFixed(2)}`
   const today = startOfDay(new Date())
   const calendarRef = React.useRef<HTMLDivElement>(null)
   const calendarTriggerRef = React.useRef<HTMLButtonElement>(null)
@@ -445,9 +443,9 @@ function SiteHeader({
         itemCount={itemCount}
         total={cartTotal}
         items={items}
-        onIncrement={staticAction}
-        onDecrement={staticAction}
-        onRemove={staticAction}
+        onIncrement={incrementItem}
+        onDecrement={decrementItem}
+        onRemove={removeItem}
         onCheckout={handleCheckout}
       />
     </header>

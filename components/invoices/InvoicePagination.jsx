@@ -10,6 +10,8 @@ export default function InvoicePagination({
   totalPages,
   pageSize,
   query,
+  basePath = "/invoices",
+  rowOptions = [10, 20, 50, 100],
 }) {
   const router = useRouter()
 
@@ -19,7 +21,7 @@ export default function InvoicePagination({
     if (query) params.set("query", query)
     if (page > 1) params.set("page", String(page))
 
-    router.push(`/invoices?${params}`, { scroll: false })
+    router.push(`${basePath}?${params}`, { scroll: false })
     document
       .querySelector("[data-dashboard-scroll]")
       ?.scrollTo({ top: 0, behavior: "smooth" })
@@ -34,7 +36,7 @@ export default function InvoicePagination({
           onChange={(event) => changePage(1, Number(event.target.value))}
           className="h-8 rounded-lg border border-border bg-background px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:border-input dark:bg-input/30 dark:[color-scheme:dark] [&_option]:bg-popover [&_option]:text-popover-foreground"
         >
-          {[10, 20, 50, 100].map((rows) => (
+          {rowOptions.map((rows) => (
             <option key={rows} value={rows}>
               {rows}
             </option>

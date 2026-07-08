@@ -9,28 +9,16 @@ import {
   ShoppingCart,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-
-const quickOrders = [
-  {
-    id: "weekly-produce",
-    name: "Weekly Produce",
-    groups: [
-      {
-        id: "fresh-essentials",
-        name: "Fresh Essentials",
-        products: [],
-      },
-    ],
-  },
-]
+import { useCart, useQuickOrders } from "@/app/context/app-context"
 
 function getGuideProducts(guide) {
   return guide.groups.flatMap((group) => group.products)
 }
 
 export default function QuickOrderGuide() {
+  const { quickOrders, dashboardQuickOrderIds } = useQuickOrders()
+  const { addItem } = useCart()
   const [selectedGuideIds, setSelectedGuideIds] = useState([])
-  const dashboardQuickOrderIds = ["weekly-produce"]
 
   const visibleGuides = dashboardQuickOrderIds
     .map((id) => quickOrders.find((guide) => guide.id === id))
@@ -174,6 +162,7 @@ export default function QuickOrderGuide() {
             className="h-10 w-full"
             size="sm"
             disabled={selectedIds.length === 0}
+            onClick={() => selectedProducts.forEach((product) => addItem(product, 1))}
           >
             <ShoppingCart className="size-4" />
             Add to cart

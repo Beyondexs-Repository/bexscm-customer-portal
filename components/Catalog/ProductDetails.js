@@ -11,7 +11,10 @@ import {
   Star,
 } from "lucide-react";
 
-import catalog from "@/data/data.json";
+import items from "@/data/livedata/Items.json";
+import { useCart, useQuickOrders } from "@/app/context/app-context";
+import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
+import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
 import { getProductGalleryImages } from "@/lib/catalog-products";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -65,32 +68,53 @@ function ProductGallery({ product, images }) {
 
 export function ProductDetails({ productId }) {
   const t = useTranslations("catalog")
+  const {
+    items: cartItems,
+    addItem,
+    incrementItem,
+    decrementItem,
+  } = useCart()
+  const {
+    quickOrders,
+    addProductToQuickOrder,
+    removeProductFromQuickOrder,
+  } = useQuickOrders()
   const pathname = usePathname()
   const catalogPath = pathname.startsWith("/backoffice")
     ? "/backoffice/catalog"
     : "/catalog"
   const product = useMemo(
     () =>
-      catalog
-        .flatMap((category, categoryIndex) =>
-          category.subcategories.flatMap((subcategory, subcategoryIndex) =>
-            subcategory.products.map((item, productIndex) => ({
-              ...item,
-              category: item.category || category.name,
-              subcategory: item.subcategory || subcategory.name,
-              fallbackImageIndex:
-                categoryIndex + subcategoryIndex + productIndex,
-            })),
-          ),
-        )
-        .find((item) => item.id === productId || item.slug === productId),
+      items
+        .map((item, index) => ({
+          category: item.MainGroup?.trim() || "Other",
+          id: item.ITEMNMBR.trim(),
+          brand: item.ppc_Brand.trim(),
+          name: item.ItemName?.trim() || item.ITEMDESC.trim(),
+          sku: item.ITEMNMBR.trim(),
+          unit: item.UOMSCHDL?.trim() || "unit",
+          price: Number(item.QTYBSUOM) || 0,
+          subcategory: item["Sub-Group"]?.trim() || "Other",
+          fallbackImageIndex: index,
+          image: getCategoryPlaceholderImage(item.MainGroup?.trim() || "Other"),
+        }))
+        .find((item) => item.id === productId),
     [productId],
   );
   const [draftQuantity, setDraftQuantity] = useState(1);
+  const [orderGuideOpen, setOrderGuideOpen] = useState(false);
 
   const galleryImages = useMemo(
     () => getProductGalleryImages(product),
     [product],
+  );
+  const cartItem = cartItems.find((item) => item.id === product?.id);
+  const isInCart = Boolean(cartItem);
+  const quantity = cartItem?.quantity ?? draftQuantity;
+  const isInOrderGuide = quickOrders.some((order) =>
+    order.groups.some((group) =>
+      group.products.some((item) => item.id === product?.id),
+    ),
   );
 
   if (!product) {
@@ -171,20 +195,34 @@ export function ProductDetails({ productId }) {
                 variant="ghost"
                 size="icon-sm"
                 className="h-full w-8 shrink-0 rounded-none p-0 font-bold"
-                onClick={() => setDraftQuantity((current) => Math.max(1, current - 1))}
+                onClick={() => {
+                  if (isInCart) {
+                    decrementItem(product.id);
+                    return;
+                  }
+
+                  setDraftQuantity((current) => Math.max(1, current - 1));
+                }}
               >
                 <span className="grid size-full place-items-center">-</span>
               </Button>
 
               <div className="flex flex-1 items-center justify-center text-sm font-bold">
-                {draftQuantity}
+                {quantity}
               </div>
 
               <Button
                 variant="ghost"
                 size="icon-sm"
                 className="h-full w-8 shrink-0 rounded-none p-0 font-bold"
-                onClick={() => setDraftQuantity((current) => current + 1)}
+                onClick={() => {
+                  if (isInCart) {
+                    incrementItem(product.id);
+                    return;
+                  }
+
+                  setDraftQuantity((current) => current + 1);
+                }}
               >
                 <span className="grid size-full place-items-center">+</span>
               </Button>
@@ -192,24 +230,42 @@ export function ProductDetails({ productId }) {
 
             <Button
               className="h-9 flex-1 rounded-full text-sm font-bold"
-              variant="default"
+              variant={isInCart ? "secondary" : "default"}
+              onClick={() => {
+                if (!isInCart) {
+                  addItem({ ...product, image: galleryImages[0] }, draftQuantity);
+                }
+              }}
             >
               <ShoppingCart />
-              {t("addToCart")}
+              {isInCart ? t("addedToCart") : t("addToCart")}
             </Button>
           </div>
 
           <div className="mt-3">
             <Button
-              variant="outline"
-              className="h-10 w-full rounded-full text-sm font-bold"
+              variant={isInOrderGuide ? "default" : "outline"}
+              className={cn(
+                "h-10 w-full rounded-full text-sm font-bold",
+                isInOrderGuide && "border-sky-500 bg-sky-500 text-white hover:bg-sky-500 hover:text-white dark:border-sky-400 dark:bg-sky-500 dark:text-white dark:hover:bg-sky-500 dark:hover:text-white",
+              )}
+              onClick={() => setOrderGuideOpen(true)}
             >
-              <Star className="size-4" />
+              <Star className={cn("size-4", isInOrderGuide && "fill-current")} />
               {t("addToOrderGuide")}
             </Button>
           </div>
         </section>
       </div>
+
+      <OrderGuidePickerDialog
+        product={product}
+        quickOrders={quickOrders}
+        open={orderGuideOpen}
+        onOpenChange={setOrderGuideOpen}
+        onAdd={addProductToQuickOrder}
+        onRemove={removeProductFromQuickOrder}
+      />
 
       <section className="mx-auto max-w-7xl border-t px-4 py-8 lg:px-6">
         <h2 className="text-xl font-bold">{t("productDescription")}</h2>

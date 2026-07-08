@@ -1,4 +1,5 @@
-import { Search } from "lucide-react"
+import { Search, X } from "lucide-react"
+import Link from "next/link"
 
 import InvoicePagination from "@/components/invoices/InvoicePagination"
 import { getInvoices } from "@/components/overview/recent-invoices"
@@ -43,9 +44,18 @@ export default async function InvoicesPage({ searchParams }) {
           <Input
             name="query"
             defaultValue={query}
-            className="pl-9"
+            className="pl-9 pr-9"
             placeholder="Search invoices..."
           />
+          {query ? (
+            <Link
+              href={`/invoices?rows=${pageSize}`}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <X className="size-4" />
+            </Link>
+          ) : null}
           <input type="hidden" name="rows" value={pageSize} />
         </div>
         <Button type="submit">Search</Button>
@@ -78,7 +88,12 @@ export default async function InvoicesPage({ searchParams }) {
                   invoices.map((invoice) => (
                     <tr key={invoice.id} className="hover:bg-muted/30">
                       <td className="px-6 py-4">
-                        <p className="font-semibold">#{invoice.invoiceNumber}</p>
+                        <Link
+                          href={`/invoices/${invoice.invoiceNumber}`}
+                          className="font-semibold hover:text-primary"
+                        >
+                          #{invoice.invoiceNumber}
+                        </Link>
                         {/* <p className="text-xs text-muted-foreground">
                           Customer {invoice.customerId}
                         </p> */}

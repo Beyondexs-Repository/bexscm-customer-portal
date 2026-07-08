@@ -10,25 +10,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { useQuickOrders } from "@/app/context/app-context"
 import { OrderGuideList } from "./OrderGuideList"
 import { OrderGuideProductsList } from "./OrderGuideProductsList"
-
-const previewOrder = {
-  id: "weekly-produce",
-  name: "Weekly Produce",
-  createdAt: "2026-06-01T09:00:00.000Z",
-  updatedAt: "2026-06-01T09:00:00.000Z",
-  groups: [
-    {
-      id: "fresh-essentials",
-      name: "Fresh Essentials",
-      products: [],
-    },
-  ],
-}
-
-const quickOrders = [previewOrder]
-const staticAction = () => {}
 
 export function OrderGuide() {
   const t = useTranslations("orderGuide")
@@ -37,7 +21,7 @@ export function OrderGuide() {
   const canDelete = true
   const canAddProducts = true
   const canPlaceOrder = true
-  const setQuickOrders = staticAction
+  const { quickOrders, setQuickOrders, createQuickOrder } = useQuickOrders()
   const [open, setOpen] = useState(false)
   const [quickOrderName, setQuickOrderName] = useState("")
   const [selectedOrderId, setSelectedOrderId] = useState(null)
@@ -55,7 +39,7 @@ export function OrderGuide() {
     if (!canCreate) return
     if (!quickOrderName.trim()) return
 
-    const newOrder = previewOrder
+    const newOrder = createQuickOrder(quickOrderName.trim())
 
     setSelectedOrderId(newOrder.id)
     setSelectedGroupId(newOrder.groups[0]?.id ?? null)

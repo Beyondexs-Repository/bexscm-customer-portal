@@ -9,6 +9,7 @@ export function DashboardShell({ children }) {
   const pathname = usePathname();
   const t = useTranslations("dashboard");
   const isCatalogPage = pathname === "/catalog" || pathname.startsWith("/catalog/");
+  const isInvoicesPage = pathname === "/invoices" || pathname.startsWith("/invoices/");
   const isBackoffice = pathname === "/backoffice" || pathname.startsWith("/backoffice/");
   const backofficeRoute = pathname === "/backoffice" ? "/backoffice/overview" : pathname;
 
@@ -72,6 +73,8 @@ export function DashboardShell({ children }) {
       ? t("overview.title")
       : isCatalogPage
         ? t("catalog.title")
+        : isInvoicesPage
+          ? "Invoices"
         : pathname === "/order-guide"
           ? t("orderGuide.title")
           : pathname === "/my-orders"
@@ -90,6 +93,8 @@ export function DashboardShell({ children }) {
       ? t("overview.description")
       : isCatalogPage
         ? t("catalog.description")
+        : isInvoicesPage
+          ? "Review invoice totals, payments, balances, and status."
         : pathname === "/order-guide"
           ? t("orderGuide.description")
           : pathname === "/my-orders"

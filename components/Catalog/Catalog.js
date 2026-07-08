@@ -19,7 +19,9 @@ import {
 } from "lucide-react";
 
 import items from "@/data/livedata/Items.json";
+import { useCart, useQuickOrders } from "@/app/context/app-context";
 import { Button } from "@/components/ui/button";
+import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -149,7 +151,7 @@ function SelectMenu({
 }
 
 function ProductImage({ product }) {
-  const image = getCategoryPlaceholderImage(product.category);
+  const image = product.image || getCategoryPlaceholderImage(product.category);
 
   return (
     <div className="relative aspect-[1.25] overflow-hidden bg-muted sm:aspect-[1.35] xl:aspect-[1.45]">
@@ -170,7 +172,27 @@ function ProductCard({
   product,
 }) {
   const t = useTranslations("catalog")
+  const {
+    items: cartItems,
+    addItem,
+    incrementItem,
+    decrementItem,
+  } = useCart()
+  const {
+    quickOrders,
+    addProductToQuickOrder,
+    removeProductFromQuickOrder,
+  } = useQuickOrders()
   const [draftQuantity, setDraftQuantity] = useState(1);
+  const [orderGuideOpen, setOrderGuideOpen] = useState(false);
+  const cartItem = cartItems.find((item) => item.id === product.id);
+  const isInCart = Boolean(cartItem);
+  const quantity = cartItem?.quantity ?? draftQuantity;
+  const isInOrderGuide = quickOrders.some((order) =>
+    order.groups.some((group) =>
+      group.products.some((item) => item.id === product.id),
+    ),
+  );
 
   return (
     <article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
@@ -185,9 +207,13 @@ function ProductCard({
                 variant="outline"
                 size="icon-sm"
                 aria-label={`Order Guide ${product.name}`}
-                className="absolute right-1.5 top-1.5 rounded-full border bg-card text-muted-foreground shadow-md hover:text-primary dark:border-border dark:bg-card hover:dark:bg-card/60 sm:right-2 sm:top-2"
+                className={cn(
+                  "absolute right-1.5 top-1.5 rounded-full border bg-card text-muted-foreground shadow-md hover:text-primary dark:border-border dark:bg-card hover:dark:bg-card/60 sm:right-2 sm:top-2",
+                  isInOrderGuide && "border-sky-500 bg-sky-500 text-white hover:bg-sky-500 hover:text-white dark:border-sky-400 dark:bg-sky-500 dark:text-white dark:hover:bg-sky-500 dark:hover:text-white",
+                )}
+                onClick={() => setOrderGuideOpen(true)}
               >
-                <Star className="h-4 w-4" />
+                <Star className={cn("h-4 w-4", isInOrderGuide && "fill-current")} />
               </Button>
             </TooltipTrigger>
 
@@ -225,12 +251,19 @@ function ProductCard({
               size="icon-sm"
               aria-label={`Decrease ${product.name} quantity`}
               className="h-full rounded-none"
-              onClick={() => setDraftQuantity((current) => Math.max(1, current - 1))}
+              onClick={() => {
+                if (isInCart) {
+                  decrementItem(product.id);
+                  return;
+                }
+
+                setDraftQuantity((current) => Math.max(1, current - 1));
+              }}
             >
               <span className="grid size-full place-items-center">-</span>
             </Button>
             <Input
-              value={draftQuantity}
+              value={quantity}
               readOnly
               aria-label={`${product.name} quantity`}
               className="h-full rounded-none border-0 px-0 text-center text-xs font-normal shadow-none focus-visible:ring-0"
@@ -240,21 +273,44 @@ function ProductCard({
               size="icon-sm"
               aria-label={`Increase ${product.name} quantity`}
               className="h-full rounded-none"
-              onClick={() => setDraftQuantity((current) => current + 1)}
+              onClick={() => {
+                if (isInCart) {
+                  incrementItem(product.id);
+                  return;
+                }
+
+                setDraftQuantity((current) => current + 1);
+              }}
             >
               <span className="grid size-full place-items-center">+</span>
             </Button>
           </div>
 
           <Button
-            variant="default"
+            variant={isInCart ? "secondary" : "default"}
             className="h-8 min-w-0 rounded-md px-2 text-[0.68rem] font-bold lg:text-xs"
+            onClick={() => {
+              if (!isInCart) {
+                addItem(product, draftQuantity);
+              }
+            }}
           >
             <ShoppingCart />
-            <span className="truncate">{t("addToCart")}</span>
+            <span className="truncate">
+              {isInCart ? t("addedToCart") : t("addToCart")}
+            </span>
           </Button>
         </div>
       </div>
+
+      <OrderGuidePickerDialog
+        product={product}
+        quickOrders={quickOrders}
+        open={orderGuideOpen}
+        onOpenChange={setOrderGuideOpen}
+        onAdd={addProductToQuickOrder}
+        onRemove={removeProductFromQuickOrder}
+      />
     </article>
   );
 }
@@ -596,6 +652,7 @@ export function Catalog() {
         price: Number(item.QTYBSUOM) || 0,
         category: categoryName,
         subcategory: subcategoryName,
+        image: getCategoryPlaceholderImage(categoryName),
       });
       category.subcategories.set(subcategoryName, products);
       categories.set(categoryName, category);

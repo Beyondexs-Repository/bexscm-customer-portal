@@ -4,6 +4,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "sonner"
 import { defaultLocale, loadMessages } from "@/lib/i18n"
+import { AppProvider } from "@/app/context/app-context"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -33,15 +34,17 @@ export default async function RootLayout({children}) {
     >
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider locale={defaultLocale} messages={messages}>
-		<ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-            <Toaster richColors position="top-center" />
-          </ThemeProvider>
+          <AppProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+              <Toaster richColors position="top-center" />
+            </ThemeProvider>
+          </AppProvider>
         </NextIntlClientProvider>
       </body>
     </html>

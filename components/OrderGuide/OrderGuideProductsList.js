@@ -32,8 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-
-const staticAction = () => {};
+import { useCart, useQuickOrders } from "@/app/context/app-context";
 
 const productImages = [
   "https://images.unsplash.com/photo-1579653853027-5b305f13a7ca?auto=format&fit=crop&w=720&q=80",
@@ -261,12 +260,14 @@ export function OrderGuideProductsList({
   canPlaceOrder,
 }) {
   const t = useTranslations("orderGuide")
-  const addItem = staticAction;
-  const incrementItem = staticAction;
-  const decrementItem = staticAction;
-  const removeItem = staticAction;
-  const dashboardQuickOrderIds = selectedOrder ? [selectedOrder.id] : [];
-  const setDashboardQuickOrderIds = staticAction;
+  const {
+    items,
+    addItem,
+    incrementItem,
+    decrementItem,
+    removeItem,
+  } = useCart();
+  const { dashboardQuickOrderIds, setDashboardQuickOrderIds } = useQuickOrders();
   const [productToMove, setProductToMove] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
   const [productToEditPar, setProductToEditPar] = useState(null);
@@ -274,7 +275,9 @@ export function OrderGuideProductsList({
 
   const products = selectedGroup?.products ?? [];
 
-  const cartQuantities = new Map();
+  const cartQuantities = new Map(
+    items.map((item) => [item.id, item.quantity]),
+  );
 
   const allProductsInCart =
     products.length > 0 &&

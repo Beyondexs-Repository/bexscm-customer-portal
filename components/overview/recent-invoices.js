@@ -20,6 +20,10 @@ function formatDate(value) {
   }).format(new Date(value))
 }
 
+function roundUnits(value) {
+  return Number(Number(value).toFixed(2))
+}
+
 export async function getInvoices() {
   const [invoiceLines, invoiceStatuses] = await Promise.all([
     readLiveData("Invoices.json"),
@@ -70,7 +74,10 @@ export async function getInvoices() {
 
   return [...invoicesByNumber.values()].sort(
     (a, b) => new Date(b.invoiceDate) - new Date(a.invoiceDate),
-  )
+  ).map((invoice) => ({
+    ...invoice,
+    units: roundUnits(invoice.units),
+  }))
 }
 
 export async function getRecentInvoices(limit = 5) {
