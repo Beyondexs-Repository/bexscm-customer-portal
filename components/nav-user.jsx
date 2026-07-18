@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { BadgeCheckIcon, ChevronsUpDownIcon, LogOutIcon } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { clearSession } from "@/lib/auth"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,9 +22,8 @@ export function NavUser() {
   const router = useRouter()
 
   function handleLogout() {
-    document.cookie = "session=; path=/; max-age=0; samesite=lax"
+    clearSession()
     router.replace("/login")
-    router.refresh()
   }
 
   return (
@@ -34,14 +34,14 @@ export function NavUser() {
             <SidebarMenuButton size="lg">
               <Avatar className="h-8 w-8 rounded-lg"><AvatarFallback className="rounded-lg">AC</AvatarFallback></Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">Aloha Customer</span>
+                <span className="truncate font-medium">Crate Inc</span>
                 <span className="truncate text-xs text-muted-foreground">Frontend Preview</span>
               </div>
               <ChevronsUpDownIcon className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent side={isMobile ? "bottom" : "right"} align="end" sideOffset={4}>
-            <DropdownMenuLabel>Aloha Customer</DropdownMenuLabel>
+            <DropdownMenuLabel>Crate Inc</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild><Link href="/profile"><BadgeCheckIcon />My Profile</Link></DropdownMenuItem>

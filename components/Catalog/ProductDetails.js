@@ -66,7 +66,7 @@ function ProductGallery({ product, images }) {
   );
 }
 
-export function ProductDetails({ productId }) {
+export function ProductDetails({ productId, backHref }) {
   const t = useTranslations("catalog")
   const {
     items: cartItems,
@@ -80,9 +80,9 @@ export function ProductDetails({ productId }) {
     removeProductFromQuickOrder,
   } = useQuickOrders()
   const pathname = usePathname()
-  const catalogPath = pathname.startsWith("/backoffice")
+  const catalogPath = backHref ?? (pathname.startsWith("/backoffice")
     ? "/backoffice/catalog"
-    : "/catalog"
+    : "/catalog")
   const product = useMemo(
     () =>
       items

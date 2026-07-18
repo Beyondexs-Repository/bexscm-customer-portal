@@ -14,7 +14,6 @@ import {
   Search,
   ShoppingCart,
   SlidersHorizontal,
-  Mic,
   Loader2,
 } from "lucide-react";
 
@@ -44,6 +43,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import VoiceSearch from "@/components/ai/VoiceSearch";
+import { askVoiceAi } from "@/components/ai/voiceOpenAiClient";
 
 
 
@@ -492,6 +493,46 @@ function getVisiblePages(currentPage, totalPages) {
   return [...pages].sort((a, b) => a - b);
 }
 
+function getProductSearchText(product) {
+  return [
+    product.id,
+    product.sku,
+    product.name,
+    product.brand,
+    product.category,
+    product.subcategory,
+    product.unit,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function findProduct(products, searchText) {
+  const search = searchText.trim().toLowerCase();
+
+  if (!search) return null;
+
+  return (
+    products.find((product) => product.id.toLowerCase() === search) ||
+    products.find((product) => product.name.toLowerCase() === search) ||
+    products.find((product) => getProductSearchText(product).includes(search)) ||
+    null
+  );
+}
+
+function getVisibleProductsForAi(products) {
+  return products.map((product, index) => ({
+    number: index + 1,
+    id: product.id,
+    name: product.name,
+    brand: product.brand,
+    category: product.category,
+    subcategory: product.subcategory,
+    unit: product.unit,
+  }));
+}
+
 function CatalogFilterControls({
   searchQuery,
   categoryName,
@@ -501,7 +542,8 @@ function CatalogFilterControls({
   sortBy,
   activeFilterCount,
   voiceStatus,
-  onVoiceSearch,
+  onVoiceStatusChange,
+  onVoiceTranscript,
   onSearchChange,
   onCategoryChange,
   onSubcategoryChange,
@@ -531,23 +573,11 @@ function CatalogFilterControls({
             placeholder={t("searchProducts")}
             className="h-10 rounded-md pl-9 text-sm"
           />
-          <button
-            type="button"
-            onClick={onVoiceSearch}
-            disabled={voiceStatus !== "idle"}
-            aria-label={
-              voiceStatus === "listening"
-                ? "Listening"
-                : "Search products by voice"
-            }
-            className="absolute right-2 top-1/2 z-50 -translate-y-1/2 rounded-full bg-green-500 p-2 text-white"
-          >
-            {voiceStatus === "idle" ? (
-              <Mic size={18} />
-            ) : (
-              <Loader2 className="size-[18px] animate-spin" />
-            )}
-          </button>
+          <VoiceSearch
+            voiceStatus={voiceStatus}
+            onVoiceStatusChange={onVoiceStatusChange}
+            onTranscript={onVoiceTranscript}
+          />
         </div>
 
         <Button
@@ -631,6 +661,13 @@ function CatalogFilterControls({
 
 export function Catalog() {
   const t = useTranslations("catalog")
+  const {
+    items: cartItems,
+    addItem,
+    decrementItem,
+    removeItem,
+    clearCart,
+  } = useCart();
   const catalog = useMemo(() => {
     const categories = new Map();
 
@@ -667,6 +704,19 @@ export function Catalog() {
     }));
   }, []);
   const categoryNames = ["All", ...catalog.map((category) => category.name)];
+  const allProducts = useMemo(
+    () =>
+      catalog.flatMap((category) =>
+        category.subcategories.flatMap((subcategory) =>
+          subcategory.products.map((product) => ({
+            ...product,
+            category: category.name,
+            subcategory: subcategory.name,
+          })),
+        ),
+      ),
+    [catalog],
+  );
   const [voiceProducts, setVoiceProducts] = useState([]);
   const [categoryName, setCategoryName] = useState("All");
   const activeCategory =
@@ -684,43 +734,11 @@ export function Catalog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
   const [voiceStatus, setVoiceStatus] = useState("idle");
+  const [voiceTranscript, setVoiceTranscript] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const catalogScrollRef = useRef(null);
-  const voiceSearchRequestIdRef = useRef(0);
-
-  function startListening() {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      alert("Speech recognition is not supported in this browser.");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    setVoiceStatus("listening");
-    recognition.start();
-
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setSearchQuery(transcript);
-      setAppliedSearchQuery(transcript);
-      setCurrentPage(1);
-      setVoiceProducts([]);
-      setVoiceStatus("idle");
-    };
-    recognition.onerror = () => setVoiceStatus("idle");
-    recognition.onend = () => {
-      setVoiceStatus((current) =>
-        current === "listening" ? "idle" : current,
-      );
-    };
-  }
 
   function scrollCatalogToTop() {
     catalogScrollRef.current?.scrollTo({
@@ -833,16 +851,113 @@ export function Catalog() {
   }
 
   function handleSearchChange(event) {
-    voiceSearchRequestIdRef.current += 1;
     setVoiceProducts([]);
     setVoiceStatus("idle");
     setSearchQuery(event.target.value);
   }
 
+  function handleVoiceStatusChange(nextStatus) {
+    if (nextStatus === "listening") {
+      setVoiceTranscript("");
+    }
+
+    setVoiceStatus(nextStatus);
+  }
+
+  function applyVoiceSearch(text) {
+    setSearchQuery(text);
+    setAppliedSearchQuery(text);
+    setVoiceProducts([]);
+    setCurrentPage(1);
+  }
+
+  function findVoiceProduct(aiResult, transcript) {
+    if (aiResult.productId) {
+      return allProducts.find((product) => product.id === aiResult.productId);
+    }
+
+    return findProduct(allProducts, aiResult.searchText || transcript);
+  }
+
+  function addProductsByNumber(productNumbers, quantity) {
+    productNumbers.forEach((number) => {
+      const product = visibleProducts[number - 1];
+
+      if (product) {
+        addItem(product, quantity);
+      }
+    });
+  }
+
+  function decreaseProductCount(productId, quantity) {
+    const cartItem = cartItems.find((item) => item.id === productId);
+    const removeCount = Math.min(quantity, cartItem?.quantity || 0);
+
+    for (let index = 0; index < removeCount; index += 1) {
+      decrementItem(productId);
+    }
+  }
+
+  function handleVoiceAction(aiResult, transcript) {
+    const quantity = Math.max(1, Number(aiResult.quantity) || 1);
+    const productNumbers = aiResult.productNumbers || [];
+    const product = findVoiceProduct(aiResult, transcript);
+
+    if (aiResult.action === "add") {
+      if (productNumbers.length > 0) {
+        addProductsByNumber(productNumbers, quantity);
+        return;
+      }
+
+      if (product) {
+        addItem(product, quantity);
+        return;
+      }
+    }
+
+    if (aiResult.action === "increase" && product) {
+      addItem(product, quantity);
+      return;
+    }
+
+    if (aiResult.action === "decrease" && product) {
+      decreaseProductCount(product.id, quantity);
+      return;
+    }
+
+    if (aiResult.action === "remove" && product) {
+      removeItem(product.id);
+      return;
+    }
+
+    if (aiResult.action === "clear") {
+      clearCart();
+      return;
+    }
+
+    applyVoiceSearch(aiResult.searchText || transcript);
+  }
+
+  async function handleVoiceTranscript(transcript) {
+    setVoiceTranscript(transcript);
+
+    try {
+      const aiResult = await askVoiceAi({
+        transcript,
+        products: getVisibleProductsForAi(visibleProducts),
+      });
+
+      handleVoiceAction(aiResult, transcript);
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "Voice search failed.");
+    }
+  }
+
   function handleClearAll() {
-    voiceSearchRequestIdRef.current += 1;
     setVoiceProducts([]);
     setVoiceStatus("idle");
+    setVoiceTranscript("");
     setSearchQuery("");
     setAppliedSearchQuery("");
     setCategoryName("All");
@@ -871,13 +986,18 @@ export function Catalog() {
           aria-live="polite"
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"
         >
-          <div className="flex min-w-52 items-center justify-center gap-3 rounded-lg border bg-background px-6 py-5 text-foreground shadow-xl">
-            <Loader2 className="size-5 animate-spin text-primary" />
-            <p className="text-sm font-semibold">
-              {voiceStatus === "listening"
-                ? "Listening..."
-                : "Searching products..."}
-            </p>
+          <div className="grid min-w-64 max-w-sm gap-3 rounded-lg border bg-background px-6 py-5 text-center text-foreground shadow-xl">
+            <Loader2 className="mx-auto size-5 animate-spin text-primary" />
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">
+                {voiceStatus === "listening" ? "Listening..." : "Just a sec..."}
+              </p>
+              {voiceTranscript ? (
+                <p className="text-xs font-medium text-muted-foreground">
+                  You said: {voiceTranscript}
+                </p>
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}
@@ -920,7 +1040,8 @@ export function Catalog() {
               sortBy={sortBy}
               activeFilterCount={activeFilterCount}
               voiceStatus={voiceStatus}
-              onVoiceSearch={startListening}
+              onVoiceStatusChange={handleVoiceStatusChange}
+              onVoiceTranscript={handleVoiceTranscript}
               onSearchChange={handleSearchChange}
               onCategoryChange={handleCategoryChange}
               onSubcategoryChange={handleSubcategoryChange}
@@ -941,7 +1062,8 @@ export function Catalog() {
           sortBy={sortBy}
           activeFilterCount={activeFilterCount}
           voiceStatus={voiceStatus}
-          onVoiceSearch={startListening}
+          onVoiceStatusChange={handleVoiceStatusChange}
+          onVoiceTranscript={handleVoiceTranscript}
           onSearchChange={handleSearchChange}
           onCategoryChange={handleCategoryChange}
           onSubcategoryChange={handleSubcategoryChange}

@@ -1,14 +1,11 @@
-import Promotions from "@/components/promotions/Promotions"
+import { Suspense } from "react"
 
-export default async function Page({ searchParams }) {
-  const { created } = await searchParams
-  let createdPromotion = null
+import PromotionsPageClient from "@/components/promotions/PromotionsPageClient"
 
-  try {
-    createdPromotion = created ? JSON.parse(created) : null
-  } catch {
-    createdPromotion = null
-  }
-
-  return <Promotions createdPromotion={createdPromotion} />
+export default function Page() {
+  return (
+    <Suspense>
+      <PromotionsPageClient />
+    </Suspense>
+  )
 }

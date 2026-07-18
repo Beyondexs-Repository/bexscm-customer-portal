@@ -1,13 +1,13 @@
-import { readFile } from "node:fs/promises"
-import path from "node:path"
-import Link from "next/link"
-import { notFound } from "next/navigation"
-import {
-  ArrowLeft,
-  FileDown,
-  Share2,
-} from "lucide-react"
+"use client"
 
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { ArrowLeft, FileDown, Share2 } from "lucide-react"
+
+import invoiceLines from "@/data/livedata/Invoices.json"
+import statuses from "@/data/livedata/InvoicesStatus.json"
+import items from "@/data/livedata/Items.json"
+import proprietaryItems from "@/data/livedata/ProprietaryItems.json"
 import InvoicePagination from "@/components/invoices/InvoicePagination"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -28,28 +28,37 @@ const date = (value) =>
     year: "numeric",
   }).format(new Date(value))
 
-export default async function InvoiceDetails({ invoiceId, page = 1, pageSize = 5 }) {
-  const [invoiceText, statusText, itemsText, proprietaryText] = await Promise.all([
-    readFile(path.join(process.cwd(), "data", "livedata", "Invoices.json"), "utf8"),
-    readFile(
-      path.join(process.cwd(), "data", "livedata", "InvoicesStatus.json"),
-      "utf8",
-    ),
-    readFile(path.join(process.cwd(), "data", "livedata", "Items.json"), "utf8"),
-    readFile(
-      path.join(process.cwd(), "data", "livedata", "ProprietaryItems.json"),
-      "utf8",
-    ),
-  ])
-  const allLines = JSON.parse(invoiceText.replace(/^\uFEFF/, ""))
-  const statuses = JSON.parse(statusText.replace(/^\uFEFF/, ""))
-  const items = JSON.parse(itemsText.replace(/^\uFEFF/, ""))
-  const proprietaryItems = JSON.parse(proprietaryText.replace(/^\uFEFF/, ""))
-  const lines = allLines.filter(
+const rowOptions = [5, 10, 20, 50, 100]
+
+export default function InvoiceDetails({ invoiceId }) {
+  const searchParams = useSearchParams()
+  const requestedPage = Number.parseInt(searchParams.get("page") ?? "", 10) || 1
+  const requestedPageSize =
+    Number.parseInt(searchParams.get("rows") ?? "", 10) || 5
+  const pageSize = rowOptions.includes(requestedPageSize)
+    ? requestedPageSize
+    : 5
+  const lines = invoiceLines.filter(
     (line) => clean(line.InvoiceNumber) === invoiceId,
   )
 
-  if (lines.length === 0) notFound()
+  if (lines.length === 0) {
+    return (
+      <main className="space-y-4 p-4">
+        <Button asChild variant="ghost" size="sm" className="px-0">
+          <Link href="/invoices">
+            <ArrowLeft className="size-4" />
+            Back to Invoices
+          </Link>
+        </Button>
+        <Card>
+          <CardContent className="p-6 text-sm text-muted-foreground">
+            Invoice not found.
+          </CardContent>
+        </Card>
+      </main>
+    )
+  }
 
   const firstLine = lines[0]
   const status =
@@ -61,7 +70,7 @@ export default async function InvoiceDetails({ invoiceId, page = 1, pageSize = 5
     : Math.max(total - balance, 0)
   const statusLabel = clean(status.Status) || "Open"
   const totalPages = Math.max(1, Math.ceil(lines.length / pageSize))
-  const currentPage = Math.min(Math.max(page, 1), totalPages)
+  const currentPage = Math.min(Math.max(requestedPage, 1), totalPages)
   const start = (currentPage - 1) * pageSize
   const products = lines.slice(start, start + pageSize)
   const itemsByNumber = new Map(items.map((item) => [clean(item.ITEMNMBR), item]))
@@ -194,8 +203,8 @@ export default async function InvoiceDetails({ invoiceId, page = 1, pageSize = 5
                 currentPage={currentPage}
                 totalPages={totalPages}
                 pageSize={pageSize}
-                basePath={`/invoices/${invoiceId}`}
-                rowOptions={[5, 10, 20, 50, 100]}
+                basePath={`/invoices/details/?id=${encodeURIComponent(invoiceId)}`}
+                rowOptions={rowOptions}
               />
             </div>
           </CardContent>

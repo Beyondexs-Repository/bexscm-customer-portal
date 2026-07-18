@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
+import { clearSession } from "@/lib/auth"
 import { useCart } from "@/app/context/app-context"
 import { CartSidebar } from "@/components/cart-sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -36,10 +37,51 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 const CUTOFF_TIME = "8:00 AM"
 const CUTOFF_DATE = "6/6"
 const DEFAULT_PROFILE = {
-  firstName: "Aloha",
-  lastName: "Customer",
+  firstName: "Crate",
+  lastName: "Inc",
   email: "hello@crateinc.com",
   avatar: "",
+}
+
+const HEADER_ROUTES = [
+  ["/", "Overview", "View account activity, recent orders, and shortcuts"],
+  ["/catalog/details", "Product Details", "Review product information, pricing, and availability"],
+  ["/catalog", "Catalog", "Browse products, pricing, and availability", true],
+  ["/order-guide", "Order Guide", "Build and manage frequently ordered product lists"],
+  ["/my-orders", "My Orders", "Review current and previous orders"],
+  ["/invoices/details", "Invoice Details", "Review invoice charges, payments, and balances"],
+  ["/invoices", "Invoices", "Review invoice totals, payments, balances, and status", true],
+  ["/messages", "Messages", "Contact support and review conversations"],
+  ["/employees", "Employees", "View and manage store employees"],
+  ["/users", "Users", "View and manage customer portal users"],
+  ["/profile", "Profile", "Manage your account and contact information"],
+  ["/backoffice", "Backoffice Overview", "Review internal activity and operational status"],
+  ["/backoffice/overview", "Backoffice Overview", "Review internal activity and operational status"],
+  ["/backoffice/orders", "Backoffice Orders", "Review and manage customer order activity"],
+  ["/backoffice/catalog/details", "Backoffice Product Details", "Review product information, pricing, and availability"],
+  ["/backoffice/catalog", "Backoffice Catalog", "Browse products, pricing, and availability", true],
+  ["/backoffice/order-guide", "Backoffice Order Guide", "Review and manage customer order guides"],
+  ["/backoffice/employees", "Employees", "Review and manage employee records"],
+  ["/backoffice/users", "Users", "Review and manage application users"],
+  ["/backoffice/roles-permissions", "Roles and Permissions", "Review access rules and role-based capabilities"],
+  ["/backoffice/promotions/create", "Create Promotion", "Create a customer promotion"],
+  ["/backoffice/promotions", "Promotions", "Review and manage customer promotions"],
+  ["/backoffice/profile", "Profile", "Manage your account and contact information"],
+] as const
+
+function getHeader(pathname: string) {
+  const normalizedPath =
+    pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname
+  const route = HEADER_ROUTES.find(([path, , , matchesChildren]) =>
+    matchesChildren
+      ? normalizedPath === path || normalizedPath.startsWith(`${path}/`)
+      : normalizedPath === path
+  )
+
+  return {
+    title: route?.[1] ?? "Crate Inc.",
+    description: route?.[2] ?? "",
+  }
 }
 
 type HeaderProfile = typeof DEFAULT_PROFILE
@@ -100,19 +142,16 @@ function HeaderInfoItem({
 
 function SiteHeader({
   className,
-  title,
-  description,
   initialProfile = null,
   children,
   ...props
 }: React.ComponentProps<"header"> & {
-  title?: React.ReactNode
-  description?: React.ReactNode
   initialProfile?: Partial<HeaderProfile> | null
 }) {
   const router = useRouter()
   const pathname = usePathname()
   const t = useTranslations("header")
+  const { title, description } = getHeader(pathname)
   const isMessagesPage = pathname === "/messages"
   const canSearchMessages = true
   const canClearChat = true
@@ -199,9 +238,8 @@ function SiteHeader({
   }, [calendarOpen])
 
   function handleLogout() {
-    document.cookie = "session=; path=/; max-age=0; samesite=lax"
+    clearSession()
     router.replace("/login")
-    router.refresh()
   }
 
   function dispatchMessagesAction(action: "search" | "clear") {

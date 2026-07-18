@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react"
 
 import catalog from "@/data/data.json"
 import { findCatalogProduct, getProductGalleryImages } from "@/lib/catalog-products"
+import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
 
 const AppContext = createContext(null)
 const CART_STORAGE_KEY = "aloha.cart.v1"
@@ -20,7 +21,12 @@ function createDefaultGroup() {
 
 function getCartItemImage(product) {
   const catalogItem = findCatalogProduct(product.id)
+  const category = product.category || catalogItem?.category
   const storedImage = product.image || ""
+
+  if (category) {
+    return getCategoryPlaceholderImage(category)
+  }
 
   if (storedImage) {
     return storedImage
@@ -46,6 +52,8 @@ function getInitialCartItems() {
 
           return {
             ...item,
+            category: item.category || catalogItem?.category,
+            subcategory: item.subcategory || catalogItem?.subcategory,
             image: getCartItemImage(catalogItem ? { ...catalogItem, ...item } : item),
           }
         })
@@ -167,6 +175,8 @@ export function AppProvider({ children }) {
           price: product.price,
           unit: product.unit,
           sku: product.sku,
+          category: product.category,
+          subcategory: product.subcategory,
           image: getCartItemImage(product),
           quantity,
         },

@@ -28,22 +28,27 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { locales } from "@/lib/i18n"
+import { localeStorageKey, locales } from "@/lib/i18n"
+import { hasSession, saveSession } from "@/lib/auth"
 
 const localeLabels = {
   en: "English",
   es: "Spanish",
+  ta: "Tamil",
 }
-
-const countryNameFormatter =
-  typeof Intl !== "undefined" && Intl.DisplayNames
-    ? new Intl.DisplayNames(["en"], { type: "region" })
-    : null
 
 const preferredCountries = ["US", "IN", "GB", "AE", "CA", "AU"]
 
 function getCountryName(country) {
-  return countryNameFormatter?.of(country) ?? country
+  try {
+    if (typeof Intl !== "undefined" && Intl.DisplayNames) {
+      return new Intl.DisplayNames(["en"], { type: "region" }).of(country) ?? country
+    }
+  } catch {
+    return country
+  }
+
+  return country
 }
 
 function getFlagEmoji(country) {
@@ -151,6 +156,12 @@ export default function Login() {
   }, [countrySearch])
 
   useEffect(() => {
+    if (hasSession()) {
+      router.replace("/")
+    }
+  }, [router])
+
+  useEffect(() => {
 	function handleClickOutside(event) {
 		if (
 			countryPickerRef.current &&
@@ -244,8 +255,7 @@ export default function Login() {
     }
 
     setMessage(t("phoneVerified"))
-	document.cookie =
-    "session=demo; path=/; max-age=86400; samesite=lax"
+    saveSession()
     router.replace("/")
   }
 
@@ -258,6 +268,10 @@ export default function Login() {
 
   function handleLocaleChange(nextLocale) {
     setSelectedLocale(nextLocale)
+    window.localStorage.setItem(localeStorageKey, nextLocale)
+    window.dispatchEvent(
+      new CustomEvent("crate-locale-change", { detail: nextLocale }),
+    )
   }
 
   return (

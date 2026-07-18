@@ -9,15 +9,13 @@
       { "id": "my-orders", "title": "My Orders", "path": "/my-orders", "footer": true },
       { "id": "invoices", "title": "Invoices", "path": "/invoices" },
       { "id": "messages", "title": "Messages", "path": "/messages", "footer": true },
-      { "id": "employees", "title": "Employees", "path": "/employees" },
-      { "id": "profile", "title": "Profile", "path": "/profile" }
+      { "id": "employees", "title": "Employees", "path": "/employees" }
     ]
   },
   "internal": {
     "label": "Internal",
     "basePath": "/backoffice",
     "routes": [
-      { "id": "overview", "title": "Backoffice Home", "path": "/backoffice", "footer": true },
       { "id": "overview", "title": "Overview", "path": "/backoffice/overview" },
       { "id": "orders", "title": "Orders", "path": "/backoffice/orders", "footer": true },
       { "id": "catalog", "title": "Catalog", "path": "/backoffice/catalog", "footer": true },
@@ -25,8 +23,7 @@
       { "id": "employees", "title": "Employees", "path": "/backoffice/employees", "footer": true },
       { "id": "users", "title": "Users", "path": "/backoffice/users" },
       { "id": "roles-permissions", "title": "Roles & Permissions", "path": "/backoffice/roles-permissions" },
-      { "id": "promotions", "title": "Promotions", "path": "/backoffice/promotions" },
-      { "id": "profile", "title": "Profile", "path": "/backoffice/profile" }
+      { "id": "promotions", "title": "Promotions", "path": "/backoffice/promotions" }
     ]
   }
 }

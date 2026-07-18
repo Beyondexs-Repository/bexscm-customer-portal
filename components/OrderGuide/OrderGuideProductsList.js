@@ -33,15 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useCart, useQuickOrders } from "@/app/context/app-context";
-
-const productImages = [
-  "https://images.unsplash.com/photo-1579653853027-5b305f13a7ca?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1510130387422-82bed34b37e9?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1599084993091-1cb5c0721cc6?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1568495248636-6432b97bd949?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1604909052743-94e838986d24?auto=format&fit=crop&w=720&q=80",
-  "https://images.unsplash.com/photo-1559737558-2f5a35f4523b?auto=format&fit=crop&w=720&q=80",
-];
+import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
 
 function formatPrice(price, unit) {
   return `$${Number(price).toFixed(2)} / ${unit}`;
@@ -54,8 +46,8 @@ function touchOrder(order) {
   };
 }
 
-function ProductImage({ product, index }) {
-  const image = productImages[index % productImages.length];
+function ProductImage({ product }) {
+  const image = product.image || getCategoryPlaceholderImage(product.category);
 
   return (
     <div className="relative aspect-[1.15] overflow-hidden bg-muted sm:aspect-[1.2] xl:aspect-[1.28]">
@@ -100,7 +92,6 @@ function EmptyProductsCard({ canAddProducts }) {
 
 function SavedProductCard({
   product,
-  index,
   cartQuantity,
   onAddToCart,
   onIncrement,
@@ -121,11 +112,11 @@ function SavedProductCard({
     <article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
       <div className="relative">
         <Link
-          href={`/catalog/${product.id}`}
+          href={`/catalog/details/?id=${encodeURIComponent(product.id)}`}
           aria-label={`View details for ${product.name}`}
           className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <ProductImage product={product} index={index} />
+          <ProductImage product={product} />
         </Link>
 
         {canEdit ? <DropdownMenu>
@@ -162,7 +153,7 @@ function SavedProductCard({
       <div className="relative space-y-1.5 p-2 lg:space-y-2 lg:p-2.5 relative">
         <div className="min-w-0 space-y-1">
           <Link
-            href={`/catalog/${product.id}`}
+            href={`/catalog/details/?id=${encodeURIComponent(product.id)}`}
             className="block truncate text-[0.72rem] font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
           >
             {product.name}
@@ -541,11 +532,10 @@ export function OrderGuideProductsList({
           ) : (
             <div className="no-scrollbar h-full overflow-y-auto">
               <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3 2xl:grid-cols-4">
-                {products.map((product, index) => (
+                {products.map((product) => (
                   <SavedProductCard
                     key={product.id}
                     product={product}
-                    index={index}
                     cartQuantity={cartQuantities.get(product.id) ?? 0}
                     onAddToCart={addItem}
                     onIncrement={incrementItem}

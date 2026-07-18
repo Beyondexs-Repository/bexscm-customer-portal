@@ -1,10 +1,10 @@
-import { NextIntlClientProvider } from "next-intl"
 import { Noto_Sans_Tamil, Poppins } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "sonner"
-import { defaultLocale, loadMessages } from "@/lib/i18n"
+import { defaultLocale } from "@/lib/i18n"
 import { AppProvider } from "@/app/context/app-context"
+import { StaticIntlProvider } from "@/components/static-intl-provider"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -23,9 +23,7 @@ export const metadata = {
   description: "Crate Inc. - Fresh Produce Delivered to Your Doorstep",
 };
 
-export default async function RootLayout({children}) {
-  const messages = await loadMessages(defaultLocale)
-
+export default function RootLayout({children}) {
   return (
     <html
       lang={defaultLocale}
@@ -33,7 +31,7 @@ export default async function RootLayout({children}) {
       className={`${poppins.variable} ${notoSansTamil.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider locale={defaultLocale} messages={messages}>
+        <StaticIntlProvider>
           <AppProvider>
             <ThemeProvider
               attribute="class"
@@ -45,7 +43,7 @@ export default async function RootLayout({children}) {
               <Toaster richColors position="top-center" />
             </ThemeProvider>
           </AppProvider>
-        </NextIntlClientProvider>
+        </StaticIntlProvider>
       </body>
     </html>
   );

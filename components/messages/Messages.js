@@ -66,7 +66,7 @@ function formatRole(roleKey) {
 
 const previewUser = {
   id: 1,
-  name: "Aloha Customer",
+  name: "Crate Inc",
   roleKey: "store-manager",
   avatar: "",
 }
@@ -86,7 +86,7 @@ const previewMessages = [
   },
   {
     id: 2,
-    senderName: "Aloha Customer",
+    senderName: "Crate Inc",
     senderRoleKey: "store-manager",
     senderAccountStatus: "active",
     senderAvatar: "",

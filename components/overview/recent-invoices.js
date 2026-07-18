@@ -1,16 +1,7 @@
-import "server-only"
-
-import { readFile } from "node:fs/promises"
-import path from "node:path"
+import invoiceLines from "@/data/livedata/Invoices.json"
+import invoiceStatuses from "@/data/livedata/InvoicesStatus.json"
 
 const clean = (value) => String(value ?? "").trim()
-
-async function readLiveData(fileName) {
-  const filePath = path.join(process.cwd(), "data", "livedata", fileName)
-  const contents = await readFile(filePath, "utf8")
-
-  return JSON.parse(contents.replace(/^\uFEFF/, ""))
-}
 
 function formatDate(value) {
   return new Intl.DateTimeFormat("en-US", {
@@ -24,12 +15,7 @@ function roundUnits(value) {
   return Number(Number(value).toFixed(2))
 }
 
-export async function getInvoices() {
-  const [invoiceLines, invoiceStatuses] = await Promise.all([
-    readLiveData("Invoices.json"),
-    readLiveData("InvoicesStatus.json"),
-  ])
-
+export function getInvoices() {
   const statusesByInvoice = new Map(
     invoiceStatuses.map((invoice) => [clean(invoice.InvoiceNumber), invoice]),
   )
@@ -80,6 +66,6 @@ export async function getInvoices() {
   }))
 }
 
-export async function getRecentInvoices(limit = 5) {
-  return (await getInvoices()).slice(0, limit)
+export function getRecentInvoices(limit = 5) {
+  return getInvoices().slice(0, limit)
 }

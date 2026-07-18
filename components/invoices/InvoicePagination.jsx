@@ -16,12 +16,15 @@ export default function InvoicePagination({
   const router = useRouter()
 
   const changePage = (page, rows = pageSize) => {
-    const params = new URLSearchParams({ rows: String(rows) })
+    const [path, search = ""] = basePath.split("?")
+    const params = new URLSearchParams(search)
 
+    params.set("rows", String(rows))
     if (query) params.set("query", query)
     if (page > 1) params.set("page", String(page))
+    if (page <= 1) params.delete("page")
 
-    router.push(`${basePath}?${params}`, { scroll: false })
+    router.push(`${path}?${params}`, { scroll: false })
     document
       .querySelector("[data-dashboard-scroll]")
       ?.scrollTo({ top: 0, behavior: "smooth" })

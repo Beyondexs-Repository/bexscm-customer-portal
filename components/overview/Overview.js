@@ -107,8 +107,8 @@ function QuickActions() {
   )
 }
 
-async function RecentOrdersTable() {
-  const recentOrders = await getRecentInvoices(5)
+function RecentOrdersTable() {
+  const recentOrders = getRecentInvoices(5)
 
   return (
     <section className="h-full overflow-hidden rounded-xl border bg-card shadow-sm">
@@ -156,7 +156,7 @@ async function RecentOrdersTable() {
               >
                 <td className="px-4 py-2">
                   <Link
-                    href={`/invoices/${order.invoiceNumber}`}
+                    href={`/invoices/details/?id=${encodeURIComponent(order.invoiceNumber)}`}
                     aria-label={`View invoice ${order.invoiceNumber}`}
                     className="absolute inset-0 z-10"
                   />

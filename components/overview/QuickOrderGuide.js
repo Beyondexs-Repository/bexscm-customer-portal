@@ -8,6 +8,7 @@ import {
   FolderOpen,
   ShoppingCart,
 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useCart, useQuickOrders } from "@/app/context/app-context"
 
@@ -17,8 +18,9 @@ function getGuideProducts(guide) {
 
 export default function QuickOrderGuide() {
   const { quickOrders, dashboardQuickOrderIds } = useQuickOrders()
-  const { addItem } = useCart()
+  const { items: cartItems, addItem } = useCart()
   const [selectedGuideIds, setSelectedGuideIds] = useState([])
+  const cartProductIds = new Set(cartItems.map((item) => item.id))
 
   const visibleGuides = dashboardQuickOrderIds
     .map((id) => quickOrders.find((guide) => guide.id === id))
@@ -44,6 +46,11 @@ export default function QuickOrderGuide() {
     })
 
   const selectedProducts = Array.from(productsById.values())
+  const missingSelectedProducts = selectedProducts.filter(
+    (product) => !cartProductIds.has(product.id),
+  )
+  const selectedProductsAdded =
+    selectedProducts.length > 0 && missingSelectedProducts.length === 0
 
   function toggleGuide(guideId) {
     setSelectedGuideIds((current) =>
@@ -89,6 +96,12 @@ export default function QuickOrderGuide() {
               {visibleGuides.map((guide) => {
                 const products = getGuideProducts(guide)
                 const isSelected = selectedIds.includes(guide.id)
+                const addedCount = products.filter((product) =>
+                  cartProductIds.has(product.id),
+                ).length
+                const hasAddedProducts = addedCount > 0
+                const allGuideProductsAdded =
+                  products.length > 0 && addedCount === products.length
 
                 return (
                   <article
@@ -128,6 +141,16 @@ export default function QuickOrderGuide() {
                         {products.length === 1 ? "product" : "products"}
                       </p>
                     </div>
+                    {hasAddedProducts ? (
+                      <Badge
+                        variant={allGuideProductsAdded ? "default" : "secondary"}
+                        className="ml-auto shrink-0"
+                      >
+                        {allGuideProductsAdded
+                          ? "Added"
+                          : `Added ${addedCount}/${products.length}`}
+                      </Badge>
+                    ) : null}
                   </article>
                 )
               })}
@@ -161,13 +184,15 @@ export default function QuickOrderGuide() {
             type="button"
             className="h-10 w-full"
             size="sm"
-            disabled={selectedIds.length === 0}
-            onClick={() => selectedProducts.forEach((product) => addItem(product, 1))}
+            disabled={selectedIds.length === 0 || selectedProductsAdded}
+            onClick={() =>
+              missingSelectedProducts.forEach((product) => addItem(product, 1))
+            }
           >
             <ShoppingCart className="size-4" />
-            Add to cart
-            {selectedProducts.length > 0
-              ? ` (${selectedProducts.length})`
+            {selectedProductsAdded ? "Added" : "Add to cart"}
+            {!selectedProductsAdded && missingSelectedProducts.length > 0
+              ? ` (${missingSelectedProducts.length})`
               : ""}
           </Button>
         </div>

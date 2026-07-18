@@ -1,5 +1,7 @@
-import { readFileSync } from "fs";
-import path from "path";
+import customers from "@/data/livedata/Customers.json";
+import invoices from "@/data/livedata/Invoices.json";
+import invoiceStatuses from "@/data/livedata/InvoicesStatus.json";
+import items from "@/data/livedata/Items.json";
 
 export const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -10,18 +12,6 @@ export const money = new Intl.NumberFormat("en-US", {
 export const number = new Intl.NumberFormat("en-US");
 
 const clean = (value) => String(value ?? "").trim();
-const liveData = (fileName) =>
-  JSON.parse(
-    readFileSync(path.join(process.cwd(), "data", "livedata", fileName), "utf8").replace(
-      /^\uFEFF/,
-      ""
-    )
-  );
-
-const customers = liveData("Customers.json");
-const invoices = liveData("Invoices.json");
-const invoiceStatuses = liveData("InvoicesStatus.json");
-const items = liveData("Items.json");
 
 const invoiceMap = new Map();
 for (const invoice of invoices) {

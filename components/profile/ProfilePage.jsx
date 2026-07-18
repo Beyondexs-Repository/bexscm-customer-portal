@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 const profile = {
-  firstName: "Aloha",
-  lastName: "Customer",
+  firstName: "Crate",
+  lastName: "Inc",
   email: "hello@crateinc.com",
   phone: "+1 (555) 014-2026",
   avatar: "",
@@ -43,7 +43,7 @@ export default function ProfilePage() {
                 </Label>
                 <div className="relative w-fit">
                   <Avatar className="size-24 ring-1 ring-border sm:size-28">
-                    <AvatarImage src={profile.avatar} alt="Aloha Customer" />
+                    <AvatarImage src={profile.avatar} alt="Crate" />
                     <AvatarFallback className="text-2xl font-semibold">
                       AC
                     </AvatarFallback>

@@ -11,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
 
 export function CartSidebar({
   open,
@@ -35,6 +36,8 @@ export function CartSidebar({
     sku: string
     unit: string
     image?: string
+    category?: string
+    subcategory?: string
   }[]
   onIncrement?: (id: string) => void
   onDecrement?: (id: string) => void
@@ -76,25 +79,24 @@ export function CartSidebar({
             </div>
           ) : (
             <div className="space-y-3">
-              {items.map((item) => (
+              {items.map((item) => {
+                const image = item.category
+                  ? getCategoryPlaceholderImage(item.category)
+                  : item.image || getCategoryPlaceholderImage(item.category)
+
+                return (
                 <article
                   key={item.id}
                   className="rounded-md border bg-card p-3 text-card-foreground"
                 >
                   <div className="flex items-start gap-3">
                     <div className="relative size-16 shrink-0 overflow-hidden rounded-md border bg-muted">
-                      {item.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="size-full object-cover"
-                        />
-                      ) : (
-                        <div className="grid size-full place-items-center text-primary/70">
-                          <ShoppingBagIcon className="size-6" />
-                        </div>
-                      )}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={image}
+                        alt={item.name}
+                        className="size-full object-cover"
+                      />
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -149,7 +151,8 @@ export function CartSidebar({
                     </div>
                   </div>
                 </article>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
