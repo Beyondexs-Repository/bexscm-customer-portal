@@ -1,5 +1,9 @@
 {
   "API_URL": "https://crateapi.bexlgems.com/api/",
   "BASE_URL": "https://crateapi.bexlgems.com/",
-  "CART_API_URL": "https://crateapi.bexlgems.com/api/cart"
+  "CART_API_URL": "https://crateapi.bexlgems.com/api/cart",
+  "COMMON_IMAGE_BASE_URL": "https://crateapi.bexlgems.com/Images/Items/",
+  "API_AUTHORIZATION": "EDBh8df8gF4GyvPiIysdrEKBbP6pA4Qxswkbd4tv8Q",
+  "DEFAULT_CUSTNMBR": "400001",
+  "DEFAULT_EMAIL": "yogeshbose2016@gmail.com"
 }
