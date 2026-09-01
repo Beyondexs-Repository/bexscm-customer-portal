@@ -14,6 +14,7 @@ import {
   SearchIcon,
   ShoppingCartIcon,
   Trash2Icon,
+  UploadCloudIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils"
 import { clearSession } from "@/lib/auth"
 import { useCart } from "@/app/context/app-context"
 import { CartSidebar } from "@/components/cart-sidebar"
+import { GlobalUploadModal } from "@/components/upload/GlobalUploadModal"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -140,14 +142,26 @@ function HeaderInfoItem({
   )
 }
 
+interface UseCartReturn {
+  items: Array<{ id: string; name: string; price: number; quantity: number; sku: string; unit: string; image?: string }>
+  itemCount: number
+  total: number | string
+  incrementItem: (id: string) => void
+  decrementItem: (id: string) => void
+  removeItem: (id: string) => void
+  clearCart: () => void
+  checkoutOrderApi: (custnmbr: string) => Promise<{ success?: boolean; message?: string; error?: string; orderNumber?: string; OrderNumber?: string; orderAmount?: number; OrderAmount?: number; total?: number }>
+  fetchCustomerCart: (custnmbr?: string) => Promise<unknown>
+}
+
 function SiteHeader({
   className,
   initialProfile = null,
   children,
   ...props
-}: React.ComponentProps<"header"> & {
+}: React.PropsWithChildren<React.ComponentProps<"header"> & {
   initialProfile?: Partial<HeaderProfile> | null
-}) {
+}>) {
   const router = useRouter()
   const pathname = usePathname()
   const t = useTranslations("header")
@@ -166,18 +180,36 @@ function SiteHeader({
   const profileName = getFullName(profile)
   const profileInitials = getInitials(profile)
   const {
-    items,
-    itemCount,
-    total,
+    items = [],
+    itemCount = 0,
+    total: cartTotal = 0,
     incrementItem,
     decrementItem,
     removeItem,
-  } = useCart()
-  const cartTotal = `$${Number(total).toFixed(2)}`
-  const today = startOfDay(new Date())
+    clearCart,
+    checkoutOrderApi,
+    fetchCustomerCart,
+  } = (useCart() as unknown) as UseCartReturn
+
+  const formattedCartTotal =
+    typeof cartTotal === "number"
+      ? `$${cartTotal.toFixed(2)}`
+      : String(cartTotal || "").startsWith("$")
+      ? String(cartTotal)
+      : `$${cartTotal || "0.00"}`
+
   const calendarRef = React.useRef<HTMLDivElement>(null)
   const calendarTriggerRef = React.useRef<HTMLButtonElement>(null)
+  const [uploadOpen, setUploadOpen] = React.useState(false)
   const [cartOpen, setCartOpen] = React.useState(false)
+  const [isCheckingOut, setIsCheckingOut] = React.useState(false)
+
+  React.useEffect(() => {
+    if (cartOpen && typeof fetchCustomerCart === "function") {
+      fetchCustomerCart("400001")
+    }
+  }, [cartOpen, fetchCustomerCart])
+  const today = React.useMemo(() => startOfDay(new Date()), [])
   const [calendarOpen, setCalendarOpen] = React.useState(false)
   const [deliveryDate, setDeliveryDate] = React.useState(
     () => new Date(2026, 5, 12)
@@ -186,9 +218,35 @@ function SiteHeader({
     () => new Date(2026, 5, 1)
   )
 
-  function handleCheckout() {
-    setCartOpen(false)
-    toast.success("This is a static frontend preview.")
+  async function handleCheckout() {
+    if (items.length === 0 || isCheckingOut) return
+    setIsCheckingOut(true)
+
+    try {
+      const res = await checkoutOrderApi("400001")
+
+      if (!res || res.success === false) {
+        throw new Error(res?.message || res?.error || "Order creation failed on backend server.")
+      }
+
+      const orderNum = res?.orderNumber ?? res?.OrderNumber ?? "CREATED"
+      const amount = Number(res?.orderAmount ?? res?.OrderAmount ?? res?.total) || 0
+
+      toast.success(
+        amount > 0
+          ? `Order #${orderNum} placed successfully! Total: $${amount.toFixed(2)}`
+          : `Order #${orderNum} placed successfully!`
+      )
+      clearCart()
+      setCartOpen(false)
+    } catch (error: unknown) {
+      console.error("Checkout request failed:", error)
+      const errObj = error as { message?: string }
+      const errorMsg = errObj?.message || "Checkout request failed. Please check API endpoint."
+      toast.error(`Checkout Failed: ${errorMsg}`)
+    } finally {
+      setIsCheckingOut(false)
+    }
   }
 
   const calendarDays = React.useMemo(() => {
@@ -454,6 +512,22 @@ function SiteHeader({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <button
+          type="button"
+          className="relative flex size-9 items-center justify-center rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:size-auto sm:px-1"
+          onClick={() => setUploadOpen(true)}
+          aria-label="Upload Files"
+        >
+          <UploadCloudIcon className="size-5 text-primary sm:hidden" />
+          <HeaderInfoItem
+            icon={UploadCloudIcon}
+            caption="AI Quick Action"
+            label="Upload"
+            className="hidden sm:block"
+          />
+        </button>
+        <Separator orientation="vertical" className="hidden h-8 sm:block" />
+
         {!isMessagesPage && (
           <button
             type="button"
@@ -465,7 +539,7 @@ function SiteHeader({
             <HeaderInfoItem
               icon={ShoppingCartIcon}
               caption={t("cart")}
-              label={cartTotal}
+              label={formattedCartTotal}
               className="hidden sm:block"
             />
             <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-primary text-[10px] font-semibold leading-none text-primary-foreground sm:right-1">
@@ -479,12 +553,17 @@ function SiteHeader({
         open={cartOpen}
         onOpenChange={setCartOpen}
         itemCount={itemCount}
-        total={cartTotal}
+        total={formattedCartTotal}
         items={items}
+        isCheckingOut={isCheckingOut}
         onIncrement={incrementItem}
         onDecrement={decrementItem}
         onRemove={removeItem}
         onCheckout={handleCheckout}
+      />
+      <GlobalUploadModal
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
       />
     </header>
   )

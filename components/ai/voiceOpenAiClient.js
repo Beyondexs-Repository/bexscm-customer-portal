@@ -1,5 +1,6 @@
 "use client";
 
+import { DEFAULT_AUTHORIZATION_TOKEN } from "@/lib/api/apiClient";
 import { OPENAI_API_KEY, OPENAI_MODEL } from "./voiceConfig";
 
 function buildMessages({ transcript, products }) {
@@ -47,24 +48,71 @@ Rules:
   ];
 }
 
-function parseAiResponse(text) {
+function parseAiResponse(data, transcript = "") {
   try {
-    const result = JSON.parse(text);
+    const result = typeof data === "string" ? JSON.parse(data) : data;
+    const rawAction = (result.action || "search").toLowerCase();
+    const lowerTranscript = (transcript || "").toLowerCase();
+
+    let action = rawAction;
+    let quantity = Number(result.quantity) || 1;
+    let searchText = result.searchText || "";
+
+    // Parse explicit numbers from transcript if not set or default
+    const numberWords = {
+      one: 1, two: 2, three: 3, four: 4, five: 5,
+      six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+    };
+    const match = lowerTranscript.match(/\d+/);
+    if (match) {
+      quantity = Math.max(1, parseInt(match[0], 10));
+    } else {
+      for (const [word, num] of Object.entries(numberWords)) {
+        if (lowerTranscript.includes(word)) {
+          quantity = num;
+          break;
+        }
+      }
+    }
+
+    // Intent refinement: if transcript explicitly requests adding to cart or increasing item count
+    if (
+      action === "search" &&
+      (lowerTranscript.includes("add") ||
+        lowerTranscript.includes("cart") ||
+        lowerTranscript.includes("buy") ||
+        lowerTranscript.includes("put"))
+    ) {
+      action = "add";
+      if (!searchText || searchText.toLowerCase().includes("add to cart")) {
+        searchText = lowerTranscript
+          .replace(/add\s+(to\s+cart\s+)?/gi, "")
+          .replace(/put\s+in\s+cart\s+/gi, "")
+          .trim();
+      }
+    }
 
     return {
-      action: result.action || "search",
-      productId: result.productId || "",
-      searchText: result.searchText || "",
-      quantity: Number(result.quantity) || 1,
+      action,
+      productId: result.productId ? String(result.productId) : "",
+      searchText,
+      quantity,
       productNumbers: Array.isArray(result.productNumbers)
         ? result.productNumbers.map(Number).filter(Boolean)
         : [],
     };
   } catch {
+    const lowerTranscript = (transcript || "").toLowerCase();
+    const isAddIntent =
+      lowerTranscript.includes("add") ||
+      lowerTranscript.includes("cart") ||
+      lowerTranscript.includes("buy") ||
+      lowerTranscript.includes("put");
+
     return {
-      action: "search",
+      action: isAddIntent ? "add" : "search",
       productId: "",
-      searchText: text,
+      searchText: typeof data === "string" ? data : transcript || "",
       quantity: 1,
       productNumbers: [],
     };
@@ -72,29 +120,49 @@ function parseAiResponse(text) {
 }
 
 export async function askVoiceAi({ transcript, products }) {
-  if (!OPENAI_API_KEY || OPENAI_API_KEY === "PASTE_OPENAI_API_KEY_HERE") {
-    throw new Error("Add your OpenAI API key in components/ai/voiceConfig.js");
+  // 1. Try backend voice API first
+  try {
+    const response = await fetch("https://crateapi.bexlgems.com/api/voice/command", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: DEFAULT_AUTHORIZATION_TOKEN || "EDBh8df8gF4GyvPiIysdrEKBbP6pA4Qxswkbd4tv8Q",
+      },
+      body: JSON.stringify({ transcript }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return parseAiResponse(data, transcript);
+    }
+  } catch (err) {
+    console.warn("Backend voice command API failed, attempting OpenAI fallback:", err);
   }
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      response_format: { type: "json_object" },
-      messages: buildMessages({ transcript, products }),
-      temperature: 0,
-    }),
-  });
+  // 2. Fallback to OpenAI API if available
+  if (OPENAI_API_KEY && OPENAI_API_KEY !== "PASTE_OPENAI_API_KEY_HERE") {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        response_format: { type: "json_object" },
+        messages: buildMessages({ transcript, products }),
+        temperature: 0,
+      }),
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data?.error?.message || "Voice AI request failed.");
+    if (!response.ok) {
+      throw new Error(data?.error?.message || "Voice AI request failed.");
+    }
+
+    return parseAiResponse(data.choices?.[0]?.message?.content || "", transcript);
   }
 
-  return parseAiResponse(data.choices?.[0]?.message?.content || "");
+  throw new Error("Voice API request failed and no OpenAI fallback available.");
 }

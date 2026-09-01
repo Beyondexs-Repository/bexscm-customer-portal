@@ -1,0 +1,5 @@
+{
+  "API_URL": "https://crateapi.bexlgems.com/api/",
+  "BASE_URL": "https://crateapi.bexlgems.com/",
+  "CART_API_URL": "https://crateapi.bexlgems.com/api/cart"
+}

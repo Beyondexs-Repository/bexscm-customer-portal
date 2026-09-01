@@ -1,17 +1,23 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 import {
   CalendarClock,
   ChevronRight,
   CircleDollarSign,
   Filter,
+  Loader2,
   PackageCheck,
+  RefreshCw,
+  Search,
   Truck,
+  UserCheck,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,6 +25,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import PaginationCustom from "@/components/ui/pagination-custom"
 import { cn } from "@/lib/utils"
 
 import { formatCurrency, statusFilters, statusStyles, typeFilters } from "./MyOrders"
@@ -63,7 +70,7 @@ function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
             {t("orderNumber", { number: order.orderNumber })}
           </p>
 
-          <Badge className={cn("h-auto shrink-0 px-2 py-0.5 text-[10px] leading-none ring-1", statusStyles[order.statusTone])}>
+          <Badge className={cn("h-auto shrink-0 px-2 py-0.5 text-[10px] leading-none ring-1", statusStyles[order.statusTone || "blue"])}>
             {order.status}
           </Badge>
         </div>
@@ -71,7 +78,9 @@ function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
         <p className="mt-1 line-clamp-2 text-[11px] leading-snug">
           <span className="text-muted-foreground">{t("placedOnLabel")} </span>
           <span className="font-semibold text-foreground">{order.placedOn}</span>
-          <span className="text-muted-foreground"> {t("at")} {order.placedAt}</span>
+          {order.placedAt && (
+            <span className="text-muted-foreground"> {t("at")} {order.placedAt}</span>
+          )}
         </p>
 
         <div className="mt-3 grid grid-cols-2 gap-3 md:hidden">
@@ -108,63 +117,148 @@ function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
 }
 
 export default function OrderList({
-  orders,
-  filteredOrders,
+  orders = [],
+  filteredOrders = [],
   selectedOrder,
   statusFilter,
   typeFilter,
+  customerId = "400001",
+  isLoading = false,
+  error = null,
+  onCustomerIdChange,
+  onRefresh,
   onStatusFilterChange,
   onTypeFilterChange,
   onSelectOrder,
   canViewOrderDetails,
 }) {
   const t = useTranslations("myOrders")
-  const deliveredCount = orders.filter((order) => order.status === "Delivered").length
-  const upcomingCount = orders.filter((order) => order.status === "Order Sent").length
-  const totalThisMonth = orders.reduce((sum, order) => sum + order.total, 0)
+  const [inputCustomer, setInputCustomer] = useState(customerId)
+  const [prevCustomerId, setPrevCustomerId] = useState(customerId)
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+
+  if (prevCustomerId !== customerId) {
+    setPrevCustomerId(customerId)
+    setInputCustomer(customerId)
+  }
+
+  // Reset to page 1 whenever filters or customer changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [statusFilter, typeFilter, customerId, filteredOrders.length])
+
+  const totalItems = filteredOrders.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
+  const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages)
+
+  const paginatedOrders = useMemo(() => {
+    const start = (validCurrentPage - 1) * pageSize
+    return filteredOrders.slice(start, start + pageSize)
+  }, [filteredOrders, validCurrentPage, pageSize])
+
+  const deliveredCount = orders.filter((order) => {
+    const s = String(order.status).toLowerCase()
+    return s.includes("delivered") || s.includes("completed")
+  }).length
+
+  const upcomingCount = orders.filter((order) => {
+    const s = String(order.status).toLowerCase()
+    return s.includes("sent") || s.includes("created") || s.includes("pending") || s.includes("open")
+  }).length
+
+  const totalThisMonth = orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0)
+
   const statusFilterLabels = {
     all: t("allOrders"),
     upcoming: t("upcoming"),
     past: t("past"),
   }
 
+  const handleCustomerSubmit = (e) => {
+    e.preventDefault()
+    const val = inputCustomer.trim() || "400001"
+    if (onCustomerIdChange) {
+      onCustomerIdChange(val)
+    }
+  }
+
   return (
     <div className="min-h-0 space-y-4 pb-2">
+      {/* Dashboard Count Stat Cards - Based on order list */}
       <section className="grid grid-cols-2 gap-3 min-[1420px]:grid-cols-4">
-        <StatCard icon={Truck} value={orders.length} label={t("totalOrders")} tone="bg-emerald-50 text-emerald-600" />
-        <StatCard icon={PackageCheck} value={deliveredCount} label={t("ordersDelivered")} tone="bg-violet-50 text-violet-600" />
-        <StatCard icon={CalendarClock} value={upcomingCount} label={t("upcomingOrders")} tone="bg-orange-50 text-orange-600" />
-        <StatCard icon={CircleDollarSign} value={formatCurrency(totalThisMonth)} label={t("totalSpend")} tone="bg-blue-50 text-blue-600" />
+        <StatCard icon={Truck} value={orders.length} label={t("totalOrders")} tone="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300" />
+        <StatCard icon={PackageCheck} value={deliveredCount} label={t("ordersDelivered")} tone="bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-300" />
+        <StatCard icon={CalendarClock} value={upcomingCount} label={t("upcomingOrders")} tone="bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-300" />
+        <StatCard icon={CircleDollarSign} value={formatCurrency(totalThisMonth)} label={t("totalSpend")} tone="bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300" />
       </section>
 
+      {/* Main Order List Section */}
       <section className="flex min-h-0 flex-col rounded-lg border bg-background p-3 shadow-sm sm:p-4">
-        <div className="flex flex-col gap-3 border-b pb-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <h2 className="text-lg font-bold leading-tight sm:text-xl">{t("recentOrders")}</h2>
-            <p className="mt-1 text-xs text-muted-foreground">{t("filterHint")}</p>
-          </div>
+        {/* Customer Input & Controls Header */}
+        <div className="flex flex-col gap-3 border-b pb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold leading-tight sm:text-xl">{t("recentOrders")}</h2>
+                <Badge variant="outline" className="gap-1 text-xs font-normal">
+                  <UserCheck className="size-3 text-primary" />
+                  ID: <span className="font-semibold">{customerId}</span>
+                </Badge>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{t("filterHint")}</p>
+            </div>
 
-          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+            {/* Status Filter Tabs (Moved to Top Right) */}
             <div className="grid grid-cols-3 rounded-lg bg-muted p-1">
               {statusFilters.map((filter) => (
                 <Button
                   key={filter}
                   variant={statusFilter === filter ? "default" : "ghost"}
                   size="sm"
-                  className="h-9 min-w-0 px-2 text-[11px] sm:px-3 sm:text-xs"
+                  className="h-8 min-w-0 px-2 text-[11px] sm:px-3 sm:text-xs"
                   onClick={() => onStatusFilterChange(filter)}
                 >
                   <span className="truncate">{statusFilterLabels[filter]}</span>
                 </Button>
               ))}
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+          {/* Filters & Actions Bar */}
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
+            {/* Customer ID Input Form (Moved to Bottom Left) */}
+            <form onSubmit={handleCustomerSubmit} className="flex items-center gap-2">
+              <div className="relative flex-1 sm:w-44">
+                <Input
+                  type="text"
+                  placeholder="Customer ID"
+                  value={inputCustomer}
+                  onChange={(e) => setInputCustomer(e.target.value)}
+                  className="h-9 pr-8 text-xs font-mono"
+                />
+                <button type="submit" aria-label="Search Customer Orders" className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground">
+                  <Search className="size-4" />
+                </button>
+              </div>
+              <Button type="submit" size="sm" variant="default" className="h-9 px-3 text-xs">
+                {t("search") || "Search"}
+              </Button>
+              {onRefresh && (
+                <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={isLoading} className="h-9 px-2" title="Refresh orders">
+                  <RefreshCw className={cn("size-3.5", isLoading && "animate-spin")} />
+                </Button>
+              )}
+            </form>
+
+            <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-9 min-w-0 justify-between gap-2 px-3">
+                  <Button variant="outline" size="sm" className="h-8 min-w-0 justify-between gap-2 px-3 text-xs">
                     <span className="flex min-w-0 items-center gap-2">
-                      <Filter className="size-4 shrink-0" />
+                      <Filter className="size-3.5 shrink-0" />
                       <span className="truncate">{typeFilter === "All Types" ? t("orderType") : typeFilter}</span>
                     </span>
                   </Button>
@@ -186,9 +280,33 @@ export default function OrderList({
           </div>
         </div>
 
-        <div className="no-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pt-4">
-          {filteredOrders.length > 0 ? (
-            filteredOrders.map((order) => (
+        {/* Results Count / Range Info - Placed above orders list */}
+        {!isLoading && !error && filteredOrders.length > 0 && (
+          <div className="pt-3 pb-1 text-xs text-muted-foreground font-medium">
+            {t("showing", {
+              start: (validCurrentPage - 1) * pageSize + 1,
+              end: Math.min(validCurrentPage * pageSize, totalItems),
+              total: totalItems,
+            })}
+          </div>
+        )}
+
+        {/* Orders List View / Loading / Error State */}
+        <div className="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pt-2 pr-1">
+          {isLoading ? (
+            <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-lg border bg-card p-6 text-muted-foreground">
+              <Loader2 className="size-6 animate-spin text-primary" />
+              <p className="text-xs font-medium">Loading orders for Customer #{customerId}...</p>
+            </div>
+          ) : error ? (
+            <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-6 text-center text-destructive">
+              <p className="text-xs font-semibold">{error}</p>
+              <Button variant="outline" size="sm" onClick={onRefresh} className="h-8 text-xs">
+                <RefreshCw className="mr-1.5 size-3" /> Retry
+              </Button>
+            </div>
+          ) : paginatedOrders.length > 0 ? (
+            paginatedOrders.map((order) => (
               <OrderRow
                 key={order.id}
                 order={order}
@@ -198,18 +316,33 @@ export default function OrderList({
               />
             ))
           ) : (
-            <div className="grid min-h-40 place-items-center rounded-lg border bg-card">
+            <div className="grid min-h-40 place-items-center rounded-lg border bg-card p-6 text-center">
               <p className="text-sm text-muted-foreground">{t("noOrdersFound")}</p>
             </div>
           )}
         </div>
 
-        <div className="mt-3 flex items-center justify-between border-t pt-3 pb-1 text-xs text-muted-foreground">
-          <span className="leading-snug">
-            {t("showing", { start: filteredOrders.length > 0 ? 1 : 0, end: filteredOrders.length, total: orders.length })}
-          </span>
-        </div>
+        {/* Pagination Footer */}
+        {!isLoading && !error && filteredOrders.length > 0 && (
+          <PaginationCustom
+            currentPage={validCurrentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            onPageChange={(page) => setCurrentPage(page)}
+            onPageSizeChange={(size) => {
+              setPageSize(size)
+              setCurrentPage(1)
+            }}
+            pageSizeOptions={[10, 20, 50, 100]}
+            labels={{
+              show: t("show") || "Show",
+              perPage: t("perPage") || "per page",
+            }}
+          />
+        )}
       </section>
     </div>
   )
 }
+

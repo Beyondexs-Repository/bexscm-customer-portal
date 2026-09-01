@@ -1,7 +1,7 @@
 "use client"
 
 import { useTranslations } from "next-intl"
-import { MinusIcon, PlusIcon, ShoppingBagIcon, Trash2Icon } from "lucide-react"
+import { Loader2, MinusIcon, PlusIcon, ShoppingBagIcon, Trash2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
+import { resolveItemImageUrl } from "@/lib/api/itemsApi"
 
 export function CartSidebar({
   open,
@@ -19,6 +20,7 @@ export function CartSidebar({
   itemCount,
   total,
   items = [],
+  isCheckingOut = false,
   onIncrement,
   onDecrement,
   onRemove,
@@ -39,6 +41,7 @@ export function CartSidebar({
     category?: string
     subcategory?: string
   }[]
+  isCheckingOut?: boolean
   onIncrement?: (id: string) => void
   onDecrement?: (id: string) => void
   onRemove?: (id: string) => void
@@ -80,9 +83,8 @@ export function CartSidebar({
           ) : (
             <div className="space-y-3">
               {items.map((item) => {
-                const image = item.category
-                  ? getCategoryPlaceholderImage(item.category)
-                  : item.image || getCategoryPlaceholderImage(item.category)
+                const resolvedImg = resolveItemImageUrl(item.image) || item.image
+                const image = resolvedImg || getCategoryPlaceholderImage(item.category)
 
                 return (
                 <article
@@ -163,11 +165,18 @@ export function CartSidebar({
             <span>{total}</span>
           </div>
           <Button
-            className="h-11 w-full"
-            disabled={isEmpty}
+            className="h-11 w-full gap-2"
+            disabled={isEmpty || isCheckingOut}
             onClick={onCheckout}
           >
-            {t("proceed")}
+            {isCheckingOut ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              t("proceed")
+            )}
           </Button>
         </SheetFooter>
       </SheetContent>

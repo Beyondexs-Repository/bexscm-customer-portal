@@ -235,7 +235,10 @@
     "units": "{count} unidades",
     "totalUnits": "Unidades totales",
     "orderTotal": "Total del pedido",
-    "downloadInvoice": "Descargar factura (PDF)"
+    "downloadInvoice": "Descargar factura (PDF)",
+    "show": "Mostrar",
+    "perPage": "por página",
+    "search": "Buscar"
   },
   "orderGuide": {
     "title": "Guías de pedidos",

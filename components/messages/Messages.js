@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-const fallbackAvatar = "https://api.dicebear.com/9.x/adventurer/svg?seed=Aloha"
+const fallbackAvatar = "https://api.dicebear.com/9.x/adventurer/svg?seed=Crate"
 
 function formatTime(value) {
   if (!value) return ""

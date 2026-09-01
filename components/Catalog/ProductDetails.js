@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -11,7 +11,8 @@ import {
   Star,
 } from "lucide-react";
 
-import items from "@/data/livedata/Items.json";
+import staticItems from "@/data/livedata/Items.json";
+import { fetchItemsApi, resolveItemImageUrl } from "@/lib/api/itemsApi";
 import { useCart, useQuickOrders } from "@/app/context/app-context";
 import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
@@ -83,23 +84,57 @@ export function ProductDetails({ productId, backHref }) {
   const catalogPath = backHref ?? (pathname.startsWith("/backoffice")
     ? "/backoffice/catalog"
     : "/catalog")
+  
+  const [rawItems, setRawItems] = useState(staticItems);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLiveItems() {
+      try {
+        const apiItems = await fetchItemsApi();
+        if (isMounted && Array.isArray(apiItems) && apiItems.length > 0) {
+          setRawItems(apiItems);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch live items in ProductDetails:", err);
+      }
+    }
+    loadLiveItems();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const product = useMemo(
     () =>
-      items
-        .map((item, index) => ({
-          category: item.MainGroup?.trim() || "Other",
-          id: item.ITEMNMBR.trim(),
-          brand: item.ppc_Brand.trim(),
-          name: item.ItemName?.trim() || item.ITEMDESC.trim(),
-          sku: item.ITEMNMBR.trim(),
-          unit: item.UOMSCHDL?.trim() || "unit",
-          price: Number(item.QTYBSUOM) || 0,
-          subcategory: item["Sub-Group"]?.trim() || "Other",
-          fallbackImageIndex: index,
-          image: getCategoryPlaceholderImage(item.MainGroup?.trim() || "Other"),
-        }))
+      rawItems
+        .map((item, index) => {
+          const categoryName = (item.MainGroup || item.mainGroup)?.trim() || "Other";
+          const subcategoryName = (item["Sub-Group"] || item.subGroup || item.SubGroup)?.trim() || "Other";
+          const id = (item.ITEMNMBR || item.itemnmbr)?.trim() || "";
+          const brand = (item.ppc_Brand || item.brand || item.itmshnam)?.trim() || "";
+          const name = (item.ItemName || item.itemName || item.ITEMDESC || item.itemdesc)?.trim() || "";
+          const unit = (item.UOMSCHDL || item.uomschdl)?.trim() || "unit";
+          const price = Number(item.QTYBSUOM ?? item.qtybsuom ?? item.avgWeight) || 0;
+          const rawImage = item.image ?? item.Image ?? item.IMAGE;
+          const resolvedImg = resolveItemImageUrl(rawImage);
+          const image = resolvedImg || getCategoryPlaceholderImage(categoryName);
+
+          return {
+            category: categoryName,
+            id,
+            brand,
+            name,
+            sku: id,
+            unit,
+            price,
+            subcategory: subcategoryName,
+            fallbackImageIndex: index,
+            image,
+          };
+        })
         .find((item) => item.id === productId),
-    [productId],
+    [rawItems, productId],
   );
   const [draftQuantity, setDraftQuantity] = useState(1);
   const [orderGuideOpen, setOrderGuideOpen] = useState(false);
