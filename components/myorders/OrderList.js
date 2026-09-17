@@ -137,8 +137,8 @@ export default function OrderList({
   const [prevCustomerId, setPrevCustomerId] = useState(customerId)
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
 
   if (prevCustomerId !== customerId) {
     setPrevCustomerId(customerId)
@@ -294,7 +294,10 @@ export default function OrderList({
         {/* Orders List View / Loading / Error State */}
         <div className="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pt-2 pr-1">
           {isLoading ? (
-            <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-lg border bg-card p-6 text-muted-foreground">
+
+            <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-lg border bg-card p-6 text-muted-foreground"
+             style={{ minHeight: Math.min(pageSize * 76, 600) }}
+            >
               <Loader2 className="size-6 animate-spin text-primary" />
               <p className="text-xs font-medium">Loading orders for Customer #{customerId}...</p>
             </div>
@@ -334,7 +337,7 @@ export default function OrderList({
               setPageSize(size)
               setCurrentPage(1)
             }}
-            pageSizeOptions={[10, 20, 50, 100]}
+            pageSizeOptions={[5, 10, 20, 50, 100]}
             labels={{
               show: t("show") || "Show",
               perPage: t("perPage") || "per page",
