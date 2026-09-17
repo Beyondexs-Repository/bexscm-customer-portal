@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useTranslations } from "next-intl"
 import {
   Building2,
@@ -8,9 +9,12 @@ import {
   CircleDollarSign,
   Download,
   MapPin,
+  Minus,
+  Plus,
   PackageCheck,
   Phone,
   Store,
+  Trash2,
   User,
   X,
 } from "lucide-react"
@@ -22,6 +26,10 @@ import { cn } from "@/lib/utils"
 import { formatCurrency, statusStyles } from "./MyOrders"
 
 export default function OrderDetails({ order, onBack, onClose }) {
+
+  const [reOrderModalOpen, setReOrderModalOpen] = useState(false);
+  const [reOrderItems, setReOrderItems] = useState([])
+
   const t = useTranslations("myOrders")
   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
@@ -75,7 +83,7 @@ export default function OrderDetails({ order, onBack, onClose }) {
                 {t("placedOnLabel")}{" "}
               </span>
               <span className="break-words text-[11px] font-bold leading-snug sm:text-xs">
-              {order.placedOn}
+                {order.placedOn}
               </span>
             </p>
           </div>
@@ -213,11 +221,255 @@ export default function OrderDetails({ order, onBack, onClose }) {
       </div>
 
       {order.status !== "Order Sent" && (
-        <div className="shrink-0 border-t bg-card p-3 sm:p-4 z-10">
-          <Button variant="outline" className="h-11 w-full text-primary">
-            <Download className="size-4" />
-            {t("downloadInvoice")}
-          </Button>
+        <div className="z-10 shrink-0 border-t bg-card p-3 sm:p-4">
+          <div className="grid grid-cols-2 gap-3">
+            {/* ReOrder - Left */}
+            <Button
+              variant="outline"
+              className="h-11 w-full text-primary"
+              onClick={() => {
+                setReOrderItems(
+                  order.items.map((item) => ({
+                    ...item,
+                    quantity: Number(item.quantity) || 1,
+                  }))
+                )
+                setReOrderModalOpen(true)
+              }}
+            >
+              ReOrder
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-11 w-full text-primary"
+            >
+              <Download className="size-4" />
+              {t("downloadInvoice")}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* For modal */}
+      {reOrderModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-xl border bg-card shadow-xl">
+
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3 border-b p-4">
+              <div>
+                <h2 className="text-base font-bold">
+                  ReOrder
+                </h2>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("orderNumber", { number: order.orderNumber })}
+                </p>
+              </div>
+
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setReOrderModalOpen(false)}
+                aria-label="Close"
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="max-h-[65vh] overflow-y-auto p-4">
+
+              <h3 className="text-sm font-bold">
+                {t("orderItems")}
+              </h3>
+
+              <div className="mt-3 divide-y rounded-lg border">
+                {reOrderItems.map((item) => {
+                  const quantity = Number(item.quantity) || 1
+                  const price = Number(item.price) || 0
+                  const itemTotal = quantity * price
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="relative flex gap-3 p-3 m"
+                     
+                    >
+                      {/* Delete Button - Top Right */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                         style={{marginRight:'60px'}}
+                        className="absolute right-2 top-2"
+                        onClick={() => {
+                          setReOrderItems((currentItems) =>
+                            currentItems.filter(
+                              (currentItem) =>
+                                currentItem.id !== item.id
+                            )
+                          )
+                        }}
+                        aria-label="Delete product"
+                      >
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
+
+                      {/* Product Image */}
+                      <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="size-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none"
+                          }}
+                        />
+                      </div>
+
+                      {/* Product Details */}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold">
+                          {item.name}
+                        </p>
+
+                        <p className="truncate text-xs text-muted-foreground">
+                          {t("brand")} {item.brand}
+                        </p>
+
+                        <p className="truncate text-xs text-muted-foreground">
+                          {t("packSize")} {item.packSize}
+                        </p>
+
+                        <p className="truncate text-xs text-muted-foreground">
+                          SKU: {item.sku}
+                        </p>
+                      </div>
+
+                      {/* Quantity / Price */}
+                      <div className="shrink-0 text-right">
+                        <p className="text-xs font-bold">
+                          {t("units", { count: quantity })}
+                        </p>
+
+                        <p className="mt-1 text-xs">
+                          {formatCurrency(itemTotal)}
+                        </p>
+                      </div>
+
+                      {/* Quantity Selector - Bottom Right */}
+                      <div className="absolute bottom-2 right-2 flex items-center rounded-md border bg-background">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className="size-7"
+                          onClick={() => {
+                            setReOrderItems((currentItems) =>
+                              currentItems.map((currentItem) =>
+                                currentItem.id === item.id
+                                  ? {
+                                    ...currentItem,
+                                    quantity: Math.max(
+                                      1,
+                                      Number(currentItem.quantity) - 1
+                                    ),
+                                  }
+                                  : currentItem
+                              )
+                            )
+                          }}
+                        >
+                          <Minus className="size-3.5" />
+                        </Button>
+
+                        <span className="min-w-7 text-center text-xs font-semibold">
+                          {quantity}
+                        </span>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className="size-7"
+                          onClick={() => {
+                            setReOrderItems((currentItems) =>
+                              currentItems.map((currentItem) =>
+                                currentItem.id === item.id
+                                  ? {
+                                    ...currentItem,
+                                    quantity:
+                                      Number(currentItem.quantity) + 1,
+                                  }
+                                  : currentItem
+                              )
+                            )
+                          }}
+                        >
+                          <Plus className="size-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Order Summary */}
+              <div className="mt-4 space-y-2 border-t pt-4 text-sm">
+                <div className="flex justify-between gap-3">
+                  <span className="font-semibold">
+                    {t("totalUnits")}
+                  </span>
+
+                  <span className="font-bold">
+                    {reOrderItems.reduce(
+                      (sum, item) =>
+                        sum + (Number(item.quantity) || 0),
+                      0
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex justify-between gap-3">
+                  <span className="font-semibold">
+                    {t("orderTotal")}
+                  </span>
+
+                  <span className="font-bold">
+                    {formatCurrency(
+                      reOrderItems.reduce(
+                        (sum, item) =>
+                          sum +
+                          (Number(item.quantity) || 0) *
+                          (Number(item.price) || 0),
+                        0
+                      )
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-2 border-t p-4">
+              <Button
+                variant="outline"
+                onClick={() => setReOrderModalOpen(false)}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                onClick={() => {
+                  // ReOrder action will be added here
+                }}
+              >
+                Add to Cart
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </section>

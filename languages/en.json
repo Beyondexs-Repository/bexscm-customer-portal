@@ -236,7 +236,7 @@
     "units": "{count} units",
     "totalUnits": "Total Units",
     "orderTotal": "Order Total",
-    "downloadInvoice": "Download Invoice (PDF)",
+    "downloadInvoice": "Invoice (PDF)",
     "show": "Show",
     "perPage": "per page",
     "search": "Search"
