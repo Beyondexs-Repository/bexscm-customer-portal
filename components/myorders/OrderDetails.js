@@ -2,11 +2,16 @@
 
 import { useTranslations } from "next-intl"
 import {
+  Building2,
   CalendarClock,
   ChevronLeft,
   CircleDollarSign,
   Download,
+  MapPin,
   PackageCheck,
+  Phone,
+  Store,
+  User,
   X,
 } from "lucide-react"
 
@@ -22,7 +27,7 @@ export default function OrderDetails({ order, onBack, onClose }) {
 
   return (
     <section className="flex h-full min-h-0 flex-col rounded-lg border bg-card shadow-sm">
-      <div className="flex items-start justify-between gap-3 border-b p-3 sm:p-4">
+      <div className="flex shrink-0 items-start justify-between gap-3 border-b p-3 sm:p-4">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
             <p className="min-w-0 truncate text-xs font-bold text-muted-foreground">
@@ -61,7 +66,7 @@ export default function OrderDetails({ order, onBack, onClose }) {
         </Button>
       </div>
 
-      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-3 pb-24 sm:p-4 xl:pb-4">
+      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <div className="min-w-0 rounded-lg bg-emerald-50 p-2 text-foreground dark:bg-emerald-800/5 dark:ring-1 dark:ring-emerald-900/80 sm:p-3">
             <CalendarClock className="mb-2 size-4 text-emerald-600" />
@@ -69,9 +74,9 @@ export default function OrderDetails({ order, onBack, onClose }) {
               <span className="text-muted-foreground dark:text-emerald-100/70">
                 {t("placedOnLabel")}{" "}
               </span>
-              <p className="break-words text-[11px] font-bold leading-snug sm:text-xs">
+              <span className="break-words text-[11px] font-bold leading-snug sm:text-xs">
               {order.placedOn}
-              </p>
+              </span>
             </p>
           </div>
 
@@ -96,17 +101,82 @@ export default function OrderDetails({ order, onBack, onClose }) {
           </div>
         </div>
 
+        {/* Customer Details Card */}
+        <div className="mt-4 rounded-xl border bg-slate-50/70 p-3.5 sm:p-4 text-slate-800 dark:bg-slate-900/40 dark:text-slate-100 shadow-2xs">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400">
+                <Store className="size-4.5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold leading-tight text-foreground">
+                  {order.customerName || "Central Foodservice, Inc."}
+                </h4>
+                <p className="text-[11px] font-semibold text-muted-foreground mt-0.5">
+                  ID: {order.customerID || "400001"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 space-y-2 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 text-muted-foreground font-semibold shrink-0">
+                <Building2 className="size-3.5 text-slate-400" />
+                <span>Ship To</span>
+              </div>
+              <span className="font-bold text-right text-foreground">
+                {order.shipToName || order.customerName || "Central Foodservice, Inc."}
+              </span>
+            </div>
+
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 text-muted-foreground font-semibold shrink-0">
+                <MapPin className="size-3.5 text-slate-400" />
+                <span>Address</span>
+              </div>
+              <span className="font-bold text-right text-sky-600 dark:text-sky-400">
+                {order.address1 || "308 Government Road, Mattawa, WA, 99349"}
+              </span>
+            </div>
+
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 text-muted-foreground font-semibold shrink-0">
+                <User className="size-3.5 text-slate-400" />
+                <span>Sales Rep</span>
+              </div>
+              <span className="font-bold text-right text-foreground">
+                {order.salesPerson || "Laura Parker"}
+              </span>
+            </div>
+
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 text-muted-foreground font-semibold shrink-0">
+                <Phone className="size-3.5 text-slate-400" />
+                <span>Phone</span>
+              </div>
+              <span className="font-bold text-right text-sky-600 dark:text-sky-400">
+                {order.phone1 || "(509) 932-4219"}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <h3 className="mt-5 text-sm font-bold">{t("orderItems")}</h3>
 
         <div className="mt-3 divide-y rounded-lg border">
           {order.items.map((item) => (
             <div key={item.id} className="flex gap-3 p-3">
-              <div
-                role="img"
-                aria-label={item.name}
-                className="size-14 shrink-0 rounded-md bg-cover bg-center"
-                style={{ backgroundImage: `url(${item.image})` }}
-              />
+              <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="size-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none"
+                  }}
+                />
+              </div>
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold">{item.name}</p>
@@ -143,7 +213,7 @@ export default function OrderDetails({ order, onBack, onClose }) {
       </div>
 
       {order.status !== "Order Sent" && (
-        <div className="border-t p-3 sm:p-4">
+        <div className="shrink-0 border-t bg-card p-3 sm:p-4 z-10">
           <Button variant="outline" className="h-11 w-full text-primary">
             <Download className="size-4" />
             {t("downloadInvoice")}

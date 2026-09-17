@@ -165,6 +165,30 @@ button{
   display: none;
 }
 
+/* Custom Visible Scrollbar for Side Panels */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.552 0.016 285.938 / 40%) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: oklch(0.552 0.016 285.938 / 40%);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.552 0.016 285.938 / 70%);
+}
+
 
 /* Scroll bar Styles */
 
@@ -180,4 +204,13 @@ button{
 ::-webkit-scrollbar-thumb {
   background: var(--primary); 
   border-radius: 10px;
+}
+
+/* Hide Next.js dev overlay indicator badge */
+[data-nextjs-toast],
+[data-nextjs-toast-errors],
+nextjs-portal,
+#nextjs__container,
+div[class*="nextjs-portal"] {
+  display: none !important;
 }

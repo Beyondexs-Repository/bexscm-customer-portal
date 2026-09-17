@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { localeStorageKey, locales } from "@/lib/i18n"
 import { hasSession, saveSession } from "@/lib/auth"
+import { loginAuthApi } from "@/lib/api/authApi"
 
 const localeLabels = {
   en: "English",
@@ -119,6 +120,7 @@ export default function Login() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
   const [step, setStep] = useState("phone")
   const [message, setMessage] = useState("")
+  const [isSendingOtp, setIsSendingOtp] = useState(false)
   const [selectedLocale, setSelectedLocale] = useState(locale)
   const otpRefs = useRef([])
   const countryPickerRef = useRef(null)
@@ -180,7 +182,7 @@ export default function Login() {
 	}
 }, [])
 
-  function handleSendOtp(event) {
+  async function handleSendOtp(event) {
     event.preventDefault()
 
     const nextError = getPhoneError(phone, selectedCountry, t)
@@ -193,9 +195,31 @@ export default function Login() {
 
     setPhoneError("")
     setMessage("")
-    setStep("otp")
-    setMessage(t("otpSent", { phone: formattedPhone ?? maskedPhone }))
-    window.setTimeout(() => otpRefs.current[0]?.focus(), 0)
+    setIsSendingOtp(true)
+
+    const rawDigits = phone.replace(/\D/g, "")
+    const callingCode = selectedCountryData?.callingCode ? `+${selectedCountryData.callingCode}` : "+91"
+
+    try {
+      // Call POST https://crateapi.bexlgems.com/api/auth/login with countryCode and mobileNumber
+      const res = await loginAuthApi({
+        countryCode: callingCode,
+        mobileNumber: rawDigits,
+      })
+
+      console.log("Login API response:", res)
+
+      setStep("otp")
+      setMessage(t("otpSent", { phone: formattedPhone ?? maskedPhone }))
+      window.setTimeout(() => otpRefs.current[0]?.focus(), 0)
+    } catch (error) {
+      console.error("Login API request failed:", error)
+      const errObj = error
+      const errorMsg = errObj?.message || "Failed to send OTP. Please check your network or phone number."
+      setPhoneError(errorMsg)
+    } finally {
+      setIsSendingOtp(false)
+    }
   }
 
   function handlePhoneChange(event) {
@@ -276,35 +300,42 @@ export default function Login() {
 
   return (
 	<main className="relative h-svh overflow-hidden bg-[radial-gradient(circle_at_top_left,#e8f8d8,transparent_30%),linear-gradient(135deg,#fffaf1,#fff2dc)] text-[#071936]">
-		{/* Logo */}
-		<div className="absolute left-6 top-6 z-30 flex items-center gap-3 sm:left-10 lg:left-14">
-			<Image
-				src="/logo/logo.png"
-				alt="Crate Inc."
-				width={80}
-				height={80}
-				className="size-16 object-contain"
-				priority
-			/>
-			<div>
-				<p className="text-2xl font-black tracking-tight">CRATE INC.</p>
-				<p className="mt-1 text-sm font-semibold text-slate-500">
-					{t("tagline")}
-				</p>
+		{/* Top Header Bar */}
+		<header className="absolute inset-x-0 top-0 z-30 flex items-center justify-between px-6 py-5 sm:px-10 lg:px-14">
+			{/* Logo (Left) */}
+			<div className="flex items-center gap-3">
+				<Image
+					src="/logo/logo.png"
+					alt="Crate Inc."
+					width={80}
+					height={80}
+					className="size-14 object-contain sm:size-16"
+					priority
+				/>
+				<div>
+					<p className="text-xl font-black tracking-tight sm:text-2xl">CRATE INC.</p>
+					<p className="text-xs font-semibold text-slate-500 sm:text-sm">
+						{t("tagline")}
+					</p>
+				</div>
 			</div>
-		</div>
+
+			{/* Centered Welcome Caption (Top Center) */}
+			<div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center justify-center text-center">
+				<span className="rounded-full border border-orange-200 bg-orange-100/80 px-4 py-1.5 text-sm font-extrabold tracking-wide text-orange-600 shadow-xs">
+					{t("welcomeTo")} Crate Inc.
+				</span>
+			</div>
+		</header>
 
 		<section className="absolute inset-0 z-20 mx-auto flex h-full w-full max-w-7xl flex-col items-center justify-center gap-8 px-6 pb-0 pt-8 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:px-14 lg:pt-0">
-			{/* Left Content - hidden text on mobile */}
+			{/* Left Content */}
 			<div className="relative flex w-full flex-col items-center lg:items-start">
-				<div className="hidden lg:block">
-					<p className="text-lg font-extrabold text-orange-500">
-						{t("welcomeTo")}
-					</p>
-					<h1 className="mt-2 text-1xl font-black tracking-tight xl:text-3xl">
+				<div className="hidden lg:block space-y-1">
+					<h1 className="text-2xl font-black tracking-tight xl:text-3xl text-[#071936]">
 						Crate Inc.
 					</h1>
-					<p className=" max-w-md text-base font-semibold leading-7 text-slate-500">
+					<p className="max-w-md text-base font-semibold leading-7 text-slate-500">
 						{t("trustMessage")}
 					</p>
 				</div>
@@ -450,9 +481,16 @@ export default function Login() {
 							className="h-12 w-full rounded-lg bg-orange-500 text-base font-extrabold text-white shadow-lg shadow-orange-500/25 hover:bg-orange-600"
 							size="lg"
 							type="submit"
+							disabled={isSendingOtp}
 						>
-							{t("sendOtp")}
-							<ArrowRightIcon className="size-5" />
+							{isSendingOtp ? (
+								<span>Sending OTP...</span>
+							) : (
+								<>
+									{t("sendOtp")}
+									<ArrowRightIcon className="size-5" />
+								</>
+							)}
 						</Button>
 					</form>
 				) : (

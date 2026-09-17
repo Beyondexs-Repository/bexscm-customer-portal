@@ -235,7 +235,10 @@
     "units": "{count} அலகுகள்",
     "totalUnits": "மொத்த அலகுகள்",
     "orderTotal": "ஆர்டர் மொத்தம்",
-    "downloadInvoice": "இன்வாய்ஸை பதிவிறக்கு (PDF)"
+    "downloadInvoice": "இன்வாய்ஸை பதிவிறக்கு (PDF)",
+    "show": "காட்டு",
+    "perPage": "பக்கம் ஒன்றுக்கு",
+    "search": "தேடு"
   },
   "orderGuide": {
     "title": "ஆர்டர் வழிகாட்டிகள்",

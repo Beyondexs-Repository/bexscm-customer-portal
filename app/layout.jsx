@@ -5,6 +5,8 @@ import { Toaster } from "sonner"
 import { defaultLocale } from "@/lib/i18n"
 import { AppProvider } from "@/app/context/app-context"
 import { StaticIntlProvider } from "@/components/static-intl-provider"
+import { StoreProvider } from "@/lib/redux/StoreProvider"
+import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -30,20 +32,23 @@ export default function RootLayout({children}) {
       suppressHydrationWarning
       className={`${poppins.variable} ${notoSansTamil.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <StaticIntlProvider>
-          <AppProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-              <Toaster richColors position="top-center" />
-            </ThemeProvider>
-          </AppProvider>
-        </StaticIntlProvider>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <StoreProvider>
+          <StaticIntlProvider>
+            <AppProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+                <ChatbotWidget />
+                <Toaster richColors position="top-center" />
+              </ThemeProvider>
+            </AppProvider>
+          </StaticIntlProvider>
+        </StoreProvider>
       </body>
     </html>
   );

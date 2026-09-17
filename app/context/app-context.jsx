@@ -1,10 +1,12 @@
 "use client"
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 
 import catalog from "@/data/data.json"
-import { findCatalogProduct, getProductGalleryImages } from "@/lib/catalog-products"
+import { findCatalogProduct } from "@/lib/catalog-products"
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
+import { postCartApi, updateCartQuantityApi, checkoutOrderApi, importDocumentCartApi, getCustomerCartApi } from "@/lib/api/cartApi"
+import { resolveItemImageUrl } from "@/lib/api/itemsApi"
 
 const AppContext = createContext(null)
 const CART_STORAGE_KEY = "aloha.cart.v1"
@@ -19,24 +21,44 @@ function createDefaultGroup() {
   }
 }
 
+function detectCategoryFromName(name = "") {
+  const n = String(name).toLowerCase()
+  if (n.includes("salmon") || n.includes("shrimp") || n.includes("crawfish") || n.includes("tuna") || n.includes("crab") || n.includes("fish") || n.includes("seafood")) {
+    return "Seafood"
+  }
+  if (n.includes("steak") || n.includes("beef") || n.includes("ribeye") || n.includes("t-bone") || n.includes("ground beef")) {
+    return "Beef"
+  }
+  if (n.includes("hen") || n.includes("chicken") || n.includes("poultry") || n.includes("wing") || n.includes("breast")) {
+    return "Chicken"
+  }
+  if (n.includes("pork") || n.includes("bacon") || n.includes("ham") || n.includes("chop") || n.includes("rib")) {
+    return "Pork"
+  }
+  if (n.includes("sausage") || n.includes("deli") || n.includes("meat")) {
+    return "Processed Meat"
+  }
+  if (n.includes("alligator") || n.includes("lamb") || n.includes("veal") || n.includes("specialty")) {
+    return "Specialty Meats"
+  }
+  return "Seafood"
+}
+
 function getCartItemImage(product) {
-  const catalogItem = findCatalogProduct(product.id)
-  const category = product.category || catalogItem?.category
-  const storedImage = product.image || ""
+  if (!product) return getCategoryPlaceholderImage("Seafood")
+  const itemKey = String(product.id || product.sku || product.itemNumber || "").trim()
+  const catalogItem = findCatalogProduct(itemKey)
+  const mergedProduct = catalogItem ? { ...catalogItem, ...product } : product
 
-  if (category) {
-    return getCategoryPlaceholderImage(category)
+  const rawImage = mergedProduct.image
+  const resolvedImg = resolveItemImageUrl(rawImage)
+
+  if (resolvedImg) {
+    return resolvedImg
   }
 
-  if (storedImage) {
-    return storedImage
-  }
-
-  return (
-    getProductGalleryImages({ ...catalogItem, ...product })[0] ||
-    catalogItem?.image ||
-    storedImage
-  )
+  const category = mergedProduct.category || catalogItem?.category || detectCategoryFromName(mergedProduct.name || product.name)
+  return getCategoryPlaceholderImage(category)
 }
 
 function getInitialCartItems() {
@@ -146,14 +168,75 @@ export function AppProvider({ children }) {
     )
   }, [quickOrders, storageHydrated])
 
-  useEffect(() => {
-    if (!storageHydrated) return
+  const fetchCustomerCart = useCallback(async (custnmbr = "400001") => {
+    try {
+      const data = await getCustomerCartApi(custnmbr)
+      if (Array.isArray(data)) {
+        const mappedItems = data.map((item) => {
+          const itemNum = String(item.itemNumber || item.ItemNumber || item.cartId).trim()
+          const matchedCatalogItem = findCatalogProduct(itemNum)
+          const name = item.itemName || item.requestedItemName || matchedCatalogItem?.name || `Item ${itemNum}`
+          const price = matchedCatalogItem?.price || 12.50
+          const unit = matchedCatalogItem?.unit || "LB"
+          const image = getCartItemImage(matchedCatalogItem || { id: itemNum, name, image: item.image })
 
-    window.localStorage.setItem(
-      DASHBOARD_QUICK_ORDERS_STORAGE_KEY,
-      JSON.stringify(dashboardQuickOrderIds)
-    )
-  }, [dashboardQuickOrderIds, storageHydrated])
+          return {
+            id: itemNum,
+            name,
+            price,
+            unit,
+            sku: itemNum,
+            quantity: Number(item.quantity || 1),
+            image,
+            cartId: item.cartId,
+            source: item.source || "Backend API",
+          }
+        })
+
+        setCartItems(mappedItems)
+        return mappedItems
+      }
+    } catch (error) {
+      console.warn("Failed to fetch customer cart from API:", error)
+    }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+    getCustomerCartApi("400001")
+      .then((data) => {
+        if (!ignore && Array.isArray(data)) {
+          const mappedItems = data.map((item) => {
+            const itemNum = String(item.itemNumber || item.ItemNumber || item.cartId).trim()
+            const matchedCatalogItem = findCatalogProduct(itemNum)
+            const name = item.itemName || item.requestedItemName || matchedCatalogItem?.name || `Item ${itemNum}`
+            const price = matchedCatalogItem?.price || 12.50
+            const unit = matchedCatalogItem?.unit || "LB"
+            const image = getCartItemImage(matchedCatalogItem || { id: itemNum, name, image: item.image })
+
+            return {
+              id: itemNum,
+              name,
+              price,
+              unit,
+              sku: itemNum,
+              quantity: Number(item.quantity || 1),
+              image,
+              cartId: item.cartId,
+              source: item.source || "Backend API",
+            }
+          })
+          setCartItems(mappedItems)
+        }
+      })
+      .catch((error) => {
+        console.warn("Failed to fetch customer cart from API:", error)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   function addCartItem(product, quantity = 1) {
     setCartItems((currentItems) => {
@@ -182,32 +265,75 @@ export function AppProvider({ children }) {
         },
       ]
     })
+
+    // Post cart payload to https://crateapi.bexlgems.com/api/cart
+    postCartApi({
+      itemNumber: product.ITEMNMBR || product.ItemNumber || product.itemnmbr || product.sku || product.id,
+      itemName: product.ITEMDESC || product.ItemName || product.itemdesc || product.name,
+      quantity,
+      custnmbr: "400001",
+      source: "App/Web",
+    }).catch((error) => {
+      console.warn("Failed to sync cart item to Cart API endpoint:", error.message)
+    })
   }
 
   function incrementCartItem(productId) {
+    let nextQuantity = 1
     setCartItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === productId ? { ...item, quantity: item.quantity + 1 } : item
-      )
+      currentItems.map((item) => {
+        if (item.id === productId) {
+          nextQuantity = item.quantity + 1
+          return { ...item, quantity: nextQuantity }
+        }
+        return item
+      })
     )
+
+    updateCartQuantityApi({
+      itemNumber: productId,
+      quantity: nextQuantity,
+      custnmbr: "400001",
+    }).catch((error) => {
+      console.warn("Failed to sync cart item quantity PUT request:", error.message)
+    })
   }
 
   function decrementCartItem(productId) {
+    let nextQuantity = 0
     setCartItems((currentItems) =>
       currentItems
-        .map((item) =>
-          item.id === productId
-            ? { ...item, quantity: Math.max(0, item.quantity - 1) }
-            : item
-        )
+        .map((item) => {
+          if (item.id === productId) {
+            nextQuantity = Math.max(0, item.quantity - 1)
+            return { ...item, quantity: nextQuantity }
+          }
+          return item
+        })
         .filter((item) => item.quantity > 0)
     )
+
+    updateCartQuantityApi({
+      itemNumber: productId,
+      quantity: nextQuantity,
+      custnmbr: "400001",
+    }).catch((error) => {
+      console.warn("Failed to sync cart item quantity PUT request:", error.message)
+    })
   }
 
   function removeCartItem(productId) {
     setCartItems((currentItems) =>
       currentItems.filter((item) => item.id !== productId)
     )
+
+    updateCartQuantityApi({
+      itemNumber: productId,
+      quantity: 0,
+      custnmbr: "400001",
+    }).catch((error) => {
+      console.warn("Failed to sync cart item delete PUT request:", error.message)
+    })
   }
 
   function clearCart() {
@@ -315,11 +441,12 @@ export function AppProvider({ children }) {
       decrementCartItem,
       removeCartItem,
       clearCart,
+      fetchCustomerCart,
       createQuickOrder,
       addProductToQuickOrder,
       removeProductFromQuickOrder,
     }
-  }, [cartItems, dashboardQuickOrderIds, quickOrders])
+  }, [cartItems, dashboardQuickOrderIds, fetchCustomerCart, quickOrders])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }
@@ -372,6 +499,7 @@ export function useCart() {
     decrementCartItem,
     removeCartItem,
     clearCart,
+    fetchCustomerCart,
   } = useAppContext()
 
   return {
@@ -383,5 +511,12 @@ export function useCart() {
     decrementItem: decrementCartItem,
     removeItem: removeCartItem,
     clearCart,
+    fetchCustomerCart,
+    refetchCart: fetchCustomerCart,
+    postCartApi,
+    updateCartQuantityApi,
+    checkoutOrderApi,
+    importDocumentCartApi,
+    getCustomerCartApi,
   }
 }

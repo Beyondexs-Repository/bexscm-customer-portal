@@ -34,6 +34,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useCart, useQuickOrders } from "@/app/context/app-context";
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
+import { resolveItemImageUrl } from "@/lib/api/itemsApi";
 
 function formatPrice(price, unit) {
   return `$${Number(price).toFixed(2)} / ${unit}`;
@@ -47,18 +48,33 @@ function touchOrder(order) {
 }
 
 function ProductImage({ product }) {
-  const image = product.image || getCategoryPlaceholderImage(product.category);
+  const resolvedImg = resolveItemImageUrl(product.image) || product.image;
+  const categoryFallback = getCategoryPlaceholderImage(product.category);
+  const initialImage = resolvedImg || categoryFallback;
+
+  const [imgSrc, setImgSrc] = useState(initialImage);
+  const [prevInitial, setPrevInitial] = useState(initialImage);
+
+  if (prevInitial !== initialImage) {
+    setPrevInitial(initialImage);
+    setImgSrc(initialImage);
+  }
 
   return (
     <div className="relative aspect-[1.15] overflow-hidden bg-muted sm:aspect-[1.2] xl:aspect-[1.28]">
       <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(135deg,var(--muted),var(--background))] text-primary/70">
         <Package2 className="size-8 sm:size-10" />
       </div>
-      <div
-        role="img"
-        aria-label={product.name}
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${image})` }}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={imgSrc}
+        alt={product.name}
+        className="absolute inset-0 size-full object-cover"
+        onError={() => {
+          if (imgSrc !== categoryFallback) {
+            setImgSrc(categoryFallback);
+          }
+        }}
       />
     </div>
   );

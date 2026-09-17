@@ -15,9 +15,12 @@ import {
   ShoppingCart,
   SlidersHorizontal,
   Loader2,
+  Mic,
 } from "lucide-react";
+import { toast } from "sonner";
 
-import items from "@/data/livedata/Items.json";
+import staticItems from "@/data/livedata/Items.json";
+import { fetchItemsApi, resolveItemImageUrl } from "@/lib/api/itemsApi";
 import { useCart, useQuickOrders } from "@/app/context/app-context";
 import { Button } from "@/components/ui/button";
 import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
@@ -152,18 +155,33 @@ function SelectMenu({
 }
 
 function ProductImage({ product }) {
-  const image = product.image || getCategoryPlaceholderImage(product.category);
+  const resolvedImg = resolveItemImageUrl(product.image) || product.image;
+  const categoryFallback = getCategoryPlaceholderImage(product.category);
+  const initialImage = resolvedImg || categoryFallback;
+
+  const [imgSrc, setImgSrc] = useState(initialImage);
+  const [prevInitial, setPrevInitial] = useState(initialImage);
+
+  if (prevInitial !== initialImage) {
+    setPrevInitial(initialImage);
+    setImgSrc(initialImage);
+  }
 
   return (
     <div className="relative aspect-[1.25] overflow-hidden bg-muted sm:aspect-[1.35] xl:aspect-[1.45]">
       <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(135deg,var(--muted),var(--background))] text-primary/70">
         <Package2 className="size-8 sm:size-10" />
       </div>
-      <div
-        role="img"
-        aria-label={product.name}
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${image})` }}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={imgSrc}
+        alt={product.name}
+        className="absolute inset-0 size-full object-cover"
+        onError={() => {
+          if (imgSrc !== categoryFallback) {
+            setImgSrc(categoryFallback);
+          }
+        }}
       />
     </div>
   );
@@ -186,6 +204,9 @@ function ProductCard({
   } = useQuickOrders()
   const [draftQuantity, setDraftQuantity] = useState(1);
   const [orderGuideOpen, setOrderGuideOpen] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [cardVoiceStatus, setCardVoiceStatus] = useState("idle");
+
   const cartItem = cartItems.find((item) => item.id === product.id);
   const isInCart = Boolean(cartItem);
   const quantity = cartItem?.quantity ?? draftQuantity;
@@ -195,12 +216,124 @@ function ProductCard({
     ),
   );
 
+  function handleProductVoiceAdd() {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      toast.error("Speech recognition is not supported in this browser.");
+      return;
+    }
+
+    setCardVoiceStatus("listening");
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results?.[0]?.[0]?.transcript?.trim();
+      if (transcript) {
+        setCardVoiceStatus("processing");
+
+        let qty = draftQuantity;
+        const numberWords = {
+          one: 1, two: 2, three: 3, four: 4, five: 5,
+          six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+        };
+
+        const lower = transcript.toLowerCase();
+        const match = lower.match(/\d+/);
+        if (match) {
+          qty = Math.max(1, parseInt(match[0], 10));
+        } else {
+          for (const [word, num] of Object.entries(numberWords)) {
+            if (lower.includes(word)) {
+              qty = num;
+              break;
+            }
+          }
+        }
+
+        try {
+          const liveItems = await fetchItemsApi();
+          const liveItem = Array.isArray(liveItems)
+            ? liveItems.find(
+                (item) => (item.itemnmbr || item.ITEMNMBR)?.trim() === product.id,
+              )
+            : null;
+
+          const finalProduct = liveItem
+            ? {
+                ...product,
+                price: Number(liveItem.qtybsuom ?? liveItem.QTYBSUOM ?? liveItem.avgWeight) || product.price,
+                unit: (liveItem.uomschdl || liveItem.UOMSCHDL)?.trim() || product.unit,
+              }
+            : product;
+
+          addItem(finalProduct, qty);
+          toast.success(`Added ${qty} × ${product.name} to cart via voice!`);
+        } catch {
+          addItem(product, qty);
+          toast.success(`Added ${qty} × ${product.name} to cart via voice!`);
+        }
+      }
+      setCardVoiceStatus("idle");
+    };
+
+    recognition.onerror = () => {
+      setCardVoiceStatus("idle");
+    };
+
+    recognition.onend = () => {
+      setCardVoiceStatus("idle");
+    };
+
+    try {
+      recognition.start();
+    } catch {
+      setCardVoiceStatus("idle");
+    }
+  }
+
+  async function handleAddToCart() {
+    if (isInCart || isAdding) return;
+
+    setIsAdding(true);
+    try {
+      const liveItems = await fetchItemsApi();
+      const liveItem = Array.isArray(liveItems)
+        ? liveItems.find(
+            (item) =>
+              (item.itemnmbr || item.ITEMNMBR)?.trim() === product.id,
+          )
+        : null;
+
+      const finalProduct = liveItem
+        ? {
+            ...product,
+            price: Number(liveItem.qtybsuom ?? liveItem.QTYBSUOM ?? liveItem.avgWeight) || product.price,
+            unit: (liveItem.uomschdl || liveItem.UOMSCHDL)?.trim() || product.unit,
+          }
+        : product;
+
+      addItem(finalProduct, draftQuantity);
+    } catch (error) {
+      console.warn("Failed to fetch latest item details, adding product:", error);
+      addItem(product, draftQuantity);
+    } finally {
+      setIsAdding(false);
+    }
+  }
+
   return (
     <article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
       <div className="relative">
         <div className="block">
           <ProductImage product={product} />
         </div>
+
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -245,7 +378,7 @@ function ProductCard({
           {formatPrice(product.price, product.unit)}
         </p>
 
-        <div className="grid gap-2 min-[460px]:grid-cols-[4.25rem_1fr] lg:grid-cols-[4.75rem_1fr]">
+        <div className="grid gap-1.5 grid-cols-[3.8rem_1fr] lg:grid-cols-[4.25rem_1fr]">
           <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
             <Button
               variant="ghost"
@@ -289,16 +422,21 @@ function ProductCard({
 
           <Button
             variant={isInCart ? "secondary" : "default"}
+            disabled={isAdding}
             className="h-8 min-w-0 rounded-md px-2 text-[0.68rem] font-bold lg:text-xs"
-            onClick={() => {
-              if (!isInCart) {
-                addItem(product, draftQuantity);
-              }
-            }}
+            onClick={handleAddToCart}
           >
-            <ShoppingCart />
+            {isAdding ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <ShoppingCart />
+            )}
             <span className="truncate">
-              {isInCart ? t("addedToCart") : t("addToCart")}
+              {isInCart
+                ? t("addedToCart")
+                : isAdding
+                  ? "Adding..."
+                  : t("addToCart")}
             </span>
           </Button>
         </div>
@@ -509,14 +647,23 @@ function getProductSearchText(product) {
 }
 
 function findProduct(products, searchText) {
-  const search = searchText.trim().toLowerCase();
+  if (!searchText) return null;
+
+  const rawSearch = searchText.trim().toLowerCase();
+  // Strip action prefixes and suffixes (e.g. "add chicken to cart" -> "chicken")
+  const search = rawSearch
+    .replace(/^(add|search|find|buy|put|get|please)\s+/g, "")
+    .replace(/\s+(to\s+cart|in\s+cart|please)$/g, "")
+    .trim();
 
   if (!search) return null;
 
   return (
-    products.find((product) => product.id.toLowerCase() === search) ||
+    products.find((product) => String(product.id).toLowerCase() === search) ||
     products.find((product) => product.name.toLowerCase() === search) ||
     products.find((product) => getProductSearchText(product).includes(search)) ||
+    products.find((product) => search.split(/\s+/).some((term) => term.length > 2 && getProductSearchText(product).includes(term))) ||
+    products.find((product) => getProductSearchText(product).includes(rawSearch)) ||
     null
   );
 }
@@ -668,28 +815,58 @@ export function Catalog() {
     removeItem,
     clearCart,
   } = useCart();
+
+  const [rawItems, setRawItems] = useState(staticItems);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLiveItems() {
+      try {
+        const apiItems = await fetchItemsApi();
+        if (isMounted && Array.isArray(apiItems) && apiItems.length > 0) {
+          setRawItems(apiItems);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch live items in Catalog, using fallback:", err);
+      }
+    }
+    loadLiveItems();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const catalog = useMemo(() => {
     const categories = new Map();
 
-    items.forEach((item) => {
-      const categoryName = item.MainGroup?.trim() || "Other";
-      const subcategoryName = item["Sub-Group"]?.trim() || "Other";
+    rawItems.forEach((item) => {
+      const categoryName = (item.MainGroup || item.mainGroup)?.trim() || "Other";
+      const subcategoryName = (item["Sub-Group"] || item.subGroup || item.SubGroup)?.trim() || "Other";
       const category = categories.get(categoryName) ?? {
         name: categoryName,
         subcategories: new Map(),
       };
       const products = category.subcategories.get(subcategoryName) ?? [];
 
+      const id = (item.ITEMNMBR || item.itemnmbr)?.trim() || "";
+      const brand = (item.ppc_Brand || item.brand || item.itmshnam)?.trim() || "";
+      const name = (item.ItemName || item.itemName || item.ITEMDESC || item.itemdesc)?.trim() || "";
+      const unit = (item.UOMSCHDL || item.uomschdl)?.trim() || "unit";
+      const price = Number(item.QTYBSUOM ?? item.qtybsuom ?? item.avgWeight) || 0;
+      const rawImage = item.image ?? item.Image ?? item.IMAGE;
+      const resolvedImg = resolveItemImageUrl(rawImage);
+      const image = resolvedImg || getCategoryPlaceholderImage(categoryName);
+
       products.push({
-        id: item.ITEMNMBR.trim(),
-        brand: item.ppc_Brand.trim(),
-        name: item.ItemName?.trim() || item.ITEMDESC.trim(),
-        sku: item.ITEMNMBR.trim(),
-        unit: item.UOMSCHDL?.trim() || "unit",
-        price: Number(item.QTYBSUOM) || 0,
+        id,
+        brand,
+        name,
+        sku: id,
+        unit,
+        price,
         category: categoryName,
         subcategory: subcategoryName,
-        image: getCategoryPlaceholderImage(categoryName),
+        image,
       });
       category.subcategories.set(subcategoryName, products);
       categories.set(categoryName, category);
@@ -702,7 +879,7 @@ export function Catalog() {
         products,
       })),
     }));
-  }, []);
+  }, [rawItems]);
   const categoryNames = ["All", ...catalog.map((category) => category.name)];
   const allProducts = useMemo(
     () =>
@@ -873,7 +1050,11 @@ export function Catalog() {
 
   function findVoiceProduct(aiResult, transcript) {
     if (aiResult.productId) {
-      return allProducts.find((product) => product.id === aiResult.productId);
+      const targetId = String(aiResult.productId).trim().toLowerCase();
+      const match = allProducts.find(
+        (product) => String(product.id).trim().toLowerCase() === targetId
+      );
+      if (match) return match;
     }
 
     return findProduct(allProducts, aiResult.searchText || transcript);
@@ -898,19 +1079,41 @@ export function Catalog() {
     }
   }
 
-  function handleVoiceAction(aiResult, transcript) {
+  async function handleVoiceAction(aiResult, transcript) {
     const quantity = Math.max(1, Number(aiResult.quantity) || 1);
     const productNumbers = aiResult.productNumbers || [];
-    const product = findVoiceProduct(aiResult, transcript);
+    const product = findVoiceProduct(aiResult, transcript) || findProduct(allProducts, aiResult.searchText || transcript);
 
     if (aiResult.action === "add") {
-      if (productNumbers.length > 0) {
-        addProductsByNumber(productNumbers, quantity);
+      if (product) {
+        try {
+          const liveItems = await fetchItemsApi();
+          const liveItem = Array.isArray(liveItems)
+            ? liveItems.find(
+                (item) =>
+                  (item.itemnmbr || item.ITEMNMBR)?.trim() === product.id,
+              )
+            : null;
+
+          const finalProduct = liveItem
+            ? {
+                ...product,
+                price: Number(liveItem.qtybsuom ?? liveItem.QTYBSUOM ?? liveItem.avgWeight) || product.price,
+                unit: (liveItem.uomschdl || liveItem.UOMSCHDL)?.trim() || product.unit,
+              }
+            : product;
+
+          addItem(finalProduct, quantity);
+          toast.success(`Added ${quantity} × ${finalProduct.name} to cart!`);
+        } catch {
+          addItem(product, quantity);
+          toast.success(`Added ${quantity} × ${product.name} to cart!`);
+        }
         return;
       }
 
-      if (product) {
-        addItem(product, quantity);
+      if (productNumbers.length > 0) {
+        addProductsByNumber(productNumbers, quantity);
         return;
       }
     }
@@ -947,7 +1150,7 @@ export function Catalog() {
         products: getVisibleProductsForAi(visibleProducts),
       });
 
-      handleVoiceAction(aiResult, transcript);
+      await handleVoiceAction(aiResult, transcript);
     } catch (error) {
       console.error(error);
       alert(error.message || "Voice search failed.");

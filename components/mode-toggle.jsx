@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { CheckIcon, ChevronDownIcon, MonitorIcon, MoonIcon, SunIcon } from "lucide-react"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/components/theme-provider"
 
 import {
   DropdownMenu,

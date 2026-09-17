@@ -1,9 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 
-import { myOrders } from "@/data/my-orders"
+import { fetchCustomerOrdersApi, DEFAULT_CUSTNMBR } from "@/lib/api/ordersApi"
 import { cn } from "@/lib/utils"
 
 import OrderList from "./OrderList"
@@ -33,7 +33,16 @@ export function formatCurrency(value) {
 }
 
 export function getOrderBucket(order) {
-  if (order.status === "Order Sent") return "upcoming"
+  const status = String(order.status || "").toLowerCase()
+  if (
+    status.includes("sent") ||
+    status.includes("created") ||
+    status.includes("pending") ||
+    status.includes("open") ||
+    status.includes("processing")
+  ) {
+    return "upcoming"
+  }
   return "past"
 }
 
@@ -43,18 +52,60 @@ export default function MyOrders() {
   const [selectedOrderId, setSelectedOrderId] = useState(null)
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("All Types")
+  const [customerId, setCustomerId] = useState(DEFAULT_CUSTNMBR)
+  const [orders, setOrders] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleRefresh = useCallback(() => {
+    setRefreshKey((prev) => prev + 1)
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    fetchCustomerOrdersApi(customerId)
+      .then((data) => {
+        if (!ignore) {
+          setOrders(data)
+          setError(null)
+          setIsLoading(false)
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          console.error("Failed to load customer orders:", err)
+          setError(err.message || "Failed to fetch orders")
+          setOrders([])
+          setIsLoading(false)
+        }
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [customerId, refreshKey])
+
+  const handleCustomerIdChange = useCallback((newId) => {
+    setIsLoading(true)
+    setCustomerId(newId)
+  }, [])
 
   const filteredOrders = useMemo(
     () =>
-      myOrders.filter((order) => {
+      orders.filter((order) => {
         const matchesStatus =
           statusFilter === "all" || getOrderBucket(order) === statusFilter
 
-        const matchesType = typeFilter === "All Types" || order.type === typeFilter
+        const matchesType =
+          typeFilter === "All Types" ||
+          (typeFilter === "App/Web" && order.type === "App/Web") ||
+          (typeFilter === "Others" && order.type !== "App/Web")
 
         return matchesStatus && matchesType
       }),
-    [statusFilter, typeFilter],
+    [orders, statusFilter, typeFilter],
   )
 
   const selectedOrder =
@@ -64,16 +115,19 @@ export default function MyOrders() {
     <main className="grid min-h-full gap-4 bg-background p-3 sm:p-4 xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_minmax(360px,430px)] xl:pb-6">
       <div className={cn("min-h-0", selectedOrder ? "hidden xl:block" : "block")}>
         <OrderList
-          orders={myOrders}
+          orders={orders}
           filteredOrders={filteredOrders}
           selectedOrder={selectedOrder}
           statusFilter={statusFilter}
           typeFilter={typeFilter}
+          customerId={customerId}
+          isLoading={isLoading}
+          error={error}
+          onCustomerIdChange={handleCustomerIdChange}
+          onRefresh={handleRefresh}
           onStatusFilterChange={setStatusFilter}
           onTypeFilterChange={setTypeFilter}
-          onSelectOrder={
-            canViewOrderDetails ? setSelectedOrderId : () => {}
-          }
+          onSelectOrder={canViewOrderDetails ? setSelectedOrderId : () => {}}
           canViewOrderDetails={canViewOrderDetails}
         />
       </div>

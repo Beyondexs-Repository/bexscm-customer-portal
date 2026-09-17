@@ -9,11 +9,13 @@ const icons = {
   items: Boxes,
 };
 
-export default function StatsCards() {
+export default function StatsCards({ stats: statsData = stats }) {
+  const currentStats = statsData || stats;
+
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {stats.map((stat) => {
-        const Icon = icons[stat.type];
+      {currentStats.map((stat) => {
+        const Icon = icons[stat.type] || Boxes;
 
         return (
           <div key={stat.label} className="rounded-lg border bg-card p-4 shadow-sm">
