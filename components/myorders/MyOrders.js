@@ -1,17 +1,13 @@
 "use client"
-
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
-
 import { fetchCustomerOrdersApi, DEFAULT_CUSTNMBR } from "@/lib/api/ordersApi"
 import { cn } from "@/lib/utils"
-
 import OrderList from "./OrderList"
 import OrderDetails from "./OrderDetails"
 
 export const statusFilters = ["all", "upcoming", "past"]
 export const typeFilters = ["App/Web", "Others"]
-
 export const statusStyles = {
   green:
     "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:ring-emerald-800",
