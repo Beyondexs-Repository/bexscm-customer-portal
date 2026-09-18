@@ -1,7 +1,14 @@
 "use client"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useDispatch, useSelector } from "react-redux"
 import { useTranslations } from "next-intl"
-import { fetchCustomerOrdersApi, DEFAULT_CUSTNMBR } from "@/lib/api/ordersApi"
+import { DEFAULT_CUSTNMBR } from "@/lib/api/ordersApi"
+import {
+  fetchCustomerOrders,
+  selectOrders,
+  selectOrdersStatus,
+  selectOrdersError,
+} from "@/lib/redux/slices/ordersSlice"
 import { cn } from "@/lib/utils"
 import OrderList from "./OrderList"
 import OrderDetails from "./OrderDetails"
@@ -44,47 +51,31 @@ export function getOrderBucket(order) {
 
 export default function MyOrders() {
   const t = useTranslations("myOrders")
+  const dispatch = useDispatch()
   const canViewOrderDetails = true
   const [selectedOrderId, setSelectedOrderId] = useState(null)
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("All Types")
   const [customerId, setCustomerId] = useState(DEFAULT_CUSTNMBR)
-  const [orders, setOrders] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Redux-backed orders state (dispatched via fetchCustomerOrders thunk)
+  const orders = useSelector(selectOrders)
+  const ordersStatus = useSelector(selectOrdersStatus)
+  const error = useSelector(selectOrdersError)
+  const isLoading = ordersStatus === "loading" || ordersStatus === "idle"
+
+  console.log(orders, ordersStatus, error, isLoading, "--find getslice datas & loading");
 
   const handleRefresh = useCallback(() => {
     setRefreshKey((prev) => prev + 1)
   }, [])
 
   useEffect(() => {
-    let ignore = false
-
-    fetchCustomerOrdersApi(customerId)
-      .then((data) => {
-        if (!ignore) {
-          setOrders(data)
-          setError(null)
-          setIsLoading(false)
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          console.error("Failed to load customer orders:", err)
-          setError(err.message || "Failed to fetch orders")
-          setOrders([])
-          setIsLoading(false)
-        }
-      })
-
-    return () => {
-      ignore = true
-    }
-  }, [customerId, refreshKey])
+    dispatch(fetchCustomerOrders(customerId))
+  }, [dispatch, customerId, refreshKey])
 
   const handleCustomerIdChange = useCallback((newId) => {
-    setIsLoading(true)
     setCustomerId(newId)
   }, [])
 
