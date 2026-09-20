@@ -3,12 +3,12 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useTranslations } from "next-intl"
 import { DEFAULT_CUSTNMBR } from "@/lib/api/ordersApi"
-import {
-  fetchCustomerOrders,
-  selectOrders,
-  selectOrdersStatus,
-  selectOrdersError,
-} from "@/lib/redux/slices/ordersSlice"
+// import {
+//   fetchCustomerOrders,
+//   selectOrders,
+//   selectOrdersStatus,
+//   selectOrdersError,
+// } from "@/lib/redux/slices/ordersSlice"
 import { cn } from "@/lib/utils"
 import OrderList from "./OrderList"
 import OrderDetails from "./OrderDetails"
@@ -58,22 +58,86 @@ export default function MyOrders() {
   const [typeFilter, setTypeFilter] = useState("All Types")
   const [customerId, setCustomerId] = useState(DEFAULT_CUSTNMBR)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [orderList, setOrderList] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Redux-backed orders state (dispatched via fetchCustomerOrders thunk)
-  const orders = useSelector(selectOrders)
-  const ordersStatus = useSelector(selectOrdersStatus)
-  const error = useSelector(selectOrdersError)
-  const isLoading = ordersStatus === "loading" || ordersStatus === "idle"
+  // const orders = useSelector(selectOrders)
+  //const ordersStatus = useSelector(selectOrdersStatus)
+  // const error = useSelector(selectOrdersError)
+  // const isLoading = ordersStatus === "loading" || ordersStatus === "idle"
 
-  console.log(orders, ordersStatus, error, isLoading, "--find getslice datas & loading");
+  // console.log(orderList, ordersStatus, error, isLoading, "--find getslice datas & loading");
 
   const handleRefresh = useCallback(() => {
     setRefreshKey((prev) => prev + 1)
   }, [])
 
+
+  const fetchCustomerOrders = async (customerId) => {
+  setIsLoading(true);
+
+  try {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/customers/400001/orders`;
+
+    console.log("Customer ID:", customerId);
+    console.log("Customer Orders API URL:", url);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
+    });
+
+    console.log("Customer Orders HTTP Status:", response.status);
+    console.log("Customer Orders HTTP OK:", response.ok);
+
+    const responseText = await response.text();
+
+    console.log("Customer Orders Raw Response:", responseText);
+
+    let result = null;
+
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch (error) {
+      console.warn("Response is not JSON:", responseText);
+    }
+
+    console.log("Customer Orders Parsed Response:", result);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to fetch customer orders. HTTP ${response.status}`
+      );
+    }
+
+    setOrderList(result);
+
+    return result;
+  } catch (error) {
+    console.error("Customer Orders Error:", error);
+    setOrderList([]);
+    return null;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
   useEffect(() => {
-    dispatch(fetchCustomerOrders(customerId))
-  }, [dispatch, customerId, refreshKey])
+    fetchCustomerOrders(customerId);
+    console.log("Orderview", orderList);
+  }, [customerId, refreshKey])
+
+  useEffect(() => {
+    console.log("Orderview Updated:", orderList);
+  }, [orderList]);
 
   const handleCustomerIdChange = useCallback((newId) => {
     setCustomerId(newId)
@@ -81,7 +145,7 @@ export default function MyOrders() {
 
   const filteredOrders = useMemo(
     () =>
-      orders.filter((order) => {
+      orderList.filter((order) => {
         const matchesStatus =
           statusFilter === "all" || getOrderBucket(order) === statusFilter
 
@@ -92,7 +156,7 @@ export default function MyOrders() {
 
         return matchesStatus && matchesType
       }),
-    [orders, statusFilter, typeFilter],
+    [orderList, statusFilter, typeFilter],
   )
 
   const selectedOrder =
@@ -102,19 +166,19 @@ export default function MyOrders() {
     <main className="grid min-h-full gap-4 bg-background p-3 sm:p-4 xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_minmax(360px,430px)] xl:pb-6">
       <div className={cn("min-h-0", selectedOrder ? "hidden xl:block" : "block")}>
         <OrderList
-          orders={orders}
+          orders={orderList}
           filteredOrders={filteredOrders}
           selectedOrder={selectedOrder}
           statusFilter={statusFilter}
           typeFilter={typeFilter}
           customerId={customerId}
-          isLoading={isLoading}
-          error={error}
+           isLoading={isLoading}
+          //  error={error}
           onCustomerIdChange={handleCustomerIdChange}
           onRefresh={handleRefresh}
           onStatusFilterChange={setStatusFilter}
           onTypeFilterChange={setTypeFilter}
-          onSelectOrder={canViewOrderDetails ? setSelectedOrderId : () => {}}
+          onSelectOrder={canViewOrderDetails ? setSelectedOrderId : () => { }}
           canViewOrderDetails={canViewOrderDetails}
         />
       </div>
