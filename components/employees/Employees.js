@@ -1,19 +1,33 @@
-import { MoreHorizontal, Plus, Search } from "lucide-react"
+"use client"
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+import { useState } from "react"
+import { Network, Plus, Search, Table2 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-
-const employees = [
-  { id: 1, initials: "AM", name: "Ava Morgan", email: "ava@crateinc.com", phone: "+1 555 0101", role: "Sales Manager", status: "Active" },
-  { id: 2, initials: "JL", name: "James Lee", email: "james@crateinc.com", phone: "+1 555 0102", role: "Warehouse Lead", status: "Active" },
-  { id: 3, initials: "SK", name: "Sofia Khan", email: "sofia@crateinc.com", phone: "+1 555 0103", role: "Account Manager", status: "Inactive" },
-  { id: 4, initials: "NR", name: "Noah Reed", email: "noah@crateinc.com", phone: "+1 555 0104", role: "Delivery Coordinator", status: "Active" },
-]
+import EmpChart, { chartEmployees } from "./EmpChart"
+import EmployeeForm, { managerIds } from "./EmployeeForm"
+import { AlertDialog } from "radix-ui"
+import EmpTable from "./EmpTable"
 
 export default function Employees() {
+  const [view, setView] = useState("table")
+  const [employees, setEmployees] = useState(() => chartEmployees.map((employee) => ({ ...employee, status: "Active" })))
+  const [form, setForm] = useState(null)
+  const [deleting, setDeleting] = useState(null)
+
+  function saveEmployee(employee) {
+    setEmployees((current) => current.some((item) => item.id === employee.id)
+      ? current.map((item) => item.id === employee.id ? employee : item)
+      : [...current, employee])
+    setForm(null)
+  }
+
+  function deleteEmployee() {
+    setEmployees((current) => current.filter((item) => item.id !== deleting.id).map((item) => ({ ...item, managerIds: managerIds(item).filter((id) => id !== deleting.id), managerId: null })))
+    setDeleting(null)
+  }
+
   return (
     <main className="space-y-5 p-4">
       <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -21,71 +35,54 @@ export default function Employees() {
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input className="pl-9" placeholder="Search employees..." />
         </div>
-        <Button>
-          <Plus className="size-4" />
-          Add Employee
-        </Button>
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
+          {/* <span className="text-sm text-muted-foreground">View</span> */}
+          <div role="group" aria-label="Employee view" className="flex items-center rounded-lg border bg-muted/40 p-1">
+            <Button
+              variant={view === "chart" ? "secondary" : "ghost"}
+              size="icon-sm"
+              aria-label="Chart view"
+              title="Chart view"
+              aria-pressed={view === "chart"}
+              onClick={() => setView("chart")}
+              className={view === "chart" ? "shadow-sm" : "text-muted-foreground"}
+            >
+              <Network className="size-4" />
+            </Button>
+            <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
+            <Button
+              variant={view === "table" ? "secondary" : "ghost"}
+              size="icon-sm"
+              aria-label="Table view"
+              title="Table view"
+              aria-pressed={view === "table"}
+              onClick={() => setView("table")}
+              className={view === "table" ? "shadow-sm" : "text-muted-foreground"}
+            >
+              <Table2 className="size-4" />
+            </Button>
+          </div>
+          <Button onClick={() => setForm({ employee: null })}>
+            <Plus className="size-4" />
+            Add Employee
+          </Button>
+        </div>
       </section>
-
-      <Card className="overflow-hidden py-0">
-        <CardHeader className="border-b px-4 py-4 sm:px-6">
-          <CardTitle className="text-base">Employees</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Team members and their current access status.
-          </p>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="px-6 py-3 font-medium">Employee</th>
-                  <th className="px-4 py-3 font-medium">Contact</th>
-                  <th className="px-4 py-3 font-medium">Role</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 text-right font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {employees.map((employee) => (
-                  <tr key={employee.id} className="hover:bg-muted/30">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="size-9">
-                          <AvatarFallback>{employee.initials}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-semibold">{employee.name}</p>
-                          <p className="text-xs text-muted-foreground">{employee.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-muted-foreground">{employee.phone}</td>
-                    <td className="px-4 py-4">{employee.role}</td>
-                    <td className="px-4 py-4">
-                      <Badge
-                        variant="secondary"
-                        className={employee.status === "Active" ? "bg-emerald-500/10 text-emerald-600" : ""}
-                      >
-                        {employee.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <Button variant="ghost" size="icon-sm" aria-label="Employee actions">
-                        <MoreHorizontal className="size-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground sm:px-6">
-            <span>Showing 1–4 of 4 employees</span>
-            <span>Page 1 of 1</span>
-          </div>
-        </CardContent>
-      </Card>
+      {view === "chart" ? <EmpChart employees={employees} onEdit={(employee) => setForm({ employee })} onDelete={setDeleting} /> : <EmpTable employees={employees} onEdit={(employee) => setForm({ employee })} onDelete={setDeleting} />}
+      {form && <EmployeeForm employee={form.employee} employees={employees} onClose={() => setForm(null)} onSave={saveEmployee} />}
+      <AlertDialog.Root open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 space-y-4 rounded-lg border bg-background p-6 shadow-lg">
+            <AlertDialog.Title className="text-lg font-semibold">Delete employee?</AlertDialog.Title>
+            <AlertDialog.Description className="text-sm text-muted-foreground">Delete {deleting?.name}? Their reporting links will be removed. Employees who report to them will be kept.</AlertDialog.Description>
+            <div className="flex justify-end gap-2">
+              <AlertDialog.Cancel asChild><Button variant="outline">Cancel</Button></AlertDialog.Cancel>
+              <AlertDialog.Action asChild><Button variant="destructive" onClick={deleteEmployee}>Confirm</Button></AlertDialog.Action>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </main>
   )
 }

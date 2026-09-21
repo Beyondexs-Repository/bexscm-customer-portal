@@ -95,8 +95,8 @@ function SelectMenu({
   const emptyStateLabel = pluralizeFilterLabel(label);
   const filteredOptions = searchable
     ? options.filter((option) =>
-        option.toLowerCase().includes(optionSearch.trim().toLowerCase()),
-      )
+      option.toLowerCase().includes(optionSearch.trim().toLowerCase()),
+    )
     : options;
 
   return (
@@ -260,16 +260,16 @@ function ProductCard({
           const liveItems = await fetchItemsApi();
           const liveItem = Array.isArray(liveItems)
             ? liveItems.find(
-                (item) => (item.itemnmbr || item.ITEMNMBR)?.trim() === product.id,
-              )
+              (item) => (item.itemnmbr || item.ITEMNMBR)?.trim() === product.id,
+            )
             : null;
 
           const finalProduct = liveItem
             ? {
-                ...product,
-                price: Number(liveItem.qtybsuom ?? liveItem.QTYBSUOM ?? liveItem.avgWeight) || product.price,
-                unit: (liveItem.uomschdl || liveItem.UOMSCHDL)?.trim() || product.unit,
-              }
+              ...product,
+              price: Number(liveItem.qtybsuom ?? liveItem.QTYBSUOM ?? liveItem.avgWeight) || product.price,
+              unit: (liveItem.uomschdl || liveItem.UOMSCHDL)?.trim() || product.unit,
+            }
             : product;
 
           addItem(finalProduct, qty);
@@ -305,17 +305,17 @@ function ProductCard({
       const liveItems = await fetchItemsApi();
       const liveItem = Array.isArray(liveItems)
         ? liveItems.find(
-            (item) =>
-              (item.itemnmbr || item.ITEMNMBR)?.trim() === product.id,
-          )
+          (item) =>
+            (item.itemnmbr || item.ITEMNMBR)?.trim() === product.id,
+        )
         : null;
 
       const finalProduct = liveItem
         ? {
-            ...product,
-            price: Number(liveItem.qtybsuom ?? liveItem.QTYBSUOM ?? liveItem.avgWeight) || product.price,
-            unit: (liveItem.uomschdl || liveItem.UOMSCHDL)?.trim() || product.unit,
-          }
+          ...product,
+          price: Number(liveItem.qtybsuom ?? liveItem.QTYBSUOM ?? liveItem.avgWeight) || product.price,
+          unit: (liveItem.uomschdl || liveItem.UOMSCHDL)?.trim() || product.unit,
+        }
         : product;
 
       addItem(finalProduct, draftQuantity);
@@ -817,24 +817,67 @@ export function Catalog() {
   } = useCart();
 
   const [rawItems, setRawItems] = useState(staticItems);
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
-    async function loadLiveItems() {
+  const fetchCatalogItems = async () => {
+      setIsLoadingItems(true);
+  
       try {
-        const apiItems = await fetchItemsApi();
-        if (isMounted && Array.isArray(apiItems) && apiItems.length > 0) {
-          setRawItems(apiItems);
+        const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/items`
+  
+        console.log("Catalog Items API URL:", url);
+  
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+          },
+        });
+  
+        console.log("Catalog Items HTTP Status:", response.status);
+        console.log("Catalog Items HTTP OK:", response.ok);
+  
+        const responseText = await response.text();
+  
+        console.log("Catalog Items Raw Response:", responseText);
+  
+        let result = null;
+  
+        try {
+          result = responseText ? JSON.parse(responseText) : null;
+        } catch (error) {
+          console.warn("Response is not JSON:", responseText);
         }
-      } catch (err) {
-        console.warn("Failed to fetch live items in Catalog, using fallback:", err);
+  
+        console.log("Catalog Items Parsed Response:", result);
+  
+        if (!response.ok) {
+          throw new Error(
+            result?.Msg ||
+            result?.message ||
+            result?.error ||
+            `Unable to fetch catalog items. HTTP ${response.status}`
+          );
+        }
+  
+        if (Array.isArray(result) && result.length > 0) {
+          setRawItems(result);
+        }
+  
+        return result;
+      } catch (error) {
+        console.error("Catalog Items Error:", error);
+        return null;
+      } finally {
+        setIsLoadingItems(false);
       }
-    }
-    loadLiveItems();
-    return () => {
-      isMounted = false;
     };
-  }, []);
+  
+    useEffect(() => {
+      fetchCatalogItems();
+    }, []);
 
   const catalog = useMemo(() => {
     const categories = new Map();
@@ -961,13 +1004,13 @@ export function Catalog() {
       const selectedSubcategory = activeCategory?.subcategories.find(
         (subcategory) => subcategory.name === subcategoryName,
       );
- 
+
       filtered = selectedSubcategory?.products ?? [];
     }
- 
+
     const normalizedSearch = appliedSearchQuery.trim().toLowerCase();
- 
-    if(normalizedSearch && voiceProducts.length === 0) {
+
+    if (normalizedSearch && voiceProducts.length === 0) {
       filtered = filtered.filter((product) =>
         [
           product.name,
@@ -982,7 +1025,7 @@ export function Catalog() {
           ),
       );
     }
- 
+
     if (sortBy === "Price Low to High") {
       filtered.sort((a, b) => a.price - b.price);
     } else if (sortBy === "Price High to Low") {
@@ -990,7 +1033,7 @@ export function Catalog() {
     } else {
       filtered.sort((a, b) => a.name.localeCompare(b.name));
     }
- 
+
     return filtered;
   }, [
     catalog,
@@ -1090,17 +1133,17 @@ export function Catalog() {
           const liveItems = await fetchItemsApi();
           const liveItem = Array.isArray(liveItems)
             ? liveItems.find(
-                (item) =>
-                  (item.itemnmbr || item.ITEMNMBR)?.trim() === product.id,
-              )
+              (item) =>
+                (item.itemnmbr || item.ITEMNMBR)?.trim() === product.id,
+            )
             : null;
 
           const finalProduct = liveItem
             ? {
-                ...product,
-                price: Number(liveItem.qtybsuom ?? liveItem.QTYBSUOM ?? liveItem.avgWeight) || product.price,
-                unit: (liveItem.uomschdl || liveItem.UOMSCHDL)?.trim() || product.unit,
-              }
+              ...product,
+              price: Number(liveItem.qtybsuom ?? liveItem.QTYBSUOM ?? liveItem.avgWeight) || product.price,
+              unit: (liveItem.uomschdl || liveItem.UOMSCHDL)?.trim() || product.unit,
+            }
             : product;
 
           addItem(finalProduct, quantity);
@@ -1277,24 +1320,38 @@ export function Catalog() {
 
       <div
         ref={catalogScrollRef}
-        className="no-scrollbar mt-3 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden pr-1"
+        className={cn(
+          "no-scrollbar mt-3 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden pr-1",
+          isLoadingItems && "flex items-center justify-center",
+        )}
       >
-        <div className="mb-2 flex min-w-0 items-center justify-between gap-3 text-xs text-muted-foreground sm:text-sm">
-          <p className="truncate">
-            {t("showingProducts", { start: products.length === 0 ? 0 : startIndex + 1, end: endIndex, total: products.length })}
-          </p>
-        </div>
+        {isLoadingItems ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-col items-center justify-center gap-2 text-center text-muted-foreground"
+          >
+            <Loader2 className="size-6 animate-spin text-primary" />
+            <p className="text-xs font-medium">Loading products...</p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-2 flex min-w-0 items-center justify-between gap-3 text-xs text-muted-foreground sm:text-sm">
+              <p className="truncate">
+                {t("showingProducts", { start: products.length === 0 ? 0 : startIndex + 1, end: endIndex, total: products.length })}
+              </p>
+            </div>
 
-        <section className="grid min-w-0 auto-rows-min grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[1800px]:grid-cols-6">
-          {visibleProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-            />
-          ))}
-        </section>
+            <section className="grid min-w-0 auto-rows-min grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[1800px]:grid-cols-6">
+              {visibleProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                />
+              ))}
+            </section>
 
-        <div className="mt-6 flex flex-row items-center justify-between gap-2 pb-1 text-xs text-muted-foreground  sm:text-sm">
+            <div className="mt-6 flex flex-row items-center justify-between gap-2 pb-1 text-xs text-muted-foreground sm:text-sm">
           <div className="flex items-center justify-center gap-1.5 sm:gap-2">
             <Button
               variant="outline"
@@ -1377,7 +1434,9 @@ export function Catalog() {
             </DropdownMenu>
             <span>{t("perPage")}</span>
           </div>
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
     </main>

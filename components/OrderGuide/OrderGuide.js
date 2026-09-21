@@ -214,12 +214,7 @@ const createOrderGuideApiv1_POST = async ({
   if (quickOrders.length > 0) {
     return (
       <div className="grid h-full min-h-0 gap-2 overflow-hidden bg-background p-2 lg:grid-cols-[320px_1fr] lg:gap-3 lg:p-3">
-        <div
-          className={cn(
-            "h-full min-h-0",
-            selectedOrder ? "hidden lg:block" : "block",
-          )}
-        >
+        <div className={cn("h-full min-h-0", selectedOrder ? "hidden lg:block" : "block")}>
           <OrderGuideList
             quickOrders={quickOrders}
             setQuickOrders={setQuickOrders}
@@ -235,12 +230,7 @@ const createOrderGuideApiv1_POST = async ({
           />
         </div>
 
-        <div
-          className={cn(
-            "h-full min-h-0",
-            selectedOrder ? "block" : "hidden lg:block",
-          )}
-        >
+        <div className={cn("h-full min-h-0", selectedOrder ? "block" : "hidden lg:block")}>
           <OrderGuideProductsList
             selectedOrder={selectedOrder}
             selectedGroup={selectedGroup}
