@@ -35,6 +35,74 @@ import { Input } from "@/components/ui/input";
 import { useCart, useQuickOrders } from "@/app/context/app-context";
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
 import { resolveItemImageUrl } from "@/lib/api/itemsApi";
+// import { deleteOrderGroupItemApi } from "@/lib/api/ordergroupitemdelete";
+
+
+
+const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/${orderGroupItemID}`;
+
+    console.log("Delete Order Guide ID:", orderGroupItemID);
+    console.log("Delete Order Guide URL:", url);
+
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
+    });
+
+    console.log("Delete Order Guide HTTP Status:", response.status);
+    console.log("Delete Order Guide HTTP OK:", response.ok);
+
+    const responseText = await response.text();
+
+    console.log("Delete Order Guide Raw Response:", responseText);
+
+    let result = null;
+
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch (error) {
+      console.warn("Response is not JSON:", responseText);
+    }
+
+    console.log("Delete Order Guide Parsed Response:", result);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to delete order guide. HTTP ${response.status}`,
+      );
+    }
+
+    if (!result?.success) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          "Failed to delete order guide.",
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Delete Order Guide Error:", error);
+    throw error;
+  }
+};
+
+
+
+
+
+
+
+
 
 function formatPrice(price, unit) {
   return `$${Number(price).toFixed(2)} / ${unit}`;
@@ -45,6 +113,10 @@ function touchOrder(order) {
     ...order,
     updatedAt: new Date().toISOString(),
   };
+}
+
+function getCartKey(product) {
+  return String(product.itemNumber || product.sku || product.id);
 }
 
 function ProductImage({ product }) {
@@ -81,7 +153,7 @@ function ProductImage({ product }) {
 }
 
 function EmptyProductsCard({ canAddProducts }) {
-  const t = useTranslations("orderGuide")
+  const t = useTranslations("orderGuide");
   return (
     <div className="flex min-h-[320px] items-center justify-center">
       <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
@@ -95,12 +167,14 @@ function EmptyProductsCard({ canAddProducts }) {
           Add products from the catalog to build this order guide group.
         </p>
 
-        {canAddProducts ? <Button asChild className="mt-5 h-9">
-          <Link href="/catalog">
-            <Plus className="size-4" />
-            {t("addProducts")}
-          </Link>
-        </Button> : null}
+        {canAddProducts ? (
+          <Button asChild className="mt-5 h-9">
+            <Link href="/catalog">
+              <Plus className="size-4" />
+              {t("addProducts")}
+            </Link>
+          </Button>
+        ) : null}
       </div>
     </div>
   );
@@ -109,6 +183,7 @@ function EmptyProductsCard({ canAddProducts }) {
 function SavedProductCard({
   product,
   cartQuantity,
+  cartItemId,
   onAddToCart,
   onIncrement,
   onDecrement,
@@ -118,7 +193,7 @@ function SavedProductCard({
   canEdit,
   canPlaceOrder,
 }) {
-  const t = useTranslations("orderGuide")
+  const t = useTranslations("orderGuide");
   const [draftQuantity, setDraftQuantity] = useState(1);
   const isInCart = cartQuantity > 0;
   const quantity = isInCart ? cartQuantity : draftQuantity;
@@ -135,35 +210,37 @@ function SavedProductCard({
           <ProductImage product={product} />
         </Link>
 
-        {canEdit ? <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon-sm"
-              aria-label={`${product.name} options`}
-              className="absolute right-1.5 top-1.5 bg-background/95 text-muted-foreground shadow-sm sm:right-2 sm:top-2"
-            >
-              <MoreVertical />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onSelect={() => onChangeGroup(product)}>
-              <MoveRight className="size-4" />
-              {t("changeGroup")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onEditPar(product)}>
-              <Package2 className="size-4" />
-              {t("editPar")}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              variant="destructive"
-              onSelect={() => onRequestDelete(product)}
-            >
-              <Trash2 className="size-4" />
-              {t("delete")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu> : null}
+        {canEdit ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                aria-label={`${product.name} options`}
+                className="absolute right-1.5 top-1.5 bg-background/95 text-muted-foreground shadow-sm sm:right-2 sm:top-2"
+              >
+                <MoreVertical />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onSelect={() => onChangeGroup(product)}>
+                <MoveRight className="size-4" />
+                {t("changeGroup")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onEditPar(product)}>
+                <Package2 className="size-4" />
+                {t("editPar")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => onRequestDelete(product)}
+              >
+                <Trash2 className="size-4" />
+                {t("delete")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
       </div>
 
       <div className="relative space-y-1.5 p-2 lg:space-y-2 lg:p-2.5 relative">
@@ -188,70 +265,73 @@ function SavedProductCard({
           {formatPrice(product.price, product.unit)}
         </p>
 
-        {canPlaceOrder ? <div className="grid gap-2 min-[460px]:grid-cols-[4rem_1fr] lg:grid-cols-[4.5rem_1fr]">
-          <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={`Decrease ${product.name} quantity`}
-              className="h-full rounded-none"
-              onClick={() => {
-                if (isInCart) {
-                  onDecrement(product.id);
-                  return;
-                }
+        {canPlaceOrder ? (
+          <div className="grid gap-2 min-[460px]:grid-cols-[4rem_1fr] lg:grid-cols-[4.5rem_1fr]">
+            <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Decrease ${product.name} quantity`}
+                className="h-full rounded-none"
+                onClick={() => {
+                  if (isInCart) {
+                    onDecrement(cartItemId);
+                    return;
+                  }
 
-                setDraftQuantity((current) => Math.max(1, current - 1));
+                  setDraftQuantity((current) => Math.max(1, current - 1));
+                }}
+              >
+                <span className="grid size-full place-items-center">-</span>
+              </Button>
+
+              <Input
+                value={quantity}
+                readOnly
+                aria-label={`${product.name} quantity`}
+                className="h-full rounded-none border-0 px-0 text-center text-xs font-normal shadow-none focus-visible:ring-0"
+              />
+
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Increase ${product.name} quantity`}
+                className="h-full rounded-none"
+                onClick={() => {
+                  if (isInCart) {
+                    onIncrement(cartItemId);
+                    return;
+                  }
+
+                  setDraftQuantity((current) => current + 1);
+                }}
+              >
+                <span className="grid size-full place-items-center">+</span>
+              </Button>
+            </div>
+
+            <Button
+              variant={isInCart ? "secondary" : "default"}
+              //disabled={isInCart}
+              className="h-8 min-w-0 rounded-md px-2 text-[0.65rem] font-bold lg:text-xs"
+              onClick={() => {
+                if (!isInCart) {
+                  onAddToCart(product, draftQuantity);
+                }
               }}
             >
-              <span className="grid size-full place-items-center">-</span>
-            </Button>
-
-            <Input
-              value={quantity}
-              readOnly
-              aria-label={`${product.name} quantity`}
-              className="h-full rounded-none border-0 px-0 text-center text-xs font-normal shadow-none focus-visible:ring-0"
-            />
-
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={`Increase ${product.name} quantity`}
-              className="h-full rounded-none"
-              onClick={() => {
-                if (isInCart) {
-                  onIncrement(product.id);
-                  return;
-                }
-
-                setDraftQuantity((current) => current + 1);
-              }}
-            >
-              <span className="grid size-full place-items-center">+</span>
+              <ShoppingCart />
+              <span className="truncate">
+                {isInCart ? "Added" : t("addToCart")}
+              </span>
             </Button>
           </div>
-
-          <Button
-            variant={isInCart ? "secondary" : "default"}
-            className="h-8 min-w-0 rounded-md px-2 text-[0.65rem] font-bold lg:text-xs"
-            onClick={() => {
-              if (!isInCart) {
-                onAddToCart(product, draftQuantity);
-              }
-            }}
-          >
-            <ShoppingCart />
-            <span className="truncate">
-              {isInCart ? t("added") : t("addToCart")}
-            </span>
-          </Button>
-        </div> : null}
+        ) : null}
         {parValue != null && parValue !== "" && (
-              <p className="shrink-0 text-right leading-tight absolute right-2 top-2 flex flex-col items-center text-sm text-muted-foreground">
-                {t("par")} <span className="font-medium text-xs">{parValue}</span>
-              </p>
-            )}
+          <p className="shrink-0 text-right leading-tight absolute right-2 top-2 flex flex-col items-center text-sm text-muted-foreground">
+            {t("par")} <span className="font-medium text-xs">{parValue}</span>
+          </p>
+        )}
       </div>
     </article>
   );
@@ -266,15 +346,11 @@ export function OrderGuideProductsList({
   canAddProducts,
   canPlaceOrder,
 }) {
-  const t = useTranslations("orderGuide")
-  const {
-    items,
-    addItem,
-    incrementItem,
-    decrementItem,
-    removeItem,
-  } = useCart();
-  const { dashboardQuickOrderIds, setDashboardQuickOrderIds } = useQuickOrders();
+  const t = useTranslations("orderGuide");
+  const { items, addItem, incrementItem, decrementItem, removeItem } =
+    useCart();
+  const { dashboardQuickOrderIds, setDashboardQuickOrderIds } =
+    useQuickOrders();
   const [productToMove, setProductToMove] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
   const [productToEditPar, setProductToEditPar] = useState(null);
@@ -282,19 +358,26 @@ export function OrderGuideProductsList({
 
   const products = selectedGroup?.products ?? [];
 
-  const cartQuantities = new Map(
-    items.map((item) => [item.id, item.quantity]),
-  );
+  const cartItemsByKey = new Map();
+
+  items.forEach((item) => {
+    [item.id, item.sku, item.itemNumber].filter(Boolean).forEach((key) => {
+      cartItemsByKey.set(String(key), item);
+    });
+  });
 
   const allProductsInCart =
     products.length > 0 &&
-    products.every((product) => (cartQuantities.get(product.id) ?? 0) > 0);
-  const selectedCount = products.filter(
-    (product) => (cartQuantities.get(product.id) ?? 0) > 0,
-  ).length;
+    products.every((product) => {
+      const cartItem = cartItemsByKey.get(getCartKey(product));
+      return (cartItem?.quantity ?? 0) > 0;
+    });
+  const selectedCount = products.filter((product) => {
+    const cartItem = cartItemsByKey.get(getCartKey(product));
+    return (cartItem?.quantity ?? 0) > 0;
+  }).length;
   const isOnDashboard =
-    Boolean(selectedOrder) &&
-    dashboardQuickOrderIds.includes(selectedOrder.id);
+    Boolean(selectedOrder) && dashboardQuickOrderIds.includes(selectedOrder.id);
 
   function toggleDashboardQuickOrder() {
     if (!selectedOrder) return;
@@ -321,15 +404,18 @@ export function OrderGuideProductsList({
 
     if (allProductsInCart) {
       products.forEach((product) => {
-        if ((cartQuantities.get(product.id) ?? 0) > 0) {
-          removeItem(product.id);
+        const cartItem = cartItemsByKey.get(getCartKey(product));
+
+        if ((cartItem?.quantity ?? 0) > 0) {
+          removeItem(cartItem.id);
         }
       });
       return;
     }
 
     products.forEach((product) => {
-      const cartQuantity = cartQuantities.get(product.id) ?? 0;
+      const cartItem = cartItemsByKey.get(getCartKey(product));
+      const cartQuantity = cartItem?.quantity ?? 0;
 
       if (cartQuantity === 0) {
         addItem(product, 1);
@@ -433,8 +519,18 @@ export function OrderGuideProductsList({
     setProductToMove(null);
   }
 
-  function confirmDeleteProduct() {
+  async function confirmDeleteProduct() {
     if (!productToDelete) return;
+
+    try {
+      const response = await deleteOrderGroupItemApiv1_DEL(
+        productToDelete.orderGroupItemID,
+      );
+
+      console.log("Delete Order Group Item Response:", response);
+    } catch (error) {
+      console.error("Delete Order Group Item Error:", error);
+    }
 
     removeFromGroup(productToDelete.id);
     setProductToDelete(null);
@@ -443,7 +539,9 @@ export function OrderGuideProductsList({
   function openEditParDialog(product) {
     setProductToEditPar(product);
     setParDraft(
-      product.par === null || product.par === undefined ? "" : String(product.par),
+      product.par === null || product.par === undefined
+        ? ""
+        : String(product.par),
     );
   }
 
@@ -506,21 +604,23 @@ export function OrderGuideProductsList({
           </div>
 
           <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto sm:self-center">
-            {canAddProducts ? <Button asChild variant="outline" size="sm" className="h-8">
-              <Link href="/catalog">
-                <Plus className="size-4" />
-                {t("addProducts")}
-              </Link>
-            </Button> : null}
+            {canAddProducts ? (
+              <Button asChild variant="outline" size="sm" className="h-8">
+                <Link href="/catalog">
+                  <Plus className="size-4" />
+                  {t("addProducts")}
+                </Link>
+              </Button>
+            ) : null}
 
             {canAddProducts ? (
               <Button
                 type="button"
                 variant={isOnDashboard ? "destructive" : "outline"}
                 size="sm"
-              className="h-8"
-              onClick={toggleDashboardQuickOrder}
-            >
+                className="h-8"
+                onClick={toggleDashboardQuickOrder}
+              >
                 {!isOnDashboard ? <Plus className="size-4" /> : null}
                 {isOnDashboard
                   ? "Remove from Quick Order"
@@ -536,7 +636,9 @@ export function OrderGuideProductsList({
                 className="flex h-8 items-center gap-1"
               >
                 <ShoppingCart className="size-4" />
-                {allProductsInCart ? `Selected (${selectedCount})` : "Select All"}
+                {allProductsInCart
+                  ? `Selected (${selectedCount})`
+                  : "Select All"}
               </Button>
             )}
           </div>
@@ -548,21 +650,26 @@ export function OrderGuideProductsList({
           ) : (
             <div className="no-scrollbar h-full overflow-y-auto">
               <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3 2xl:grid-cols-4">
-                {products.map((product) => (
-                  <SavedProductCard
-                    key={product.id}
-                    product={product}
-                    cartQuantity={cartQuantities.get(product.id) ?? 0}
-                    onAddToCart={addItem}
-                    onIncrement={incrementItem}
-                    onDecrement={decrementItem}
-                    onChangeGroup={setProductToMove}
-                    onEditPar={openEditParDialog}
-                    onRequestDelete={setProductToDelete}
-                    canEdit={canEdit}
-                    canPlaceOrder={canPlaceOrder}
-                  />
-                ))}
+                {products.map((product) => {
+                  const cartItem = cartItemsByKey.get(getCartKey(product));
+
+                  return (
+                    <SavedProductCard
+                      key={product.id}
+                      product={product}
+                      cartQuantity={cartItem?.quantity ?? 0}
+                      cartItemId={cartItem?.id ?? product.id}
+                      onAddToCart={addItem}
+                      onIncrement={incrementItem}
+                      onDecrement={decrementItem}
+                      onChangeGroup={setProductToMove}
+                      onEditPar={openEditParDialog}
+                      onRequestDelete={setProductToDelete}
+                      canEdit={canEdit}
+                      canPlaceOrder={canPlaceOrder}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
@@ -610,7 +717,10 @@ export function OrderGuideProductsList({
           <DialogHeader>
             <DialogTitle>{t("deleteProduct")}</DialogTitle>
             <DialogDescription>
-              {t("removeProduct", { product: productToDelete?.name, group: selectedGroup.name })}
+              {t("removeProduct", {
+                product: productToDelete?.name,
+                group: selectedGroup.name,
+              })}
             </DialogDescription>
           </DialogHeader>
 
@@ -652,10 +762,13 @@ export function OrderGuideProductsList({
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setProductToEditPar(null);
-              setParDraft("");
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setProductToEditPar(null);
+                setParDraft("");
+              }}
+            >
               {t("cancel")}
             </Button>
             <Button onClick={saveProductPar}>{t("save")}</Button>

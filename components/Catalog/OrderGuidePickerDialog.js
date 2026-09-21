@@ -17,6 +17,81 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+// import { createOrderGroupItemApi } from "@/lib/api/ordergroupitempost";
+
+
+const createOrderGroupItemApiv1_POST = async ({
+  orderGuideGroupID,
+  itemNumber,
+  itemName,
+  quantity,
+  createdBY,
+}) => {
+  try {
+    const url =
+      `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems`;
+
+    const requestBody = {
+      orderGuideGroupID,
+      itemNumber,
+      itemName,
+      quantity,
+      createdBY,
+    };
+
+    console.log("POST URL:", url);
+    console.log("POST Body:", requestBody);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const responseText = await response.text();
+
+    console.log("POST Status:", response.status);
+    console.log("POST Raw Response:", responseText);
+
+    let result = null;
+
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch {
+      console.warn("Response is not JSON:", responseText);
+    }
+
+    console.log("POST Parsed Response:", result);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to create order group item. HTTP ${response.status}`,
+      );
+    }
+
+    if (!result?.success) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          "Failed to create order group item.",
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Create Order Group Item Error:", error);
+    throw error;
+  }
+};
+
 
 function isProductInGroup(group, productId) {
   return Boolean(group.products?.some((product) => product.id === productId));
@@ -41,7 +116,8 @@ export function OrderGuidePickerDialog({
   onAdd,
   onRemove,
 }) {
-  const t = useTranslations("catalog")
+  const t = useTranslations("catalog");
+
   const defaultOpenOrders =
     product && quickOrders.length > 0
       ? quickOrders
@@ -49,12 +125,48 @@ export function OrderGuidePickerDialog({
           .map((order) => order.id)
       : [];
 
+  async function handleGroupCheck(order, group, product, checked) {
+    if (checked) {
+      onAdd(order.id, product, group.id);
+
+      try {
+         const storedUser = localStorage.getItem("loggedInUser");
+console.log(storedUser, "--find storedUser");
+        if (!storedUser) {
+          console.error("Logged-in user not found");
+          return;
+        }
+
+        // const user = JSON.parse(storedUser);
+
+        const response = await createOrderGroupItemApiv1_POST({
+          orderGuideGroupID: group.id,
+          itemNumber: product.id,
+          itemName: product.name,
+          quantity: 1,
+          createdBY: storedUser
+          // createdBY: user.userId,
+        });
+
+        console.log("Create Order Group Item Response:", response);
+      } catch (error) {
+        console.error("Create Order Group Item Error:", error);
+      }
+
+      return;
+    }
+
+    onRemove(order.id, product.id, group.id);
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[min(92svh,44rem)] overflow-hidden sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("addToOrderGuide")}</DialogTitle>
-          <DialogDescription>{t("orderGuidePickerDescription")}</DialogDescription>
+          <DialogDescription>
+            {t("orderGuidePickerDescription")}
+          </DialogDescription>
         </DialogHeader>
 
         {!product ? null : quickOrders.length === 0 ? (
@@ -93,7 +205,9 @@ export function OrderGuidePickerDialog({
                         <span className="text-xs text-muted-foreground">
                           {selectedCount > 0
                             ? t("groupsSelected", { count: selectedCount })
-                            : t("groupsAvailable", { count: order.groups.length })}
+                            : t("groupsAvailable", {
+                                count: order.groups.length,
+                              })}
                         </span>
                       </span>
                     </AccordionTrigger>
@@ -115,12 +229,12 @@ export function OrderGuidePickerDialog({
                                 type="checkbox"
                                 checked={checked}
                                 onChange={(event) => {
-                                  if (event.target.checked) {
-                                    onAdd(order.id, product, group.id);
-                                    return;
-                                  }
-
-                                  onRemove(order.id, product.id, group.id);
+                                  handleGroupCheck(
+                                    order,
+                                    group,
+                                    product,
+                                    event.target.checked,
+                                  );
                                 }}
                                 className="mt-0.5 size-4 accent-primary"
                               />
