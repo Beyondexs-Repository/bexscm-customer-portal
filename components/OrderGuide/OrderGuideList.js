@@ -1200,7 +1200,6 @@ const updateOrderGuideGroupApiv1_Modify = async ({
         await loadOrderGuides();
         setExpandedOrderId(dialog.order.id);
         setSelectedGroupId(group.id);
-       
         closeDialog();
       } catch (error) {
         console.error("Create Order Guide Group Error:", error);

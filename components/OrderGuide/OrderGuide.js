@@ -27,10 +27,10 @@ import { useQuickOrders } from "@/app/context/app-context";
 import { OrderGuideList } from "./OrderGuideList";
 import { OrderGuideProductsList } from "./OrderGuideProductsList";
 // import { createOrderGuideApi } from "@/lib/api/orderguideapi";
-// import { getConfig } from "@/lib/config";
+import { getConfig } from "@/lib/config";
 export function OrderGuide() {
   const t = useTranslations("orderGuide");
-  // const config = getConfig();
+  const config = getConfig();
 
   // const custnmbr = config.DEFAULT_CUSTNMBR;
   const custnmbr = "400001";

@@ -6,18 +6,28 @@ import Link from "next/link";
 import { toast } from "sonner";
 import {
   ChevronLeft,
-  ChevronDown,
-  LayoutGrid,
-  List,
   MoveRight,
   MoreVertical,
   Package2,
   Plus,
-  Search,
   ShoppingBasket,
   ShoppingCart,
   Trash2,
 } from "lucide-react";
+// import {
+//   ChevronLeft,
+//   ChevronDown,
+//   LayoutGrid,
+//   List,
+//   MoveRight,
+//   MoreVertical,
+//   Package2,
+//   Plus,
+//   Search,
+//   ShoppingBasket,
+//   ShoppingCart,
+//   Trash2,
+// } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,8 +43,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
+  // DropdownMenuRadioGroup,
+  // DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -43,8 +53,20 @@ import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
 import { resolveItemImageUrl } from "@/lib/api/itemsApi";
 // import { deleteOrderGroupItemApi } from "@/lib/api/ordergroupitemdelete";
 
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+// import { cn } from "@/lib/utils";
+// import { useIsMobile } from "@/hooks/use-mobile";
+
+
+function formatPrice(price, unit) {
+  return `$${Number(price).toFixed(2)} / ${unit}`;
+}
+
+function touchOrder(order) {
+  return {
+    ...order,
+    updatedAt: new Date().toISOString(),
+  };
+}
 
 const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
   try {
@@ -103,25 +125,10 @@ const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
   }
 };
 
-
-
-
-
-
-
-
-
-
-function formatPrice(price, unit) {
-  return `$${Number(price).toFixed(2)} / ${unit}`;
+function getCartKey(product) {
+  return String(product.itemNumber || product.sku || product.id);
 }
 
-function touchOrder(order) {
-  return {
-    ...order,
-    updatedAt: new Date().toISOString(),
-  };
-}
 
 function ProductImage({ product }) {
   const resolvedImg = resolveItemImageUrl(product.image) || product.image;
@@ -137,14 +144,7 @@ function ProductImage({ product }) {
   }
 
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden bg-muted",
-        listLayout
-          ? "h-full min-h-36"
-          : "aspect-[1.15] sm:aspect-[1.2] xl:aspect-[1.28]",
-      )}
-    >
+    <div className="relative aspect-[1.15] overflow-hidden bg-muted sm:aspect-[1.2] xl:aspect-[1.28]">
       <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(135deg,var(--muted),var(--background))] text-primary/70">
         <Package2 className="size-8 sm:size-10" />
       </div>
@@ -193,7 +193,6 @@ function EmptyProductsCard({ canAddProducts }) {
 
 function SavedProductCard({
   product,
-  layout,
   cartQuantity,
   cartItemId,
   onAddToCart,
@@ -210,22 +209,16 @@ function SavedProductCard({
   const isInCart = cartQuantity > 0;
   const quantity = isInCart ? cartQuantity : draftQuantity;
   const parValue = product.par;
-  const listLayout = layout === "list";
 
   return (
-    <article
-      className={cn(
-        "min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm",
-        listLayout && "flex",
-      )}
-    >
-      <div className={cn("relative", listLayout && "w-28 shrink-0 sm:w-40")}>
+    <article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
+      <div className="relative">
         <Link
           href={`/catalog/details/?id=${encodeURIComponent(product.id)}`}
           aria-label={`View details for ${product.name}`}
-          className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <ProductImage product={product} listLayout={listLayout} />
+          <ProductImage product={product} />
         </Link>
 
         {canEdit ? (
@@ -259,20 +252,9 @@ function SavedProductCard({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
-
-        {parValue != null && parValue !== "" ? (
-          <div className="absolute bottom-2 right-2 rounded-md bg-black/80 px-2 py-1 text-xs font-semibold text-white shadow-sm">
-            {t("par")} {parValue}
-          </div>
-        ) : null}
       </div>
 
-      <div
-        className={cn(
-          "relative space-y-1.5 p-2 lg:space-y-2 lg:p-2.5",
-          listLayout && "min-w-0 flex-1 sm:p-3",
-        )}
-      >
+      <div className="relative space-y-1.5 p-2 lg:space-y-2 lg:p-2.5 relative">
         <div className="min-w-0 space-y-1">
           <Link
             href={`/catalog/details/?id=${encodeURIComponent(product.id)}`}
@@ -286,9 +268,6 @@ function SavedProductCard({
             </p>
           </div>
           <div className="grid gap-0.5 text-[0.6rem] font-medium text-muted-foreground lg:text-[0.7rem]">
-            {listLayout && product.sku && (
-              <span className="truncate">Item code: {product.sku}</span>
-            )}
             <span className="truncate">Pack Size: 1 {product.unit}</span>
           </div>
         </div>
@@ -298,21 +277,16 @@ function SavedProductCard({
         </p>
 
         {canPlaceOrder ? (
-          <div
-            className={cn(
-              "grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2",
-              listLayout && "max-w-xs",
-            )}
-          >
+          <div className="grid gap-2 min-[460px]:grid-cols-[4rem_1fr] lg:grid-cols-[4.5rem_1fr]">
             <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
               <Button
                 variant="ghost"
                 size="icon-sm"
                 aria-label={`Decrease ${product.name} quantity`}
-                className="h-full w-full min-w-0 rounded-none"
+                className="h-full rounded-none"
                 onClick={() => {
                   if (isInCart) {
-                    onDecrement(product.id);
+                    onDecrement(cartItemId);
                     return;
                   }
 
@@ -333,10 +307,10 @@ function SavedProductCard({
                 variant="ghost"
                 size="icon-sm"
                 aria-label={`Increase ${product.name} quantity`}
-                className="h-full w-full min-w-0 rounded-none"
+                className="h-full rounded-none"
                 onClick={() => {
                   if (isInCart) {
-                    onIncrement(product.id);
+                    onIncrement(cartItemId);
                     return;
                   }
 
@@ -349,6 +323,7 @@ function SavedProductCard({
 
             <Button
               variant={isInCart ? "secondary" : "default"}
+              //disabled={isInCart}
               className="h-8 min-w-0 rounded-md px-2 text-[0.65rem] font-bold lg:text-xs"
               onClick={() => {
                 if (!isInCart) {
@@ -358,11 +333,16 @@ function SavedProductCard({
             >
               <ShoppingCart />
               <span className="truncate">
-                {isInCart ? t("added") : t("addToCart")}
+                {isInCart ? "Added" : t("addToCart")}
               </span>
             </Button>
           </div>
         ) : null}
+        {parValue != null && parValue !== "" && (
+          <p className="shrink-0 text-right leading-tight absolute right-2 top-2 flex flex-col items-center text-sm text-muted-foreground">
+            {t("par")} <span className="font-medium text-xs">{parValue}</span>
+          </p>
+        )}
       </div>
     </article>
   );
@@ -386,39 +366,16 @@ export function OrderGuideProductsList({
   const [productToDelete, setProductToDelete] = useState(null);
   const [productToEditPar, setProductToEditPar] = useState(null);
   const [parDraft, setParDraft] = useState("");
-  const [productSearch, setProductSearch] = useState("");
-  const [sortBy, setSortBy] = useState("name-asc");
-  const isMobile = useIsMobile();
-  const [preferredLayout, setLayout] = useState(null);
-  const layout = preferredLayout ?? (isMobile ? "list" : "card");
 
-  const allProducts = selectedGroup?.products ?? [];
-  const normalizedSearch = productSearch.trim().toLowerCase();
-  const filteredProducts = normalizedSearch
-    ? allProducts.filter((product) =>
-        [product.name, product.sku, product.category, product.subcategory].some(
-          (value) =>
-            String(value ?? "")
-              .toLowerCase()
-              .includes(normalizedSearch),
-        ),
-      )
-    : allProducts;
-  const [sortField, sortDirection] = sortBy.split("-");
-  const products = [...filteredProducts].sort((a, b) => {
-    const field = sortField === "code" ? "sku" : "name";
-    const comparison = String(a[field] ?? "").localeCompare(
-      String(b[field] ?? ""),
-      undefined,
-      {
-        numeric: true,
-        sensitivity: "base",
-      },
-    );
-    return sortDirection === "desc" ? -comparison : comparison;
+  const products = selectedGroup?.products ?? [];
+
+  const cartItemsByKey = new Map();
+
+  items.forEach((item) => {
+    [item.id, item.sku, item.itemNumber].filter(Boolean).forEach((key) => {
+      cartItemsByKey.set(String(key), item);
+    });
   });
-
-  const cartQuantities = new Map(items.map((item) => [item.id, item.quantity]));
 
   const allProductsInCart =
     products.length > 0 &&
@@ -486,7 +443,7 @@ export function OrderGuideProductsList({
           ? touchOrder({
               ...order,
               groups: order.groups.map((group) =>
-                selectedGroup.isAll || group.id === selectedGroup.id
+                group.id === selectedGroup.id
                   ? {
                       ...group,
                       products: group.products.filter(
@@ -510,7 +467,7 @@ export function OrderGuideProductsList({
           ? touchOrder({
               ...order,
               groups: order.groups.map((group) =>
-                selectedGroup.isAll || group.id === selectedGroup.id
+                group.id === selectedGroup.id
                   ? {
                       ...group,
                       products: group.products.map((product) =>
@@ -540,10 +497,7 @@ export function OrderGuideProductsList({
         return touchOrder({
           ...order,
           groups: order.groups.map((group) => {
-            if (
-              group.id === selectedGroup.id ||
-              (selectedGroup.isAll && group.id !== targetGroupId)
-            ) {
+            if (group.id === selectedGroup.id) {
               return {
                 ...group,
                 products: group.products.filter(
@@ -563,13 +517,7 @@ export function OrderGuideProductsList({
 
               return {
                 ...group,
-                products: [
-                  ...group.products,
-                  {
-                    ...productToMove,
-                    par: group.par ?? productToMove.par ?? null,
-                  },
-                ],
+                products: [...group.products, productToMove],
               };
             }
 
@@ -611,11 +559,10 @@ export function OrderGuideProductsList({
   function saveProductPar() {
     if (!productToEditPar) return;
 
-    const nextPar = parDraft.trim() === "" ? null : Number(parDraft);
-    if (nextPar !== null && (!Number.isFinite(nextPar) || nextPar < 0)) return;
+    const nextPar = parDraft.trim();
 
     updateProductInGroup(productToEditPar.id, {
-      par: nextPar,
+      par: nextPar === "" ? null : nextPar,
     });
 
     setProductToEditPar(null);
@@ -634,8 +581,8 @@ export function OrderGuideProductsList({
 
   return (
     <>
-      <section className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-lg border bg-card shadow-sm">
-        <div className="flex shrink-0 flex-col gap-2 p-2 sm:flex-row sm:items-start sm:justify-between lg:p-3">
+      <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-card shadow-sm">
+        <div className="flex shrink-0 flex-col gap-2 border-b p-2 sm:flex-row sm:items-start sm:justify-between lg:p-3">
           <div className="flex min-w-0 gap-2 lg:gap-3">
             <Button
               variant="outline"
@@ -656,20 +603,18 @@ export function OrderGuideProductsList({
                 </span>
               </div>
 
-              <div className="mt-1 flex min-w-0 items-center gap-2">
+              <div className="mt-2 flex min-w-0 items-center gap-2 lg:mt-3">
                 <h2 className="truncate text-lg font-bold lg:text-xl">
                   {selectedGroup.name}
                 </h2>
                 <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                  {normalizedSearch
-                    ? `${products.length} of ${allProducts.length} items`
-                    : `${allProducts.length} items`}
+                  {products.length} items
                 </Badge>
               </div>
             </div>
           </div>
 
-          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 [&>a]:flex-1 [&>button]:flex-1 sm:w-auto sm:self-center sm:[&>a]:flex-none sm:[&>button]:flex-none">
+          <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto sm:self-center">
             {canAddProducts ? (
               <Button asChild variant="outline" size="sm" className="h-8">
                 <Link href="/catalog">
@@ -693,124 +638,49 @@ export function OrderGuideProductsList({
                   : "Add to Quick Order"}
               </Button>
             ) : null}
-          </div>
-        </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b px-2 pb-2 pt-0 lg:px-3 lg:pb-3">
-          <div className="relative min-w-0 basis-full sm:basis-auto sm:flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={productSearch}
-              onChange={(event) => setProductSearch(event.target.value)}
-              placeholder="Search products..."
-              aria-label="Search order guide products"
-              className="h-9 pl-9 text-sm"
-            />
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-9">
-                Sort by <ChevronDown className="size-4" />
+            {canPlaceOrder && products.length > 0 && (
+              <Button
+                size="sm"
+                variant={allProductsInCart ? "secondary" : "default"}
+                onClick={handleSelectAllAndAddToCart}
+                className="flex h-8 items-center gap-1"
+              >
+                <ShoppingCart className="size-4" />
+                {allProductsInCart
+                  ? `Selected (${selectedCount})`
+                  : "Select All"}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
-                <DropdownMenuRadioItem value="name-asc">
-                  Item name A-Z
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="name-desc">
-                  Item name Z-A
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="code-asc">
-                  Item code A-Z
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="code-desc">
-                  Item code Z-A
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <div
-            role="group"
-            aria-label="Product layout"
-            className="flex items-center rounded-lg border bg-muted/40 p-1"
-          >
-            <Button
-              variant={layout === "list" ? "secondary" : "ghost"}
-              size="icon-sm"
-              className={
-                layout === "list" ? "shadow-sm" : "text-muted-foreground"
-              }
-              aria-label="List layout"
-              title="List layout"
-              aria-pressed={layout === "list"}
-              onClick={() => setLayout("list")}
-            >
-              <List className="size-4" />
-            </Button>
-            <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
-            <Button
-              variant={layout === "card" ? "secondary" : "ghost"}
-              size="icon-sm"
-              className={
-                layout === "card" ? "shadow-sm" : "text-muted-foreground"
-              }
-              aria-label="Card layout"
-              title="Card layout"
-              aria-pressed={layout === "card"}
-              onClick={() => setLayout("card")}
-            >
-              <LayoutGrid className="size-4" />
-            </Button>
+            )}
           </div>
-
-          {canPlaceOrder && products.length > 0 && (
-            <Button
-              size="sm"
-              variant={allProductsInCart ? "secondary" : "default"}
-              onClick={handleSelectAllAndAddToCart}
-              className="flex h-9 flex-1 items-center gap-1 sm:flex-none"
-            >
-              <ShoppingCart className="size-4" />
-              {allProductsInCart ? `Selected (${selectedCount})` : "Select All"}
-            </Button>
-          )}
         </div>
 
         <div className="min-h-0 flex-1 p-2 lg:p-3">
-          {allProducts.length === 0 ? (
+          {products.length === 0 ? (
             <EmptyProductsCard canAddProducts={canAddProducts} />
-          ) : products.length === 0 ? (
-            <div className="grid min-h-[240px] place-items-center text-sm text-muted-foreground">
-              No products match your search.
-            </div>
           ) : (
             <div className="no-scrollbar h-full overflow-y-auto">
-              <div
-                className={cn(
-                  "grid gap-2 sm:gap-3",
-                  layout === "list"
-                    ? "grid-cols-1"
-                    : "grid-cols-1 min-[460px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4",
-                )}
-              >
-                {products.map((product) => (
-                  <SavedProductCard
-                    key={product.id}
-                    product={product}
-                    layout={layout}
-                    cartQuantity={cartQuantities.get(product.id) ?? 0}
-                    onAddToCart={addItem}
-                    onIncrement={incrementItem}
-                    onDecrement={decrementItem}
-                    onChangeGroup={setProductToMove}
-                    onEditPar={openEditParDialog}
-                    onRequestDelete={setProductToDelete}
-                    canEdit={canEdit}
-                    canPlaceOrder={canPlaceOrder}
-                  />
-                ))}
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3 2xl:grid-cols-4">
+                {products.map((product) => {
+                  const cartItem = cartItemsByKey.get(getCartKey(product));
+
+                  return (
+                    <SavedProductCard
+                      key={product.id}
+                      product={product}
+                      cartQuantity={cartItem?.quantity ?? 0}
+                      cartItemId={cartItem?.id ?? product.id}
+                      onAddToCart={addItem}
+                      onIncrement={incrementItem}
+                      onDecrement={decrementItem}
+                      onChangeGroup={setProductToMove}
+                      onEditPar={openEditParDialog}
+                      onRequestDelete={setProductToDelete}
+                      canEdit={canEdit}
+                      canPlaceOrder={canPlaceOrder}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
@@ -895,8 +765,6 @@ export function OrderGuideProductsList({
 
           <div className="space-y-2 py-2">
             <Input
-              type="number"
-              min="0"
               value={parDraft}
               onChange={(event) => setParDraft(event.target.value)}
               placeholder={t("enterPar")}
