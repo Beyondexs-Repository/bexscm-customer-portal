@@ -41,6 +41,7 @@ import { Input } from "@/components/ui/input";
 import { useCart, useQuickOrders } from "@/app/context/app-context";
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
 import { resolveItemImageUrl } from "@/lib/api/itemsApi";
+// import { deleteOrderGroupItemApi } from "@/lib/api/ordergroupitemdelete";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -53,6 +54,67 @@ function touchOrder(order) {
     ...order,
     updatedAt: new Date().toISOString(),
   };
+}
+
+
+const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/${orderGroupItemID}`;
+
+    console.log("Delete Order Guide ID:", orderGroupItemID);
+    console.log("Delete Order Guide URL:", url);
+
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
+    });
+
+    console.log("Delete Order Guide HTTP Status:", response.status);
+    console.log("Delete Order Guide HTTP OK:", response.ok);
+
+    const responseText = await response.text();
+
+    console.log("Delete Order Guide Raw Response:", responseText);
+
+    let result = null;
+
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch (error) {
+      console.warn("Response is not JSON:", responseText);
+    }
+
+    console.log("Delete Order Guide Parsed Response:", result);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to delete order guide. HTTP ${response.status}`,
+      );
+    }
+
+    if (!result?.success) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          "Failed to delete order guide.",
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Delete Order Guide Error:", error);
+    throw error;
+  }
+};
+function getCartKey(product) {
+  return String(product.itemNumber || product.sku || product.id);
 }
 
 function ProductImage({ product, listLayout }) {
@@ -73,7 +135,7 @@ function ProductImage({ product, listLayout }) {
       className={cn(
         "relative overflow-hidden bg-muted",
         listLayout
-          ? "size-full"
+          ? "h-full min-h-36"
           : "aspect-[1.15] sm:aspect-[1.2] xl:aspect-[1.28]",
       )}
     >
@@ -127,6 +189,7 @@ function SavedProductCard({
   product,
   layout,
   cartQuantity,
+  cartItemId,
   onAddToCart,
   onIncrement,
   onDecrement,
@@ -142,94 +205,24 @@ function SavedProductCard({
   const quantity = isInCart ? cartQuantity : draftQuantity;
   const parValue = product.par;
   const listLayout = layout === "list";
-  const categoryLabel = product.category || product.subcategory;
-  const orderControls = canPlaceOrder ? (
-    <div className="grid w-full grid-cols-[1fr_2fr] gap-2">
-      <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={`Decrease ${product.name} quantity`}
-          className="h-full w-full min-w-0 rounded-none"
-          onClick={() => {
-            if (isInCart) {
-              onDecrement(product.id);
-              return;
-            }
-
-            setDraftQuantity((current) => Math.max(1, current - 1));
-          }}
-        >
-          <span className="grid size-full place-items-center">-</span>
-        </Button>
-
-        <Input
-          value={quantity}
-          readOnly
-          aria-label={`${product.name} quantity`}
-          className="h-full rounded-none border-0 px-0 text-center text-xs font-normal shadow-none focus-visible:ring-0"
-        />
-
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={`Increase ${product.name} quantity`}
-          className="h-full w-full min-w-0 rounded-none"
-          onClick={() => {
-            if (isInCart) {
-              onIncrement(product.id);
-              return;
-            }
-
-            setDraftQuantity((current) => current + 1);
-          }}
-        >
-          <span className="grid size-full place-items-center">+</span>
-        </Button>
-      </div>
-
-      <Button
-        variant={isInCart ? "secondary" : "default"}
-        className="h-8 min-w-0 rounded-md px-2 text-[0.65rem] font-bold lg:text-xs"
-        onClick={() => {
-          if (!isInCart) {
-            onAddToCart(product, draftQuantity);
-          }
-        }}
-      >
-        <ShoppingCart />
-        <span className="truncate">
-          {isInCart ? t("added") : t("addToCart")}
-        </span>
-      </Button>
-    </div>
-  ) : null;
 
   return (
     <article
       className={cn(
         "min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm",
-        listLayout && "relative flex items-start gap-2 p-2 sm:items-stretch sm:gap-3 ",
+        listLayout && "flex",
       )}
     >
-      <div
-        className={cn(
-          "relative",
-          listLayout && "w-14 shrink-0",
-        )}
-      >
+      <div className={cn("relative", listLayout && "w-28 shrink-0 sm:w-40")}>
         <Link
           href={`/catalog/details/?id=${encodeURIComponent(product.id)}`}
           aria-label={`View details for ${product.name}`}
-          className={cn(
-            "block overflow-hidden rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            listLayout ? "h-14" : "h-full",
-          )}
+          className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ProductImage product={product} listLayout={listLayout} />
         </Link>
 
-        {canEdit && !listLayout ? (
+        {canEdit ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -261,14 +254,8 @@ function SavedProductCard({
           </DropdownMenu>
         ) : null}
 
-        {parValue != null && parValue !== "" && !listLayout ? (
-          <div className="absolute bottom-2 right-2 rounded-md bg-blue-500/90 px-2 py-1 text-xs font-semibold text-white shadow-sm">
-            {t("par")} {parValue}
-          </div>
-        ) : null}
-
-        {parValue != null && parValue !== "" && listLayout ? (
-          <div className="mt-1 rounded-md bg-blue-500/90 px-1 py-0.5 text-center text-[0.6rem] font-semibold text-white shadow-sm">
+        {parValue != null && parValue !== "" ? (
+          <div className="absolute bottom-2 right-2 rounded-md bg-black/80 px-2 py-1 text-xs font-semibold text-white shadow-sm">
             {t("par")} {parValue}
           </div>
         ) : null}
@@ -276,104 +263,100 @@ function SavedProductCard({
 
       <div
         className={cn(
-          "relative space-y-1.5 p-2 lg:space-y-2 ",
-          listLayout && "grid min-w-0 flex-1 grid-cols-1 gap-2 self-stretch space-y-0 p-0 sm:grid-cols-[minmax(0,1fr)_18rem] sm:gap-3",
+          "relative space-y-1.5 p-2 lg:space-y-2 lg:p-2.5",
+          listLayout && "min-w-0 flex-1 sm:p-3",
         )}
       >
-        <div className={cn("min-w-0 space-y-1", listLayout && "flex-1")}>
-          <div className="min-w-0 sm:flex sm:items-center sm:gap-2">
-            <Link
-              href={`/catalog/details/?id=${encodeURIComponent(product.id)}`}
-              className="block min-w-0 truncate text-[0.72rem] font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
-            >
-              {product.name}
-            </Link>
-            {listLayout && categoryLabel ? (
-              <Badge
-                variant="secondary"
-                className="hidden h-5 shrink-0 px-1.5 text-[0.6rem] font-semibold sm:inline-flex"
-              >
-                <span className="truncate">{categoryLabel}</span>
-              </Badge>
-            ) : null}
-          </div>
-          {listLayout ? (
-            <>
-              {categoryLabel ? (
-                <Badge
-                  variant="secondary"
-                  className="h-5 max-w-full px-1.5 text-[0.6rem] font-semibold sm:hidden"
-                >
-                  <span className="truncate">{categoryLabel}</span>
-                </Badge>
-              ) : null}
-              <p className="truncate text-[0.7rem] font-medium text-muted-foreground lg:text-xs">
-                {product.sku ? `Item code: ${product.sku}` : "Item code: —"}
-                <span className="px-1.5 text-border">|</span>
-                Pack Size: 1 {product.unit}
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="flex items-start justify-between gap-2 text-[0.64rem] font-semibold text-muted-foreground lg:text-xs">
-                <p className="min-w-0 truncate leading-tight">
-                  {product.subcategory || product.category || product.sku}
-                </p>
-              </div>
-              <div className="grid gap-0.5 text-[0.6rem] font-medium text-muted-foreground lg:text-[0.7rem]">
-                <span className="truncate">Pack Size: 1 {product.unit}</span>
-              </div>
-            </>
-          )}
-
-          <p
-            className={cn(
-              "text-[0.95rem] font-bold lg:text-base",
-              listLayout && "pt-2",
-            )}
+        <div className="min-w-0 space-y-1">
+          <Link
+            href={`/catalog/details/?id=${encodeURIComponent(product.id)}`}
+            className="block truncate text-[0.72rem] font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
           >
-            {formatPrice(product.price, product.unit)}
-          </p>
+            {product.name}
+          </Link>
+          <div className="flex items-start justify-between gap-2 text-[0.64rem] font-semibold text-muted-foreground lg:text-xs">
+            <p className="min-w-0 truncate leading-tight">
+              {product.subcategory || product.category || product.sku}
+            </p>
+          </div>
+          <div className="grid gap-0.5 text-[0.6rem] font-medium text-muted-foreground lg:text-[0.7rem]">
+            {listLayout && product.sku && (
+              <span className="truncate">Item code: {product.sku}</span>
+            )}
+            <span className="truncate">Pack Size: 1 {product.unit}</span>
+          </div>
         </div>
 
-        {listLayout ? (
-          <div className="flex min-h-8 w-full flex-col justify-end gap-2 sm:justify-between">
-            {canEdit ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label={`${product.name} options`}
-                    className="absolute right-0 top-0 z-10 text-muted-foreground sm:static sm:self-end"
-                  >
-                    <MoreVertical />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem onSelect={() => onChangeGroup(product)}>
-                    <MoveRight className="size-4" />
-                    {t("changeGroup")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => onEditPar(product)}>
-                    <Package2 className="size-4" />
-                    {t("editPar")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onSelect={() => onRequestDelete(product)}
-                  >
-                    <Trash2 className="size-4" />
-                    {t("delete")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-            <div className="mt-auto w-full">
-              {orderControls}
+        <p className="text-[0.95rem] font-bold lg:text-base">
+          {formatPrice(product.price, product.unit)}
+        </p>
+
+        {canPlaceOrder ? (
+          <div
+            className={cn(
+              "grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2",
+              listLayout && "max-w-xs",
+            )}
+          >
+            <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Decrease ${product.name} quantity`}
+                className="h-full w-full min-w-0 rounded-none"
+                onClick={() => {
+                  if (isInCart) {
+                    onDecrement(product.id);
+                    return;
+                  }
+
+                  setDraftQuantity((current) => Math.max(1, current - 1));
+                }}
+              >
+                <span className="grid size-full place-items-center">-</span>
+              </Button>
+
+              <Input
+                value={quantity}
+                readOnly
+                aria-label={`${product.name} quantity`}
+                className="h-full rounded-none border-0 px-0 text-center text-xs font-normal shadow-none focus-visible:ring-0"
+              />
+
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Increase ${product.name} quantity`}
+                className="h-full w-full min-w-0 rounded-none"
+                onClick={() => {
+                  if (isInCart) {
+                    onIncrement(product.id);
+                    return;
+                  }
+
+                  setDraftQuantity((current) => current + 1);
+                }}
+              >
+                <span className="grid size-full place-items-center">+</span>
+              </Button>
             </div>
+
+            <Button
+              variant={isInCart ? "secondary" : "default"}
+              className="h-8 min-w-0 rounded-md px-2 text-[0.65rem] font-bold lg:text-xs"
+              onClick={() => {
+                if (!isInCart) {
+                  onAddToCart(product, draftQuantity);
+                }
+              }}
+            >
+              <ShoppingCart />
+              <span className="truncate">
+                {isInCart ? t("added") : t("addToCart")}
+              </span>
+            </Button>
           </div>
-        ) : orderControls}
+        ) : null}
       </div>
     </article>
   );
@@ -431,12 +414,36 @@ export function OrderGuideProductsList({
 
   const cartQuantities = new Map(items.map((item) => [item.id, item.quantity]));
 
-  const allProductsInCart =
-    products.length > 0 &&
-    products.every((product) => (cartQuantities.get(product.id) ?? 0) > 0);
-  const selectedCount = products.filter(
-    (product) => (cartQuantities.get(product.id) ?? 0) > 0,
-  ).length;
+
+  const cartItemsByKey = new Map(
+  items.map((item) => [getCartKey(item), item])
+);
+
+const allProductsInCart =
+  products.length > 0 &&
+  products.every((product) => {
+    const cartItem = cartItemsByKey.get(getCartKey(product));
+
+    return (cartItem?.quantity ?? 0) > 0;
+  });
+
+const selectedCount = products.filter((product) => {
+  const cartItem = cartItemsByKey.get(getCartKey(product));
+
+  return (cartItem?.quantity ?? 0) > 0;
+}).length;
+  // const allProductsInCart =
+  //   products.length > 0 &&
+  //   products.every((product) => {
+  //     const cartItem = cartItemsByKey.get(getCartKey(product));
+  //     return (cartItem?.quantity ?? 0) > 0;
+  //   });
+  // const selectedCount = products.filter((product) => {
+  //   const cartItem = cartItemsByKey.get(getCartKey(product));
+  //   return (cartItem?.quantity ?? 0) > 0;
+  // }).length;
+
+
   const isOnDashboard =
     Boolean(selectedOrder) && dashboardQuickOrderIds.includes(selectedOrder.id);
 
@@ -465,15 +472,18 @@ export function OrderGuideProductsList({
 
     if (allProductsInCart) {
       products.forEach((product) => {
-        if ((cartQuantities.get(product.id) ?? 0) > 0) {
-          removeItem(product.id);
+        const cartItem = cartItemsByKey.get(getCartKey(product));
+
+        if ((cartItem?.quantity ?? 0) > 0) {
+          removeItem(cartItem.id);
         }
       });
       return;
     }
 
     products.forEach((product) => {
-      const cartQuantity = cartQuantities.get(product.id) ?? 0;
+      const cartItem = cartItemsByKey.get(getCartKey(product));
+      const cartQuantity = cartItem?.quantity ?? 0;
 
       if (cartQuantity === 0) {
         addItem(product, 1);
@@ -586,8 +596,18 @@ export function OrderGuideProductsList({
     setProductToMove(null);
   }
 
-  function confirmDeleteProduct() {
+  async function confirmDeleteProduct() {
     if (!productToDelete) return;
+
+    try {
+      const response = await deleteOrderGroupItemApiv1_DEL(
+        productToDelete.orderGroupItemID,
+      );
+
+      console.log("Delete Order Group Item Response:", response);
+    } catch (error) {
+      console.error("Delete Order Group Item Error:", error);
+    }
 
     removeFromGroup(productToDelete.id);
     setProductToDelete(null);
