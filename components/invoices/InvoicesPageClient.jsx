@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useMemo } from "react"
 import { useSearchParams } from "next/navigation"
-import { Search, X } from "lucide-react"
+import { Search, X, ReceiptText, DollarSign, CircleCheck, Clock } from "lucide-react"
 
 import InvoicePagination from "@/components/invoices/InvoicePagination"
 import { getInvoices } from "@/components/overview/recent-invoices"
@@ -31,21 +31,43 @@ export default function InvoicesPageClient() {
 
   const allInvoices = useMemo(() => getInvoices(), [])
   const normalizedQuery = query.toLowerCase()
-  const filteredInvoices = normalizedQuery
-    ? allInvoices.filter(
-        (invoice) =>
-          invoice.invoiceNumber.toLowerCase().includes(normalizedQuery) ||
-          invoice.customerId.toLowerCase().includes(normalizedQuery) ||
-          invoice.status.toLowerCase().includes(normalizedQuery),
-      )
-    : allInvoices
+  const filteredInvoices = allInvoices.filter((invoice) => {
+    return !normalizedQuery ||
+      invoice.invoiceNumber.toLowerCase().includes(normalizedQuery) ||
+      invoice.customerId.toLowerCase().includes(normalizedQuery) ||
+      invoice.status.toLowerCase().includes(normalizedQuery)
+  })
+  const totals = filteredInvoices.reduce((sum, invoice) => ({
+    amount: sum.amount + invoice.total,
+    paid: sum.paid + invoice.paidAmount,
+    due: sum.due + invoice.balance,
+  }), { amount: 0, paid: 0, due: 0 })
+  const stats = [
+    { label: "Total Invoices", value: filteredInvoices.length.toLocaleString("en-US"), icon: ReceiptText, color: "bg-blue-500/10 text-blue-600" },
+    { label: "Total Amount", value: money.format(totals.amount), icon: DollarSign, color: "bg-violet-500/10 text-violet-600" },
+    { label: "Paid Amount", value: money.format(totals.paid), icon: CircleCheck, color: "bg-emerald-500/10 text-emerald-600" },
+    { label: "Due Amount", value: money.format(totals.due), icon: Clock, color: "bg-amber-500/10 text-amber-600" },
+  ]
   const totalPages = Math.max(1, Math.ceil(filteredInvoices.length / pageSize))
   const currentPage = Math.min(Math.max(requestedPage, 1), totalPages)
   const start = (currentPage - 1) * pageSize
   const invoices = filteredInvoices.slice(start, start + pageSize)
 
   return (
-    <main className="space-y-5 p-4">
+    <main className="space-y-4 p-2 sm:space-y-5 sm:p-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+        {stats.map(({ label, value, icon: Icon, color }) => (
+          <Card key={label} className="py-2.5 sm:py-4">
+            <CardContent className="flex items-center gap-1.5 px-2.5 sm:gap-3 sm:px-4">
+              <span className={`grid size-7 shrink-0 place-items-center rounded-lg sm:size-10 ${color}`}><Icon className="size-3.5 sm:size-5" /></span>
+              <div className="min-w-0">
+                <p className="text-[10px] leading-3 font-medium text-muted-foreground sm:text-xs sm:leading-normal">{label}</p>
+                <p className="mt-0.5 whitespace-nowrap text-[11px] font-semibold tabular-nums sm:mt-1 sm:text-xl">{value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
       <form className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -54,6 +76,7 @@ export default function InvoicesPageClient() {
             defaultValue={query}
             className="pl-9 pr-9"
             placeholder="Search invoices..."
+            aria-label="Search invoices"
           />
           {query ? (
             <Link

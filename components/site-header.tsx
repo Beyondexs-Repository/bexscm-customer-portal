@@ -327,10 +327,10 @@ function SiteHeader({
               </h1>
             )}
             {description && (
-              <p className="mt-0.5 max-w-full break-words text-[11px] leading-tight text-muted-foreground sm:text-xs sm:leading-5">
-                {description}
-              </p>
-            )}
+  <p className="mt-0.5 hidden max-w-full break-words text-[11px] leading-tight text-muted-foreground sm:block sm:text-xs sm:leading-5">
+    {description}
+  </p>
+)}
           </div>
         )}
       </div>

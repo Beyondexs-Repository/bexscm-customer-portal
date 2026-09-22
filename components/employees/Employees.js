@@ -1,18 +1,21 @@
 "use client"
 
 import { useState } from "react"
+import { useEmployeeAccess } from "./employee-access"
 import { Network, Plus, Search, Table2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import EmpChart, { chartEmployees } from "./EmpChart"
+import EmpChart from "./EmpChart"
+import employeeData from "./employees.json"
 import EmployeeForm, { managerIds } from "./EmployeeForm"
 import { AlertDialog } from "radix-ui"
 import EmpTable from "./EmpTable"
 
 export default function Employees() {
+  const { allowedRoles } = useEmployeeAccess()
   const [view, setView] = useState("table")
-  const [employees, setEmployees] = useState(() => chartEmployees.map((employee) => ({ ...employee, status: "Active" })))
+  const [employees, setEmployees] = useState(() => employeeData.map((employee) => ({ ...employee, status: "Active" })))
   const [form, setForm] = useState(null)
   const [deleting, setDeleting] = useState(null)
 
@@ -24,6 +27,7 @@ export default function Employees() {
   }
 
   function deleteEmployee() {
+    if (!deleting || !allowedRoles.includes(deleting.role)) return
     setEmployees((current) => current.filter((item) => item.id !== deleting.id).map((item) => ({ ...item, managerIds: managerIds(item).filter((id) => id !== deleting.id), managerId: null })))
     setDeleting(null)
   }
@@ -62,15 +66,15 @@ export default function Employees() {
               <Table2 className="size-4" />
             </Button>
           </div>
-          <Button onClick={() => setForm({ employee: null })}>
+          {allowedRoles.length > 0 && <Button onClick={() => setForm({ employee: null })}>
             <Plus className="size-4" />
             Add Employee
-          </Button>
+          </Button>}
         </div>
       </section>
       {view === "chart" ? <EmpChart employees={employees} onEdit={(employee) => setForm({ employee })} onDelete={setDeleting} /> : <EmpTable employees={employees} onEdit={(employee) => setForm({ employee })} onDelete={setDeleting} />}
-      {form && <EmployeeForm employee={form.employee} employees={employees} onClose={() => setForm(null)} onSave={saveEmployee} />}
-      <AlertDialog.Root open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
+      {form && allowedRoles.length > 0 && (!form.employee || allowedRoles.includes(form.employee.role)) && <EmployeeForm employee={form.employee} employees={employees} onClose={() => setForm(null)} onSave={saveEmployee} />}
+      <AlertDialog.Root open={!!deleting && allowedRoles.includes(deleting.role)} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialog.Portal>
           <AlertDialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
           <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 space-y-4 rounded-lg border bg-background p-6 shadow-lg">

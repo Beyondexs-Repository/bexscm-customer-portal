@@ -1,0 +1,22 @@
+[
+  {
+    "id": "downtown",
+    "name": "Downtown Store",
+    "city": "Chennai"
+  },
+  {
+    "id": "anna-nagar",
+    "name": "Anna Nagar Store",
+    "city": "Chennai"
+  },
+  {
+    "id": "velachery",
+    "name": "Velachery Store",
+    "city": "Chennai"
+  },
+  {
+    "id": "coimbatore",
+    "name": "Coimbatore Central",
+    "city": "Coimbatore"
+  }
+]

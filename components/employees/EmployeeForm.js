@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { employeeRoles, useEmployeeAccess } from "./employee-access";
+import locations from "@/data/locations.json";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -18,33 +21,36 @@ import {
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
-import roleConfig from "@/data/roles-permissions.json";
 
 export const managerIds = (employee) =>
   employee.managerIds ??
   (employee.managerId == null ? [] : [employee.managerId]);
 
+const roleLabel = (role) => role === "Department Manager" ? "Dept. Manager" : role;
+
+function ManagerRoleBadge({ role, activeRole }) {
+  const colors = role === activeRole
+    ? "bg-green-100 text-green-700! dark:bg-green-500/15 dark:text-green-300!"
+    : "bg-orange-100 text-orange-700! dark:bg-orange-500/15 dark:text-orange-300!";
+  return <Badge variant="secondary" className={colors}>{roleLabel(role)}</Badge>;
+}
+
 export default function EmployeeForm({ employee, employees, onClose, onSave }) {
+  const { allowedRoles: roles, role: reportingRole } = useEmployeeAccess();
+  const canSelectLocation = reportingRole === "Owner" || reportingRole === "Teritory Manager";
   const [draft, setDraft] = useState({
     name: "",
     email: "",
     phone: "",
     role: "",
     image: "",
+    locationId: "",
     ...employee,
     status: employee?.status ?? "Active",
     managerIds: employee ? managerIds(employee) : [],
   });
   const [error, setError] = useState("");
   const [reading, setReading] = useState(false);
-  const roles = [
-    ...new Set([
-      ...Object.values(roleConfig.portals).flatMap((portal) =>
-        portal.roles.map((role) => role.name),
-      ),
-      ...employees.map((item) => item.role),
-    ]),
-  ];
   const statuses = ["Active", "Inactive"];
   const blocked = new Set(employee ? [employee.id] : []);
   let changed = true;
@@ -60,9 +66,17 @@ export default function EmployeeForm({ employee, employees, onClose, onSave }) {
       }
     }
   }
-  const candidates = employees.filter((item) => !blocked.has(item.id));
+  const roleIndex = employeeRoles.indexOf(draft.role);
+  const candidates = employees.filter((item) => {
+    const managerIndex = employeeRoles.indexOf(item.role);
+    return !blocked.has(item.id) && managerIndex >= 0 && managerIndex < roleIndex;
+  });
   function field(key, value) {
-    setDraft((current) => ({ ...current, [key]: value }));
+    setDraft((current) => ({
+      ...current,
+      [key]: value,
+      ...(key === "role" && value !== current.role ? { managerIds: [] } : {}),
+    }));
   }
   function upload(event) {
     const file = event.target.files?.[0];
@@ -86,8 +100,26 @@ export default function EmployeeForm({ employee, employees, onClose, onSave }) {
   }
   function submit(event) {
     event.preventDefault();
+    if (!roles.includes(draft.role) || (employee && !roles.includes(employee.role))) {
+      setError("Your login cannot add or edit this role.");
+      return;
+    }
     if (!draft.name.trim() || !draft.email.trim() || !draft.phone.trim()) {
       setError("Enter a name, email, and mobile number.");
+      return;
+    }
+    if (draft.managerIds.some((id) => !candidates.some((item) => item.id === id))) {
+      setError("Select reporting managers from the appropriate role level.");
+      return;
+    }
+    if (canSelectLocation && draft.locationId && !locations.some((location) => location.id === draft.locationId)) {
+      setError("Select a valid location.");
+      return;
+    }
+    if (employee && employees.some((item) =>
+      managerIds(item).includes(employee.id) && employeeRoles.indexOf(item.role) <= roleIndex,
+    )) {
+      setError("This role must remain above the employees who report to it. Update their reporting managers first.");
       return;
     }
     onSave({
@@ -98,6 +130,7 @@ export default function EmployeeForm({ employee, employees, onClose, onSave }) {
       phone: draft.phone.trim(),
       status: draft.status ?? "Active",
       managerId: null,
+      locationId: canSelectLocation ? draft.locationId : employee?.locationId ?? "",
     });
   }
   return (
@@ -183,6 +216,22 @@ export default function EmployeeForm({ employee, employees, onClose, onSave }) {
             </select>
           </label>
           </div>
+          {canSelectLocation && draft.role && (
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Location
+              <select
+                className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                value={draft.locationId}
+                onChange={(event) => field("locationId", event.target.value)}
+              >
+                <option value="">Select location</option>
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>{location.name} - {location.city}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          {roleIndex > 0 && (
           <div className="space-y-1">
             <p className="text-sm font-medium">Reports to</p>
             <DropdownMenu>
@@ -198,7 +247,7 @@ export default function EmployeeForm({ employee, employees, onClose, onSave }) {
                     : "Select reporting managers"}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="max-h-60 w-72 overflow-y-auto">
+              <DropdownMenuContent className="max-h-60 w-80 max-w-[calc(100vw-2rem)] overflow-y-auto">
                 {candidates.map((item) => (
                   <DropdownMenuCheckboxItem
                     key={item.id}
@@ -213,7 +262,8 @@ export default function EmployeeForm({ employee, employees, onClose, onSave }) {
                       )
                     }
                   >
-                    {item.name}
+                    <span className="min-w-0 whitespace-normal">{item.name}</span>
+                    <ManagerRoleBadge role={item.role} activeRole={reportingRole} />
                   </DropdownMenuCheckboxItem>
                 ))}
                 {!candidates.length && (
@@ -223,13 +273,19 @@ export default function EmployeeForm({ employee, employees, onClose, onSave }) {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-            <p className="text-xs text-muted-foreground">
-              {draft.managerIds
-                .map((id) => employees.find((item) => item.id === id)?.name)
-                .filter(Boolean)
-                .join(", ") || "Leave empty for a top-level employee."}
-            </p>
+            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+              {draft.managerIds.length ? draft.managerIds.map((id) => {
+                const manager = employees.find((item) => item.id === id);
+                return manager ? (
+                  <span key={id} className="inline-flex flex-wrap items-center gap-1.5">
+                    {manager.name}
+                    <ManagerRoleBadge role={manager.role} activeRole={reportingRole} />
+                  </span>
+                ) : null;
+              }) : "Leave empty for a top-level employee."}
+            </div>
           </div>
+          )}
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}
