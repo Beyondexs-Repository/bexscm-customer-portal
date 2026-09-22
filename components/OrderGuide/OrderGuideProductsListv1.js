@@ -6,18 +6,28 @@ import Link from "next/link";
 import { toast } from "sonner";
 import {
   ChevronLeft,
-  ChevronDown,
-  LayoutGrid,
-  List,
   MoveRight,
   MoreVertical,
   Package2,
   Plus,
-  Search,
   ShoppingBasket,
   ShoppingCart,
   Trash2,
 } from "lucide-react";
+// import {
+//   ChevronLeft,
+//   ChevronDown,
+//   LayoutGrid,
+//   List,
+//   MoveRight,
+//   MoreVertical,
+//   Package2,
+//   Plus,
+//   Search,
+//   ShoppingBasket,
+//   ShoppingCart,
+//   Trash2,
+// } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,16 +43,19 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
+  // DropdownMenuRadioGroup,
+  // DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useCart, useQuickOrders } from "@/app/context/app-context";
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
 import { resolveItemImageUrl } from "@/lib/api/itemsApi";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+// import { deleteOrderGroupItemApi } from "@/lib/api/ordergroupitemdelete";
+
+// import { cn } from "@/lib/utils";
+// import { useIsMobile } from "@/hooks/use-mobile";
+
 
 function formatPrice(price, unit) {
   return `$${Number(price).toFixed(2)} / ${unit}`;
@@ -55,7 +68,69 @@ function touchOrder(order) {
   };
 }
 
-function ProductImage({ product, listLayout }) {
+const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/${orderGroupItemID}`;
+
+    console.log("Delete Order Guide ID:", orderGroupItemID);
+    console.log("Delete Order Guide URL:", url);
+
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
+    });
+
+    console.log("Delete Order Guide HTTP Status:", response.status);
+    console.log("Delete Order Guide HTTP OK:", response.ok);
+
+    const responseText = await response.text();
+
+    console.log("Delete Order Guide Raw Response:", responseText);
+
+    let result = null;
+
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch (error) {
+      console.warn("Response is not JSON:", responseText);
+    }
+
+    console.log("Delete Order Guide Parsed Response:", result);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to delete order guide. HTTP ${response.status}`,
+      );
+    }
+
+    if (!result?.success) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          "Failed to delete order guide.",
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Delete Order Guide Error:", error);
+    throw error;
+  }
+};
+
+function getCartKey(product) {
+  return String(product.itemNumber || product.sku || product.id);
+}
+
+
+function ProductImage({ product }) {
   const resolvedImg = resolveItemImageUrl(product.image) || product.image;
   const categoryFallback = getCategoryPlaceholderImage(product.category);
   const initialImage = resolvedImg || categoryFallback;
@@ -69,14 +144,7 @@ function ProductImage({ product, listLayout }) {
   }
 
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden bg-muted",
-        listLayout
-          ? "size-full"
-          : "aspect-[1.15] sm:aspect-[1.2] xl:aspect-[1.28]",
-      )}
-    >
+    <div className="relative aspect-[1.15] overflow-hidden bg-muted sm:aspect-[1.2] xl:aspect-[1.28]">
       <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(135deg,var(--muted),var(--background))] text-primary/70">
         <Package2 className="size-8 sm:size-10" />
       </div>
@@ -125,8 +193,8 @@ function EmptyProductsCard({ canAddProducts }) {
 
 function SavedProductCard({
   product,
-  layout,
   cartQuantity,
+  cartItemId,
   onAddToCart,
   onIncrement,
   onDecrement,
@@ -141,95 +209,19 @@ function SavedProductCard({
   const isInCart = cartQuantity > 0;
   const quantity = isInCart ? cartQuantity : draftQuantity;
   const parValue = product.par;
-  const listLayout = layout === "list";
-  const categoryLabel = product.category || product.subcategory;
-  const orderControls = canPlaceOrder ? (
-    <div className="grid w-full grid-cols-[1fr_2fr] gap-2">
-      <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={`Decrease ${product.name} quantity`}
-          className="h-full w-full min-w-0 rounded-none"
-          onClick={() => {
-            if (isInCart) {
-              onDecrement(product.id);
-              return;
-            }
-
-            setDraftQuantity((current) => Math.max(1, current - 1));
-          }}
-        >
-          <span className="grid size-full place-items-center">-</span>
-        </Button>
-
-        <Input
-          value={quantity}
-          readOnly
-          aria-label={`${product.name} quantity`}
-          className="h-full rounded-none border-0 px-0 text-center text-xs font-normal shadow-none focus-visible:ring-0"
-        />
-
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={`Increase ${product.name} quantity`}
-          className="h-full w-full min-w-0 rounded-none"
-          onClick={() => {
-            if (isInCart) {
-              onIncrement(product.id);
-              return;
-            }
-
-            setDraftQuantity((current) => current + 1);
-          }}
-        >
-          <span className="grid size-full place-items-center">+</span>
-        </Button>
-      </div>
-
-      <Button
-        variant={isInCart ? "secondary" : "default"}
-        className="h-8 min-w-0 rounded-md px-2 text-[0.65rem] font-bold lg:text-xs"
-        onClick={() => {
-          if (!isInCart) {
-            onAddToCart(product, draftQuantity);
-          }
-        }}
-      >
-        <ShoppingCart />
-        <span className="truncate">
-          {isInCart ? t("added") : t("addToCart")}
-        </span>
-      </Button>
-    </div>
-  ) : null;
 
   return (
-    <article
-      className={cn(
-        "min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm",
-        listLayout && "relative flex items-start gap-2 p-2 sm:items-stretch sm:gap-3 ",
-      )}
-    >
-      <div
-        className={cn(
-          "relative",
-          listLayout && "w-14 shrink-0",
-        )}
-      >
+    <article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
+      <div className="relative">
         <Link
           href={`/catalog/details/?id=${encodeURIComponent(product.id)}`}
           aria-label={`View details for ${product.name}`}
-          className={cn(
-            "block overflow-hidden rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            listLayout ? "h-14" : "h-full",
-          )}
+          className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <ProductImage product={product} listLayout={listLayout} />
+          <ProductImage product={product} />
         </Link>
 
-        {canEdit && !listLayout ? (
+        {canEdit ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -260,120 +252,97 @@ function SavedProductCard({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
-
-        {parValue != null && parValue !== "" && !listLayout ? (
-          <div className="absolute bottom-2 right-2 rounded-md bg-blue-500/90 px-2 py-1 text-xs font-semibold text-white shadow-sm">
-            {t("par")} {parValue}
-          </div>
-        ) : null}
-
-        {parValue != null && parValue !== "" && listLayout ? (
-          <div className="mt-1 rounded-md bg-blue-500/90 px-1 py-0.5 text-center text-[0.6rem] font-semibold text-white shadow-sm">
-            {t("par")} {parValue}
-          </div>
-        ) : null}
       </div>
 
-      <div
-        className={cn(
-          "relative space-y-1.5 p-2 lg:space-y-2 ",
-          listLayout && "grid min-w-0 flex-1 grid-cols-1 gap-2 self-stretch space-y-0 p-0 sm:grid-cols-[minmax(0,1fr)_18rem] sm:gap-3",
-        )}
-      >
-        <div className={cn("min-w-0 space-y-1", listLayout && "flex-1")}>
-          <div className="min-w-0 sm:flex sm:items-center sm:gap-2">
-            <Link
-              href={`/catalog/details/?id=${encodeURIComponent(product.id)}`}
-              className="block min-w-0 truncate text-[0.72rem] font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
-            >
-              {product.name}
-            </Link>
-            {listLayout && categoryLabel ? (
-              <Badge
-                variant="secondary"
-                className="hidden h-5 shrink-0 px-1.5 text-[0.6rem] font-semibold sm:inline-flex"
-              >
-                <span className="truncate">{categoryLabel}</span>
-              </Badge>
-            ) : null}
-          </div>
-          {listLayout ? (
-            <>
-              {categoryLabel ? (
-                <Badge
-                  variant="secondary"
-                  className="h-5 max-w-full px-1.5 text-[0.6rem] font-semibold sm:hidden"
-                >
-                  <span className="truncate">{categoryLabel}</span>
-                </Badge>
-              ) : null}
-              <p className="truncate text-[0.7rem] font-medium text-muted-foreground lg:text-xs">
-                {product.sku ? `Item code: ${product.sku}` : "Item code: —"}
-                <span className="px-1.5 text-border">|</span>
-                Pack Size: 1 {product.unit}
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="flex items-start justify-between gap-2 text-[0.64rem] font-semibold text-muted-foreground lg:text-xs">
-                <p className="min-w-0 truncate leading-tight">
-                  {product.subcategory || product.category || product.sku}
-                </p>
-              </div>
-              <div className="grid gap-0.5 text-[0.6rem] font-medium text-muted-foreground lg:text-[0.7rem]">
-                <span className="truncate">Pack Size: 1 {product.unit}</span>
-              </div>
-            </>
-          )}
-
-          <p
-            className={cn(
-              "text-[0.95rem] font-bold lg:text-base",
-              listLayout && "pt-2",
-            )}
+      <div className="relative space-y-1.5 p-2 lg:space-y-2 lg:p-2.5 relative">
+        <div className="min-w-0 space-y-1">
+          <Link
+            href={`/catalog/details/?id=${encodeURIComponent(product.id)}`}
+            className="block truncate text-[0.72rem] font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
           >
-            {formatPrice(product.price, product.unit)}
-          </p>
+            {product.name}
+          </Link>
+          <div className="flex items-start justify-between gap-2 text-[0.64rem] font-semibold text-muted-foreground lg:text-xs">
+            <p className="min-w-0 truncate leading-tight">
+              {product.subcategory || product.category || product.sku}
+            </p>
+          </div>
+          <div className="grid gap-0.5 text-[0.6rem] font-medium text-muted-foreground lg:text-[0.7rem]">
+            <span className="truncate">Pack Size: 1 {product.unit}</span>
+          </div>
         </div>
 
-        {listLayout ? (
-          <div className="flex min-h-8 w-full flex-col justify-end gap-2 sm:justify-between">
-            {canEdit ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label={`${product.name} options`}
-                    className="absolute right-0 top-0 z-10 text-muted-foreground sm:static sm:self-end"
-                  >
-                    <MoreVertical />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem onSelect={() => onChangeGroup(product)}>
-                    <MoveRight className="size-4" />
-                    {t("changeGroup")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => onEditPar(product)}>
-                    <Package2 className="size-4" />
-                    {t("editPar")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onSelect={() => onRequestDelete(product)}
-                  >
-                    <Trash2 className="size-4" />
-                    {t("delete")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-            <div className="mt-auto w-full">
-              {orderControls}
+        <p className="text-[0.95rem] font-bold lg:text-base">
+          {formatPrice(product.price, product.unit)}
+        </p>
+
+        {canPlaceOrder ? (
+          <div className="grid gap-2 min-[460px]:grid-cols-[4rem_1fr] lg:grid-cols-[4.5rem_1fr]">
+            <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Decrease ${product.name} quantity`}
+                className="h-full rounded-none"
+                onClick={() => {
+                  if (isInCart) {
+                    onDecrement(cartItemId);
+                    return;
+                  }
+
+                  setDraftQuantity((current) => Math.max(1, current - 1));
+                }}
+              >
+                <span className="grid size-full place-items-center">-</span>
+              </Button>
+
+              <Input
+                value={quantity}
+                readOnly
+                aria-label={`${product.name} quantity`}
+                className="h-full rounded-none border-0 px-0 text-center text-xs font-normal shadow-none focus-visible:ring-0"
+              />
+
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Increase ${product.name} quantity`}
+                className="h-full rounded-none"
+                onClick={() => {
+                  if (isInCart) {
+                    onIncrement(cartItemId);
+                    return;
+                  }
+
+                  setDraftQuantity((current) => current + 1);
+                }}
+              >
+                <span className="grid size-full place-items-center">+</span>
+              </Button>
             </div>
+
+            <Button
+              variant={isInCart ? "secondary" : "default"}
+              //disabled={isInCart}
+              className="h-8 min-w-0 rounded-md px-2 text-[0.65rem] font-bold lg:text-xs"
+              onClick={() => {
+                if (!isInCart) {
+                  onAddToCart(product, draftQuantity);
+                }
+              }}
+            >
+              <ShoppingCart />
+              <span className="truncate">
+                {isInCart ? "Added" : t("addToCart")}
+              </span>
+            </Button>
           </div>
-        ) : orderControls}
+        ) : null}
+        {parValue != null && parValue !== "" && (
+          <p className="shrink-0 text-right leading-tight absolute right-2 top-2 flex flex-col items-center text-sm text-muted-foreground">
+            {t("par")} <span className="font-medium text-xs">{parValue}</span>
+          </p>
+        )}
       </div>
     </article>
   );
@@ -397,46 +366,27 @@ export function OrderGuideProductsList({
   const [productToDelete, setProductToDelete] = useState(null);
   const [productToEditPar, setProductToEditPar] = useState(null);
   const [parDraft, setParDraft] = useState("");
-  const [productSearch, setProductSearch] = useState("");
-  const [sortBy, setSortBy] = useState("name-asc");
-  const isMobile = useIsMobile();
-  const [preferredLayout, setLayout] = useState(null);
-  const layout = preferredLayout ?? (isMobile ? "list" : "card");
 
-  const allProducts = selectedGroup?.products ?? [];
-  const normalizedSearch = productSearch.trim().toLowerCase();
-  const filteredProducts = normalizedSearch
-    ? allProducts.filter((product) =>
-        [product.name, product.sku, product.category, product.subcategory].some(
-          (value) =>
-            String(value ?? "")
-              .toLowerCase()
-              .includes(normalizedSearch),
-        ),
-      )
-    : allProducts;
-  const [sortField, sortDirection] = sortBy.split("-");
-  const products = [...filteredProducts].sort((a, b) => {
-    const field = sortField === "code" ? "sku" : "name";
-    const comparison = String(a[field] ?? "").localeCompare(
-      String(b[field] ?? ""),
-      undefined,
-      {
-        numeric: true,
-        sensitivity: "base",
-      },
-    );
-    return sortDirection === "desc" ? -comparison : comparison;
+  const products = selectedGroup?.products ?? [];
+
+  const cartItemsByKey = new Map();
+
+  items.forEach((item) => {
+    [item.id, item.sku, item.itemNumber].filter(Boolean).forEach((key) => {
+      cartItemsByKey.set(String(key), item);
+    });
   });
-
-  const cartQuantities = new Map(items.map((item) => [item.id, item.quantity]));
 
   const allProductsInCart =
     products.length > 0 &&
-    products.every((product) => (cartQuantities.get(product.id) ?? 0) > 0);
-  const selectedCount = products.filter(
-    (product) => (cartQuantities.get(product.id) ?? 0) > 0,
-  ).length;
+    products.every((product) => {
+      const cartItem = cartItemsByKey.get(getCartKey(product));
+      return (cartItem?.quantity ?? 0) > 0;
+    });
+  const selectedCount = products.filter((product) => {
+    const cartItem = cartItemsByKey.get(getCartKey(product));
+    return (cartItem?.quantity ?? 0) > 0;
+  }).length;
   const isOnDashboard =
     Boolean(selectedOrder) && dashboardQuickOrderIds.includes(selectedOrder.id);
 
@@ -465,15 +415,18 @@ export function OrderGuideProductsList({
 
     if (allProductsInCart) {
       products.forEach((product) => {
-        if ((cartQuantities.get(product.id) ?? 0) > 0) {
-          removeItem(product.id);
+        const cartItem = cartItemsByKey.get(getCartKey(product));
+
+        if ((cartItem?.quantity ?? 0) > 0) {
+          removeItem(cartItem.id);
         }
       });
       return;
     }
 
     products.forEach((product) => {
-      const cartQuantity = cartQuantities.get(product.id) ?? 0;
+      const cartItem = cartItemsByKey.get(getCartKey(product));
+      const cartQuantity = cartItem?.quantity ?? 0;
 
       if (cartQuantity === 0) {
         addItem(product, 1);
@@ -490,7 +443,7 @@ export function OrderGuideProductsList({
           ? touchOrder({
               ...order,
               groups: order.groups.map((group) =>
-                selectedGroup.isAll || group.id === selectedGroup.id
+                group.id === selectedGroup.id
                   ? {
                       ...group,
                       products: group.products.filter(
@@ -514,7 +467,7 @@ export function OrderGuideProductsList({
           ? touchOrder({
               ...order,
               groups: order.groups.map((group) =>
-                selectedGroup.isAll || group.id === selectedGroup.id
+                group.id === selectedGroup.id
                   ? {
                       ...group,
                       products: group.products.map((product) =>
@@ -544,10 +497,7 @@ export function OrderGuideProductsList({
         return touchOrder({
           ...order,
           groups: order.groups.map((group) => {
-            if (
-              group.id === selectedGroup.id ||
-              (selectedGroup.isAll && group.id !== targetGroupId)
-            ) {
+            if (group.id === selectedGroup.id) {
               return {
                 ...group,
                 products: group.products.filter(
@@ -567,13 +517,7 @@ export function OrderGuideProductsList({
 
               return {
                 ...group,
-                products: [
-                  ...group.products,
-                  {
-                    ...productToMove,
-                    par: group.par ?? productToMove.par ?? null,
-                  },
-                ],
+                products: [...group.products, productToMove],
               };
             }
 
@@ -586,8 +530,18 @@ export function OrderGuideProductsList({
     setProductToMove(null);
   }
 
-  function confirmDeleteProduct() {
+  async function confirmDeleteProduct() {
     if (!productToDelete) return;
+
+    try {
+      const response = await deleteOrderGroupItemApiv1_DEL(
+        productToDelete.orderGroupItemID,
+      );
+
+      console.log("Delete Order Group Item Response:", response);
+    } catch (error) {
+      console.error("Delete Order Group Item Error:", error);
+    }
 
     removeFromGroup(productToDelete.id);
     setProductToDelete(null);
@@ -605,11 +559,10 @@ export function OrderGuideProductsList({
   function saveProductPar() {
     if (!productToEditPar) return;
 
-    const nextPar = parDraft.trim() === "" ? null : Number(parDraft);
-    if (nextPar !== null && (!Number.isFinite(nextPar) || nextPar < 0)) return;
+    const nextPar = parDraft.trim();
 
     updateProductInGroup(productToEditPar.id, {
-      par: nextPar,
+      par: nextPar === "" ? null : nextPar,
     });
 
     setProductToEditPar(null);
@@ -628,8 +581,8 @@ export function OrderGuideProductsList({
 
   return (
     <>
-      <section className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-lg border bg-card shadow-sm">
-        <div className="flex shrink-0 flex-col gap-2 p-2 sm:flex-row sm:items-start sm:justify-between lg:p-3">
+      <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-card shadow-sm">
+        <div className="flex shrink-0 flex-col gap-2 border-b p-2 sm:flex-row sm:items-start sm:justify-between lg:p-3">
           <div className="flex min-w-0 gap-2 lg:gap-3">
             <Button
               variant="outline"
@@ -650,20 +603,18 @@ export function OrderGuideProductsList({
                 </span>
               </div>
 
-              <div className="mt-1 flex min-w-0 items-center gap-2">
+              <div className="mt-2 flex min-w-0 items-center gap-2 lg:mt-3">
                 <h2 className="truncate text-lg font-bold lg:text-xl">
                   {selectedGroup.name}
                 </h2>
                 <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                  {normalizedSearch
-                    ? `${products.length} of ${allProducts.length} items`
-                    : `${allProducts.length} items`}
+                  {products.length} items
                 </Badge>
               </div>
             </div>
           </div>
 
-          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 [&>a]:flex-1 [&>button]:flex-1 sm:w-auto sm:self-center sm:[&>a]:flex-none sm:[&>button]:flex-none">
+          <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto sm:self-center">
             {canAddProducts ? (
               <Button asChild variant="outline" size="sm" className="h-8">
                 <Link href="/catalog">
@@ -687,124 +638,49 @@ export function OrderGuideProductsList({
                   : "Add to Quick Order"}
               </Button>
             ) : null}
-          </div>
-        </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b px-2 pb-2 pt-0 lg:px-3 lg:pb-3">
-          <div className="relative min-w-0 basis-full sm:basis-auto sm:flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={productSearch}
-              onChange={(event) => setProductSearch(event.target.value)}
-              placeholder="Search products..."
-              aria-label="Search order guide products"
-              className="h-9 pl-9 text-sm"
-            />
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-9">
-                Sort by <ChevronDown className="size-4" />
+            {canPlaceOrder && products.length > 0 && (
+              <Button
+                size="sm"
+                variant={allProductsInCart ? "secondary" : "default"}
+                onClick={handleSelectAllAndAddToCart}
+                className="flex h-8 items-center gap-1"
+              >
+                <ShoppingCart className="size-4" />
+                {allProductsInCart
+                  ? `Selected (${selectedCount})`
+                  : "Select All"}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
-                <DropdownMenuRadioItem value="name-asc">
-                  Item name A-Z
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="name-desc">
-                  Item name Z-A
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="code-asc">
-                  Item code A-Z
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="code-desc">
-                  Item code Z-A
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <div
-            role="group"
-            aria-label="Product layout"
-            className="flex items-center rounded-lg border bg-muted/40 p-1"
-          >
-            <Button
-              variant={layout === "list" ? "secondary" : "ghost"}
-              size="icon-sm"
-              className={
-                layout === "list" ? "shadow-sm" : "text-muted-foreground"
-              }
-              aria-label="List layout"
-              title="List layout"
-              aria-pressed={layout === "list"}
-              onClick={() => setLayout("list")}
-            >
-              <List className="size-4" />
-            </Button>
-            <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
-            <Button
-              variant={layout === "card" ? "secondary" : "ghost"}
-              size="icon-sm"
-              className={
-                layout === "card" ? "shadow-sm" : "text-muted-foreground"
-              }
-              aria-label="Card layout"
-              title="Card layout"
-              aria-pressed={layout === "card"}
-              onClick={() => setLayout("card")}
-            >
-              <LayoutGrid className="size-4" />
-            </Button>
+            )}
           </div>
-
-          {canPlaceOrder && products.length > 0 && (
-            <Button
-              size="sm"
-              variant={allProductsInCart ? "secondary" : "default"}
-              onClick={handleSelectAllAndAddToCart}
-              className="flex h-9 flex-1 items-center gap-1 sm:flex-none"
-            >
-              <ShoppingCart className="size-4" />
-              {allProductsInCart ? `Selected (${selectedCount})` : "Select All"}
-            </Button>
-          )}
         </div>
 
         <div className="min-h-0 flex-1 p-2 lg:p-3">
-          {allProducts.length === 0 ? (
+          {products.length === 0 ? (
             <EmptyProductsCard canAddProducts={canAddProducts} />
-          ) : products.length === 0 ? (
-            <div className="grid min-h-[240px] place-items-center text-sm text-muted-foreground">
-              No products match your search.
-            </div>
           ) : (
             <div className="no-scrollbar h-full overflow-y-auto">
-              <div
-                className={cn(
-                  "grid gap-2 sm:gap-3",
-                  layout === "list"
-                    ? "grid-cols-1"
-                    : "grid-cols-1 min-[460px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4",
-                )}
-              >
-                {products.map((product) => (
-                  <SavedProductCard
-                    key={product.id}
-                    product={product}
-                    layout={layout}
-                    cartQuantity={cartQuantities.get(product.id) ?? 0}
-                    onAddToCart={addItem}
-                    onIncrement={incrementItem}
-                    onDecrement={decrementItem}
-                    onChangeGroup={setProductToMove}
-                    onEditPar={openEditParDialog}
-                    onRequestDelete={setProductToDelete}
-                    canEdit={canEdit}
-                    canPlaceOrder={canPlaceOrder}
-                  />
-                ))}
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3 2xl:grid-cols-4">
+                {products.map((product) => {
+                  const cartItem = cartItemsByKey.get(getCartKey(product));
+
+                  return (
+                    <SavedProductCard
+                      key={product.id}
+                      product={product}
+                      cartQuantity={cartItem?.quantity ?? 0}
+                      cartItemId={cartItem?.id ?? product.id}
+                      onAddToCart={addItem}
+                      onIncrement={incrementItem}
+                      onDecrement={decrementItem}
+                      onChangeGroup={setProductToMove}
+                      onEditPar={openEditParDialog}
+                      onRequestDelete={setProductToDelete}
+                      canEdit={canEdit}
+                      canPlaceOrder={canPlaceOrder}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
@@ -889,8 +765,6 @@ export function OrderGuideProductsList({
 
           <div className="space-y-2 py-2">
             <Input
-              type="number"
-              min="0"
               value={parDraft}
               onChange={(event) => setParDraft(event.target.value)}
               placeholder={t("enterPar")}
