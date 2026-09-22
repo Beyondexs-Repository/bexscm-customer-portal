@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { createPortal } from "react-dom"
 import { useTranslations } from "next-intl"
 import {
   Building2,
@@ -24,11 +25,13 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 import { formatCurrency, statusStyles } from "./MyOrders"
+import OrderItemRatings from "./OrderItemRatings"
 
 export default function OrderDetails({ order, onBack, onClose }) {
 
   const [reOrderModalOpen, setReOrderModalOpen] = useState(false);
   const [reOrderItems, setReOrderItems] = useState([])
+  const [ratingOrderId, setRatingOrderId] = useState(null)
 
   const t = useTranslations("myOrders")
   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
@@ -78,7 +81,7 @@ export default function OrderDetails({ order, onBack, onClose }) {
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <div className="min-w-0 rounded-lg bg-emerald-50 p-2 text-foreground dark:bg-emerald-800/5 dark:ring-1 dark:ring-emerald-900/80 sm:p-3">
             <CalendarClock className="mb-2 size-4 text-emerald-600" />
-            <p className="text-[10px] leading-snug sm:text-[11px]">
+            <p className="text-[10px] flex flex-col leading-snug sm:text-[11px]">
               <span className="text-muted-foreground dark:text-emerald-100/70">
                 {t("placedOnLabel")}{" "}
               </span>
@@ -170,7 +173,11 @@ export default function OrderDetails({ order, onBack, onClose }) {
           </div>
         </div>
 
-        <h3 className="mt-5 text-sm font-bold">{t("orderItems")}</h3>
+        <div className="mt-5 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-bold">{t("orderItems")}</h3>
+          <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setRatingOrderId(order.id)}>Rate items</Button>
+        </div>
+        <OrderItemRatings key={order.id} open={ratingOrderId === order.id} onOpenChange={(open) => setRatingOrderId(open ? order.id : null)} items={order.items} />
 
         <div className="mt-3 divide-y rounded-lg border">
           {order.items.map((item) => (
@@ -237,7 +244,7 @@ export default function OrderDetails({ order, onBack, onClose }) {
                 setReOrderModalOpen(true)
               }}
             >
-              ReOrder
+              Reorder
             </Button>
 
             <Button
@@ -252,15 +259,15 @@ export default function OrderDetails({ order, onBack, onClose }) {
       )}
 
       {/* For modal */}
-      {reOrderModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      {reOrderModalOpen && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-lg rounded-xl border bg-card shadow-xl">
 
             {/* Modal Header */}
             <div className="flex items-start justify-between gap-3 border-b p-4">
               <div>
                 <h2 className="text-base font-bold">
-                  ReOrder
+                  Reorder
                 </h2>
 
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -281,11 +288,8 @@ export default function OrderDetails({ order, onBack, onClose }) {
             {/* Modal Content */}
             <div className="max-h-[65vh] overflow-y-auto p-4">
 
-              <h3 className="text-sm font-bold">
-                {t("orderItems")}
-              </h3>
 
-              <div className="mt-3 divide-y rounded-lg border">
+              <div className="mt-0 divide-y rounded-lg border">
                 {reOrderItems.map((item) => {
                   const quantity = Number(item.quantity) || 1
                   const price = Number(item.price) || 0
@@ -294,15 +298,13 @@ export default function OrderDetails({ order, onBack, onClose }) {
                   return (
                     <div
                       key={item.id}
-                      className="relative flex gap-3 p-3 m"
-                     
+                      className="relative flex gap-3 p-3"
                     >
                       {/* Delete Button - Top Right */}
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon-sm"
-                         style={{marginRight:'60px'}}
                         className="absolute right-2 top-2"
                         onClick={() => {
                           setReOrderItems((currentItems) =>
@@ -346,78 +348,82 @@ export default function OrderDetails({ order, onBack, onClose }) {
                         <p className="truncate text-xs text-muted-foreground">
                           SKU: {item.sku}
                         </p>
+
+                        {/* Quantity Selector */}
+                        <div className="mt-2 inline-flex items-center rounded-md border bg-background">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            className="size-7"
+                            onClick={() => {
+                              setReOrderItems((currentItems) =>
+                                currentItems.map((currentItem) =>
+                                  currentItem.id === item.id
+                                    ? {
+                                      ...currentItem,
+                                      quantity: Math.max(
+                                        1,
+                                        Number(currentItem.quantity) - 1
+                                      ),
+                                    }
+                                    : currentItem
+                                )
+                              )
+                            }}
+                          >
+                            <Minus className="size-3.5" />
+                          </Button>
+
+                          <span className="min-w-7 text-center text-xs font-semibold">
+                            {quantity}
+                          </span>
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            className="size-7"
+                            onClick={() => {
+                              setReOrderItems((currentItems) =>
+                                currentItems.map((currentItem) =>
+                                  currentItem.id === item.id
+                                    ? {
+                                      ...currentItem,
+                                      quantity:
+                                        Number(currentItem.quantity) + 1,
+                                    }
+                                    : currentItem
+                                )
+                              )
+                            }}
+                          >
+                            <Plus className="size-3.5" />
+                          </Button>
+                        </div>
                       </div>
 
-                      {/* Quantity / Price */}
-                      <div className="shrink-0 text-right">
-                        <p className="text-xs font-bold">
+                      {/* Units / Price */}
+                      <div className="w-20 shrink-0 pt-8 absolute bottom-2 right-2 text-right">
+                        <p className="text-sm font-bold">
                           {t("units", { count: quantity })}
                         </p>
 
-                        <p className="mt-1 text-xs">
+                        <p className="mt-1 text-sm">
                           {formatCurrency(itemTotal)}
                         </p>
-                      </div>
-
-                      {/* Quantity Selector - Bottom Right */}
-                      <div className="absolute bottom-2 right-2 flex items-center rounded-md border bg-background">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          className="size-7"
-                          onClick={() => {
-                            setReOrderItems((currentItems) =>
-                              currentItems.map((currentItem) =>
-                                currentItem.id === item.id
-                                  ? {
-                                    ...currentItem,
-                                    quantity: Math.max(
-                                      1,
-                                      Number(currentItem.quantity) - 1
-                                    ),
-                                  }
-                                  : currentItem
-                              )
-                            )
-                          }}
-                        >
-                          <Minus className="size-3.5" />
-                        </Button>
-
-                        <span className="min-w-7 text-center text-xs font-semibold">
-                          {quantity}
-                        </span>
-
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          className="size-7"
-                          onClick={() => {
-                            setReOrderItems((currentItems) =>
-                              currentItems.map((currentItem) =>
-                                currentItem.id === item.id
-                                  ? {
-                                    ...currentItem,
-                                    quantity:
-                                      Number(currentItem.quantity) + 1,
-                                  }
-                                  : currentItem
-                              )
-                            )
-                          }}
-                        >
-                          <Plus className="size-3.5" />
-                        </Button>
                       </div>
                     </div>
                   )
                 })}
               </div>
 
-              {/* Order Summary */}
-              <div className="mt-4 space-y-2 border-t pt-4 text-sm">
+              
+            </div>
+
+                <div className="flex flex-col gap-2 border-t p-4 pb-0">
+                {/* Order Summary */}
+              <div className="space-y-2 text-sm">
                 <div className="flex justify-between gap-3">
                   <span className="font-semibold">
                     {t("totalUnits")}
@@ -450,8 +456,6 @@ export default function OrderDetails({ order, onBack, onClose }) {
                   </span>
                 </div>
               </div>
-            </div>
-
             {/* Modal Footer */}
             <div className="flex justify-end gap-2 border-t p-4">
               <Button
@@ -469,8 +473,10 @@ export default function OrderDetails({ order, onBack, onClose }) {
                 Add to Cart
               </Button>
             </div>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </section>
   )

@@ -30,10 +30,28 @@ export function OrderGuide() {
   const selectedOrder = selectedOrderId
     ? quickOrders.find((order) => order.id === selectedOrderId) ?? null
     : null
-  const selectedGroup =
+  const allProducts = selectedOrder
+    ? Array.from(
+        new Map(
+          selectedOrder.groups
+            .flatMap((group) => group.products)
+            .map((product) => [product.id, product]),
+        ).values(),
+      )
+    : []
+  const storedSelectedGroup =
     selectedOrder?.groups.find((group) => group.id === selectedGroupId) ??
     selectedOrder?.groups[0] ??
     null
+  const selectedGroup =
+    selectedOrder && selectedGroupId === "all"
+      ? {
+          id: "all",
+          name: "All",
+          products: allProducts,
+          isAll: true,
+        }
+      : storedSelectedGroup
 
   function handleSave() {
     if (!canCreate) return
@@ -42,15 +60,15 @@ export function OrderGuide() {
     const newOrder = createQuickOrder(quickOrderName.trim())
 
     setSelectedOrderId(newOrder.id)
-    setSelectedGroupId(newOrder.groups[0]?.id ?? null)
+    setSelectedGroupId("all")
     setQuickOrderName("")
     setOpen(false)
   }
 
   if (quickOrders.length > 0) {
     return (
-      <div className="grid h-full min-h-0 gap-2 overflow-hidden bg-background p-2 lg:grid-cols-[320px_1fr] lg:gap-3 lg:p-3">
-        <div className={cn("h-full min-h-0", selectedOrder ? "hidden lg:block" : "block")}>
+      <div className="grid h-full min-h-0 w-full min-w-0 grid-cols-1 gap-2 overflow-hidden bg-background p-1 sm:p-2 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-3 lg:p-3">
+        <div className={cn("h-full min-h-0 min-w-0", selectedOrder ? "hidden lg:block" : "block")}>
           <OrderGuideList
             quickOrders={quickOrders}
             setQuickOrders={setQuickOrders}
@@ -65,7 +83,7 @@ export function OrderGuide() {
           />
         </div>
 
-        <div className={cn("h-full min-h-0", selectedOrder ? "block" : "hidden lg:block")}>
+        <div className={cn("h-full min-h-0 min-w-0", selectedOrder ? "block" : "hidden lg:block")}>
           <OrderGuideProductsList
             selectedOrder={selectedOrder}
             selectedGroup={selectedGroup}

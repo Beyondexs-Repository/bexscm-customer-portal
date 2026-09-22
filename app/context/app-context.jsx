@@ -6,7 +6,7 @@ import catalog from "@/data/data.json"
 import { findCatalogProduct } from "@/lib/catalog-products"
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
 import { postCartApi, updateCartQuantityApi, checkoutOrderApi, importDocumentCartApi, getCustomerCartApi } from "@/lib/api/cartApi"
-import { resolveItemImageUrl } from "@/lib/api/itemsApi"
+import { fetchItemsApi, resolveItemImageUrl } from "@/lib/api/itemsApi"
 
 const AppContext = createContext(null)
 const CART_STORAGE_KEY = "aloha.cart.v1"
@@ -61,6 +61,84 @@ function getCartItemImage(product) {
   return getCategoryPlaceholderImage(category)
 }
 
+function mapCustomerCartItems(cartItems, liveItems) {
+  const liveItemsById = new Map(
+    liveItems.map((item) => [
+      String(item.ITEMNMBR ?? item.itemnmbr ?? "").trim(),
+      item,
+    ])
+  )
+
+  return cartItems.map((item) => {
+    const itemNum = String(
+      item.itemNumber ?? item.ItemNumber ?? item.cartId ?? ""
+    ).trim()
+    const liveItem = liveItemsById.get(itemNum)
+    const catalogItem = findCatalogProduct(itemNum)
+    const name =
+      item.itemName ??
+      item.ItemName ??
+      item.requestedItemName ??
+      liveItem?.ItemName ??
+      liveItem?.itemName ??
+      liveItem?.ITEMDESC ??
+      catalogItem?.name ??
+      `Item ${itemNum}`
+    const price = Number(
+      item.price ??
+      item.Price ??
+      item.unitPrice ??
+      item.UnitPrice ??
+      liveItem?.QTYBSUOM ??
+      liveItem?.qtybsuom ??
+      liveItem?.avgWeight ??
+      catalogItem?.price ??
+      0
+    )
+    const unit =
+      liveItem?.UOMSCHDL ??
+      liveItem?.uomschdl ??
+      catalogItem?.unit ??
+      "LB"
+    const image = getCartItemImage({
+      ...(catalogItem || {}),
+      id: itemNum,
+      name,
+      image:
+        item.image ??
+        item.Image ??
+        item.IMAGE ??
+        liveItem?.image ??
+        liveItem?.Image ??
+        liveItem?.IMAGE ??
+        catalogItem?.image,
+    })
+
+    return {
+      id: itemNum,
+      name,
+      price,
+      unit: String(unit).trim(),
+      sku: itemNum,
+      quantity: Number(item.quantity ?? item.Quantity ?? 1),
+      image,
+      cartId: item.cartId,
+      source: item.source ?? item.Source ?? "Backend API",
+    }
+  })
+}
+
+async function loadCustomerCart(custnmbr) {
+  const [cartItems, liveItems] = await Promise.all([
+    getCustomerCartApi(custnmbr),
+    fetchItemsApi(),
+  ])
+
+  return Array.isArray(cartItems)
+    ? mapCustomerCartItems(cartItems, Array.isArray(liveItems) ? liveItems : [])
+    : []
+}
+
 function getInitialCartItems() {
   if (typeof window === "undefined") {
     return []
@@ -70,15 +148,16 @@ function getInitialCartItems() {
     const items = JSON.parse(window.localStorage.getItem(CART_STORAGE_KEY))
     return Array.isArray(items)
       ? items.map((item) => {
-          const catalogItem = findCatalogProduct(item.id)
+        const catalogItem = findCatalogProduct(item.id)
 
-          return {
-            ...item,
-            category: item.category || catalogItem?.category,
-            subcategory: item.subcategory || catalogItem?.subcategory,
-            image: getCartItemImage(catalogItem ? { ...catalogItem, ...item } : item),
-          }
-        })
+        return {
+          ...item,
+          price: Number(item.price ?? catalogItem?.price ?? 0),
+          category: item.category || catalogItem?.category,
+          subcategory: item.subcategory || catalogItem?.subcategory,
+          image: getCartItemImage(catalogItem ? { ...catalogItem, ...item } : item),
+        }
+      })
       : []
   } catch {
     return []
@@ -88,16 +167,16 @@ function getInitialCartItems() {
 function normalizeQuickOrders(orders) {
   return Array.isArray(orders)
     ? orders.map((order) => ({
-        ...order,
-        groups:
-          Array.isArray(order.groups) && order.groups.length > 0
-            ? order.groups.map((group, index) => ({
-                ...group,
-                name: group.name || (index === 0 ? "Default Group" : "Group"),
-                products: Array.isArray(group.products) ? group.products : [],
-              }))
-            : [createDefaultGroup()],
-      }))
+      ...order,
+      groups:
+        Array.isArray(order.groups) && order.groups.length > 0
+          ? order.groups.map((group, index) => ({
+            ...group,
+            name: group.name || (index === 0 ? "Default Group" : "Group"),
+            products: Array.isArray(group.products) ? group.products : [],
+          }))
+          : [createDefaultGroup()],
+    }))
     : []
 }
 
@@ -171,14 +250,55 @@ export function AppProvider({ children }) {
   const fetchCustomerCart = useCallback(async (custnmbr = "400001") => {
     try {
       const data = await getCustomerCartApi(custnmbr)
+
       if (Array.isArray(data)) {
         const mappedItems = data.map((item) => {
-          const itemNum = String(item.itemNumber || item.ItemNumber || item.cartId).trim()
+          const itemNum = String(
+            item.itemNumber ||
+            item.ItemNumber ||
+            item.cartId
+          ).trim()
+
           const matchedCatalogItem = findCatalogProduct(itemNum)
-          const name = item.itemName || item.requestedItemName || matchedCatalogItem?.name || `Item ${itemNum}`
-          const price = matchedCatalogItem?.price || 12.50
-          const unit = matchedCatalogItem?.unit || "LB"
-          const image = getCartItemImage(matchedCatalogItem || { id: itemNum, name, image: item.image })
+
+          const name =
+            item.itemName ||
+            item.requestedItemName ||
+            matchedCatalogItem?.name ||
+            `Item ${itemNum}`
+
+          const apiPrice =
+            item.price ??
+            item.Price ??
+            item.unitPrice
+
+          /*
+           * Only use API price when it is actually greater than 0.
+           * If API returns 0 / empty / missing, use catalog price.
+           */
+          const parsedApiPrice = Number(apiPrice)
+
+          const catalogPrice = Number(
+            matchedCatalogItem?.price ?? 0
+          )
+
+          const price =
+            Number.isFinite(parsedApiPrice) && parsedApiPrice > 0
+              ? parsedApiPrice
+              : catalogPrice
+
+          const unit =
+            matchedCatalogItem?.unit ||
+            item.unit ||
+            "LB"
+
+          const image = getCartItemImage(
+            matchedCatalogItem || {
+              id: itemNum,
+              name,
+              image: item.image,
+            }
+          )
 
           return {
             id: itemNum,
@@ -193,50 +313,88 @@ export function AppProvider({ children }) {
           }
         })
 
-        setCartItems(mappedItems)
+        setCartItems((currentItems) => {
+          return mappedItems.map((apiItem) => {
+            const existingItem = currentItems.find(
+              (currentItem) =>
+                String(currentItem.id) === String(apiItem.id)
+            )
+
+            /*
+             * If this product was already added to the cart
+             * and the API does not provide a real price,
+             * KEEP the price that was already in the cart.
+             */
+            if (
+              existingItem &&
+              (!Number.isFinite(apiItem.price) ||
+                apiItem.price <= 0)
+            ) {
+              return {
+                ...apiItem,
+                price: Number(existingItem.price) || 0,
+              }
+            }
+
+            return {
+              ...apiItem,
+              price: Number(apiItem.price) || 0,
+            }
+          })
+        })
+
         return mappedItems
       }
     } catch (error) {
-      console.warn("Failed to fetch customer cart from API:", error)
+      console.warn(
+        "Failed to fetch customer cart from API:",
+        error
+      )
     }
   }, [])
 
   useEffect(() => {
-    let ignore = false
-    getCustomerCartApi("400001")
-      .then((data) => {
-        if (!ignore && Array.isArray(data)) {
-          const mappedItems = data.map((item) => {
-            const itemNum = String(item.itemNumber || item.ItemNumber || item.cartId).trim()
-            const matchedCatalogItem = findCatalogProduct(itemNum)
-            const name = item.itemName || item.requestedItemName || matchedCatalogItem?.name || `Item ${itemNum}`
-            const price = matchedCatalogItem?.price || 12.50
-            const unit = matchedCatalogItem?.unit || "LB"
-            const image = getCartItemImage(matchedCatalogItem || { id: itemNum, name, image: item.image })
+    if (!storageHydrated) return
 
-            return {
-              id: itemNum,
-              name,
-              price,
-              unit,
-              sku: itemNum,
-              quantity: Number(item.quantity || 1),
-              image,
-              cartId: item.cartId,
-              source: item.source || "Backend API",
-            }
-          })
-          setCartItems(mappedItems)
-        }
-      })
-      .catch((error) => {
-        console.warn("Failed to fetch customer cart from API:", error)
-      })
+    fetchCustomerCart()
+  }, [storageHydrated, fetchCustomerCart])
 
-    return () => {
-      ignore = true
-    }
-  }, [])
+  // useEffect(() => {
+  //   let ignore = false
+  //   getCustomerCartApi("400001")
+  //     .then((data) => {
+  //       if (!ignore && Array.isArray(data)) {
+  //         const mappedItems = data.map((item) => {
+  //           const itemNum = String(item.itemNumber || item.ItemNumber || item.cartId).trim()
+  //           const matchedCatalogItem = findCatalogProduct(itemNum)
+  //           const name = item.itemName || item.requestedItemName || matchedCatalogItem?.name || `Item ${itemNum}`
+  //           const price = matchedCatalogItem?.price || 12.50
+  //           const unit = matchedCatalogItem?.unit || "LB"
+  //           const image = getCartItemImage(matchedCatalogItem || { id: itemNum, name, image: item.image })
+
+  //           return {
+  //             id: itemNum,
+  //             name,
+  //             price,
+  //             unit,
+  //             sku: itemNum,
+  //             quantity: Number(item.quantity || 1),
+  //             image,
+  //             cartId: item.cartId,
+  //             source: item.source || "Backend API",
+  //           }
+  //         })
+  //         setCartItems(mappedItems)
+  //       }
+  //     })
+  //     .catch((error) => {
+  //       console.warn("Failed to fetch customer cart from API:", error)
+  //     })
+
+  //   return () => {
+  //     ignore = true
+  //   }
+  // }, [])
 
   function addCartItem(product, quantity = 1) {
     setCartItems((currentItems) => {
@@ -255,7 +413,7 @@ export function AppProvider({ children }) {
         {
           id: product.id,
           name: product.name,
-          price: product.price,
+          price: Number(product.price ?? 0),
           unit: product.unit,
           sku: product.sku,
           category: product.category,
@@ -385,6 +543,7 @@ export function AppProvider({ children }) {
                   category: product.category,
                   subcategory: product.subcategory,
                   image: product.image,
+                  par: group.par ?? product.par ?? null,
                 },
               ],
             }
@@ -399,18 +558,18 @@ export function AppProvider({ children }) {
       orders.map((order) =>
         order.id === orderId
           ? touchQuickOrder({
-              ...order,
-              groups: order.groups.map((group, index) =>
-                (groupId ? group.id === groupId : index === 0)
-                  ? {
-                      ...group,
-                      products: group.products.filter(
-                        (product) => product.id !== productId
-                      ),
-                    }
-                  : group
-              ),
-            })
+            ...order,
+            groups: order.groups.map((group, index) =>
+              (groupId ? group.id === groupId : index === 0)
+                ? {
+                  ...group,
+                  products: group.products.filter(
+                    (product) => product.id !== productId
+                  ),
+                }
+                : group
+            ),
+          })
           : order
       )
     )

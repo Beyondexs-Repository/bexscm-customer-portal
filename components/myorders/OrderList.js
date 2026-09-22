@@ -186,9 +186,9 @@ export default function OrderList({
   }
 
   return (
-    <div className="min-h-0 space-y-4 pb-2">
+    <div className="flex min-h-0 flex-col gap-4 pb-2 xl:h-[calc(100svh-6.5rem)] xl:pb-0">
       {/* Dashboard Count Stat Cards - Based on order list */}
-      <section className="grid grid-cols-2 gap-3 min-[1420px]:grid-cols-4">
+      <section className="grid shrink-0 grid-cols-2 gap-3 min-[1420px]:grid-cols-4">
         <StatCard icon={Truck} value={orders.length} label={t("totalOrders")} tone="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300" />
         <StatCard icon={PackageCheck} value={deliveredCount} label={t("ordersDelivered")} tone="bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-300" />
         <StatCard icon={CalendarClock} value={upcomingCount} label={t("upcomingOrders")} tone="bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-300" />
@@ -196,7 +196,7 @@ export default function OrderList({
       </section>
 
       {/* Main Order List Section */}
-      <section className="flex min-h-0 flex-col rounded-lg border bg-background p-3 shadow-sm sm:p-4">
+      <section className="flex min-h-0 flex-1 flex-col rounded-lg border bg-background p-3 shadow-sm sm:p-4">
         {/* Customer Input & Controls Header */}
         <div className="flex flex-col gap-3 border-b pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -294,10 +294,7 @@ export default function OrderList({
         {/* Orders List View / Loading / Error State */}
         <div className="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pt-2 pr-1">
           {isLoading ? (
-
-            <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-lg border bg-card p-6 text-muted-foreground"
-             style={{ minHeight: Math.min(pageSize * 76, 600) }}
-            >
+            <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-lg border bg-card p-6 text-muted-foreground xl:h-full xl:min-h-0">
               <Loader2 className="size-6 animate-spin text-primary" />
               <p className="text-xs font-medium">Loading orders for Customer #{customerId}...</p>
             </div>

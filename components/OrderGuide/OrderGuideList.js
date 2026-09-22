@@ -24,6 +24,7 @@ import {
   Download,
   GripVertical,
   MoreVertical,
+  Package2,
   Pencil,
   Plus,
   Trash2,
@@ -54,6 +55,12 @@ function countOrderProducts(order) {
     (total, group) => total + group.products.length,
     0,
   );
+}
+
+function countUniqueOrderProducts(order) {
+  return new Set(
+    order.groups.flatMap((group) => group.products.map((product) => product.id)),
+  ).size;
 }
 
 function touchOrder(order) {
@@ -89,6 +96,7 @@ function OrderGuideCard({
   onSelectGroup,
   onOpenRenameOrder,
   onOpenRenameGroup,
+  onOpenEditGroupPar,
   onOpenDeleteOrder,
   onOpenDeleteGroup,
   onAddGroup,
@@ -161,6 +169,47 @@ function OrderGuideCard({
 
       {isExpandedOrder ? (
         <div className="mt-4 space-y-2">
+          <div
+            className={cn(
+              "flex items-center justify-between gap-2 rounded-md border border-transparent px-3 py-2.5 text-sm",
+              isSelectedOrder && selectedGroupId === "all"
+                ? "bg-primary/25 text-foreground"
+                : "bg-muted/35",
+            )}
+          >
+            <button
+              type="button"
+              className="min-w-0 flex-1 truncate text-left font-medium"
+              onClick={() => onSelectGroup(order.id, "all")}
+            >
+              All
+            </button>
+            <span className="rounded-full bg-background/75 px-2 py-0.5 text-xs font-semibold">
+              {countUniqueOrderProducts(order)}
+            </span>
+            {canEdit ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon-xs" aria-label="All options">
+                    <MoreVertical />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-36">
+                  <DropdownMenuItem
+                    onSelect={() => onOpenEditGroupPar(order, {
+                      id: "all",
+                      name: "All",
+                      isAll: true,
+                      products: order.groups.flatMap((group) => group.products),
+                    })}
+                  >
+                    <Package2 className="size-4" />
+                    {t("editPar")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </div>
           {order.groups.map((group) => {
             const isSelectedGroup = isSelectedOrder && group.id === selectedGroupId;
 
@@ -198,6 +247,10 @@ function OrderGuideCard({
                     {canEdit ? <DropdownMenuItem onSelect={() => onOpenRenameGroup(order, group)}>
                       <Pencil className="size-4" />
                       {t("rename")}
+                    </DropdownMenuItem> : null}
+                    {canEdit ? <DropdownMenuItem onSelect={() => onOpenEditGroupPar(order, group)}>
+                      <Package2 className="size-4" />
+                      {t("editPar")}
                     </DropdownMenuItem> : null}
                     {canDelete ? <DropdownMenuItem
                       variant="destructive"
@@ -257,6 +310,7 @@ export function OrderGuideList({
   const t = useTranslations("orderGuide")
   const [dialog, setDialog] = useState(null);
   const [draftName, setDraftName] = useState("");
+  const [parDraft, setParDraft] = useState("");
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [activeOrderId, setActiveOrderId] = useState(null);
 
@@ -279,6 +333,7 @@ export function OrderGuideList({
   function closeDialog() {
     setDialog(null);
     setDraftName("");
+    setParDraft("");
   }
 
   function openAddGroup(order) {
@@ -294,6 +349,45 @@ export function OrderGuideList({
   function openRenameGroup(order, group) {
     setDialog({ type: "rename-group", order, group });
     setDraftName(group.name);
+  }
+
+  function openEditGroupPar(order, group) {
+    setDialog({ type: "edit-group-par", order, group });
+    setParDraft(
+      group.par == null
+        ? String(group.products[0]?.par ?? "")
+        : String(group.par),
+    );
+  }
+
+  function saveGroupPar() {
+    if (dialog?.type !== "edit-group-par") return;
+
+    const value = parDraft.trim() === "" ? null : Number(parDraft);
+    if (value !== null && (!Number.isFinite(value) || value < 0)) return;
+
+    setQuickOrders((orders) =>
+      orders.map((order) =>
+        order.id === dialog.order.id
+          ? touchOrder({
+              ...order,
+              groups: order.groups.map((group) =>
+                dialog.group.isAll || group.id === dialog.group.id
+                  ? {
+                      ...group,
+                      par: value,
+                      products: group.products.map((product) => ({
+                        ...product,
+                        par: value,
+                      })),
+                    }
+                  : group,
+              ),
+            })
+          : order,
+      ),
+    );
+    closeDialog();
   }
 
   function saveNameDialog() {
@@ -471,6 +565,8 @@ export function OrderGuideList({
                       }
 
                       setExpandedOrderId(order.id);
+                      setSelectedOrderId(order.id);
+                      setSelectedGroupId("all");
                     }}
                     onSelectGroup={(orderId, groupId) => {
                       setExpandedOrderId(orderId);
@@ -479,6 +575,7 @@ export function OrderGuideList({
                     }}
                     onOpenRenameOrder={openRenameOrder}
                     onOpenRenameGroup={openRenameGroup}
+                    onOpenEditGroupPar={openEditGroupPar}
                     onOpenDeleteOrder={(orderToDelete) =>
                       setDialog({ type: "delete-order", order: orderToDelete })
                     }
@@ -559,6 +656,41 @@ export function OrderGuideList({
               {t("cancel")}
             </Button>
             <Button onClick={saveNameDialog}>{t("save")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={dialog?.type === "edit-group-par"}
+        onOpenChange={(open) => !open && closeDialog()}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("editPar")}</DialogTitle>
+            <DialogDescription>
+              This PAR value will be applied to every product in {dialog?.group?.isAll ? "all groups" : dialog?.group?.name}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            <Label htmlFor="groupParValue">{t("parValue")}</Label>
+            <Input
+              id="groupParValue"
+              type="number"
+              min="0"
+              value={parDraft}
+              onChange={(event) => setParDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") saveGroupPar();
+              }}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialog}>
+              {t("cancel")}
+            </Button>
+            <Button onClick={saveGroupPar}>{t("save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
