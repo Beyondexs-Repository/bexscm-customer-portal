@@ -29,13 +29,130 @@ import OrderItemRatings from "./OrderItemRatings"
 
 export default function OrderDetails({ order, onBack, onClose }) {
 
+  console.log(order, "--find order in order details");
   const [reOrderModalOpen, setReOrderModalOpen] = useState(false);
-  const [reOrderItems, setReOrderItems] = useState([])
-  const [ratingOrderId, setRatingOrderId] = useState(null)
+  const [reOrderItems, setReOrderItems] = useState([]);
+  const [ratingOrderId, setRatingOrderId] = useState(null);
+  //reorderapi
+  const [isReOrdering, setIsReOrdering] = useState(false);
 
   const t = useTranslations("myOrders")
   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
+const reorderOrderApi = async (orderNumber, items) => {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orders/reorder/${orderNumber}`;
+
+    console.log("Reorder API URL:", url);
+
+    const requestBody = {
+      items: items.map((item) => ({
+        itemNumber: String(item.itemNumber),
+        quantity: Number(item.quantity),
+      })),
+    };
+
+    console.log("Reorder Request Body:", requestBody);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log("Reorder HTTP Status:", response.status);
+    console.log("Reorder HTTP OK:", response.ok);
+
+    const responseText = await response.text();
+
+    console.log("Reorder Raw Response:", responseText);
+
+    let result = null;
+
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch (error) {
+      console.warn("Reorder response is not JSON:", responseText);
+    }
+
+    console.log("Reorder Parsed Response:", result);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to reorder. HTTP ${response.status}`,
+      );
+    }
+
+    if (!result?.success) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          "Failed to reorder.",
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Reorder API Error:", error);
+    throw error;
+  }
+};
+
+
+const handleReorder = async () => {
+  if (!order?.orderNumber) {
+    console.error("Order number is missing.");
+    return;
+  }
+
+  if (!reOrderItems.length) {
+    alert("Please select at least one item.");
+    return;
+  }
+
+  try {
+    setIsReOrdering(true);
+
+    const requestItems = reOrderItems.map((item) => ({
+      itemNumber: String(item.sku),
+      quantity: Number(item.quantity),
+    }));
+
+    console.log("Reorder Order Number:", order.orderNumber);
+    console.log("Reorder Items:", requestItems);
+return;
+    const result = await reorderOrderApi(
+      order.orderNumber,
+      requestItems,
+    );
+
+    console.log("Reorder Success Response:", result);
+
+    if (result?.success) {
+      alert("Items added to cart successfully.");
+
+      setReOrderModalOpen(false);
+      setReOrderItems([]);
+    }
+  } catch (error) {
+    console.error("Reorder failed:", error);
+
+    alert(
+      error?.message ||
+        "Unable to add the reordered items to cart.",
+    );
+  } finally {
+    setIsReOrdering(false);
+  }
+};
   return (
     <section className="flex h-full min-h-0 flex-col rounded-lg border bg-card shadow-sm">
       <div className="flex shrink-0 items-start justify-between gap-3 border-b p-3 sm:p-4">
@@ -458,7 +575,21 @@ export default function OrderDetails({ order, onBack, onClose }) {
               </div>
             {/* Modal Footer */}
             <div className="flex justify-end gap-2 border-t p-4">
-              <Button
+               <Button
+    variant="outline"
+    onClick={() => setReOrderModalOpen(false)}
+    disabled={isReOrdering}
+  >
+    Cancel
+  </Button>
+
+  <Button
+    onClick={handleReorder}
+    disabled={isReOrdering || reOrderItems.length === 0}
+  >
+    {isReOrdering ? "Adding..." : "Add to Cart"}
+  </Button>
+              {/* <Button
                 variant="outline"
                 onClick={() => setReOrderModalOpen(false)}
               >
@@ -471,7 +602,7 @@ export default function OrderDetails({ order, onBack, onClose }) {
                 }}
               >
                 Add to Cart
-              </Button>
+              </Button> */}
             </div>
             </div>
           </div>
