@@ -209,6 +209,7 @@ export default function MyOrders() {
             order={selectedOrder}
             onBack={() => setSelectedOrderId(null)}
             onClose={() => setSelectedOrderId(null)}
+            onReorderSuccess={handleRefresh} 
           />
         ) : (
           <section className="hidden h-full min-h-[18rem] place-items-center rounded-lg border bg-card xl:grid">

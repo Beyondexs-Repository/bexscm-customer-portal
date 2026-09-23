@@ -24,12 +24,14 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-
+import { useCart } from "@/app/context/app-context"
 import { formatCurrency, statusStyles } from "./MyOrders"
 import OrderItemRatings from "./OrderItemRatings"
 
-export default function OrderDetails({ order, onBack, onClose }) {
+export default function OrderDetails({ order, onBack, onClose, onReorderSuccess }) {
 
+   const { fetchCustomerCart } = useCart()
+  const imageurl = `https://crateapi.bexlgems.com/Images/Items`;
   console.log(order, "--find order in order details");
   const [reOrderModalOpen, setReOrderModalOpen] = useState(false);
   const [reOrderItems, setReOrderItems] = useState([]);
@@ -142,6 +144,11 @@ const handleReorder = async () => {
 
       setReOrderModalOpen(false);
       setReOrderItems([]);
+       // refresh recent orders list
+  onReorderSuccess?.();
+
+// refresh cart badge immediately
+  fetchCustomerCart("400001");
     }
   } catch (error) {
     console.error("Reorder failed:", error);
@@ -301,14 +308,23 @@ const handleReorder = async () => {
           {order.items.map((item) => (
             <div key={item.id} className="flex gap-3 p-3">
               <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
-                <img
+                {/* <img
                   src={item.image}
                   alt={item.name}
                   className="size-full object-cover"
                   onError={(e) => {
                     e.currentTarget.style.display = "none"
                   }}
-                />
+                /> */}
+                <img
+  src={item.image ? `${imageurl}/${item.image}` : "/placeholder.png"}
+  alt={item.name}
+  className="size-full object-cover"
+  onError={(e) => {
+    //  e.currentTarget.style.display = "none"
+    e.currentTarget.src = "/placeholder.png" // fallback instead of hiding
+  }}
+/>
               </div>
 
               <div className="min-w-0 flex-1">
@@ -441,14 +457,23 @@ const handleReorder = async () => {
 
                       {/* Product Image */}
                       <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
-                        <img
+                        {/* <img
                           src={item.image}
                           alt={item.name}
                           className="size-full object-cover"
                           onError={(e) => {
                             e.currentTarget.style.display = "none"
                           }}
-                        />
+                        /> */}
+                                       <img
+  src={item.image ? `${imageurl}/${item.image}` : "/placeholder.png"}
+  alt={item.name}
+  className="size-full object-cover"
+  onError={(e) => {
+    //  e.currentTarget.style.display = "none"
+    e.currentTarget.src = "/placeholder.png" // fallback instead of hiding
+  }}
+/>
                       </div>
 
                       {/* Product Details */}

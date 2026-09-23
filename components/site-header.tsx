@@ -223,8 +223,23 @@ const [notes, setNotes] = React.useState("")
   )
 
 
-async function checkoutOrderApi({ custNmbr, deliveryDate, cutOffTime, notes, discountCode, poNumber }) {
-  const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/checkout`
+// async function checkoutOrderApi({ custNmbr, deliveryDate, cutOffTime, notes, discountCode, poNumber }) {
+  async function checkoutOrderApi({
+  custNmbr,
+  deliveryDate,
+  cutOffTime,
+  notes,
+  discountCode,
+  poNumber,
+}: {
+  custNmbr: string
+  deliveryDate: string
+  cutOffTime: string
+  notes: string
+  discountCode: string
+  poNumber: string
+}) {
+const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/checkout`
 
   const response = await fetch(url, {
     method: "POST",
@@ -290,7 +305,8 @@ async function handleCheckout() {
     setNotes("")
   } catch (error) {
     console.error("Checkout request failed:", error)
-    const errorMsg = error?.message || "Checkout request failed. Please check API endpoint."
+    // const errorMsg = error?.message || "Checkout request failed. Please check API endpoint."
+    const errorMsg = error instanceof Error ? error.message : "Checkout request failed. Please check API endpoint."
     toast.error(`Checkout Failed: ${errorMsg}`)
   } finally {
     setIsCheckingOut(false)
