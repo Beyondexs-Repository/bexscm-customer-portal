@@ -36,6 +36,15 @@ export function CartSidebar({
   onDecrement,
   onRemove,
   onCheckout,
+  //add new
+  deliveryDate,
+  onDeliveryDateChange,
+  poNumber,
+  onPoNumberChange,
+  promoCode,
+  onPromoCodeChange,
+  notes,
+  onNotesChange,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -44,9 +53,9 @@ export function CartSidebar({
   items?: {
     id: string
     name: string
-    price: number
+    qtybsuom: number
     quantity: number
-    sku: string
+    itemNumber: string
     unit: string
     image?: string
     category?: string
@@ -57,6 +66,14 @@ export function CartSidebar({
   onDecrement?: (id: string) => void
   onRemove?: (id: string) => void
   onCheckout?: () => void
+  deliveryDate?: string
+  onDeliveryDateChange?: (value: string) => void
+  poNumber?: string
+  onPoNumberChange?: (value: string) => void
+  promoCode?: string
+  onPromoCodeChange?: (value: string) => void
+  notes?: string
+  onNotesChange?: (value: string) => void
 }) {
   const isEmpty = items.length === 0
   const t = useTranslations("cart")
@@ -141,7 +158,8 @@ export function CartSidebar({
                             {item.name}
                           </h3>
                           {showDescription && <p className="text-xs text-muted-foreground">
-                            {item.sku} · ${item.price.toFixed(2)} / {item.unit}
+                            {/* {item.itemNumber} · ${item.qtybsuom.toFixed(2)} / {item.unit} */}
+                          ${item.quantity}
                           </p>}
                         </div>
 
@@ -180,7 +198,7 @@ export function CartSidebar({
                             </Button>
                           </div>
                           <p className="text-sm font-semibold">
-                            ${(item.price * item.quantity).toFixed(2)}
+                            ${(item.qtybsuom * item.quantity).toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -214,25 +232,45 @@ export function CartSidebar({
               ))}
             </Tabs.List>
             <Tabs.Content value="delivery-date" forceMount className="mt-3 min-h-20 space-y-2 data-[state=inactive]:hidden">
-              <p className="text-xs text-muted-foreground">Enter your preferred delivery date.</p>
-              <Input type="date" aria-label="Delivery Date" className="w-full rounded-sm" />
-            </Tabs.Content>
-            <Tabs.Content value="po-number" forceMount className="mt-3 min-h-20 space-y-2 data-[state=inactive]:hidden">
-              <p className="text-xs text-muted-foreground">Enter your purchase order number.</p>
-              <Input aria-label="PO Number" placeholder="Enter PO number" className="rounded-sm" />
-            </Tabs.Content>
-            <Tabs.Content value="promo-code" forceMount className="mt-3 min-h-20 space-y-2 data-[state=inactive]:hidden">
-              <p className="text-xs text-muted-foreground">Enter your promo code.</p>
-              <Input aria-label="Promo Code" placeholder="Enter promo code" className="rounded-sm" />
-            </Tabs.Content>
-            <Tabs.Content value="order-notes" forceMount className="mt-3 min-h-20 data-[state=inactive]:hidden">
-              <textarea
-                rows={3}
-                aria-label="Order Notes"
-                placeholder="Enter order notes"
-                className="block h-20 w-full resize-none rounded-sm border border-input bg-transparent px-2.5 py-2 text-sm leading-5 outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-              />
-            </Tabs.Content>
+  <p className="text-xs text-muted-foreground">Enter your preferred delivery date.</p>
+  <Input
+    type="date"
+    aria-label="Delivery Date"
+    className="w-full rounded-sm"
+    value={deliveryDate}
+    onChange={(e) => onDeliveryDateChange?.(e.target.value)}
+  />
+</Tabs.Content>
+<Tabs.Content value="po-number" forceMount className="mt-3 min-h-20 space-y-2 data-[state=inactive]:hidden">
+  <p className="text-xs text-muted-foreground">Enter your purchase order number.</p>
+  <Input
+    aria-label="PO Number"
+    placeholder="Enter PO number"
+    className="rounded-sm"
+    value={poNumber}
+    onChange={(e) => onPoNumberChange?.(e.target.value)}
+  />
+</Tabs.Content>
+<Tabs.Content value="promo-code" forceMount className="mt-3 min-h-20 space-y-2 data-[state=inactive]:hidden">
+  <p className="text-xs text-muted-foreground">Enter your promo code.</p>
+  <Input
+    aria-label="Promo Code"
+    placeholder="Enter promo code"
+    className="rounded-sm"
+    value={promoCode}
+    onChange={(e) => onPromoCodeChange?.(e.target.value)}
+  />
+</Tabs.Content>
+<Tabs.Content value="order-notes" forceMount className="mt-3 min-h-20 data-[state=inactive]:hidden">
+  <textarea
+    rows={3}
+    aria-label="Order Notes"
+    placeholder="Enter order notes"
+    className="block h-20 w-full resize-none rounded-sm border border-input bg-transparent px-2.5 py-2 text-sm leading-5 outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+    value={notes}
+    onChange={(e) => onNotesChange?.(e.target.value)}
+  />
+</Tabs.Content>
           </Tabs.Root>
           <div className="flex items-center justify-between text-base font-semibold">
             <span>{t("total")}</span>

@@ -143,14 +143,14 @@ function HeaderInfoItem({
 }
 
 interface UseCartReturn {
-  items: Array<{ id: string; name: string; price: number; quantity: number; sku: string; unit: string; image?: string }>
+  items: Array<{ id: string; name: string; qtybsuom: number; quantity: number; itemNumber: string; unit: string; image?: string }>
   itemCount: number
   total: number | string
   incrementItem: (id: string) => void
   decrementItem: (id: string) => void
   removeItem: (id: string) => void
   clearCart: () => void
-  checkoutOrderApi: (custnmbr: string) => Promise<{ success?: boolean; message?: string; error?: string; orderNumber?: string; OrderNumber?: string; orderAmount?: number; OrderAmount?: number; total?: number }>
+  // checkoutOrderApi: (custnmbr: string) => Promise<{ success?: boolean; message?: string; error?: string; orderNumber?: string; OrderNumber?: string; orderAmount?: number; OrderAmount?: number; total?: number }>
   fetchCustomerCart: (custnmbr?: string) => Promise<unknown>
 }
 
@@ -187,7 +187,7 @@ function SiteHeader({
     decrementItem,
     removeItem,
     clearCart,
-    checkoutOrderApi,
+    // checkoutOrderApi,
     fetchCustomerCart,
   } = (useCart() as unknown) as UseCartReturn
 
@@ -203,6 +203,10 @@ function SiteHeader({
   const [uploadOpen, setUploadOpen] = React.useState(false)
   const [cartOpen, setCartOpen] = React.useState(false)
   const [isCheckingOut, setIsCheckingOut] = React.useState(false)
+  const [checkoutDeliveryDate, setCheckoutDeliveryDate] = React.useState("2026-09-21")
+const [poNumber, setPoNumber] = React.useState("")
+const [promoCode, setPromoCode] = React.useState("")
+const [notes, setNotes] = React.useState("")
 
   React.useEffect(() => {
     if (cartOpen && typeof fetchCustomerCart === "function") {
@@ -218,36 +222,80 @@ function SiteHeader({
     () => new Date(2026, 5, 1)
   )
 
-  async function handleCheckout() {
-    if (items.length === 0 || isCheckingOut) return
-    setIsCheckingOut(true)
 
-    try {
-      const res = await checkoutOrderApi("400001")
+async function checkoutOrderApi({ custNmbr, deliveryDate, cutOffTime, notes, discountCode, poNumber }) {
+  const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/checkout`
 
-      if (!res || res.success === false) {
-        throw new Error(res?.message || res?.error || "Order creation failed on backend server.")
-      }
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+    },
+    body: JSON.stringify({
+      custNmbr,
+      deliveryDate,
+      cutOffTime,
+      notes,
+      discountCode,
+      poNumber,
+    }),
+  })
 
-      const orderNum = res?.orderNumber ?? res?.OrderNumber ?? "CREATED"
-      const amount = Number(res?.orderAmount ?? res?.OrderAmount ?? res?.total) || 0
-
-      toast.success(
-        amount > 0
-          ? `Order #${orderNum} placed successfully! Total: $${amount.toFixed(2)}`
-          : `Order #${orderNum} placed successfully!`
-      )
-      clearCart()
-      setCartOpen(false)
-    } catch (error: unknown) {
-      console.error("Checkout request failed:", error)
-      const errObj = error as { message?: string }
-      const errorMsg = errObj?.message || "Checkout request failed. Please check API endpoint."
-      toast.error(`Checkout Failed: ${errorMsg}`)
-    } finally {
-      setIsCheckingOut(false)
-    }
+  const text = await response.text()
+  let result = null
+  try {
+    result = text ? JSON.parse(text) : null
+  } catch {
+    console.warn("Checkout response is not JSON:", text)
   }
+
+  if (!response.ok) {
+    throw new Error(result?.message || result?.error || `Checkout failed. HTTP ${response.status}`)
+  }
+
+  return result
+}
+async function handleCheckout() {
+  if (items.length === 0 || isCheckingOut) return
+  setIsCheckingOut(true)
+
+  try {
+    const res = await checkoutOrderApi({
+      custNmbr: "400001",
+      deliveryDate: checkoutDeliveryDate,
+      cutOffTime: "14:00:00",
+      notes,
+      discountCode: promoCode,
+      poNumber,
+    })
+
+    if (!res || res.success === false) {
+      throw new Error(res?.message || res?.error || "Order creation failed on backend server.")
+    }
+
+    const orderNum = res?.orderNumber ?? res?.OrderNumber ?? "CREATED"
+    const amount = Number(res?.orderAmount ?? res?.OrderAmount ?? res?.total) || 0
+
+    toast.success(
+      amount > 0
+        ? `Order #${orderNum} placed successfully! Total: $${amount.toFixed(2)}`
+        : `Order #${orderNum} placed successfully!`
+    )
+    clearCart()
+    setCartOpen(false)
+    setPoNumber("")
+    setPromoCode("")
+    setNotes("")
+  } catch (error) {
+    console.error("Checkout request failed:", error)
+    const errorMsg = error?.message || "Checkout request failed. Please check API endpoint."
+    toast.error(`Checkout Failed: ${errorMsg}`)
+  } finally {
+    setIsCheckingOut(false)
+  }
+}
 
   const calendarDays = React.useMemo(() => {
     const year = calendarMonth.getFullYear()
@@ -327,10 +375,10 @@ function SiteHeader({
               </h1>
             )}
             {description && (
-              <p className="mt-0.5 max-w-full break-words text-[11px] leading-tight text-muted-foreground sm:text-xs sm:leading-5">
-                {description}
-              </p>
-            )}
+  <p className="mt-0.5 hidden max-w-full break-words text-[11px] leading-tight text-muted-foreground sm:block sm:text-xs sm:leading-5">
+    {description}
+  </p>
+)}
           </div>
         )}
       </div>
@@ -560,6 +608,14 @@ function SiteHeader({
         onDecrement={decrementItem}
         onRemove={removeItem}
         onCheckout={handleCheckout}
+  deliveryDate={checkoutDeliveryDate}
+  onDeliveryDateChange={setCheckoutDeliveryDate}
+  poNumber={poNumber}
+  onPoNumberChange={setPoNumber}
+  promoCode={promoCode}
+  onPromoCodeChange={setPromoCode}
+  notes={notes}
+  onNotesChange={setNotes}
       />
       <GlobalUploadModal
         open={uploadOpen}

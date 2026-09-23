@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { createPortal } from "react-dom"
 import { useTranslations } from "next-intl"
+import { toast } from "sonner"
 import {
   Building2,
   CalendarClock,
@@ -114,7 +115,7 @@ const handleReorder = async () => {
   }
 
   if (!reOrderItems.length) {
-    alert("Please select at least one item.");
+    toast.error("Please select at least one item.");
     return;
   }
 
@@ -122,13 +123,13 @@ const handleReorder = async () => {
     setIsReOrdering(true);
 
     const requestItems = reOrderItems.map((item) => ({
-      itemNumber: String(item.sku),
+      itemNumber: String(item.itemNumber),
       quantity: Number(item.quantity),
     }));
 
     console.log("Reorder Order Number:", order.orderNumber);
     console.log("Reorder Items:", requestItems);
-return;
+
     const result = await reorderOrderApi(
       order.orderNumber,
       requestItems,
@@ -137,14 +138,14 @@ return;
     console.log("Reorder Success Response:", result);
 
     if (result?.success) {
-      alert("Items added to cart successfully.");
+       toast.success("Items added to cart successfully.");
 
       setReOrderModalOpen(false);
       setReOrderItems([]);
     }
   } catch (error) {
     console.error("Reorder failed:", error);
-
+ toast.error(error?.message || "Unable to add the reordered items to cart.");
     alert(
       error?.message ||
         "Unable to add the reordered items to cart.",
@@ -319,7 +320,7 @@ return;
                   {t("packSize")} {item.packSize}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  SKU: {item.sku}
+                  {t("itemNumber")} {item.itemNumber}
                 </p>
               </div>
 
@@ -409,8 +410,10 @@ return;
               <div className="mt-0 divide-y rounded-lg border">
                 {reOrderItems.map((item) => {
                   const quantity = Number(item.quantity) || 1
-                  const price = Number(item.price) || 0
-                  const itemTotal = quantity * price
+                   const unitPrice = Number(item.unitPrice) || 0
+                const itemTotal = quantity * unitPrice
+                  // const price = Number(item.price) || 0
+                  // const itemTotal = quantity * price
 
                   return (
                     <div
@@ -463,7 +466,7 @@ return;
                         </p>
 
                         <p className="truncate text-xs text-muted-foreground">
-                          SKU: {item.sku}
+                           {t("itemNumber")} {item.itemNumber}
                         </p>
 
                         {/* Quantity Selector */}
@@ -566,7 +569,7 @@ return;
                         (sum, item) =>
                           sum +
                           (Number(item.quantity) || 0) *
-                          (Number(item.price) || 0),
+                          (Number(item.unitPrice) || 0),
                         0
                       )
                     )}

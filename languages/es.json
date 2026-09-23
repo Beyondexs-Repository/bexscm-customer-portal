@@ -232,6 +232,7 @@
     "orderItems": "Artículos del pedido",
     "brand": "Marca:",
     "packSize": "Tamaño del paquete:",
+    "itemNumber": "Numéro d’article",
     "units": "{count} unidades",
     "totalUnits": "Unidades totales",
     "orderTotal": "Total del pedido",

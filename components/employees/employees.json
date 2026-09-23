@@ -1,0 +1,194 @@
+[
+  {
+    "id": "daniel",
+    "managerId": null,
+    "name": "Daniel Roberts",
+    "role": "Owner",
+    "email": "daniel@bexscm.com",
+    "phone": "9876543210"
+  },
+  {
+    "id": "alex",
+    "managerId": "daniel",
+    "name": "Alex Morgan",
+    "role": "Teritory Manager",
+    "email": "alex@bexscm.com",
+    "phone": "9876543211"
+  },
+  {
+    "id": "olivia",
+    "managerId": "alex",
+    "name": "Olivia Martinez",
+    "role": "Store Manager",
+    "email": "olivia@bexscm.com",
+    "phone": "9876543212"
+  },
+  {
+    "id": "liam",
+    "managerId": "alex",
+    "name": "Liam Wilson",
+    "role": "Store Manager",
+    "email": "liam@bexscm.com",
+    "phone": "9876543234"
+  },
+  {
+    "id": "sophia",
+    "managerId": "olivia",
+    "name": "Sophia Kim",
+    "role": "Department Manager",
+    "email": "sophia@bexscm.com",
+    "phone": "9876543213"
+  },
+  {
+    "id": "noah",
+    "managerId": "olivia",
+    "name": "Noah Patel",
+    "role": "Department Manager",
+    "email": "noah@bexscm.com",
+    "phone": "9876543235"
+  },
+  {
+    "id": "emma",
+    "managerId": "olivia",
+    "name": "Emma Davis",
+    "role": "Department Manager",
+    "email": "emma@bexscm.com",
+    "phone": "9876543215"
+  },
+  {
+    "id": "james",
+    "managerId": "liam",
+    "name": "James Lee",
+    "role": "Department Manager",
+    "email": "james@bexscm.com",
+    "phone": "9876543216"
+  },
+  {
+    "id": "ethan",
+    "managerId": "sophia",
+    "name": "Ethan Brown",
+    "role": "Employee",
+    "email": "ethan@bexscm.com",
+    "phone": "9876543214"
+  },
+  {
+    "id": "mia",
+    "managerId": "sophia",
+    "name": "Mia Anderson",
+    "role": "Employee",
+    "email": "mia@bexscm.com",
+    "phone": "9876543219"
+  },
+  {
+    "id": "jack",
+    "managerId": "sophia",
+    "name": "Jack Taylor",
+    "role": "Employee",
+    "email": "jack@bexscm.com",
+    "phone": "9876543220"
+  },
+  {
+    "id": "lucas",
+    "managerId": "noah",
+    "name": "Lucas Thompson",
+    "role": "Employee",
+    "email": "lucas@bexscm.com",
+    "phone": "9876543221"
+  },
+  {
+    "id": "ava",
+    "managerId": "noah",
+    "name": "Ava Johnson",
+    "role": "Employee",
+    "email": "ava@bexscm.com",
+    "phone": "9876543222"
+  },
+  {
+    "id": "logan",
+    "managerId": "noah",
+    "name": "Logan Harris",
+    "role": "Employee",
+    "email": "logan@bexscm.com",
+    "phone": "9876543223"
+  },
+  {
+    "id": "mason",
+    "managerId": "emma",
+    "name": "Mason White",
+    "role": "Employee",
+    "email": "mason@bexscm.com",
+    "phone": "9876543224"
+  },
+  {
+    "id": "ella",
+    "managerId": "emma",
+    "name": "Ella Martin",
+    "role": "Employee",
+    "email": "ella@bexscm.com",
+    "phone": "9876543225"
+  },
+  {
+    "id": "leo",
+    "managerId": "emma",
+    "name": "Leo Moore",
+    "role": "Employee",
+    "email": "leo@bexscm.com",
+    "phone": "9876543226"
+  },
+  {
+    "id": "henry",
+    "managerId": "james",
+    "name": "Henry Davis",
+    "role": "Employee",
+    "email": "henry@bexscm.com",
+    "phone": "9876543227"
+  },
+  {
+    "id": "amelia",
+    "managerId": "james",
+    "name": "Amelia Clark",
+    "role": "Employee",
+    "email": "amelia@bexscm.com",
+    "phone": "9876543228"
+  },
+  {
+    "id": "owen",
+    "managerId": "james",
+    "name": "Owen Lewis",
+    "role": "Employee",
+    "email": "owen@bexscm.com",
+    "phone": "9876543229"
+  },
+  {
+    "id": "benjamin",
+    "managerId": "isabella",
+    "name": "Benjamin Lewis",
+    "role": "Employee",
+    "email": "benjamin@bexscm.com",
+    "phone": "9876543230"
+  },
+  {
+    "id": "charlotte",
+    "managerId": "isabella",
+    "name": "Charlotte Walker",
+    "role": "Employee",
+    "email": "charlotte@bexscm.com",
+    "phone": "9876543231"
+  },
+  {
+    "id": "elijah",
+    "managerId": "william",
+    "name": "Elijah Hall",
+    "role": "Employee",
+    "email": "elijah@bexscm.com",
+    "phone": "9876543232"
+  },
+  {
+    "id": "harper",
+    "managerId": "william",
+    "name": "Harper Young",
+    "role": "Employee",
+    "email": "harper@bexscm.com",
+    "phone": "9876543233"
+  }
+]

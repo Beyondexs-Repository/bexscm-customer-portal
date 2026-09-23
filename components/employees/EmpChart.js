@@ -9,114 +9,6 @@ import EmployeeActions from "./EmployeeActions"
 import { managerIds } from "./EmployeeForm"
 import { cn } from "@/lib/utils"
 
-// Add employees here with a unique id and their manager's id as managerId.
-// Use managerId: null for the top level. Counts and branches are derived below.
-export const chartEmployees = [
-  {
-    id: "daniel",
-    managerId: null,
-    name: "Daniel Roberts",
-    role: "Owner",
-    email: "daniel@bexscm.com",
-    phone: "+1 555 0000",
-  },
-  {
-    id: "olivia",
-    managerId: "daniel",
-    name: "Olivia Martinez",
-    role: "Store Manager",
-    email: "olivia@bexscm.com",
-    phone: "+1 555 0101",
-  },
-  {
-    id: "liam",
-    managerId: "daniel",
-    name: "Liam Wilson",
-    role: "Store Manager",
-    email: "liam@bexscm.com",
-    phone: "+1 555 0201",
-  },
-  {
-    id: "sophia",
-    managerId: "olivia",
-    name: "Sophia Kim",
-    role: "Department Manager",
-    email: "sophia@bexscm.com",
-    phone: "+1 555 0102",
-  },
-  {
-    id: "noah",
-    managerId: "olivia",
-    name: "Noah Patel",
-    role: "Department Manager",
-    email: "noah@bexscm.com",
-    phone: "+1 555 0103",
-  },
-  {
-    id: "james",
-    managerId: "liam",
-    name: "James Lee",
-    role: "Department Manager",
-    email: "james@bexscm.com",
-    phone: "+1 555 0202",
-  },
-  {
-    id: "isabella",
-    managerId: "liam",
-    name: "Isabella Garcia",
-    role: "Department Manager",
-    email: "isabella@bexscm.com",
-    phone: "+1 555 0203",
-  },
-  {
-    id: "ethan",
-    managerId: "sophia",
-    name: "Ethan Carter",
-    role: "Warehouse Staff",
-    email: "ethan@bexscm.com",
-    phone: "+1 555 0110",
-  },
-  {
-    id: "mia",
-    managerId: "sophia",
-    name: "Mia Thompson",
-    role: "Warehouse Staff",
-    email: "mia@bexscm.com",
-    phone: "+1 555 0111",
-  },
-  {
-    id: "lucas",
-    managerId: "sophia",
-    name: "Lucas Brown",
-    role: "Warehouse Staff",
-    email: "lucas@bexscm.com",
-    phone: "+1 555 0112",
-  },
-  {
-    id: "william",
-    managerId: "james",
-    name: "William Scott",
-    role: "Sales Associate",
-    email: "william@bexscm.com",
-    phone: "+1 555 0210",
-  },
-  {
-    id: "grace",
-    managerId: "james",
-    name: "Grace Chen",
-    role: "Sales Associate",
-    email: "grace@bexscm.com",
-    phone: "+1 555 0211",
-  },
-  {
-    id: "benjamin",
-    managerId: "james",
-    name: "Benjamin Young",
-    role: "Sales Associate",
-    email: "benjamin@bexscm.com",
-    phone: "+1 555 0212",
-  },
-];
 
 function EmployeeCard({ employee, selected, onSelect, reportCount, onEdit, onDelete }) {
   const initials = employee.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join("")
@@ -145,6 +37,7 @@ function EmployeeCard({ employee, selected, onSelect, reportCount, onEdit, onDel
         <div className="flex items-start justify-between gap-2">
           <p className="min-w-0 flex-1 break-words text-sm font-semibold leading-5">{employee.name}</p>
         </div>
+        <Badge variant="secondary">{employee.role}</Badge>
         {employee.email && <p className="break-all text-xs text-muted-foreground">{employee.email}</p>}
         {employee.phone && <p className="text-xs text-muted-foreground">{employee.phone}</p>}
         <p className="text-xs text-muted-foreground">
@@ -169,7 +62,7 @@ function EmployeeLevel({ level, selectedId, onSelect, reports, onEdit, onDelete 
           <Users aria-hidden="true" className="size-4 text-muted-foreground" />
           <span className="text-sm font-semibold">{level.title}</span>
           <Badge variant="secondary" className="text-xs">{level.members.length}</Badge>
-          <span className="basis-full text-xs text-muted-foreground">{level.parent ? `Reporting to ${level.parent.name}` : "Organization owners and top-level team members."}</span>
+          <span className="basis-full text-xs text-muted-foreground">{level.parent ? `Reporting to ${level.parent.name}` : level.title === "Owners" ? "Organization owners." : "Assign an existing reporting manager to these employees."}</span>
         </span>
         <Button variant="outline" size="sm" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
           {open ? "Collapse" : "Expand"}
@@ -190,7 +83,7 @@ function EmployeeLevel({ level, selectedId, onSelect, reports, onEdit, onDelete 
 }
 
 // Default to a reporting branch so every level is visible before selecting a manager.
-export default function EmpChart({ employees = chartEmployees, onEdit, onDelete }) {
+export default function EmpChart({ employees = [], onEdit, onDelete }) {
   const [selectedPath, setSelectedPath] = useState([])
   const employeeIds = new Set(employees.map((employee) => employee.id))
   const reports = new Map()
@@ -214,9 +107,10 @@ export default function EmpChart({ employees = chartEmployees, onEdit, onDelete 
     const roles = new Set(members.map((employee) => employee.role))
     const role = roles.size === 1 ? members[0].role : null
     const title = role === "Owner" ? "Owners"
+      : role === "Teritory Manager" ? "Teritory Managers"
       : role === "Store Manager" ? "Store Managers"
       : role === "Department Manager" ? "Department Managers"
-      : depth === 0 ? "Owners" : "Employees"
+      : role === "Employee" ? "Employees" : "Direct reports"
     const selected = members.find((employee) => employee.id === selectedPath[depth])
       ?? members.find((employee) => (reports.get(employee.id) ?? []).some((report) => !visited.has(report.id)))
       ?? members[0]
@@ -233,16 +127,22 @@ export default function EmpChart({ employees = chartEmployees, onEdit, onDelete 
 
   return (
     <div className="@container space-y-6 bg-background text-foreground" aria-label="Employee organization chart">
-      {levels.map((level, depth) => (
-        <EmployeeLevel
-          key={level.parent?.id ?? "root"}
-          level={level}
-          selectedId={level.selectedId}
-          onSelect={(id) => selectEmployee(depth, id)}
-          onEdit={onEdit} onDelete={onDelete}
-          reports={reports}
-        />
-      ))}
+      {levels.flatMap((level, depth) => {
+        const sections = level.parent ? [level] : [
+          { ...level, title: "Owners", members: level.members.filter((employee) => employee.role === "Owner") },
+          { ...level, title: "No reporting manager", members: level.members.filter((employee) => employee.role !== "Owner") },
+        ];
+        return sections.filter((section) => section.members.length > 0).map((section) => (
+          <EmployeeLevel
+            key={`${level.parent?.id ?? "root"}:${section.title}`}
+            level={section}
+            selectedId={level.selectedId}
+            onSelect={(id) => selectEmployee(depth, id)}
+            onEdit={onEdit} onDelete={onDelete}
+            reports={reports}
+          />
+        ));
+      })}
       {levels.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">No employees to display. Add an employee with managerId set to null to start the chart.</p>}
     </div>
   )

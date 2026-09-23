@@ -115,17 +115,19 @@ function mapCustomerCartItems(cartItems, liveItems) {
     })
 
     return {
-      id: itemNum,
-      name,
-      price,
-      unit: String(unit).trim(),
-      sku: itemNum,
-      quantity: Number(item.quantity ?? item.Quantity ?? 1),
-      image,
-      cartId: item.cartId,
-      source: item.source ?? item.Source ?? "Backend API",
-    }
-  })
+    id: itemNum,
+    name,
+    price,
+    qtybsuom: price,   // keep both in sync so CartSidebar's item.qtybsuom works
+    unit,
+    sku: itemNum,
+    itemNumber: itemNum,   // CartSidebar also reads item.itemNumber
+    quantity: Number(item.quantity || 1),
+    image,
+    cartId: item.cartId,
+    source: item.source || "Backend API",
+  }
+})
 }
 
 async function loadCustomerCart(custnmbr) {
@@ -252,12 +254,12 @@ export function AppProvider({ children }) {
       const data = await getCustomerCartApi(custnmbr)
 
       if (Array.isArray(data)) {
-        const mappedItems = data.map((item) => {
-          const itemNum = String(
-            item.itemNumber ||
-            item.ItemNumber ||
-            item.cartId
-          ).trim()
+     const mappedItems = data.map((item) => {
+  const itemNum = String(
+    item.itemNumber ||
+    item.ItemNumber ||
+    item.cartId
+  ).trim()
 
           const matchedCatalogItem = findCatalogProduct(itemNum)
 
@@ -282,10 +284,13 @@ export function AppProvider({ children }) {
             matchedCatalogItem?.price ?? 0
           )
 
-          const price =
-            Number.isFinite(parsedApiPrice) && parsedApiPrice > 0
-              ? parsedApiPrice
-              : catalogPrice
+          // const price =
+          //   Number.isFinite(parsedApiPrice) && parsedApiPrice > 0
+          //     ? parsedApiPrice
+          //     : catalogPrice
+          
+          // Use qtybsuom straight from the API — this IS the unit price
+  const price = Number(item.qtybsuom) || 0
 
           const unit =
             matchedCatalogItem?.unit ||
@@ -300,17 +305,19 @@ export function AppProvider({ children }) {
             }
           )
 
-          return {
-            id: itemNum,
-            name,
-            price,
-            unit,
-            sku: itemNum,
-            quantity: Number(item.quantity || 1),
-            image,
-            cartId: item.cartId,
-            source: item.source || "Backend API",
-          }
+         return {
+    id: itemNum,
+    name,
+    price,
+    qtybsuom: price,   // keep both in sync so CartSidebar's item.qtybsuom works
+    unit,
+    sku: itemNum,
+    itemNumber: itemNum,   // CartSidebar also reads item.itemNumber
+    quantity: Number(item.quantity || 1),
+    image,
+    cartId: item.cartId,
+    source: item.source || "Backend API",
+  }
         })
 
         setCartItems((currentItems) => {

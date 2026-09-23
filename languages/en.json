@@ -233,6 +233,7 @@
     "orderItems": "Order Items",
     "brand": "Brand:",
     "packSize": "Pack Size:",
+    "itemNumber": "Item Number",
     "units": "{count} units",
     "totalUnits": "Total Units",
     "orderTotal": "Order Total",

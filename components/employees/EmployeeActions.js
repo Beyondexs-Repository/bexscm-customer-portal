@@ -1,10 +1,13 @@
 "use client"
 
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { useEmployeeAccess } from "./employee-access"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export default function EmployeeActions({ employee, onEdit, onDelete }) {
+  const { allowedRoles } = useEmployeeAccess()
+  if (!allowedRoles.includes(employee.role)) return null
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

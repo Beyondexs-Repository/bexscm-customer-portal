@@ -32,6 +32,7 @@ import {
 import { RxDashboard } from "react-icons/rx";
 import { LuNotepadText } from "react-icons/lu";
 import routes from "@/data/routes.json";
+import { LocationSwitcher } from "./location-switcher";
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
@@ -68,6 +69,8 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <Separator className="my-1" />
       <SidebarFooter>
+        <LocationSwitcher />
+        <Separator className="my-1" />
         <LocaleSwitcher />
         <ModeToggle />
         <Separator className="my-1" />
