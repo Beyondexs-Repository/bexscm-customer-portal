@@ -27,11 +27,14 @@ import { cn } from "@/lib/utils"
 import { useCart } from "@/app/context/app-context"
 import { formatCurrency, statusStyles } from "./MyOrders"
 import OrderItemRatings from "./OrderItemRatings"
-
+// import defaultimage from "/placeholder.png"
+import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
+import { resolveItemImageUrl } from "@/lib/api/itemsApi"
 export default function OrderDetails({ order, onBack, onClose, onReorderSuccess }) {
 
    const { fetchCustomerCart } = useCart()
   const imageurl = `https://crateapi.bexlgems.com/Images/Items`;
+
   console.log(order, "--find order in order details");
   const [reOrderModalOpen, setReOrderModalOpen] = useState(false);
   const [reOrderItems, setReOrderItems] = useState([]);
@@ -305,26 +308,55 @@ const handleReorder = async () => {
         <OrderItemRatings key={order.id} open={ratingOrderId === order.id} onOpenChange={(open) => setRatingOrderId(open ? order.id : null)} items={order.items} />
 
         <div className="mt-3 divide-y rounded-lg border">
-          {order.items.map((item) => (
+           {order.items.map((item) => {
+    const resolvedImg = resolveItemImageUrl(item.image) || item.image
+    const image = resolvedImg || getCategoryPlaceholderImage(item.category)
+
+    return (
+      <div key={item.id} className="flex gap-3 p-3">
+        <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
+          <img
+            src={image}
+            alt={item.name}
+            className="size-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = getCategoryPlaceholderImage(item.category)
+            }}
+          />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold">{item.name}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {t("brand")} {item.brand}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {t("packSize")} {item.packSize}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {t("itemNumber")} {item.itemNumber}
+          </p>
+        </div>
+
+        <div className="max-w-20 shrink-0 text-right sm:max-w-none">
+          <p className="text-xs font-bold leading-snug">{t("units", { count: item.quantity })}</p>
+          <p className="mt-1 text-xs leading-snug">{formatCurrency(item.price)}</p>
+        </div>
+      </div>
+    )
+  })}
+          {/* {order.items.map((item) => (
             <div key={item.id} className="flex gap-3 p-3">
               <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
-                {/* <img
+                <img
                   src={item.image}
                   alt={item.name}
                   className="size-full object-cover"
                   onError={(e) => {
                     e.currentTarget.style.display = "none"
                   }}
-                /> */}
-                <img
-  src={item.image ? `${imageurl}/${item.image}` : "/placeholder.png"}
-  alt={item.name}
-  className="size-full object-cover"
-  onError={(e) => {
-    //  e.currentTarget.style.display = "none"
-    e.currentTarget.src = "/placeholder.png" // fallback instead of hiding
-  }}
-/>
+                />
+               
               </div>
 
               <div className="min-w-0 flex-1">
@@ -345,7 +377,7 @@ const handleReorder = async () => {
                 <p className="mt-1 text-xs leading-snug">{formatCurrency(item.price)}</p>
               </div>
             </div>
-          ))}
+          ))} */}
         </div>
 
         <div className="mt-4 space-y-2 text-sm">
@@ -430,7 +462,8 @@ const handleReorder = async () => {
                 const itemTotal = quantity * unitPrice
                   // const price = Number(item.price) || 0
                   // const itemTotal = quantity * price
-
+ const resolvedImg = resolveItemImageUrl(item.image) || item.image
+  const image = resolvedImg || getCategoryPlaceholderImage(item.category)
                   return (
                     <div
                       key={item.id}
@@ -465,15 +498,14 @@ const handleReorder = async () => {
                             e.currentTarget.style.display = "none"
                           }}
                         /> */}
-                                       <img
-  src={item.image ? `${imageurl}/${item.image}` : "/placeholder.png"}
-  alt={item.name}
-  className="size-full object-cover"
-  onError={(e) => {
-    //  e.currentTarget.style.display = "none"
-    e.currentTarget.src = "/placeholder.png" // fallback instead of hiding
-  }}
-/>
+ <img
+          src={image}
+          alt={item.name}
+          className="size-full object-cover"
+          onError={(e) => {
+            e.currentTarget.src = getCategoryPlaceholderImage(item.category)
+          }}
+        />
                       </div>
 
                       {/* Product Details */}

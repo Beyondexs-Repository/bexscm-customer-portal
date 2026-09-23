@@ -1011,7 +1011,7 @@ export default function OrderList({
               <div className="relative flex-1 sm:w-44">
                 <Input
                   type="text"
-                  placeholder="Search order # or Customer ID"
+                  placeholder="Search Order# or Customer ID"
                   value={inputCustomer}
                   onChange={handleSearchChange}
                   className="h-9 pr-8 text-xs font-mono"
@@ -1020,9 +1020,9 @@ export default function OrderList({
                   <Search className="size-4" />
                 </button>
               </div>
-              <Button type="submit" size="sm" variant="default" className="h-9 px-3 text-xs">
+              {/* <Button type="submit" size="sm" variant="default" className="h-9 px-3 text-xs">
                 {t("search") || "Search"}
-              </Button>
+              </Button> */}
               {onRefresh && (
                 <Button
                   type="button"
