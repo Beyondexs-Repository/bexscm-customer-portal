@@ -1772,6 +1772,7 @@ export function OrderGuideProductsList({
   const layout = preferredLayout ?? (isMobile ? "list" : "card");
 
   const allProducts = selectedGroup?.products ?? [];
+  const isAllView = Boolean(selectedGroup?.isAll);
   const normalizedSearch = productSearch.trim().toLowerCase();
   const filteredProducts = normalizedSearch
     ? allProducts.filter((product) =>
@@ -2025,7 +2026,7 @@ async function moveProductToGroup(targetGroupId) {
 //API FOR MOVE TO TOP & BOTTOM
 async function handleMovePosition(position) {
   // position is "top" or "bottom" (lowercase, used by reorderProducts)
-  if (!selectedCount || isMoving) return;
+  if (!selectedCount || isMoving || isAllView) return;
 
   if (!userId) {
     toast.error("Unable to identify the logged-in user.");
@@ -2369,8 +2370,18 @@ async function handleMoveToNewGroup(name) {
             <div className="ml-auto flex items-center gap-1.5 lg:flex-wrap lg:gap-2">
             {canEdit  && (
               <div className="hidden flex-wrap gap-2 lg:flex">
-                <Button variant="outline" size="sm" disabled={!selectedCount || isMoving} onClick={() => handleMovePosition("top")}><ArrowUpToLine />Move to Top</Button>
-<Button variant="outline" size="sm" disabled={!selectedCount || isMoving} onClick={() => handleMovePosition("bottom")}><ArrowDownToLine />Move to Bottom</Button>
+               <Button variant="outline" size="sm"
+  disabled={!selectedCount || isMoving || isAllView}
+  title={isAllView ? "Select a group to reorder items" : undefined}
+  onClick={() => handleMovePosition("top")}>
+  <ArrowUpToLine />Move to Top
+</Button>
+<Button variant="outline" size="sm"
+  disabled={!selectedCount || isMoving || isAllView}
+  title={isAllView ? "Select a group to reorder items" : undefined}
+  onClick={() => handleMovePosition("bottom")}>
+  <ArrowDownToLine />Move to Bottom
+</Button>
                 {/* <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("top")}><ArrowUpToLine />Move to Top</Button>
                 <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("bottom")}><ArrowDownToLine />Move to Bottom</Button> */}
                 <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => { setDuplicate(false); setNewGroupName(null); setProductToMove(selectedProducts); }}><Folder />Change Group</Button>
@@ -2390,13 +2401,13 @@ async function handleMoveToNewGroup(name) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44 lg:hidden">
-                  <DropdownMenuItem disabled={isMoving} onSelect={() => handleMovePosition("top")}>
-  <ArrowUpToLine />Move to Top
-</DropdownMenuItem>
-<DropdownMenuItem disabled={isMoving} onSelect={() => handleMovePosition("bottom")}>
-  <ArrowDownToLine />Move to Bottom
-</DropdownMenuItem>
-                  {/* <DropdownMenuItem onSelect={() => reorderProducts("top")}>
+                    <DropdownMenuItem disabled={isMoving || isAllView} onSelect={() => handleMovePosition("top")}>
+                    <ArrowUpToLine />Move to Top
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled={isMoving || isAllView} onSelect={() => handleMovePosition("bottom")}>
+                    <ArrowDownToLine />Move to Bottom
+                  </DropdownMenuItem>
+          {/* <DropdownMenuItem onSelect={() => reorderProducts("top")}>
                     <ArrowUpToLine />Move to Top
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => reorderProducts("bottom")}>
