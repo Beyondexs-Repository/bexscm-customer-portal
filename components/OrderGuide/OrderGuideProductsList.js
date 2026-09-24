@@ -1043,7 +1043,7 @@
 
 
 //changed by Radhika 23/09/2026 --12:02 PM =================================================================================>
-  "use client";
+"use client";
 
 import { useState } from "react";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
@@ -1107,6 +1107,8 @@ function touchOrder(order) {
   };
 }
 
+
+//PRIMARY & SECONDARY GROUP DELETE FUNCTION
 const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
   try {
     const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/${orderGroupItemID}`;
@@ -1163,6 +1165,251 @@ const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
     throw error;
   }
 };
+
+
+//SEONDARY-GROUP_PRODUCT_LIST_CHANGE GROUP
+
+const changeGroupPUT = async ({
+  itemIds,
+  targetOrderGuideGroupID, // existing group
+  newGroupName,            // OR create a new group
+  modifyBY,
+}) => {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguidegroups/move-items`;
+
+    const requestBody = { itemIds, modifyBY };
+
+    if (newGroupName) {
+      requestBody.newGroupName = newGroupName;
+    } else {
+      requestBody.targetOrderGuideGroupID = targetOrderGuideGroupID;
+    }
+
+    console.log("Move Items URL:", url);
+    console.log("Move Items Request Body:", requestBody);
+
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log("Move Items HTTP Status:", response.status);
+    console.log("Move Items HTTP OK:", response.ok);
+
+    const responseText = await response.text();
+
+    console.log("Move Items Raw Response:", responseText);
+
+    let result = null;
+
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch (error) {
+      console.warn("Response is not JSON:", responseText);
+    }
+
+    console.log("Move Items Parsed Response:", result);
+
+    // Fail only on an HTTP error or an explicit success:false.
+    // An empty body or a missing "success" field is treated as OK.
+    if (!response.ok || result?.success === false) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to move items. HTTP ${response.status}`,
+      );
+    } // <-- this closing brace was missing
+
+    return result;
+  } catch (error) {
+    console.error("Move Items Error:", error);
+    throw error;
+  }
+};
+
+//SECONDARY GROUP_PRODUCT LIST Move to top & Bottom
+const moveTotop = async ({
+  itemIds,
+  position,
+  modifyBY,
+}) => {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguidegroups/move-items`;
+
+    const requestBody = {
+      itemIds,
+      position,
+      modifyBY,
+    };
+
+    console.log("Move to top Items URL:", url);
+    console.log("Move to top Items Request Body:", requestBody);
+
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log("Move to top Items HTTP Status:", response.status);
+    console.log("Move Items HTTP OK:", response.ok);
+
+    const responseText = await response.text();
+
+    console.log("Move to top Items Raw Response:", responseText);
+
+    let result = null;
+
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch (error) {
+      console.warn("Response is not JSON:", responseText);
+    }
+
+    console.log("Move to top Items Parsed Response:", result);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to Move to top items. HTTP ${response.status}`,
+      );
+    }
+
+    if (!result?.success) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          "Failed to Move to top items.",
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Move to top Items Error:", error);
+    throw error;
+  }
+};
+
+//Secondary_group_Duplicate items
+const itemsDuplicatePost = async ({
+  itemIds,
+  targetOrderGuideGroupID, // existing group
+  newGroupName,            // OR new group
+  createdBY,
+}) => {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguidegroups/duplicate-items`;
+
+    // Build the body for whichever scenario we're in
+    const requestBody = { itemIds, createdBY };
+
+    if (newGroupName) {
+      requestBody.newGroupName = newGroupName;                     // create group
+    } else {
+      requestBody.targetOrderGuideGroupID = targetOrderGuideGroupID; // existing group
+    }
+
+    console.log("Duplicate Items URL:", url);
+    console.log("Duplicate Items Request Body:", requestBody);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const responseText = await response.text();
+    console.log("Duplicate Items Raw Response:", responseText);
+
+    let result = null;
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch (error) {
+      console.warn("Response is not JSON:", responseText);
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to duplicate items. HTTP ${response.status}`,
+      );
+    }
+
+    if (!result?.success) {
+      throw new Error(
+        result?.Msg || result?.message || "Failed to duplicate items.",
+      );
+    }
+
+    return result; // { success: true, duplicatedCount: 1 }
+  } catch (error) {
+    console.error("Duplicate Items Error:", error);
+    throw error;
+  }
+};
+
+
+//SINGLE PAR VALUE UPDATE
+//SECONDARY GROUP_PRODUCT LIST - UPDATE PAR (single item)
+const updateParPUT = async ({ orderGroupItemID, parValue, modifyBY }) => {
+  const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/par/${orderGroupItemID}`;
+  const requestBody = { parValue, modifyBY };
+
+  console.log("Update PAR URL:", url);
+  console.log("Update PAR Request Body:", requestBody);
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const responseText = await response.text();
+  console.log("Update PAR Raw Response:", responseText);
+
+  let result = null;
+  try {
+    result = responseText ? JSON.parse(responseText) : null;
+  } catch (error) {
+    console.warn("Response is not JSON:", responseText);
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      result?.Msg ||
+        result?.message ||
+        result?.error ||
+        `Unable to update PAR. HTTP ${response.status}`,
+    );
+  }
+
+  return result; // the updated item
+};
+
 
 function ProductImage({ product, listLayout }) {
   const resolvedImg = resolveItemImageUrl(product.image) || product.image;
@@ -1317,6 +1564,8 @@ function SavedProductCard({
       </Button>
     </div>
   ) : null;
+
+
 
   return (
     <article
@@ -1489,6 +1738,8 @@ export function OrderGuideProductsList({
   selectedOrder,
   selectedGroup,
   setQuickOrders,
+  userId,                    // add this
+  onRefresh,
   onBack,
   canEdit,
   canAddProducts,
@@ -1501,6 +1752,8 @@ export function OrderGuideProductsList({
   const [productToMove, setProductToMove] = useState(null);
   const [duplicate, setDuplicate] = useState(false);
   const [activeProductId, setActiveProductId] = useState(null);
+  const [isMoving, setIsMoving] = useState(false);   // add this
+  const [isSavingPar, setIsSavingPar] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -1660,27 +1913,228 @@ export function OrderGuideProductsList({
       ),
     );
   }
+//locally happens 
+  // function moveProductToGroup(targetGroupId) {
+  //   if (!selectedOrder || !selectedGroup || !productToMove) return;
+  //   const movingIds = productToMove.map((product) => product.id);
+  //   setQuickOrders((orders) => orders.map((order) => order.id !== selectedOrder.id ? order : touchOrder({
+  //     ...order,
+  //     groups: order.groups.map((group) => {
+  //       if (group.id === targetGroupId) {
+  //         return { ...group, products: [...group.products, ...productToMove
+  //           .filter((product) => !group.products.some((existing) => existing.id === product.id))
+  //           .map((product) => ({ ...product, par: group.par ?? product.par ?? null }))] };
+  //       }
+  //       if (!duplicate && (selectedGroup.isAll || group.id === selectedGroup.id)) {
+  //         return { ...group, products: group.products.filter((product) => !movingIds.includes(product.id)) };
+  //       }
+  //       return group;
+  //     }),
+  //   })));
+  //   setProductToMove(null);
+  //   setSelection({ group: selectionKey, ids: [] });
+  // }
 
-  function moveProductToGroup(targetGroupId) {
-    if (!selectedOrder || !selectedGroup || !productToMove) return;
-    const movingIds = productToMove.map((product) => product.id);
-    setQuickOrders((orders) => orders.map((order) => order.id !== selectedOrder.id ? order : touchOrder({
-      ...order,
-      groups: order.groups.map((group) => {
-        if (group.id === targetGroupId) {
-          return { ...group, products: [...group.products, ...productToMove
-            .filter((product) => !group.products.some((existing) => existing.id === product.id))
-            .map((product) => ({ ...product, par: group.par ?? product.par ?? null }))] };
-        }
-        if (!duplicate && (selectedGroup.isAll || group.id === selectedGroup.id)) {
-          return { ...group, products: group.products.filter((product) => !movingIds.includes(product.id)) };
-        }
-        return group;
-      }),
-    })));
-    setProductToMove(null);
-    setSelection({ group: selectionKey, ids: [] });
+//dynamic api calls Change Group
+async function moveProductToGroup(targetGroupId) {
+  if (!selectedOrder || !selectedGroup || !productToMove) return;
+
+  const movingIds = productToMove.map((product) => product.id);
+  // Duplicate -> POST duplicate-items with targetOrderGuideGroupID
+  if (duplicate) {
+    await handleDuplicate({ targetGroupId });
+    return;
   }
+  // Call the API only for "Change Group" (not "Duplicate")
+  if (!duplicate) {
+    if (!userId) {
+      toast.error("Unable to identify the logged-in user.");
+      return;
+    }
+
+    const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+
+    try {
+      setIsMoving(true);
+
+      await changeGroupPUT({
+        itemIds: productToMove.map((product) =>
+          Number(product.orderGroupItemID),   // 91, not the SKU "500141"
+        ),
+        targetOrderGuideGroupID: Number(targetGroupId), // 113
+        modifyBY,
+      });
+    } catch (error) {
+      console.error("Move items failed:", error);
+      toast.error(error?.message || "Failed to move items.");
+      return;                                // keep dialog open, don't touch UI
+    } finally {
+      setIsMoving(false);
+    }
+  }
+
+  // API succeeded (or it's a local duplicate) -> update UI
+  setQuickOrders((orders) =>
+    orders.map((order) =>
+      order.id !== selectedOrder.id
+        ? order
+        : touchOrder({
+            ...order,
+            groups: order.groups.map((group) => {
+              if (group.id === targetGroupId) {
+                return {
+                  ...group,
+                  products: [
+                    ...group.products,
+                    ...productToMove
+                      .filter(
+                        (product) =>
+                          !group.products.some((e) => e.id === product.id),
+                      )
+                      .map((product) => ({
+                        ...product,
+                        orderGuideGroupID: Number(targetGroupId),
+                        par: group.par ?? product.par ?? null,
+                      })),
+                  ],
+                };
+              }
+
+              if (
+                !duplicate &&
+                (selectedGroup.isAll || group.id === selectedGroup.id)
+              ) {
+                return {
+                  ...group,
+                  products: group.products.filter(
+                    (product) => !movingIds.includes(product.id),
+                  ),
+                };
+              }
+
+              return group;
+            }),
+          }),
+    ),
+  );
+
+  toast.success(duplicate ? "Products duplicated." : "Products moved.");
+  setProductToMove(null);
+  setSelection({ group: selectionKey, ids: [] });
+}
+//API FOR MOVE TO TOP & BOTTOM
+async function handleMovePosition(position) {
+  // position is "top" or "bottom" (lowercase, used by reorderProducts)
+  if (!selectedCount || isMoving) return;
+
+  if (!userId) {
+    toast.error("Unable to identify the logged-in user.");
+    return;
+  }
+
+  const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+
+  try {
+    setIsMoving(true);
+
+    await moveTotop({
+      itemIds: selectedProducts.map((product) =>
+        Number(product.orderGroupItemID),
+      ),
+      position: position === "top" ? "Top" : "Bottom", // API needs "Top" / "Bottom"
+      modifyBY,
+    });
+  } catch (error) {
+    console.error("Move position failed:", error);
+    toast.error(error?.message || "Failed to move items.");
+    return; // don't touch the UI if the API failed
+  } finally {
+    setIsMoving(false);
+  }
+
+  // API succeeded -> update the UI with your existing local reorder
+  reorderProducts(position);
+  toast.success(position === "top" ? "Moved to top." : "Moved to bottom.");
+}
+
+//duplicate function
+async function handleDuplicate({ targetGroupId, newGroupName }) {
+  if (!productToMove?.length || isMoving) return;
+
+  if (!userId) {
+    toast.error("Unable to identify the logged-in user.");
+    return;
+  }
+
+  const createdBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+
+  try {
+    setIsMoving(true);
+
+    const result = await itemsDuplicatePost({
+      itemIds: productToMove.map((p) => Number(p.orderGroupItemID)),
+      targetOrderGuideGroupID: targetGroupId ? Number(targetGroupId) : undefined,
+      newGroupName,
+      createdBY,
+    });
+
+    if (result.duplicatedCount === 0) {
+      toast.info("No items were duplicated (they may already exist there).");
+    } else {
+      toast.success(
+        newGroupName
+          ? `Created "${newGroupName}" with ${result.duplicatedCount} item(s).`
+          : `${result.duplicatedCount} item(s) duplicated.`,
+      );
+    }
+
+    // Reload from the API (see note below)
+    onRefresh?.();
+
+    setProductToMove(null);
+    setNewGroupName(null);
+    setSelection({ group: selectionKey, ids: [] });
+  } catch (error) {
+    console.error("Duplicate failed:", error);
+    toast.error(error?.message || "Failed to duplicate items.");
+  } finally {
+    setIsMoving(false);
+  }
+}
+//Changegroup-- create group
+async function handleMoveToNewGroup(name) {
+  if (!productToMove?.length || isMoving) return;
+
+  if (!userId) {
+    toast.error("Unable to identify the logged-in user.");
+    return;
+  }
+
+  const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+
+  try {
+    setIsMoving(true);
+
+    // { itemIds, newGroupName, modifyBY }
+    await changeGroupPUT({
+      itemIds: productToMove.map((p) => Number(p.orderGroupItemID)),
+      newGroupName: name,
+      modifyBY,
+    });
+
+    toast.success(`Moved to new group "${name}".`);
+    onRefresh?.(); // reload so the new group and its real IDs appear
+
+    setProductToMove(null);
+    setNewGroupName(null);
+    setSelection({ group: selectionKey, ids: [] });
+  } catch (error) {
+    console.error("Move to new group failed:", error);
+    toast.error(error?.message || "Failed to create group and move items.");
+  } finally {
+    setIsMoving(false);
+  }
+}
 
   async function confirmDeleteProduct() {
     if (!productToDelete) return;
@@ -1708,20 +2162,53 @@ export function OrderGuideProductsList({
     );
   }
 
-  function saveProductPar() {
-    if (!productToEditPar) return;
+  // function saveProductPar() {
+  //   if (!productToEditPar) return;
 
-    const nextPar = parDraft.trim() === "" ? null : Number(parDraft);
-    if (nextPar !== null && (!Number.isFinite(nextPar) || nextPar < 0)) return;
+  //   const nextPar = parDraft.trim() === "" ? null : Number(parDraft);
+  //   if (nextPar !== null && (!Number.isFinite(nextPar) || nextPar < 0)) return;
 
-    updateProductInGroup(productToEditPar.id, {
-      par: nextPar,
-    });
+  //   updateProductInGroup(productToEditPar.id, {
+  //     par: nextPar,
+  //   });
 
-    setProductToEditPar(null);
-    setParDraft("");
+  //   setProductToEditPar(null);
+  //   setParDraft("");
+  // }
+
+  async function saveProductPar() {
+  if (!productToEditPar || isSavingPar) return;
+
+  const nextPar = parDraft.trim() === "" ? null : Number(parDraft);
+  if (nextPar !== null && (!Number.isFinite(nextPar) || nextPar < 0)) return;
+
+  if (!userId) {
+    toast.error("Unable to identify the logged-in user.");
+    return;
   }
 
+  try {
+    setIsSavingPar(true);
+
+    await updateParPUT({
+      orderGroupItemID: Number(productToEditPar.orderGroupItemID),
+      parValue: nextPar,
+      modifyBY: Number.isNaN(Number(userId)) ? userId : Number(userId),
+    });
+  } catch (error) {
+    console.error("Update PAR failed:", error);
+    toast.error(error?.message || "Failed to update PAR.");
+    return; // keep the dialog open, don't touch the UI
+  } finally {
+    setIsSavingPar(false);
+  }
+
+  // API succeeded -> update the UI
+  updateProductInGroup(productToEditPar.id, { par: nextPar });
+  toast.success("PAR updated.");
+  setProductToEditPar(null);
+  setParDraft("");
+}
   if (!selectedOrder || !selectedGroup) {
     return (
       <section className="grid h-full min-h-[420px] place-items-center rounded-lg border bg-card">
@@ -1882,9 +2369,11 @@ export function OrderGuideProductsList({
             <div className="ml-auto flex items-center gap-1.5 lg:flex-wrap lg:gap-2">
             {canEdit  && (
               <div className="hidden flex-wrap gap-2 lg:flex">
-                <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("top")}><ArrowUpToLine />Move to Top</Button>
-                <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("bottom")}><ArrowDownToLine />Move to Bottom</Button>
-                <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => { setDuplicate(false); setProductToMove(selectedProducts); }}><Folder />Change Group</Button>
+                <Button variant="outline" size="sm" disabled={!selectedCount || isMoving} onClick={() => handleMovePosition("top")}><ArrowUpToLine />Move to Top</Button>
+<Button variant="outline" size="sm" disabled={!selectedCount || isMoving} onClick={() => handleMovePosition("bottom")}><ArrowDownToLine />Move to Bottom</Button>
+                {/* <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("top")}><ArrowUpToLine />Move to Top</Button>
+                <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("bottom")}><ArrowDownToLine />Move to Bottom</Button> */}
+                <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => { setDuplicate(false); setNewGroupName(null); setProductToMove(selectedProducts); }}><Folder />Change Group</Button>
                 <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => { setDuplicate(true); setNewGroupName(null); setProductToMove(selectedProducts); }}><Copy />Duplicate</Button>
               </div>
             )}
@@ -1901,13 +2390,19 @@ export function OrderGuideProductsList({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44 lg:hidden">
-                  <DropdownMenuItem onSelect={() => reorderProducts("top")}>
+                  <DropdownMenuItem disabled={isMoving} onSelect={() => handleMovePosition("top")}>
+  <ArrowUpToLine />Move to Top
+</DropdownMenuItem>
+<DropdownMenuItem disabled={isMoving} onSelect={() => handleMovePosition("bottom")}>
+  <ArrowDownToLine />Move to Bottom
+</DropdownMenuItem>
+                  {/* <DropdownMenuItem onSelect={() => reorderProducts("top")}>
                     <ArrowUpToLine />Move to Top
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => reorderProducts("bottom")}>
                     <ArrowDownToLine />Move to Bottom
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => { setDuplicate(false); setProductToMove(selectedProducts); }}>
+                  </DropdownMenuItem> */}
+                  <DropdownMenuItem onSelect={() => { setDuplicate(false); setNewGroupName(null); setProductToMove(selectedProducts); }}>
                     <Folder />Change Group
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => { setDuplicate(true); setNewGroupName(null); setProductToMove(selectedProducts); }}>
@@ -1961,7 +2456,7 @@ export function OrderGuideProductsList({
                     onAddToCart={addItem}
                     onIncrement={incrementItem}
                     onDecrement={decrementItem}
-                    onChangeGroup={(product) => { setDuplicate(false); setProductToMove([product]); }}
+                    onChangeGroup={(product) => { setDuplicate(false); setNewGroupName(null); setProductToMove([product]); }}
                     onEditPar={openEditParDialog}
                     onRequestDelete={setProductToDelete}
                     canEdit={canEdit}
@@ -1992,7 +2487,14 @@ export function OrderGuideProductsList({
 
       <Dialog
         open={Boolean(productToMove)}
-        onOpenChange={(open) => !open && setProductToMove(null)}
+        // onOpenChange={(open) => !open && setProductToMove(null)}
+          onOpenChange={(open) => {
+    if (!open) {
+      setProductToMove(null);
+      setNewGroupName(null); // reset the create form when closing
+    }
+  }}
+
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -2010,7 +2512,7 @@ export function OrderGuideProductsList({
                   group.id === selectedGroup.id ? "secondary" : "outline"
                 }
                 className="h-11 w-full justify-between"
-                disabled={group.id === selectedGroup.id}
+                disabled={group.id === selectedGroup.id || isMoving}
                 onClick={() => moveProductToGroup(group.id)}
               >
                 <span className="truncate">{group.name}</span>
@@ -2020,7 +2522,7 @@ export function OrderGuideProductsList({
               </Button>
             ))}
           </div>
-          {duplicate && (
+          {/* {duplicate && ( */}
             <div className="space-y-3 border-t pt-3">
               <Button
                 type="button"
@@ -2028,38 +2530,55 @@ export function OrderGuideProductsList({
                 className="w-full justify-start"
                 aria-expanded={newGroupName !== null}
                 aria-controls="duplicate-create-group"
+                 disabled={isMoving}
                 onClick={() => setNewGroupName((name) => name ?? "")}
               >
                 <Plus className="size-4" />
                 Create group
               </Button>
               {newGroupName !== null && (
-                <form
-                  id="duplicate-create-group"
-                  className="space-y-2"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    const name = newGroupName.trim();
-                    if (!name || !productToMove?.length) return;
+   
+                // <form
+                //   id="duplicate-create-group"
+                //   className="space-y-2"
+                //   onSubmit={(event) => {
+                //     event.preventDefault();
+                //     const name = newGroupName.trim();
+                //     if (!name || !productToMove?.length) return;
 
-                    const group = {
-                      id: crypto.randomUUID(),
-                      name,
-                      products: productToMove.map((product) => ({ ...product })),
-                    };
-                    setQuickOrders((orders) =>
-                      orders.map((order) =>
-                        order.id === selectedOrder.id
-                          ? touchOrder({ ...order, groups: [...order.groups, group] })
-                          : order,
-                      ),
-                    );
-                    setProductToMove(null);
-                    setNewGroupName(null);
-                    setSelection({ group: selectionKey, ids: [] });
-                    toast.success(`Created "${name}" with the selected products.`);
-                  }}
-                >
+                //     const group = {
+                //       id: crypto.randomUUID(),
+                //       name,
+                //       products: productToMove.map((product) => ({ ...product })),
+                //     };
+                //     setQuickOrders((orders) =>
+                //       orders.map((order) =>
+                //         order.id === selectedOrder.id
+                //           ? touchOrder({ ...order, groups: [...order.groups, group] })
+                //           : order,
+                //       ),
+                //     );
+                //     setProductToMove(null);
+                //     setNewGroupName(null);
+                //     setSelection({ group: selectionKey, ids: [] });
+                //     toast.success(`Created "${name}" with the selected products.`);
+                //   }}
+                // >
+                              <form
+                id="dialog-create-group"
+                className="space-y-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const name = newGroupName.trim();
+                  if (!name) return;
+
+                  if (duplicate) {
+                    handleDuplicate({ newGroupName: name });
+                  } else {
+                    handleMoveToNewGroup(name);
+                  }
+                }}
+              >
                   <label htmlFor="duplicate-group-name" className="block text-sm font-medium">
                     Group name
                   </label>
@@ -2072,14 +2591,14 @@ export function OrderGuideProductsList({
                     required
                   />
                   <div className="flex justify-end pt-2">
-                    <Button type="submit" disabled={!newGroupName.trim()}>
+                    <Button type="submit" disabled={!newGroupName.trim() || isMoving}>
                       Create
                     </Button>
                   </div>
                 </form>
               )}
             </div>
-          )}
+          {/* // )} */}
         </DialogContent>
       </Dialog>
 
@@ -2144,7 +2663,7 @@ export function OrderGuideProductsList({
             >
               Cancel
             </Button>
-            <Button onClick={saveProductPar}>Save</Button>
+            <Button onClick={saveProductPar} disabled={isSavingPar}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

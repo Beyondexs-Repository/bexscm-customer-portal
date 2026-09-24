@@ -29,7 +29,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -163,7 +163,11 @@ function mapOrderGroupItemToProduct(item) {
 
     quantity: Number(item.quantity ?? 0),
 
-    par: item.par === undefined || item.par === null ? null : String(item.par),
+    // par: item.par === undefined || item.par === null ? null : String(item.par),
+      par:
+      (item.parValue ?? item.par) == null
+        ? null
+        : String(item.parValue ?? item.par),
   };
 }
 
@@ -451,7 +455,45 @@ export function OrderGuideList({
   const [secondaryorderList, setsecondaryOrderList] = useState([]);
   const [secondaryOrderloading, setsecondaryorderloading] = useState(false);
 
+//PAR - bulk update (used by "All" and group Edit PAR)
+const updateBulkParPUT = async ({ items, modifyBY }) => {
+  const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/par/bulk`;
+  const requestBody = { items, modifyBY };
 
+  console.log("Bulk PAR URL:", url);
+  console.log("Bulk PAR Request Body:", requestBody);
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const responseText = await response.text();
+  console.log("Bulk PAR Raw Response:", responseText);
+
+  let result = null;
+  try {
+    result = responseText ? JSON.parse(responseText) : null;
+  } catch (error) {
+    console.warn("Response is not JSON:", responseText);
+  }
+
+  if (!response.ok || result?.success === false) {
+    throw new Error(
+      result?.Msg ||
+        result?.message ||
+        result?.error ||
+        `Unable to update PAR. HTTP ${response.status}`,
+    );
+  }
+
+  return result; // { success: true, updatedCount: 2 }
+};
 
   //Secondary Group get=========step 1================
   const getOrderGroupItemsApiv1_GET = async (orderGuideGroupID) => {
@@ -1265,12 +1307,50 @@ const updateOrderGuideGroupApiv1_Modify = async ({
   }
 };
 
-  function saveGroupPar() {
-    if (dialog?.type !== "edit-group-par") return;
+async function saveGroupPar() {
+  if (dialog?.type !== "edit-group-par") return;
 
-    const value = parDraft.trim() === "" ? null : Number(parDraft);
-    if (value !== null && (!Number.isFinite(value) || value < 0)) return;
+  const value = parDraft.trim() === "" ? null : Number(parDraft);
+  if (value !== null && (!Number.isFinite(value) || value < 0)) return;
 
+  if (!userId) {
+    setNameDialogError("Unable to identify the logged-in user.");
+    return;
+  }
+
+  // Use the latest data, not the snapshot saved when the dialog opened
+  const currentOrder =
+    quickOrders.find((o) => o.id === dialog.order.id) ?? dialog.order;
+
+  // "All" -> every group's items, otherwise only this group's items
+  const targetGroups = dialog.group.isAll
+    ? currentOrder.groups
+    : currentOrder.groups.filter((g) => g.id === dialog.group.id);
+
+  const items = targetGroups
+    .flatMap((g) => g.products)
+    .map((p) => ({
+      orderGroupItemID: Number(p.orderGroupItemID),
+      parValue: value,
+    }));
+
+  if (items.length === 0) {
+    setNameDialogError("There are no products to update.");
+    return;
+  }
+
+  setIsSavingName(true);
+  setNameDialogError(null);
+
+  try {
+    const result = await updateBulkParPUT({
+      items,
+      modifyBY: Number.isNaN(Number(userId)) ? userId : Number(userId),
+    });
+
+    console.log("Bulk PAR updated:", result);
+
+    // API succeeded -> update the UI
     setQuickOrders((orders) =>
       orders.map((order) =>
         order.id === dialog.order.id
@@ -1292,8 +1372,45 @@ const updateOrderGuideGroupApiv1_Modify = async ({
           : order,
       ),
     );
+     toast.success("PAR value updated successfully");
     closeDialog();
+  } catch (error) {
+    console.error("Bulk PAR error:", error);
+    setNameDialogError(error?.message || "Failed to update PAR.");
+     toast.error(error?.message || "Failed to update PAR."); 
+  } finally {
+    setIsSavingName(false);
   }
+}
+  // function saveGroupPar() {
+  //   if (dialog?.type !== "edit-group-par") return;
+
+  //   const value = parDraft.trim() === "" ? null : Number(parDraft);
+  //   if (value !== null && (!Number.isFinite(value) || value < 0)) return;
+
+  //   setQuickOrders((orders) =>
+  //     orders.map((order) =>
+  //       order.id === dialog.order.id
+  //         ? touchOrder({
+  //             ...order,
+  //             groups: order.groups.map((group) =>
+  //               dialog.group.isAll || group.id === dialog.group.id
+  //                 ? {
+  //                     ...group,
+  //                     par: value,
+  //                     products: group.products.map((product) => ({
+  //                       ...product,
+  //                       par: value,
+  //                     })),
+  //                   }
+  //                 : group,
+  //             ),
+  //           })
+  //         : order,
+  //     ),
+  //   );
+  //   closeDialog();
+  // }
 
  async function saveNameDialog() {
     const name = draftName.trim();
@@ -1748,7 +1865,7 @@ const updateOrderGuideGroupApiv1_Modify = async ({
             <Button variant="outline" onClick={closeDialog}>
               {t("cancel")}
             </Button>
-            <Button onClick={saveGroupPar}>{t("save")}</Button>
+            <Button onClick={saveGroupPar} disabled={isSavingName}>{t("save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

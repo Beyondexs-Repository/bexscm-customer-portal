@@ -263,6 +263,8 @@ const createOrderGuideApiv1_POST = async ({
             selectedOrder={selectedOrder}
             selectedGroup={selectedGroup}
             setQuickOrders={setQuickOrders}
+             userId={userId}   
+             onRefresh={() => setRefreshKey((k) => k + 1)}
             onBack={() => {
               setSelectedOrderId(null);
               setSelectedGroupId(null);
