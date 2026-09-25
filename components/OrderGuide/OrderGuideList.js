@@ -685,6 +685,74 @@ const modifyOrderGuideApiv1_Modify = async ({
 };
 
 
+//PRIMARY GROUP DRAG AND DROP
+const primarydraganddrop = async ({ orderGuideID, sequence, modifyBY }) => {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/sequence`;
+
+    const requestBody = {
+      orderGuideID,
+      sequence,
+      modifyBY,
+    };
+
+    console.log("Update Order Guide Sequence URL:", url);
+    console.log("Update Order Guide Sequence Request Body:", requestBody);
+
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log("Update Order Guide Sequence HTTP Status:", response.status);
+    console.log("Update Order Guide Sequence HTTP OK:", response.ok);
+
+    const responseText = await response.text();
+
+    console.log("Update Order Guide Sequence Raw Response:", responseText);
+
+    let result = null;
+
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch (error) {
+      console.warn("Response is not JSON:", responseText);
+    }
+
+    console.log("Update Order Guide Sequence Parsed Response:", result);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to update order guide sequence. HTTP ${response.status}`,
+      );
+    }
+
+    if (result?.success === false) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          "Failed to update order guide sequence.",
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Update Order Guide Sequence Error:", error);
+    throw error;
+  }
+};
+
+
+
   useEffect(() => {
     const storedUser = localStorage.getItem("loggedInUser");
 
