@@ -310,7 +310,7 @@ async function handleSendOtp(event) {
 // localStorage.setItem("loggedInUser", JSON.stringify(userId));
     localStorage.setItem("custnmbr", result.custnmbr);
     localStorage.setItem("loggedInUser", result.userId);
-    // localStorage.setItem("user", JSON.stringify(Data));
+
 
     if (result?.success === false) {
       throw new Error(result?.message || result?.Msg || "Unable to send OTP.");

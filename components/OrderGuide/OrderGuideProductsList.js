@@ -1044,7 +1044,8 @@
 
 //changed by Radhika 23/09/2026 --12:02 PM =================================================================================>
 "use client";
-
+import { useDispatch } from "react-redux";
+import { PutItemSequence } from "../../redux/slices/postSlice"; 
 import { useState } from "react";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
@@ -1411,76 +1412,7 @@ const updateParPUT = async ({ orderGroupItemID, parValue, modifyBY }) => {
 };
 
 
-//secondary _product_list sequence
-const secondaryDraganddrop = async ({
-  orderGroupItemID,
-  sequence,
-  modifyBY,
-}) => {
-  try {
-    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/sequence`;
 
-    const requestBody = {
-      orderGroupItemID,
-      sequence,
-      modifyBY,
-    };
-
-    console.log("Update Order Guide ID:", orderGroupItemID);
-    console.log("Update Order Guide URL:", url);
-    console.log("Update Order Guide Request Body:", requestBody);
-
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log("Update Order Guide HTTP Status:", response.status);
-    console.log("Update Order Guide HTTP OK:", response.ok);
-
-    const responseText = await response.text();
-
-    console.log("Update Order Guide Raw Response:", responseText);
-
-    let result = null;
-
-    try {
-      result = responseText ? JSON.parse(responseText) : null;
-    } catch (error) {
-      console.warn("Response is not JSON:", responseText);
-    }
-
-    console.log("Update Order Guide Parsed Response:", result);
-
-    if (!response.ok) {
-      throw new Error(
-        result?.Msg ||
-          result?.message ||
-          result?.error ||
-          `Unable to update order guide. HTTP ${response.status}`,
-      );
-    }
-
-    if (!result?.success) {
-      throw new Error(
-        result?.Msg ||
-          result?.message ||
-          result?.error ||
-          "Failed to update order guide.",
-      );
-    }
-
-    return result;
-  } catch (error) {
-    console.error("Update Order Guide Error:", error);
-    throw error;
-  }
-};
 
 function ProductImage({ product, listLayout }) {
   const resolvedImg = resolveItemImageUrl(product.image) || product.image;
@@ -1563,16 +1495,21 @@ function SavedProductCard({
   onRequestDelete,
   canEdit,
   canPlaceOrder,
+  isAllView,
 }) {
+
   const [draftQuantity, setDraftQuantity] = useState(1);
   const isInCart = cartQuantity > 0;
   const quantity = isInCart ? cartQuantity : draftQuantity;
   const parValue = product.par;
   const listLayout = layout === "list";
+  const canDrag = canEdit && listLayout && !isAllView;   // add this
   const { setNodeRef, setActivatorNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: product.id,
-    disabled: !canEdit || !listLayout,
+    // disabled: !canEdit || !listLayout,
+     disabled: !canDrag,   // CHANGED from: !canEdit || !listLayout
   });
+
   const categoryLabel = product.category || product.subcategory;
   const orderControls = canPlaceOrder ? (
     <div className="grid w-full grid-cols-[1fr_2fr] gap-2">
@@ -1662,7 +1599,8 @@ function SavedProductCard({
             aria-label={`Select ${product.name}`}
             className="size-4 shrink-0 cursor-pointer accent-blue-600"
           />
-        {listLayout && canEdit && (
+        {/* {listLayout && canEdit && ( */}
+         {canDrag && (
           <button
             ref={setActivatorNodeRef}
             type="button"
@@ -1816,6 +1754,10 @@ export function OrderGuideProductsList({
   canAddProducts,
   canPlaceOrder,
 }) {
+
+  const dispatch = useDispatch();
+const [isReordering, setIsReordering] = useState(false);
+
   const { items, addItem, incrementItem, decrementItem } =
     useCart();
   const { dashboardQuickOrderIds, setDashboardQuickOrderIds } =
@@ -2225,6 +2167,83 @@ async function handleMoveToNewGroup(name) {
     setProductToDelete(null);
   }
 
+async function persistDragReorder(activeId, overId) {
+  if (isAllView) {
+    toast.error("Select a specific group to reorder items.");
+    return;
+  }
+  if (!userId) {
+    toast.error("Unable to identify the logged-in user.");
+    return;
+  }
+
+  const visibleIds = products.map((product) => product.id);
+  const from = visibleIds.indexOf(activeId);
+  const to = visibleIds.indexOf(overId);
+  if (from < 0 || to < 0) return;
+
+  const reorderedVisible = arrayMove(visibleIds, from, to);
+
+  // Keep filtered-out products in their existing positions, same as reorderProducts
+  let visibleIndex = 0;
+  const orderedIds = allProducts.map((product) =>
+    visibleIds.includes(product.id) ? reorderedVisible[visibleIndex++] : product.id,
+  );
+
+  const idToProduct = new Map(allProducts.map((product) => [product.id, product]));
+  const orderGroupItemIds = orderedIds.map((id) =>
+    Number(idToProduct.get(id)?.orderGroupItemID),
+  );
+
+  const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+
+  try {
+    setIsReordering(true);
+
+    await dispatch(
+      PutItemSequence({
+        orderGuideGroupID: Number(selectedGroup.id),
+        orderGroupItemIds,
+        modifyBY,
+      }),
+    )
+    .unwrap()
+      .then(() => {
+        toast.success("Order group items updated");
+      });
+  } catch (error) {
+    console.error("Reorder items failed:", error);
+    toast.error(error?.Msg || error?.message || "Failed to save the new order.");
+    return; // API failed — don't touch the UI, drag snaps back visually next render
+  } finally {
+    setIsReordering(false);
+  }
+
+  // API succeeded -> update the UI
+  const ranks = new Map(orderedIds.map((id, index) => [id, index]));
+  setSortBy("custom");
+  setQuickOrders((orders) =>
+    orders.map((order) =>
+      order.id !== selectedOrder.id
+        ? order
+        : touchOrder({
+            ...order,
+            groups: order.groups.map((group) =>
+              group.id !== selectedGroup.id
+                ? group
+                : {
+                    ...group,
+                    products: [...group.products].sort(
+                      (a, b) => ranks.get(a.id) - ranks.get(b.id),
+                    ),
+                  },
+            ),
+          }),
+    ),
+  );
+}
+
+
   function openEditParDialog(product) {
     setProductToEditPar(product);
     setParDraft(
@@ -2519,12 +2538,21 @@ async function handleMoveToNewGroup(name) {
               collisionDetection={closestCenter}
               onDragStart={({ active }) => setActiveProductId(active.id)}
               onDragCancel={() => setActiveProductId(null)}
+              // onDragEnd={({ active, over }) => {
+              //   setActiveProductId(null);
+              //   if (canEdit && layout === "list" && over && active.id !== over.id) {
+              //     reorderProducts(null, active.id, over.id);
+              //   }
+              // }}
               onDragEnd={({ active, over }) => {
-                setActiveProductId(null);
-                if (canEdit && layout === "list" && over && active.id !== over.id) {
-                  reorderProducts(null, active.id, over.id);
-                }
-              }}
+  setActiveProductId(null);
+  // if (canEdit && layout === "list" && over && active.id !== over.id) {
+  //   persistDragReorder(active.id, over.id);
+  // }
+   if (canEdit && layout === "list" && !isAllView && over && active.id !== over.id) {
+    persistDragReorder(active.id, over.id);
+  }
+}}
             >
               <SortableContext items={products.map((product) => product.id)} strategy={verticalListSortingStrategy}>
             <div className="no-scrollbar h-full overflow-y-auto">
@@ -2552,6 +2580,7 @@ async function handleMoveToNewGroup(name) {
                     onRequestDelete={setProductToDelete}
                     canEdit={canEdit}
                     canPlaceOrder={canPlaceOrder}
+                     isAllView={isAllView}
                   />
                 ))}
               </div>
