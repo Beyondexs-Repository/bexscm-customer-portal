@@ -226,7 +226,7 @@
 //Changed BY Radhika 23/09/2026-- 4-30 PM
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 
 import { DEFAULT_CUSTNMBR } from "@/lib/api/ordersApi"
@@ -285,6 +285,37 @@ export default function MyOrders() {
   const [error, setError] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [orderList, setOrderList] = useState([]);
+
+
+  // Draggable settings
+  const gridRef = useRef(null)
+const dragRef = useRef(null)
+const [detailsWidth, setDetailsWidth] = useState(430)
+const [maxDetailsWidth, setMaxDetailsWidth] = useState(430)
+const [isResizing, setIsResizing] = useState(false)
+const panelWidth = Math.min(detailsWidth, maxDetailsWidth)
+
+useEffect(() => {
+  const grid = gridRef.current
+
+  const observer = new ResizeObserver(([entry]) => {
+    const gap = parseFloat(getComputedStyle(grid).columnGap) || 0
+
+    // Preserve the original width if 40% would make the panel smaller.
+    setMaxDetailsWidth(
+      Math.max(430, (entry.contentRect.width - gap) * 0.4)
+    )
+  })
+
+  observer.observe(grid)
+  return () => observer.disconnect()
+}, [])
+
+function resizeDetails(width) {
+  setDetailsWidth(
+    Math.min(maxDetailsWidth, Math.max(430, width))
+  )
+}
 
   const handleRefresh = useCallback(() => {
     setRefreshKey((prev) => prev + 1)
@@ -415,38 +446,135 @@ export default function MyOrders() {
   }, [orderList]);
 
   return (
-    <main className="grid min-h-full gap-4 bg-background p-3 sm:p-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,430px)] xl:pb-6">
-      <div className={cn("min-h-0", selectedOrder ? "hidden xl:block" : "block")}>
-        <OrderList
-          orders={orderList}
-          filteredOrders={filteredOrders}
-          selectedOrder={selectedOrder}
-          statusFilter={statusFilter}
-          typeFilter={typeFilter}
-          customerId={customerId}
-          isLoading={isLoading}
-          error={error}
-          onCustomerIdChange={handleCustomerIdChange}
-          onRefresh={handleRefresh}
-          onStatusFilterChange={setStatusFilter}
-          onTypeFilterChange={setTypeFilter}
-          onSelectOrder={canViewOrderDetails ? setSelectedOrderId : () => { }}
-          canViewOrderDetails={canViewOrderDetails}
+  <main
+    ref={gridRef}
+    style={{ "--details-width": `${panelWidth}px` }}
+    className={cn(
+      "grid min-h-full gap-4 bg-background p-3 sm:p-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,var(--details-width))] xl:pb-6",
+      isResizing && "select-none cursor-col-resize",
+    )}
+  >
+    <div
+      className={cn(
+        "min-h-0",
+        selectedOrder ? "hidden xl:block" : "block",
+      )}
+    >
+      <OrderList
+        orders={orderList}
+        filteredOrders={filteredOrders}
+        selectedOrder={selectedOrder}
+        statusFilter={statusFilter}
+        typeFilter={typeFilter}
+        customerId={customerId}
+        isLoading={isLoading}
+        error={error}
+        onCustomerIdChange={handleCustomerIdChange}
+        onRefresh={handleRefresh}
+        onStatusFilterChange={setStatusFilter}
+        onTypeFilterChange={setTypeFilter}
+        onSelectOrder={
+          canViewOrderDetails ? setSelectedOrderId : () => {}
+        }
+        canViewOrderDetails={canViewOrderDetails}
+      />
+    </div>
+
+    <div
+      className={cn(
+        "relative h-full min-h-0 min-w-0 xl:sticky xl:top-4 xl:h-[calc(100svh-6.5rem)] xl:self-start",
+        selectedOrder ? "block" : "hidden xl:block",
+      )}
+    >
+      {/* Draggable divider — desktop only */}
+      <div
+        role="separator"
+        aria-label="Resize order details"
+        aria-orientation="vertical"
+        aria-controls="order-details-panel"
+        aria-valuemin={430}
+        aria-valuemax={Math.round(maxDetailsWidth)}
+        aria-valuenow={Math.round(panelWidth)}
+        tabIndex={0}
+        className="group absolute -left-4 top-0 hidden h-full w-4 touch-none cursor-col-resize items-center justify-center outline-none xl:flex"
+        onPointerDown={(event) => {
+          if (event.button !== 0) return
+
+          event.preventDefault()
+          event.currentTarget.focus()
+          event.currentTarget.setPointerCapture(event.pointerId)
+
+          dragRef.current = {
+            x: event.clientX,
+            width: panelWidth,
+          }
+
+          setIsResizing(true)
+        }}
+        onPointerMove={(event) => {
+          if (!dragRef.current) return
+
+          resizeDetails(
+            dragRef.current.width +
+              dragRef.current.x -
+              event.clientX,
+          )
+        }}
+        onPointerUp={(event) => {
+          if (
+            event.currentTarget.hasPointerCapture(event.pointerId)
+          ) {
+            event.currentTarget.releasePointerCapture(
+              event.pointerId,
+            )
+          }
+
+          dragRef.current = null
+          setIsResizing(false)
+        }}
+        onLostPointerCapture={() => {
+          dragRef.current = null
+          setIsResizing(false)
+        }}
+        onKeyDown={(event) => {
+          if (
+            !["ArrowLeft", "ArrowRight", "Home", "End"].includes(
+              event.key,
+            )
+          ) {
+            return
+          }
+
+          event.preventDefault()
+
+          if (event.key === "Home") {
+            resizeDetails(430)
+          } else if (event.key === "End") {
+            resizeDetails(maxDetailsWidth)
+          } else {
+            resizeDetails(
+              panelWidth +
+                (event.key === "ArrowLeft" ? 20 : -20),
+            )
+          }
+        }}
+        onDoubleClick={() => setDetailsWidth(430)}
+      >
+        <span
+          className={cn(
+            "h-12 w-1 rounded-full bg-border transition-colors group-hover:bg-primary group-focus-visible:bg-primary",
+            isResizing && "bg-primary",
+          )}
         />
       </div>
 
-      <div
-        className={cn(
-          "h-full min-h-0 xl:sticky xl:top-4 xl:h-[calc(100svh-6.5rem)] xl:self-start",
-          selectedOrder ? "block" : "hidden xl:block",
-        )}
-      >
+      <div id="order-details-panel" className="h-full min-w-0">
         {selectedOrder ? (
           <OrderDetails
             order={selectedOrder}
             onBack={() => setSelectedOrderId(null)}
             onClose={() => setSelectedOrderId(null)}
-            onReorderSuccess={handleRefresh} 
+            onReorderSuccess={handleRefresh}
           />
         ) : (
           <section className="hidden h-full min-h-[18rem] place-items-center rounded-lg border bg-card xl:grid">
@@ -456,6 +584,7 @@ export default function MyOrders() {
           </section>
         )}
       </div>
-    </main>
-  )
+    </div>
+  </main>
+)
 }
