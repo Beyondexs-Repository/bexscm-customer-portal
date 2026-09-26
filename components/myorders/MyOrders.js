@@ -229,7 +229,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 
-import { fetchCustomerOrdersApi, DEFAULT_CUSTNMBR } from "@/lib/api/ordersApi"
+import { DEFAULT_CUSTNMBR } from "@/lib/api/ordersApi"
 import { cn } from "@/lib/utils"
 
 import OrderList from "./OrderList"
@@ -277,8 +277,9 @@ export default function MyOrders() {
   const canViewOrderDetails = true
   const [selectedOrderId, setSelectedOrderId] = useState(null)
   const [statusFilter, setStatusFilter] = useState("all")
-  const [typeFilter, setTypeFilter] = useState("All Types")
-  const [customerId, setCustomerId] = useState(DEFAULT_CUSTNMBR)
+  const [typeFilter, setTypeFilter] = useState("All Types");
+  const DEFAULT_CUSTNMBR = localStorage.getItem("custnmbr");
+  const [customerId, setCustomerId] = useState(DEFAULT_CUSTNMBR);
   // const [orders, setOrders] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)

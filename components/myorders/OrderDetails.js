@@ -31,7 +31,7 @@ import OrderItemRatings from "./OrderItemRatings"
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
 import { resolveItemImageUrl } from "@/lib/api/itemsApi"
 export default function OrderDetails({ order, onBack, onClose, onReorderSuccess }) {
-
+const custnmbr = localStorage.getItem("custnmbr"); 
    const { fetchCustomerCart } = useCart()
   const imageurl = `https://crateapi.bexlgems.com/Images/Items`;
 
@@ -151,7 +151,7 @@ const handleReorder = async () => {
   onReorderSuccess?.();
 
 // refresh cart badge immediately
-  fetchCustomerCart("400001");
+  fetchCustomerCart(custnmbr);
     }
   } catch (error) {
     console.error("Reorder failed:", error);
@@ -252,7 +252,7 @@ const handleReorder = async () => {
                   {order.customerName || "Central Foodservice, Inc."}
                 </h4>
                 <p className="text-[11px] font-semibold text-muted-foreground mt-0.5">
-                  ID: {order.customerID || "400001"}
+                  ID: {order.customerID || custnmbr}
                 </p>
               </div>
             </div>

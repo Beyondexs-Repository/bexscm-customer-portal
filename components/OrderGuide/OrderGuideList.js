@@ -755,7 +755,8 @@ const primarydraganddrop = async ({ orderGuideID, sequence, modifyBY }) => {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("loggedInUser");
-
+   const custnmbr = localStorage.getItem("custnmbr");
+console.log(custnmbr,storedUser,  "--find custnmbr in OrderDuideList")
     if (!storedUser) {
       console.error("Logged-in user not found");
       return;
@@ -1042,7 +1043,7 @@ const getOrderGuideGroupApiv1_GET = async (orderGuideID) => {
 
 async function loadOrderGuides() {
   try {
-    const custnmbr = "400001";
+   const custnmbr = localStorage.getItem("custnmbr");
     const apiOrderGuides = await fetchOrderGuideListApiv1_GET(custnmbr);
 
     const formattedOrderGuides = await Promise.all(

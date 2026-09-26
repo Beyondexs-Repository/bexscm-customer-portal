@@ -5,7 +5,7 @@ import { Toaster } from "sonner"
 import { defaultLocale } from "@/lib/i18n"
 import { AppProvider } from "@/app/context/app-context"
 import { StaticIntlProvider } from "@/components/static-intl-provider"
-import { StoreProvider } from "@/lib/redux/StoreProvider"
+import { StoreProvider } from "@/redux/StoreProvider"
 import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget"
 
 const poppins = Poppins({
