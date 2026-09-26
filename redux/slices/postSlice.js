@@ -357,32 +357,33 @@ export const DeleteOrderGuide = createAsyncThunk(
 // ── PUT /orderguides/sequence ─────────────────────────────────────────────────
 export const PutOrderGuideSequence = createAsyncThunk(
   "orderGuide/PutOrderGuideSequence",
-  async ({ orderGuideID, sequence, modifyBY }, { rejectWithValue }) => {
+  async ({ custnmbr, orderGuideIds }, { rejectWithValue }) => {
     try {
-      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/sequence`
-      console.log("PutOrderGuideSequence URL:", URL)
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/sequence`;
 
       const response = await axios.put(
         URL,
-        { orderGuideID, sequence, modifyBY },
+        { custnmbr, orderGuideIds },
         {
           headers: {
             Accept: "application/json",
             Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
           },
         }
-      )
+      );
 
       if (response.data?.success === false) {
-        throw new Error(response.data?.Msg || response.data?.message || "Failed to reorder order guides.")
+        throw new Error(
+          response.data?.Msg || response.data?.message || "Failed to reorder order guides."
+        );
       }
 
-      return response.data
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.response ? error.response.data : error.message)
+      return rejectWithValue(error.response ? error.response.data : error.message);
     }
   }
-)
+);
 
 // ── POST /orderguidegroups ────────────────────────────────────────────────────
 export const PostOrderGuideGroup = createAsyncThunk(
@@ -647,14 +648,14 @@ export const PutBulkPar = createAsyncThunk(
 // ── PUT /ordergroupitems/sequence  (drag-and-drop reorder) ───────────────────
 export const PutItemSequence = createAsyncThunk(
   "orderGuide/PutItemSequence",
-  async ({ orderGroupItemID, sequence, modifyBY }, { rejectWithValue }) => {
+  async ({ orderGuideGroupID, orderGroupItemIds, modifyBY }, { rejectWithValue }) => {
     try {
       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/sequence`
       console.log("PutItemSequence URL:", URL)
 
       const response = await axios.put(
         URL,
-        { orderGroupItemID, sequence, modifyBY },
+        { orderGuideGroupID, orderGroupItemIds, modifyBY },
         {
           headers: {
             Accept: "application/json",

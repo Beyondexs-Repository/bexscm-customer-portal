@@ -1,5 +1,6 @@
 "use client";
-
+import { useDispatch } from "react-redux";
+import { PutOrderGuideSequence } from "../../redux/slices/postSlice"; // adjust path
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
@@ -50,7 +51,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-import { fetchOrderGuideListApi } from "@/lib/api/orderguidelistapi";
+// import { fetchOrderGuideListApi } from "@/lib/api/orderguidelistapi";
 
 // import { getConfig } from "@/lib/config";
 //Primary group 
@@ -434,6 +435,8 @@ export function OrderGuideList({
   canEdit,
   canDelete,
 }) {
+
+  const dispatch = useDispatch();
   const t = useTranslations("orderGuide");
   const [dialog, setDialog] = useState(null);
   const [draftName, setDraftName] = useState("");
@@ -454,6 +457,8 @@ export function OrderGuideList({
   //secondary Group
   const [secondaryorderList, setsecondaryOrderList] = useState([]);
   const [secondaryOrderloading, setsecondaryorderloading] = useState(false);
+
+
 
 //PAR - bulk update (used by "All" and group Edit PAR)
 const updateBulkParPUT = async ({ items, modifyBY }) => {
@@ -683,74 +688,6 @@ const modifyOrderGuideApiv1_Modify = async ({
     throw error;
   }
 };
-
-
-//PRIMARY GROUP DRAG AND DROP
-const primarydraganddrop = async ({ orderGuideID, sequence, modifyBY }) => {
-  try {
-    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/sequence`;
-
-    const requestBody = {
-      orderGuideID,
-      sequence,
-      modifyBY,
-    };
-
-    console.log("Update Order Guide Sequence URL:", url);
-    console.log("Update Order Guide Sequence Request Body:", requestBody);
-
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log("Update Order Guide Sequence HTTP Status:", response.status);
-    console.log("Update Order Guide Sequence HTTP OK:", response.ok);
-
-    const responseText = await response.text();
-
-    console.log("Update Order Guide Sequence Raw Response:", responseText);
-
-    let result = null;
-
-    try {
-      result = responseText ? JSON.parse(responseText) : null;
-    } catch (error) {
-      console.warn("Response is not JSON:", responseText);
-    }
-
-    console.log("Update Order Guide Sequence Parsed Response:", result);
-
-    if (!response.ok) {
-      throw new Error(
-        result?.Msg ||
-          result?.message ||
-          result?.error ||
-          `Unable to update order guide sequence. HTTP ${response.status}`,
-      );
-    }
-
-    if (result?.success === false) {
-      throw new Error(
-        result?.Msg ||
-          result?.message ||
-          result?.error ||
-          "Failed to update order guide sequence.",
-      );
-    }
-
-    return result;
-  } catch (error) {
-    console.error("Update Order Guide Sequence Error:", error);
-    throw error;
-  }
-};
-
 
 
   useEffect(() => {
@@ -1663,26 +1600,60 @@ async function saveGroupPar() {
     }
   }
 
+  // function handleDragEnd(event) {
+  //   if (!canEdit) return;
+
+  //   const { active, over } = event;
+
+  //   setActiveOrderId(null);
+
+  //   if (!over || active.id === over.id) return;
+
+  //   setQuickOrders((orders) => {
+  //     const oldIndex = orders.findIndex((order) => order.id === active.id);
+  //     const newIndex = orders.findIndex((order) => order.id === over.id);
+
+  //     if (oldIndex === -1 || newIndex === -1) return orders;
+
+  //     return arrayMove(orders, oldIndex, newIndex).map((order) =>
+  //       order.id === active.id ? touchOrder(order) : order,
+  //     );
+  //   });
+  // }
   function handleDragEnd(event) {
-    if (!canEdit) return;
+  if (!canEdit) return;
 
-    const { active, over } = event;
+  const { active, over } = event;
+  setActiveOrderId(null);
 
-    setActiveOrderId(null);
+  if (!over || active.id === over.id) return;
 
-    if (!over || active.id === over.id) return;
+  setQuickOrders((orders) => {
+    const oldIndex = orders.findIndex((order) => order.id === active.id);
+    const newIndex = orders.findIndex((order) => order.id === over.id);
 
-    setQuickOrders((orders) => {
-      const oldIndex = orders.findIndex((order) => order.id === active.id);
-      const newIndex = orders.findIndex((order) => order.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return orders;
 
-      if (oldIndex === -1 || newIndex === -1) return orders;
+    const reordered = arrayMove(orders, oldIndex, newIndex).map((order) =>
+      order.id === active.id ? touchOrder(order) : order,
+    );
 
-      return arrayMove(orders, oldIndex, newIndex).map((order) =>
-        order.id === active.id ? touchOrder(order) : order,
-      );
-    });
-  }
+    // Fire the API call with the new order, outside the state updater's purity concerns
+    const custnmbr = localStorage.getItem("custnmbr");
+    const orderGuideIds = reordered.map((order) => Number(order.id));
+
+    dispatch(PutOrderGuideSequence({ custnmbr, orderGuideIds }))
+      .unwrap()
+      .then(() => {
+        toast.success("Order items updated");
+      })
+      .catch((err) => {
+        toast.error(err?.message || err || "Failed to save new order");
+      });
+
+    return reordered;
+  });
+}
 
   function handleDragCancel() {
     setActiveOrderId(null);
