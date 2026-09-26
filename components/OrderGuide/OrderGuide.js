@@ -32,8 +32,8 @@ export function OrderGuide() {
   const t = useTranslations("orderGuide");
   const config = getConfig();
 
-  // const custnmbr = config.DEFAULT_CUSTNMBR;
-    const custnmbr = "400001";
+  const custnmbr = localStorage.getItem("custnmbr");
+
   const canCreate = true;
   const canEdit = true;
   const canDelete = true;

@@ -1,5 +1,6 @@
 "use client";
-
+import { useDispatch } from "react-redux";
+import { PostLogin } from "../../redux/slices/postSlice"; 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -106,6 +107,8 @@ function getPhoneError(phone, selectedCountry, t) {
 }
 
 export default function Login() {
+	const dispatch = useDispatch();
+
 	const router = useRouter();
 	const locale = useLocale();
 	const t = useTranslations("auth");
@@ -190,90 +193,143 @@ export default function Login() {
 		};
 	}, []);
 
-	async function handleSendOtp(event) {
-		event.preventDefault();
-		if (loginMethod === "email") return;
+	// async function handleSendOtp(event) {
+	// 	event.preventDefault();
+	// 	if (loginMethod === "email") return;
 
-		const nextError = getPhoneError(phone, selectedCountry, t);
+	// 	const nextError = getPhoneError(phone, selectedCountry, t);
 
-		if (nextError) {
-			setPhoneError(nextError);
-			setMessage("");
-			return;
-		}
+	// 	if (nextError) {
+	// 		setPhoneError(nextError);
+	// 		setMessage("");
+	// 		return;
+	// 	}
 
-		setPhoneError("");
-		setMessage("");
-		setIsSendingOtp(true);
+	// 	setPhoneError("");
+	// 	setMessage("");
+	// 	setIsSendingOtp(true);
 
-		const rawDigits = phone.replace(/\D/g, "");
-		const callingCode = selectedCountryData?.callingCode
-			? `+${selectedCountryData.callingCode}`
-			: "+91";
+	// 	const rawDigits = phone.replace(/\D/g, "");
+	// 	const callingCode = selectedCountryData?.callingCode
+	// 		? `+${selectedCountryData.callingCode}`
+	// 		: "+91";
 
-		try {
-			const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/auth/login`;
+	// 	try {
+	// 		const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/auth/login`;
 
-			const payload = {
-				countryCode: callingCode,
-				mobileNumber: rawDigits,
-				email: "",
-				channel: 0,
-			};
+	// 		const payload = {
+	// 			countryCode: callingCode,
+	// 			mobileNumber: rawDigits,
+	// 			email: "",
+	// 			channel: 0,
+	// 		};
 
-			console.log("Login API URL:", url);
-			console.log("Login API Payload:", payload);
+	// 		console.log("Login API URL:", url);
+	// 		console.log("Login API Payload:", payload);
 
-			const response = await fetch(url, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Accept: "application/json",
-					Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-				},
-				body: JSON.stringify(payload),
-			});
+	// 		const response = await fetch(url, {
+	// 			method: "POST",
+	// 			headers: {
+	// 				"Content-Type": "application/json",
+	// 				Accept: "application/json",
+	// 				Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+	// 			},
+	// 			body: JSON.stringify(payload),
+	// 		});
 
-			console.log("Login API HTTP Status:", response.status);
-			console.log("Login API HTTP OK:", response.ok);
+	// 		console.log("Login API HTTP Status:", response.status);
+	// 		console.log("Login API HTTP OK:", response.ok);
 
-			const responseText = await response.text();
+	// 		const responseText = await response.text();
 
-			console.log("Login API Raw Response:", responseText);
+	// 		console.log("Login API Raw Response:", responseText);
 
-			let result = null;
+	// 		let result = null;
 
-			try {
-				result = responseText ? JSON.parse(responseText) : null;
-			} catch (parseError) {
-				console.warn("Login API response is not JSON:", responseText);
-			}
+	// 		try {
+	// 			result = responseText ? JSON.parse(responseText) : null;
+	// 		} catch (parseError) {
+	// 			console.warn("Login API response is not JSON:", responseText);
+	// 		}
 
-			console.log("Login API Parsed Response:", result);
+	// 		console.log("Login API Parsed Response:", result);
 
-			if (!response.ok || result?.success === false) {
-				throw new Error(
-					result?.message ||
-					result?.Msg ||
-					`Unable to send OTP. HTTP ${response.status}`
-				);
-			}
+	// 		if (!response.ok || result?.success === false) {
+	// 			throw new Error(
+	// 				result?.message ||
+	// 				result?.Msg ||
+	// 				`Unable to send OTP. HTTP ${response.status}`
+	// 			);
+	// 		}
 
-			setStep("otp");
-			setMessage(
-				result?.message || t("otpSent", { phone: formattedPhone ?? maskedPhone })
-			);
-		} catch (error) {
-			console.error("Login API request failed:", error);
-			setPhoneError(
-				error?.message ||
-				"Failed to send OTP. Please check your network or phone number."
-			);
-		} finally {
-			setIsSendingOtp(false);
-		}
-	}
+	// 		setStep("otp");
+	// 		setMessage(
+	// 			result?.message || t("otpSent", { phone: formattedPhone ?? maskedPhone })
+	// 		);
+	// 	} catch (error) {
+	// 		console.error("Login API request failed:", error);
+	// 		setPhoneError(
+	// 			error?.message ||
+	// 			"Failed to send OTP. Please check your network or phone number."
+	// 		);
+	// 	} finally {
+	// 		setIsSendingOtp(false);
+	// 	}
+	// }
 
+async function handleSendOtp(event) {
+  event.preventDefault();
+  if (loginMethod === "email") return;
+
+  const nextError = getPhoneError(phone, selectedCountry, t);
+  if (nextError) {
+    setPhoneError(nextError);
+    setMessage("");
+    return;
+  }
+
+  setPhoneError("");
+  setMessage("");
+  setIsSendingOtp(true);
+
+  const rawDigits = phone.replace(/\D/g, "");
+  const callingCode = selectedCountryData?.callingCode
+    ? `+${selectedCountryData.callingCode}`
+    : "+91";
+
+  const payload = {
+    countryCode: callingCode,
+    mobileNumber: rawDigits,
+    email: "",
+    channel: 0,
+  };
+
+  try {
+    const result = await dispatch(PostLogin({ data: payload })).unwrap();
+	console.log(result, "--find result in postLogin");
+// localStorage.setItem("loggedInUser", JSON.stringify(userId));
+    localStorage.setItem("custnmbr", result.custnmbr);
+    localStorage.setItem("loggedInUser", result.userId);
+    // localStorage.setItem("user", JSON.stringify(Data));
+
+    if (result?.success === false) {
+      throw new Error(result?.message || result?.Msg || "Unable to send OTP.");
+    }
+
+    setStep("otp");
+    setMessage(
+      result?.message || t("otpSent", { phone: formattedPhone ?? maskedPhone })
+    );
+  } catch (error) {
+    console.error("Login API request failed:", error);
+    setPhoneError(
+      error?.message ||
+      "Failed to send OTP. Please check your network or phone number."
+    );
+  } finally {
+    setIsSendingOtp(false);
+  }
+}
 	function handlePhoneChange(event) {
 		setPhone(event.target.value.replace(/[^\d\s().-]/g, ""));
 		if (phoneError) setPhoneError("");

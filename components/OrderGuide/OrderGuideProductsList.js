@@ -1411,6 +1411,77 @@ const updateParPUT = async ({ orderGroupItemID, parValue, modifyBY }) => {
 };
 
 
+//secondary _product_list sequence
+const secondaryDraganddrop = async ({
+  orderGroupItemID,
+  sequence,
+  modifyBY,
+}) => {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/sequence`;
+
+    const requestBody = {
+      orderGroupItemID,
+      sequence,
+      modifyBY,
+    };
+
+    console.log("Update Order Guide ID:", orderGroupItemID);
+    console.log("Update Order Guide URL:", url);
+    console.log("Update Order Guide Request Body:", requestBody);
+
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log("Update Order Guide HTTP Status:", response.status);
+    console.log("Update Order Guide HTTP OK:", response.ok);
+
+    const responseText = await response.text();
+
+    console.log("Update Order Guide Raw Response:", responseText);
+
+    let result = null;
+
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch (error) {
+      console.warn("Response is not JSON:", responseText);
+    }
+
+    console.log("Update Order Guide Parsed Response:", result);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to update order guide. HTTP ${response.status}`,
+      );
+    }
+
+    if (!result?.success) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          "Failed to update order guide.",
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Update Order Guide Error:", error);
+    throw error;
+  }
+};
+
 function ProductImage({ product, listLayout }) {
   const resolvedImg = resolveItemImageUrl(product.image) || product.image;
   const categoryFallback = getCategoryPlaceholderImage(product.category);
@@ -2026,7 +2097,7 @@ async function moveProductToGroup(targetGroupId) {
 //API FOR MOVE TO TOP & BOTTOM
 async function handleMovePosition(position) {
   // position is "top" or "bottom" (lowercase, used by reorderProducts)
-  if (!selectedCount || isMoving || isAllView) return;
+  if (!selectedCount || isMoving) return;
 
   if (!userId) {
     toast.error("Unable to identify the logged-in user.");
@@ -2370,18 +2441,22 @@ async function handleMoveToNewGroup(name) {
             <div className="ml-auto flex items-center gap-1.5 lg:flex-wrap lg:gap-2">
             {canEdit  && (
               <div className="hidden flex-wrap gap-2 lg:flex">
+               {!isAllView && (
+  <>
                <Button variant="outline" size="sm"
-  disabled={!selectedCount || isMoving || isAllView}
+  disabled={!selectedCount || isMoving}
   title={isAllView ? "Select a group to reorder items" : undefined}
   onClick={() => handleMovePosition("top")}>
   <ArrowUpToLine />Move to Top
 </Button>
 <Button variant="outline" size="sm"
-  disabled={!selectedCount || isMoving || isAllView}
+  disabled={!selectedCount || isMoving}
   title={isAllView ? "Select a group to reorder items" : undefined}
   onClick={() => handleMovePosition("bottom")}>
   <ArrowDownToLine />Move to Bottom
 </Button>
+  </>
+)}
                 {/* <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("top")}><ArrowUpToLine />Move to Top</Button>
                 <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("bottom")}><ArrowDownToLine />Move to Bottom</Button> */}
                 <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => { setDuplicate(false); setNewGroupName(null); setProductToMove(selectedProducts); }}><Folder />Change Group</Button>
@@ -2400,13 +2475,18 @@ async function handleMoveToNewGroup(name) {
                     Actions <ChevronDown className="size-3" />
                   </Button>
                 </DropdownMenuTrigger>
+  
                 <DropdownMenuContent align="end" className="w-44 lg:hidden">
-                    <DropdownMenuItem disabled={isMoving || isAllView} onSelect={() => handleMovePosition("top")}>
+                                             {!isAllView && (
+  <>
+                    <DropdownMenuItem disabled={isMoving} onSelect={() => handleMovePosition("top")}>
                     <ArrowUpToLine />Move to Top
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled={isMoving || isAllView} onSelect={() => handleMovePosition("bottom")}>
+                  <DropdownMenuItem disabled={isMoving} onSelect={() => handleMovePosition("bottom")}>
                     <ArrowDownToLine />Move to Bottom
                   </DropdownMenuItem>
+                    </>
+)}
           {/* <DropdownMenuItem onSelect={() => reorderProducts("top")}>
                     <ArrowUpToLine />Move to Top
                   </DropdownMenuItem>
