@@ -1753,6 +1753,7 @@ export function OrderGuideProductsList({
   canEdit,
   canAddProducts,
   canPlaceOrder,
+  
 }) {
 
   const dispatch = useDispatch();
