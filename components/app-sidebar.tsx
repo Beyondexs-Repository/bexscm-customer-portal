@@ -67,7 +67,6 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={navMain} label={routeGroup.label} />
       </SidebarContent>
-      <Separator className="my-1" />
       <SidebarFooter>
         <LocationSwitcher />
         <Separator className="my-1" />

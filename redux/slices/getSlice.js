@@ -109,10 +109,10 @@ export const GetCustomerOrders = createAsyncThunk(
 // ── GET /orderguides/customer/{custnmbr} ─────────────────────────────────────
 export const GetOrderGuideList = createAsyncThunk(
   "orderGuide/GetOrderGuideList",
-  async (custnmbr = "400001", { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const resolvedCust = String(custnmbr || "400001").trim()
-      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/customer/${resolvedCust}`
+   const custnmbr = localStorage.getItem("custnmbr");
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/customer/${custnmbr}`
       console.log("GetOrderGuideList URL:", URL)
 
       const response = await axios.get(URL, {
@@ -260,6 +260,7 @@ const getSlice = createSlice({
         state.orderGuideListStatus = "succeeded"
         state.orderGuideListLoading = false
         state.orderGuideListData = action.payload
+        console.log(state.orderGuideListData, "--find state.orderGuideListData in getslice");
       })
       .addCase(GetOrderGuideList.rejected, (state, action) => {
         state.orderGuideListStatus = "failed"

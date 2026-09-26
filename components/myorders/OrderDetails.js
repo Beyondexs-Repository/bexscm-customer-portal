@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { createPortal } from "react-dom"
 import { useTranslations } from "next-intl"
-import { toast } from "sonner"
 import {
   Building2,
   CalendarClock,
@@ -16,6 +15,8 @@ import {
   PackageCheck,
   Phone,
   Store,
+  ThumbsDown,
+  ThumbsUp,
   Trash2,
   User,
   X,
@@ -24,146 +25,22 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useCart } from "@/app/context/app-context"
+
 import { formatCurrency, statusStyles } from "./MyOrders"
 import OrderItemRatings from "./OrderItemRatings"
-// import defaultimage from "/placeholder.png"
-import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
-import { resolveItemImageUrl } from "@/lib/api/itemsApi"
-export default function OrderDetails({ order, onBack, onClose, onReorderSuccess }) {
-const custnmbr = localStorage.getItem("custnmbr"); 
-   const { fetchCustomerCart } = useCart()
-  const imageurl = `https://crateapi.bexlgems.com/Images/Items`;
 
-  console.log(order, "--find order in order details");
+export default function OrderDetails({ order, onBack, onClose }) {
+
   const [reOrderModalOpen, setReOrderModalOpen] = useState(false);
-  const [reOrderItems, setReOrderItems] = useState([]);
-  const [ratingOrderId, setRatingOrderId] = useState(null);
-  //reorderapi
-  const [isReOrdering, setIsReOrdering] = useState(false);
+  const [reOrderItems, setReOrderItems] = useState([])
+  const [ratingOrderId, setRatingOrderId] = useState(null)
+  const [ratingsByOrder, setRatingsByOrder] = useState({})
+  const [expandedFeedback, setExpandedFeedback] = useState({})
+  const ratings = ratingsByOrder[order.id] || {}
 
   const t = useTranslations("myOrders")
   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
-const reorderOrderApi = async (orderNumber, items) => {
-  try {
-    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orders/reorder/${orderNumber}`;
-
-    console.log("Reorder API URL:", url);
-
-    const requestBody = {
-      items: items.map((item) => ({
-        itemNumber: String(item.itemNumber),
-        quantity: Number(item.quantity),
-      })),
-    };
-
-    console.log("Reorder Request Body:", requestBody);
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log("Reorder HTTP Status:", response.status);
-    console.log("Reorder HTTP OK:", response.ok);
-
-    const responseText = await response.text();
-
-    console.log("Reorder Raw Response:", responseText);
-
-    let result = null;
-
-    try {
-      result = responseText ? JSON.parse(responseText) : null;
-    } catch (error) {
-      console.warn("Reorder response is not JSON:", responseText);
-    }
-
-    console.log("Reorder Parsed Response:", result);
-
-    if (!response.ok) {
-      throw new Error(
-        result?.Msg ||
-          result?.message ||
-          result?.error ||
-          `Unable to reorder. HTTP ${response.status}`,
-      );
-    }
-
-    if (!result?.success) {
-      throw new Error(
-        result?.Msg ||
-          result?.message ||
-          result?.error ||
-          "Failed to reorder.",
-      );
-    }
-
-    return result;
-  } catch (error) {
-    console.error("Reorder API Error:", error);
-    throw error;
-  }
-};
-
-
-const handleReorder = async () => {
-  if (!order?.orderNumber) {
-    console.error("Order number is missing.");
-    return;
-  }
-
-  if (!reOrderItems.length) {
-    toast.error("Please select at least one item.");
-    return;
-  }
-
-  try {
-    setIsReOrdering(true);
-
-    const requestItems = reOrderItems.map((item) => ({
-      itemNumber: String(item.itemNumber),
-      quantity: Number(item.quantity),
-    }));
-
-    console.log("Reorder Order Number:", order.orderNumber);
-    console.log("Reorder Items:", requestItems);
-
-    const result = await reorderOrderApi(
-      order.orderNumber,
-      requestItems,
-    );
-
-    console.log("Reorder Success Response:", result);
-
-    if (result?.success) {
-       toast.success("Items added to cart successfully.");
-
-      setReOrderModalOpen(false);
-      setReOrderItems([]);
-       // refresh recent orders list
-  onReorderSuccess?.();
-
-// refresh cart badge immediately
-  fetchCustomerCart(custnmbr);
-    }
-  } catch (error) {
-    console.error("Reorder failed:", error);
- toast.error(error?.message || "Unable to add the reordered items to cart.");
-    alert(
-      error?.message ||
-        "Unable to add the reordered items to cart.",
-    );
-  } finally {
-    setIsReOrdering(false);
-  }
-};
   return (
     <section className="flex h-full min-h-0 flex-col rounded-lg border bg-card shadow-sm">
       <div className="flex shrink-0 items-start justify-between gap-3 border-b p-3 sm:p-4">
@@ -252,7 +129,7 @@ const handleReorder = async () => {
                   {order.customerName || "Central Foodservice, Inc."}
                 </h4>
                 <p className="text-[11px] font-semibold text-muted-foreground mt-0.5">
-                  ID: {order.customerID || custnmbr}
+                  ID: {order.customerID || "400001"}
                 </p>
               </div>
             </div>
@@ -305,79 +182,113 @@ const handleReorder = async () => {
           <h3 className="text-sm font-bold">{t("orderItems")}</h3>
           <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setRatingOrderId(order.id)}>Rate items</Button>
         </div>
-        <OrderItemRatings key={order.id} open={ratingOrderId === order.id} onOpenChange={(open) => setRatingOrderId(open ? order.id : null)} items={order.items} />
-
-        <div className="mt-3 divide-y rounded-lg border">
-           {order.items.map((item) => {
-    const resolvedImg = resolveItemImageUrl(item.image) || item.image
-    const image = resolvedImg || getCategoryPlaceholderImage(item.category)
-
-    return (
-      <div key={item.id} className="flex gap-3 p-3">
-        <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
-          <img
-            src={image}
-            alt={item.name}
-            className="size-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src = getCategoryPlaceholderImage(item.category)
+        {ratingOrderId === order.id && (
+          <OrderItemRatings
+            open
+            onOpenChange={(open) => setRatingOrderId(open ? order.id : null)}
+            items={order.items}
+            ratings={ratings}
+            onSubmit={(updatedRatings) => {
+              setRatingsByOrder((current) => ({ ...current, [order.id]: updatedRatings }))
+              setExpandedFeedback({})
             }}
           />
-        </div>
+        )}
 
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold">{item.name}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {t("brand")} {item.brand}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {t("packSize")} {item.packSize}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {t("itemNumber")} {item.itemNumber}
-          </p>
-        </div>
+        <div className="mt-3 divide-y rounded-lg border">
+          {order.items.map((item) => {
+            const feedback = ratings[item.id]
+            const feedbackId = `feedback-${order.id}-${item.id}`
+            const isExpanded = !!expandedFeedback[feedbackId]
+            const hasFeedback = feedback?.rating === "down" && (feedback.review?.trim() || feedback.image)
+            const Thumb = feedback?.rating === "up" ? ThumbsUp : ThumbsDown
 
-        <div className="max-w-20 shrink-0 text-right sm:max-w-none">
-          <p className="text-xs font-bold leading-snug">{t("units", { count: item.quantity })}</p>
-          <p className="mt-1 text-xs leading-snug">{formatCurrency(item.price)}</p>
-        </div>
-      </div>
-    )
-  })}
-          {/* {order.items.map((item) => (
-            <div key={item.id} className="flex gap-3 p-3">
-              <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="size-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none"
-                  }}
-                />
-               
+            return (
+              <div key={item.id} className="p-3">
+                <div className="flex gap-3">
+                  <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="size-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none"
+                      }}
+                    />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold">{item.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {t("brand")} {item.brand}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {t("packSize")} {item.packSize}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      SKU: {item.sku}
+                    </p>
+                  </div>
+
+                  <div className="flex max-w-20 shrink-0 flex-col items-end text-right sm:max-w-none">
+                    <p className="text-xs font-bold leading-snug">{t("units", { count: item.quantity })}</p>
+                    <p className="mt-1 text-xs leading-snug">{formatCurrency(item.price)}</p>
+                    {feedback?.rating && (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className={cn(
+                          "mt-2",
+                          feedback.rating === "up"
+                            ? "bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-600 aria-expanded:bg-green-500/10 aria-expanded:text-green-600"
+                            : "bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-500 aria-expanded:bg-red-500/10 aria-expanded:text-red-500",
+                        )}
+                        aria-label={`${feedback.rating === "up" ? "Liked" : "Disliked"} ${item.name}${hasFeedback ? `: ${isExpanded ? "hide" : "show"} feedback` : ""}`}
+                        aria-expanded={hasFeedback ? isExpanded : undefined}
+                        aria-controls={hasFeedback ? feedbackId : undefined}
+                        disabled={!hasFeedback}
+                        onClick={() => setExpandedFeedback((current) => ({ ...current, [feedbackId]: !current[feedbackId] }))}
+                      >
+                        <Thumb className="size-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                {hasFeedback && isExpanded && (
+                  <div id={feedbackId} className="mt-3 space-y-2 rounded-md border bg-muted/30 p-3">
+                    <div className="flex items-start justify-between gap-2 text-xs">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold">Your feedback</span>
+                        <span className="text-muted-foreground">
+                          {new Date(feedback.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="shrink-0 text-blue-500 hover:text-blue-400 hover:underline"
+                        onClick={() => setExpandedFeedback((current) => ({ ...current, [feedbackId]: false }))}
+                      >
+                        Hide
+                      </button>
+                    </div>
+                    {feedback.review?.trim() && <p className="whitespace-pre-wrap break-words text-xs">{feedback.review}</p>}
+                    {feedback.image && (
+                      <a
+                        href={feedback.image}
+                        download={`feedback-${item.sku || item.id}`}
+                        aria-label={`Download feedback image for ${item.name}`}
+                        title="Download image"
+                        className="block w-fit rounded-md focus-visible:outline-2 focus-visible:outline-ring"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={feedback.image} alt={`Feedback for ${item.name}`} className="h-20 w-28 rounded-md object-cover" />
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
-
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold">{item.name}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {t("brand")} {item.brand}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {t("packSize")} {item.packSize}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {t("itemNumber")} {item.itemNumber}
-                </p>
-              </div>
-
-              <div className="max-w-20 shrink-0 text-right sm:max-w-none">
-                <p className="text-xs font-bold leading-snug">{t("units", { count: item.quantity })}</p>
-                <p className="mt-1 text-xs leading-snug">{formatCurrency(item.price)}</p>
-              </div>
-            </div>
-          ))} */}
+            )
+          })}
         </div>
 
         <div className="mt-4 space-y-2 text-sm">
@@ -458,12 +369,9 @@ const handleReorder = async () => {
               <div className="mt-0 divide-y rounded-lg border">
                 {reOrderItems.map((item) => {
                   const quantity = Number(item.quantity) || 1
-                   const unitPrice = Number(item.unitPrice) || 0
-                const itemTotal = quantity * unitPrice
-                  // const price = Number(item.price) || 0
-                  // const itemTotal = quantity * price
- const resolvedImg = resolveItemImageUrl(item.image) || item.image
-  const image = resolvedImg || getCategoryPlaceholderImage(item.category)
+                  const price = Number(item.price) || 0
+                  const itemTotal = quantity * price
+
                   return (
                     <div
                       key={item.id}
@@ -490,22 +398,14 @@ const handleReorder = async () => {
 
                       {/* Product Image */}
                       <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
-                        {/* <img
+                        <img
                           src={item.image}
                           alt={item.name}
                           className="size-full object-cover"
                           onError={(e) => {
                             e.currentTarget.style.display = "none"
                           }}
-                        /> */}
- <img
-          src={image}
-          alt={item.name}
-          className="size-full object-cover"
-          onError={(e) => {
-            e.currentTarget.src = getCategoryPlaceholderImage(item.category)
-          }}
-        />
+                        />
                       </div>
 
                       {/* Product Details */}
@@ -523,7 +423,7 @@ const handleReorder = async () => {
                         </p>
 
                         <p className="truncate text-xs text-muted-foreground">
-                           {t("itemNumber")} {item.itemNumber}
+                          SKU: {item.sku}
                         </p>
 
                         {/* Quantity Selector */}
@@ -626,7 +526,7 @@ const handleReorder = async () => {
                         (sum, item) =>
                           sum +
                           (Number(item.quantity) || 0) *
-                          (Number(item.unitPrice) || 0),
+                          (Number(item.price) || 0),
                         0
                       )
                     )}
@@ -635,21 +535,7 @@ const handleReorder = async () => {
               </div>
             {/* Modal Footer */}
             <div className="flex justify-end gap-2 border-t p-4">
-               <Button
-    variant="outline"
-    onClick={() => setReOrderModalOpen(false)}
-    disabled={isReOrdering}
-  >
-    Cancel
-  </Button>
-
-  <Button
-    onClick={handleReorder}
-    disabled={isReOrdering || reOrderItems.length === 0}
-  >
-    {isReOrdering ? "Adding..." : "Add to Cart"}
-  </Button>
-              {/* <Button
+              <Button
                 variant="outline"
                 onClick={() => setReOrderModalOpen(false)}
               >
@@ -662,7 +548,7 @@ const handleReorder = async () => {
                 }}
               >
                 Add to Cart
-              </Button> */}
+              </Button>
             </div>
             </div>
           </div>
