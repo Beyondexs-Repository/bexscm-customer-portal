@@ -1014,7 +1014,7 @@ export default function OrderList({
                   placeholder="Search Order# or Customer ID"
                   value={inputCustomer}
                   onChange={handleSearchChange}
-                  className="h-9 pr-8 text-xs font-mono"
+                  className="h-9 pr-8 text-xs [font-family:inherit] text-inherit "
                 />
                 <button type="submit" aria-label="Search Customer Orders" className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground">
                   <Search className="size-4" />

@@ -22,7 +22,7 @@ export function TeamSwitcher() {
           <Image src='/logo/logo.png' alt='Crate Inc' width={32} height={32} className="size-8 object-contain"/>
         </div>
         <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-          <span className="truncate font-medium">Crate Inc.</span>
+          <span className="truncate font-medium">Bex SCM</span>
         </div>
         </div>
       </SidebarMenuItem>

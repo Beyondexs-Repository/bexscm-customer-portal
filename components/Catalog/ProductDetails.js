@@ -306,7 +306,7 @@ export function ProductDetails({ productId, backHref }) {
         <h2 className="text-xl font-bold">{t("productDescription")}</h2>
 
         <p className="mt-3 max-w-4xl leading-7 text-muted-foreground">
-          Fresh, reliable product packed for Crate Inc. ordering. This
+          Fresh, reliable product packed for Bex SCM ordering. This
           product is suitable for restaurants, retailers, catering services, and
           business buyers who need consistent quality and dependable supply.
         </p>
