@@ -1,6 +1,6 @@
 "use client"
 import { useDispatch } from "react-redux"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { createPortal } from "react-dom"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner" 
@@ -25,7 +25,7 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { cn, getItemImage } from "@/lib/utils"
 
 import { formatCurrency, statusStyles } from "./MyOrders"
 import { myOrderitemsRating } from "../../redux/slices/postSlice"   
@@ -38,7 +38,25 @@ const dispatch = useDispatch();
   const [ratingOrderId, setRatingOrderId] = useState(null)
   const [ratingsByOrder, setRatingsByOrder] = useState({})
   const [expandedFeedback, setExpandedFeedback] = useState({})
-  const ratings = ratingsByOrder[order.id] || {}
+
+  // const ratings = ratingsByOrder[order.id] || {}
+  // replace: const ratings = ratingsByOrder[order.id] || {}
+const serverRatings = useMemo(() => {
+  const map = {}
+  order.items.forEach((item) => {
+    if (!item.isRated) return
+    map[item.id] = {
+      rating: item.isPositive ? "up" : "down",
+      review: item.review || "",
+      image: item.reviewImageUrl || "",
+      locked: true,
+    }
+  })
+  return map
+}, [order.items])
+
+// ratings submitted in this session override/extend the server ones
+const ratings = { ...serverRatings, ...(ratingsByOrder[order.id] || {}) }
 
   const t = useTranslations("myOrders")
   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
@@ -194,20 +212,95 @@ const dispatch = useDispatch();
             //   setRatingsByOrder((current) => ({ ...current, [order.id]: updatedRatings }))
             //   setExpandedFeedback({})
             // }}
-           onSubmit={async (updatedRatings) => {
-  const { formData, count } = buildRatingsFormData(order.items, updatedRatings)
-  if (count === 0) return true
+
+//            onSubmit={async (updatedRatings) => {
+//   const { formData, count } = buildRatingsFormData(order.items, updatedRatings)
+//   if (count === 0) return true
+
+//   try {
+//     const result = await dispatch(myOrderitemsRating({ data: formData })).unwrap()
+
+//     setRatingsByOrder((current) => ({ ...current, [order.id]: updatedRatings }))
+//     setExpandedFeedback({})
+
+//     if (result?.errorCount > 0) {
+//       toast.warning(`${result.savedCount} rated, ${result.errorCount} failed`)
+//     } else {
+//       toast.success("Items rating updated successfully")
+//     }
+//     return true
+//   } catch (err) {
+//     console.error("Rating failed:", err)
+//     toast.error(err?.message || "Failed to update items rating")
+//     return false
+//   }
+// }}
+// onSubmit={async (updatedRatings) => {
+//   const { formData, count } = buildRatingsFormData(order.items, updatedRatings, ratings)
+
+//   if (count === 0) {
+//     toast.info("No rating changes to save")
+//     return true
+//   }
+
+//   try {
+//     const result = await dispatch(myOrderitemsRating({ data: formData })).unwrap()
+
+//     setRatingsByOrder((current) => ({ ...current, [order.id]: updatedRatings }))
+//     setExpandedFeedback({})
+
+//     if (result?.errorCount > 0) {
+//       toast.warning(`${result.savedCount} rated, ${result.errorCount} failed`)
+//     } else {
+//       toast.success("Items rating updated successfully")
+//     }
+//     return true
+//   } catch (err) {
+//     console.error("Rating failed:", err)
+//     toast.error(err?.message || "Failed to update items rating")
+//     return false
+//   }
+// }}
+//locked changes
+onSubmit={async (updatedRatings) => {
+  const { formData, count } = buildRatingsFormData(order.items, updatedRatings, ratings)
+
+  if (count === 0) {
+    toast.info("No new ratings to save")
+    return true
+  }
 
   try {
     const result = await dispatch(myOrderitemsRating({ data: formData })).unwrap()
 
-    setRatingsByOrder((current) => ({ ...current, [order.id]: updatedRatings }))
+    const errors = result?.data?.errors || []
+    const failedIds = new Set(errors.map((e) => String(e.orderDetailID)))
+    const alreadyIds = new Set(
+      errors.filter((e) => /already rated/i.test(e.error)).map((e) => String(e.orderDetailID))
+    )
+    const toId = (item) => String(item.orderDetailID ?? item.id).replace(/^item-/, "")
+
+    const next = { ...ratings }
+    order.items.forEach((item) => {
+      const fb = updatedRatings[item.id]
+      if (!fb?.rating || next[item.id]?.rating || next[item.id]?.locked) return
+      const id = toId(item)
+
+      if (alreadyIds.has(id)) next[item.id] = { locked: true }  // backend says it's rated → lock the row
+      else if (failedIds.has(id)) return                        // other error → leave editable
+      else next[item.id] = fb                                   // saved
+    })
+
+    setRatingsByOrder((current) => ({ ...current, [order.id]: next }))
     setExpandedFeedback({})
 
-    if (result?.errorCount > 0) {
-      toast.warning(`${result.savedCount} rated, ${result.errorCount} failed`)
-    } else {
+    if (result?.savedCount > 0 && result?.errorCount === 0) {
       toast.success("Items rating updated successfully")
+    } else if (result?.savedCount > 0) {
+      toast.warning(`${result.savedCount} rated, ${result.errorCount} could not be saved`)
+    } else {
+      toast.error(errors[0]?.error || "Failed to update items rating")
+      return false
     }
     return true
   } catch (err) {
@@ -232,7 +325,8 @@ const dispatch = useDispatch();
                 <div className="flex gap-3">
                   <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
                     <img
-                      src={item.image}
+                      // src={item.image}
+                      src={getItemImage(item) || undefined}
                       alt={item.name}
                       className="size-full object-cover"
                       onError={(e) => {
@@ -283,9 +377,14 @@ const dispatch = useDispatch();
                     <div className="flex items-start justify-between gap-2 text-xs">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold">Your feedback</span>
-                        <span className="text-muted-foreground">
+                          {feedback.date && (
+    <span className="text-muted-foreground">
+      {new Date(feedback.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+    </span>
+  )}
+                        {/* <span className="text-muted-foreground">
                           {new Date(feedback.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                        </span>
+                        </span> */}
                       </div>
                       <button
                         type="button"
@@ -423,7 +522,8 @@ const dispatch = useDispatch();
                       {/* Product Image */}
                       <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
                         <img
-                          src={item.image}
+                          // src={item.image}
+                          src={getItemImage(item) || undefined}
                           alt={item.name}
                           className="size-full object-cover"
                           onError={(e) => {
