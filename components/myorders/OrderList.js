@@ -979,7 +979,7 @@ export default function OrderList({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold leading-tight sm:text-xl">{t("recentOrders")}</h2>
+                <h2 className="text-lg font-bold leading-tight sm:text-xl ">{t("recentOrders")}</h2>
                 <Badge variant="outline" className="gap-1 text-xs font-normal">
                   <UserCheck className="size-3 text-primary" />
                   ID: <span className="font-semibold">{customerId}</span>
