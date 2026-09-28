@@ -2168,7 +2168,7 @@ async function handleMoveToNewGroup(name) {
     setProductToDelete(null);
   }
 
-async function persistDragReorder(activeId, overId) {
+  async function persistDragReorder(activeId, overId) {
   if (isAllView) {
     toast.error("Select a specific group to reorder items.");
     return;
@@ -2185,7 +2185,6 @@ async function persistDragReorder(activeId, overId) {
 
   const reorderedVisible = arrayMove(visibleIds, from, to);
 
-  // Keep filtered-out products in their existing positions, same as reorderProducts
   let visibleIndex = 0;
   const orderedIds = allProducts.map((product) =>
     visibleIds.includes(product.id) ? reorderedVisible[visibleIndex++] : product.id,
@@ -2197,52 +2196,142 @@ async function persistDragReorder(activeId, overId) {
   );
 
   const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+  const ranks = new Map(orderedIds.map((id, index) => [id, index]));
 
+  // Apply the new order to the UI immediately so the drop feels instant,
+  // and keep a snapshot to roll back to if the API call fails.
+  let previousGroupProducts = null;
+  setSortBy("custom");
+  setQuickOrders((orders) =>
+    orders.map((order) => {
+      if (order.id !== selectedOrder.id) return order;
+      return touchOrder({
+        ...order,
+        groups: order.groups.map((group) => {
+          if (group.id !== selectedGroup.id) return group;
+          previousGroupProducts = group.products;
+          return {
+            ...group,
+            products: [...group.products].sort(
+              (a, b) => ranks.get(a.id) - ranks.get(b.id),
+            ),
+          };
+        }),
+      });
+    }),
+  );
+
+  setIsReordering(true);
   try {
-    setIsReordering(true);
-
     await dispatch(
       PutItemSequence({
         orderGuideGroupID: Number(selectedGroup.id),
         orderGroupItemIds,
         modifyBY,
       }),
-    )
-    .unwrap()
-      .then(() => {
-        toast.success("Order group items updated");
-      });
+    ).unwrap();
+
+    toast.success("Order group items updated");
   } catch (error) {
     console.error("Reorder items failed:", error);
     toast.error(error?.Msg || error?.message || "Failed to save the new order.");
-    return; // API failed — don't touch the UI, drag snaps back visually next render
+
+    // API failed -> roll back to the order before the drag
+    if (previousGroupProducts) {
+      setQuickOrders((orders) =>
+        orders.map((order) =>
+          order.id !== selectedOrder.id
+            ? order
+            : touchOrder({
+                ...order,
+                groups: order.groups.map((group) =>
+                  group.id !== selectedGroup.id
+                    ? group
+                    : { ...group, products: previousGroupProducts },
+                ),
+              }),
+        ),
+      );
+    }
   } finally {
     setIsReordering(false);
   }
-
-  // API succeeded -> update the UI
-  const ranks = new Map(orderedIds.map((id, index) => [id, index]));
-  setSortBy("custom");
-  setQuickOrders((orders) =>
-    orders.map((order) =>
-      order.id !== selectedOrder.id
-        ? order
-        : touchOrder({
-            ...order,
-            groups: order.groups.map((group) =>
-              group.id !== selectedGroup.id
-                ? group
-                : {
-                    ...group,
-                    products: [...group.products].sort(
-                      (a, b) => ranks.get(a.id) - ranks.get(b.id),
-                    ),
-                  },
-            ),
-          }),
-    ),
-  );
 }
+// async function persistDragReorder(activeId, overId) {
+//   if (isAllView) {
+//     toast.error("Select a specific group to reorder items.");
+//     return;
+//   }
+//   if (!userId) {
+//     toast.error("Unable to identify the logged-in user.");
+//     return;
+//   }
+
+//   const visibleIds = products.map((product) => product.id);
+//   const from = visibleIds.indexOf(activeId);
+//   const to = visibleIds.indexOf(overId);
+//   if (from < 0 || to < 0) return;
+
+//   const reorderedVisible = arrayMove(visibleIds, from, to);
+
+//   // Keep filtered-out products in their existing positions, same as reorderProducts
+//   let visibleIndex = 0;
+//   const orderedIds = allProducts.map((product) =>
+//     visibleIds.includes(product.id) ? reorderedVisible[visibleIndex++] : product.id,
+//   );
+
+//   const idToProduct = new Map(allProducts.map((product) => [product.id, product]));
+//   const orderGroupItemIds = orderedIds.map((id) =>
+//     Number(idToProduct.get(id)?.orderGroupItemID),
+//   );
+
+//   const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+
+//   try {
+//     setIsReordering(true);
+
+//     await dispatch(
+//       PutItemSequence({
+//         orderGuideGroupID: Number(selectedGroup.id),
+//         orderGroupItemIds,
+//         modifyBY,
+//       }),
+//     )
+//     .unwrap()
+//       .then(() => {
+//         toast.success("Order group items updated");
+//       });
+//   } catch (error) {
+//     console.error("Reorder items failed:", error);
+//     toast.error(error?.Msg || error?.message || "Failed to save the new order.");
+//     return; // API failed — don't touch the UI, drag snaps back visually next render
+//   } finally {
+//     setIsReordering(false);
+//   }
+
+//   // API succeeded -> update the UI
+//   const ranks = new Map(orderedIds.map((id, index) => [id, index]));
+//   setSortBy("custom");
+//   setQuickOrders((orders) =>
+//     orders.map((order) =>
+//       order.id !== selectedOrder.id
+//         ? order
+//         : touchOrder({
+//             ...order,
+//             groups: order.groups.map((group) =>
+//               group.id !== selectedGroup.id
+//                 ? group
+//                 : {
+//                     ...group,
+//                     products: [...group.products].sort(
+//                       (a, b) => ranks.get(a.id) - ranks.get(b.id),
+//                     ),
+//                   },
+//             ),
+//           }),
+//     ),
+//   );
+// }
 
 
   function openEditParDialog(product) {
@@ -2538,22 +2627,24 @@ async function persistDragReorder(activeId, overId) {
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragStart={({ active }) => setActiveProductId(active.id)}
-              onDragCancel={() => setActiveProductId(null)}
+              // onDragCancel={() => setActiveProductId(null)}
               // onDragEnd={({ active, over }) => {
               //   setActiveProductId(null);
               //   if (canEdit && layout === "list" && over && active.id !== over.id) {
               //     reorderProducts(null, active.id, over.id);
               //   }
               // }}
-              onDragEnd={({ active, over }) => {
-  setActiveProductId(null);
-  // if (canEdit && layout === "list" && over && active.id !== over.id) {
-  //   persistDragReorder(active.id, over.id);
-  // }
-   if (canEdit && layout === "list" && !isAllView && over && active.id !== over.id) {
-    persistDragReorder(active.id, over.id);
-  }
-}}
+                onDragCancel={() => {
+    setActiveProductId(null);
+    document.activeElement?.blur();
+  }}
+  onDragEnd={({ active, over }) => {
+    setActiveProductId(null);
+    document.activeElement?.blur();
+    if (canEdit && layout === "list" && !isAllView && over && active.id !== over.id) {
+      persistDragReorder(active.id, over.id);
+    }
+  }}
             >
               <SortableContext items={products.map((product) => product.id)} strategy={verticalListSortingStrategy}>
             <div className="no-scrollbar h-full overflow-y-auto">

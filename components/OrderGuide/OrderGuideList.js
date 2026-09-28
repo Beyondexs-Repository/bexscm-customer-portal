@@ -1626,6 +1626,7 @@ async function saveGroupPar() {
 
   const { active, over } = event;
   setActiveOrderId(null);
+    document.activeElement?.blur();   // add this
 
   if (!over || active.id === over.id) return;
 
@@ -1686,7 +1687,11 @@ async function saveGroupPar() {
           collisionDetection={closestCenter}
           onDragStart={({ active }) => setActiveOrderId(active.id)}
           onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
+          // onDragCancel={handleDragCancel}
+           onDragCancel={() => {
+    setActiveOrderId(null);
+    document.activeElement?.blur();
+  }}
         >
           <SortableContext
             items={quickOrders.map((order) => order.id)}

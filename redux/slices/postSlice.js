@@ -675,6 +675,35 @@ export const PutItemSequence = createAsyncThunk(
   }
 )
 
+
+//-POST ITEMS RATINGS IN MY ORDER SCREEN-------------------------------------------------->
+export const myOrderitemsRating = createAsyncThunk(
+  "MyOrder/itemsRatings",
+  async ({ data }, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/itemratings/batch`
+      console.log("PostLogin URL:", URL)
+
+      const response = await axios.post(
+        URL, data, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+          },
+        }
+      )
+
+    return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
+    }
+  }
+)
+
+
+
 // ============================================================
 // SLICE  (Crea pattern — createSlice with extraReducers builder)
 // ============================================================
