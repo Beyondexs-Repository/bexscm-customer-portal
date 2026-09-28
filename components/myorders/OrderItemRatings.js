@@ -31,7 +31,7 @@ function ItemReview({ item, feedback = {}, onChange, onImageLoading }) {
     onImageLoading(1);
     const reader = new FileReader();
     reader.onload = () => {
-      onChange({ image: reader.result });
+       onChange({ image: reader.result, imageFile: file }) 
       setReadingImage(false);
       onImageLoading(-1);
     };
@@ -118,11 +118,46 @@ function ItemReview({ item, feedback = {}, onChange, onImageLoading }) {
     </article>
   );
 }
+export function buildRatingsFormData(items, ratings) {
+  const formData = new FormData()
+  let index = 0
+
+  items.forEach((item) => {
+    const fb = ratings[item.id]
+    if (!fb?.rating) return // neither liked nor disliked → skip
+
+    const isPositive = fb.rating === "up"
+    const prefix = `items[${index}]`
+    // "item-5650" → "5650"
+    const orderDetailId = String(item.orderDetailID ?? item.id).replace(/^item-/, "")
+    formData.append(`${prefix}.OrderDetailID`, orderDetailId)
+    // formData.append(`${prefix}.OrderDetailID`, String(item.orderDetailID ?? item.id))
+    formData.append(`${prefix}.IsPositive`, String(isPositive))
+
+    if (!isPositive) {
+      if (fb.review?.trim()) formData.append(`${prefix}.Review`, fb.review.trim())
+      if (fb.imageFile) formData.append(`${prefix}.ReviewImageFile`, fb.imageFile, fb.imageFile.name)
+    }
+    index++
+  })
+
+  return { formData, count: index }
+}
 
 export default function OrderItemRatings({ open, onOpenChange, items, ratings, onSubmit }) {
   const [drafts, setDrafts] = useState(ratings);
   const [loadingImages, setLoadingImages] = useState(0);
 
+
+const [submitting, setSubmitting] = useState(false);
+
+async function handleSubmit() {
+  setSubmitting(true);
+  const ok = await onSubmit(drafts);
+  setSubmitting(false);
+  if (ok !== false) onOpenChange(false);
+}
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[85svh] flex-col sm:max-w-xl">
@@ -152,9 +187,12 @@ export default function OrderItemRatings({ open, onOpenChange, items, ratings, o
           )}
         </div>
         <DialogFooter>
-          <Button disabled={loadingImages > 0} onClick={() => { onSubmit(drafts); onOpenChange(false); }}>
+          {/* <Button disabled={loadingImages > 0} onClick={() => { onSubmit(drafts); onOpenChange(false); }}>
             Submit
-          </Button>
+          </Button> */}
+          <Button disabled={loadingImages > 0 || submitting} onClick={handleSubmit}>
+  {submitting ? "Submitting…" : "Submit"}
+</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

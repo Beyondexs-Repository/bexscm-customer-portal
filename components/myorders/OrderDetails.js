@@ -1,8 +1,9 @@
 "use client"
-
+import { useDispatch } from "react-redux"
 import { useState } from "react"
 import { createPortal } from "react-dom"
 import { useTranslations } from "next-intl"
+import { toast } from "sonner" 
 import {
   Building2,
   CalendarClock,
@@ -27,10 +28,11 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 import { formatCurrency, statusStyles } from "./MyOrders"
-import OrderItemRatings from "./OrderItemRatings"
+import { myOrderitemsRating } from "../../redux/slices/postSlice"   
+import OrderItemRatings, { buildRatingsFormData } from "./OrderItemRatings"
 
 export default function OrderDetails({ order, onBack, onClose }) {
-
+const dispatch = useDispatch();
   const [reOrderModalOpen, setReOrderModalOpen] = useState(false);
   const [reOrderItems, setReOrderItems] = useState([])
   const [ratingOrderId, setRatingOrderId] = useState(null)
@@ -188,10 +190,32 @@ export default function OrderDetails({ order, onBack, onClose }) {
             onOpenChange={(open) => setRatingOrderId(open ? order.id : null)}
             items={order.items}
             ratings={ratings}
-            onSubmit={(updatedRatings) => {
-              setRatingsByOrder((current) => ({ ...current, [order.id]: updatedRatings }))
-              setExpandedFeedback({})
-            }}
+            // onSubmit={(updatedRatings) => {
+            //   setRatingsByOrder((current) => ({ ...current, [order.id]: updatedRatings }))
+            //   setExpandedFeedback({})
+            // }}
+           onSubmit={async (updatedRatings) => {
+  const { formData, count } = buildRatingsFormData(order.items, updatedRatings)
+  if (count === 0) return true
+
+  try {
+    const result = await dispatch(myOrderitemsRating({ data: formData })).unwrap()
+
+    setRatingsByOrder((current) => ({ ...current, [order.id]: updatedRatings }))
+    setExpandedFeedback({})
+
+    if (result?.errorCount > 0) {
+      toast.warning(`${result.savedCount} rated, ${result.errorCount} failed`)
+    } else {
+      toast.success("Items rating updated successfully")
+    }
+    return true
+  } catch (err) {
+    console.error("Rating failed:", err)
+    toast.error(err?.message || "Failed to update items rating")
+    return false
+  }
+}}
           />
         )}
 
