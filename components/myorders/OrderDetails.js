@@ -25,7 +25,7 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { cn, getItemImage } from "@/lib/utils"
+import { cn, getItemImage, formatDeliveryDate } from "@/lib/utils"
 
 import { formatCurrency, statusStyles } from "./MyOrders"
 import { myOrderitemsRating } from "../../redux/slices/postSlice"   
@@ -70,13 +70,15 @@ const ratings = { ...serverRatings, ...(ratingsByOrder[order.id] || {}) }
               {t("orderNumber", { number: order.orderNumber })}
             </p>
 
-            <Badge className={cn("h-auto shrink-0 px-2 py-0.5 text-[10px] leading-none ring-1", statusStyles[order.statusTone])}>
+            <Badge className={cn("h-auto shrink-0 px-2 py-0.5 text-[10px] leading-none ring-1", statusStyles[String(order.status).trim().toLowerCase() === "open" ? "green" : order.statusTone])}>
               {order.status}
             </Badge>
           </div>
 
           <h2 className="mt-3 text-lg font-bold leading-tight sm:text-xl">
-            {t("deliveryOn", { deliveryDate: order.deliveryDate })}
+            {/* {t("deliveryOn", { deliveryDate: order.deliveryDate })} */}
+            {t("deliveryOn", { deliveryDate: formatDeliveryDate(order.deliveryDate) })}
+
           </h2>
         </div>
 

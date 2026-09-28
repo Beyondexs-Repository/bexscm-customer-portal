@@ -6,7 +6,7 @@ import { defaultLocale } from "@/lib/i18n"
 import { AppProvider } from "@/app/context/app-context"
 import { StaticIntlProvider } from "@/components/static-intl-provider"
 import { StoreProvider } from "@/redux/StoreProvider"
-import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget"
+// import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget"
 
 const poppins = Poppins({
   subsets: ["latin"],

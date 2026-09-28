@@ -53,8 +53,8 @@ export const GetItems = createAsyncThunk(
   "items/GetItems",
   async (_, { rejectWithValue }) => {
     try {
-      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/items`
-      console.log("GetItems URL:", URL)
+      const custnmbr = localStorage.getItem("custnmbr")
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/items?custNmbr=${custnmbr}`
 
       const response = await axios.get(URL, {
         headers: {
@@ -69,7 +69,14 @@ export const GetItems = createAsyncThunk(
         throw new Error(result?.Msg || result?.message || "Failed to fetch items.")
       }
 
-      return Array.isArray(result) ? result : []
+      // accept a bare array or { data: [...] }
+      const list = Array.isArray(result) ? result : result?.data ?? []
+
+      // { item: {...}, inOrderGuide } → { ...item, inOrderGuide }
+      return list.map((entry) => ({
+        ...(entry.item ?? entry),
+        inOrderGuide: entry.inOrderGuide ?? false,
+      }))
     } catch (error) {
       return rejectWithValue(error.response ? error.response.data : error.message)
     }
@@ -313,10 +320,10 @@ export const { resetGetSlice, clearOrderGroupItems, clearOrderGuideGroups } = ge
 // SELECTORS
 // ============================================================
 // Items
-export const selectItemsData        = (state) => state.getSlice.itemsData
-export const selectItemsLoading     = (state) => state.getSlice.itemsLoading
-export const selectItemsStatus      = (state) => state.getSlice.itemsStatus
-export const selectItemsError       = (state) => state.getSlice.itemsError
+// export const selectItemsData        = (state) => state.getSlice.itemsData
+// export const selectItemsLoading     = (state) => state.getSlice.itemsLoading
+// export const selectItemsStatus      = (state) => state.getSlice.itemsStatus
+// export const selectItemsError       = (state) => state.getSlice.itemsError
 
 // Orders
 export const selectOrdersData       = (state) => state.getSlice.ordersData

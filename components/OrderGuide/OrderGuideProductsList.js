@@ -1045,7 +1045,7 @@
 //changed by Radhika 23/09/2026 --12:02 PM =================================================================================>
 "use client";
 import { useDispatch } from "react-redux";
-import { PutItemSequence } from "../../redux/slices/postSlice"; 
+import { PutItemSequence, PostCart  } from "../../redux/slices/postSlice"; 
 import { useState } from "react";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
@@ -2257,6 +2257,8 @@ async function handleMoveToNewGroup(name) {
     setIsReordering(false);
   }
 }
+
+
 // async function persistDragReorder(activeId, overId) {
 //   if (isAllView) {
 //     toast.error("Select a specific group to reorder items.");
@@ -2332,7 +2334,37 @@ async function handleMoveToNewGroup(name) {
 //     ),
 //   );
 // }
+async function addGuideProductsToCart(products) {
+  // skip items already in the local cart
+  const pending = products.filter((p) => !cartQuantities.get(p.id))
+  const ids = pending.map((p) => Number(p.orderGroupItemID)).filter(Boolean)
+  if (ids.length === 0) return
 
+  const custNmbr = localStorage.getItem("custnmbr")
+  if (!custNmbr) {
+    toast.error("Unable to identify the customer.")
+    return
+  }
+
+  try {
+    const result = await dispatch(
+      PostCart({ data: { custNmbr, orderGroupItemIds: ids } })
+    ).unwrap()
+
+    // keep the local cart (badge, cart page) in sync with what the server added
+    ;(result.added ?? []).forEach((entry) => {
+      const product = pending.find((p) => String(p.id).trim() === String(entry.itemNumber).trim())
+      if (product) addItem(product, Number(entry.quantity) || 1)
+    })
+
+    const skipped = result.skipped?.length ?? 0
+    const added = result.totalAdded ?? result.added?.length ?? 0
+    if (skipped > 0) toast.warning(`${added} added, ${skipped} skipped`)
+    else toast.success(`${added} item(s) added to cart`)
+  } catch (err) {
+    toast.error(typeof err === "string" ? err : err?.Msg || err?.message || "Failed to add to cart")
+  }
+}
 
   function openEditParDialog(product) {
     setProductToEditPar(product);
@@ -2573,9 +2605,15 @@ async function handleMoveToNewGroup(name) {
               </div>
             )}
             {canPlaceOrder && (
-              <Button size="sm" className="h-8 gap-1 px-2 text-[10px] sm:gap-2 sm:px-3 sm:text-xs" disabled={!selectedCount} onClick={() => {
-                selectedProducts.forEach((product) => { if (!cartQuantities.get(product.id)) addItem(product, 1); });
-              }}><ShoppingCart /><span className="lg:hidden">Add to Cart</span><span className="hidden lg:inline">{selectedCount ? `Add ${selectedCount} to Cart` : "Add to Cart"}</span></Button>
+              <Button size="sm" 
+              className="h-8 gap-1 px-2 text-[10px] sm:gap-2 sm:px-3 sm:text-xs" 
+              disabled={!selectedCount} 
+              onClick={() => addGuideProductsToCart(selectedProducts)}
+              // onClick={() => {
+              //   selectedProducts.forEach((product) => { if (!cartQuantities.get(product.id)) addItem(product, 1); });
+              // }}
+              
+              ><ShoppingCart /><span className="lg:hidden">Add to Cart</span><span className="hidden lg:inline">{selectedCount ? `Add ${selectedCount} to Cart` : "Add to Cart"}</span></Button>
             )}
             {canEdit && (
               <DropdownMenu>
@@ -2664,7 +2702,8 @@ async function handleMoveToNewGroup(name) {
                     selected={selectedIds.includes(product.id)}
                     onSelect={() => setSelection({ group: selectionKey, ids: selectedIds.includes(product.id) ? selectedIds.filter((id) => id !== product.id) : [...selectedIds, product.id] })}
                     cartQuantity={cartQuantities.get(product.id) ?? 0}
-                    onAddToCart={addItem}
+                    // onAddToCart={addItem}
+                    onAddToCart={(product) => addGuideProductsToCart([product])}
                     onIncrement={incrementItem}
                     onDecrement={decrementItem}
                     onChangeGroup={(product) => { setDuplicate(false); setNewGroupName(null); setProductToMove([product]); }}

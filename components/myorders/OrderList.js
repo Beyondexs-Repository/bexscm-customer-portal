@@ -810,7 +810,7 @@ function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
             {t("orderNumber", { number: order.orderNumber })}
           </p>
 
-          <Badge className={cn("h-auto shrink-0 px-2 py-0.5 text-[10px] leading-none ring-1", statusStyles[order.statusTone || "blue"])}>
+          <Badge className={cn("h-auto shrink-0 px-2 py-0.5 text-[10px] leading-none ring-1", statusStyles[String(order.status).trim().toLowerCase() === "open" ? "green" : order.statusTone || "blue"])}>
             {order.status}
           </Badge>
         </div>
@@ -979,11 +979,7 @@ export default function OrderList({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold leading-tight sm:text-xl">{t("recentOrders")}</h2>
-                <Badge variant="outline" className="gap-1 text-xs font-normal">
-                  <UserCheck className="size-3 text-primary" />
-                  ID: <span className="font-semibold">{customerId}</span>
-                </Badge>
+                <h2 className="text-lg font-bold leading-tight sm:text-xl ">{t("recentOrders")}</h2>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">{t("filterHint")}</p>
             </div>
@@ -1008,10 +1004,10 @@ export default function OrderList({
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
             {/* Search / Customer ID Input Form */}
             <form onSubmit={handleCustomerSubmit} className="flex items-center gap-2">
-              <div className="relative flex-1 sm:w-44">
+              <div className="relative flex-1 sm:w-64">
                 <Input
                   type="text"
-                  placeholder="Search Order# or Customer ID"
+                  placeholder="Search Order or Customer ID"
                   value={inputCustomer}
                   onChange={handleSearchChange}
                   className="h-9 pr-8 text-xs [font-family:inherit] text-inherit "
@@ -1081,7 +1077,7 @@ export default function OrderList({
           {isLoading ? (
             <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-lg border bg-card p-6 text-muted-foreground xl:h-full xl:min-h-0">
               <Loader2 className="size-6 animate-spin text-primary" />
-              <p className="text-xs font-medium">Loading orders for Customer #{customerId}...</p>
+              <p className="text-xs font-medium">Loading orders...</p>
             </div>
           ) : error ? (
             <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-6 text-center text-destructive">
