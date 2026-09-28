@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { GetItems } from "../../redux/slices/getSlice";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -68,7 +70,9 @@ function ProductGallery({ product, images }) {
 }
 
 export function ProductDetails({ productId, backHref }) {
-  const t = useTranslations("catalog")
+  const t = useTranslations("catalog");
+
+
   const {
     items: cartItems,
     addItem,
@@ -85,25 +89,43 @@ export function ProductDetails({ productId, backHref }) {
     ? "/backoffice/catalog"
     : "/catalog")
   
-  const [rawItems, setRawItems] = useState(staticItems);
+const dispatch = useDispatch();
+const itemsData = useSelector((state) => state.getSlice.itemsData);
+const itemsStatus = useSelector((state) => state.getSlice.itemsStatus);
 
-  useEffect(() => {
-    let isMounted = true;
-    async function loadLiveItems() {
-      try {
-        const apiItems = await fetchItemsApi();
-        if (isMounted && Array.isArray(apiItems) && apiItems.length > 0) {
-          setRawItems(apiItems);
-        }
-      } catch (err) {
-        console.warn("Failed to fetch live items in ProductDetails:", err);
-      }
-    }
-    loadLiveItems();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+// The page can be opened directly by URL, so the store may be empty
+useEffect(() => {
+  if (itemsStatus === "idle") dispatch(GetItems());
+}, [itemsStatus, dispatch]);
+
+const rawItems = useMemo(
+  () => (itemsData.length > 0 ? itemsData : itemsStatus === "failed" ? staticItems : []),
+  [itemsData, itemsStatus],
+);
+
+//   useEffect(() => {
+//     let isMounted = true;
+//  async function loadLiveItems() {
+//   try {
+//     const apiItems = await GetItems();
+//     const list = Array.isArray(apiItems) ? apiItems : apiItems?.data ?? [];
+//     const flat = list.map((entry) => ({
+//       ...(entry.item ?? entry),
+//       inOrderGuide: entry.inOrderGuide ?? false,
+//     }));
+
+//     if (isMounted && flat.length > 0) {
+//       setRawItems(flat);
+//     }
+//   } catch (err) {
+//     console.warn("Failed to fetch live items in ProductDetails:", err);
+//   }
+// }
+//     loadLiveItems();
+//     return () => {
+//       isMounted = false;
+//     };
+//   }, []);
 
   const product = useMemo(
     () =>
@@ -152,24 +174,50 @@ export function ProductDetails({ productId, backHref }) {
     ),
   );
 
-  if (!product) {
-    return (
-      <main className="grid h-full min-h-0 place-items-center p-4">
-        <section className="grid max-w-md gap-4 rounded-lg border bg-card p-6 text-center shadow-sm">
-          <h1 className="text-xl font-bold">{t("productNotFound")}</h1>
-          <p className="text-sm text-muted-foreground">
-            The product you are looking for is unavailable or has been removed.
-          </p>
-          <Button asChild>
-            <Link href={catalogPath}>
-              <ChevronLeft className="size-4" />
-              {t("backToCatalog")}
-            </Link>
-          </Button>
-        </section>
-      </main>
-    );
-  }
+  if (!product && (itemsStatus === "idle" || itemsStatus === "loading")) {
+  return (
+    <main className="grid h-full min-h-0 place-items-center p-4">
+      <p className="text-sm text-muted-foreground">Loading product…</p>
+    </main>
+  );
+}
+
+if (!product) {
+  return (
+    <main className="grid h-full min-h-0 place-items-center p-4">
+      <section className="grid max-w-md gap-4 rounded-lg border bg-card p-6 text-center shadow-sm">
+        <h1 className="text-xl font-bold">{t("productNotFound")}</h1>
+        <p className="text-sm text-muted-foreground">
+          The product you are looking for is unavailable or has been removed.
+        </p>
+        <Button asChild>
+          <Link href={catalogPath}>
+            <ChevronLeft className="size-4" />
+            {t("backToCatalog")}
+          </Link>
+        </Button>
+      </section>
+    </main>
+  );
+}
+  // if (!product && (itemsStatus === "idle" || itemsStatus === "loading")) {
+  //   return (
+  //     <main className="grid h-full min-h-0 place-items-center p-4">
+  //       <section className="grid max-w-md gap-4 rounded-lg border bg-card p-6 text-center shadow-sm">
+  //         <h1 className="text-xl font-bold">{t("productNotFound")}</h1>
+  //         <p className="text-sm text-muted-foreground">
+  //           The product you are looking for is unavailable or has been removed.
+  //         </p>
+  //         <Button asChild>
+  //           <Link href={catalogPath}>
+  //             <ChevronLeft className="size-4" />
+  //             {t("backToCatalog")}
+  //           </Link>
+  //         </Button>
+  //       </section>
+  //     </main>
+  //   );
+  // }
 
   return (
     <main className="min-h-screen bg-background">
