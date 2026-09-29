@@ -253,6 +253,8 @@
     "namePlaceholder": "Ej: Pedido semanal de mariscos",
     "cancel": "Cancelar",
     "save": "Guardar guía",
+    "saveAction": "Guardar",
+    "saving": "Guardando...",
     "default": "Predeterminado",
     "rename": "Renombrar",
     "delete": "Eliminar",

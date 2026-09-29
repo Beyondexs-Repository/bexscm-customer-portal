@@ -254,6 +254,8 @@
     "namePlaceholder": "Eg: Weekly Seafood Order",
     "cancel": "Cancel",
     "save": "Save Order Guide",
+    "saveAction": "Save",
+    "saving": "Saving...",
     "default": "Default",
     "rename": "Rename",
     "delete": "Delete",

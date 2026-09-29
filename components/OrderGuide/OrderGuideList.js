@@ -221,9 +221,6 @@ function OrderGuideCard({
           <div className="min-w-0 space-y-1">
             <div className="flex min-w-0 items-center gap-2">
               <h3 className="truncate text-sm font-semibold">{order.name}</h3>
-              {orderIndex === 0 ? (
-                <Badge className="h-4 px-1.5 text-[10px]">{t("default")}</Badge>
-              ) : null}
             </div>
             <p className="truncate text-xs text-muted-foreground">
               {countOrderProducts(order)} items -{" "}
@@ -1495,7 +1492,7 @@ async function handleDeleteOrdGuideGroup(order, group) {
 
   async function saveNameDialog() {
     const name = draftName.trim();
-    if (!name || !dialog) return;
+    if (!name || !dialog || isSavingName) return;
 
     if (dialog.type === "add-group") {
       if (!userId) {
@@ -1888,7 +1885,7 @@ async function handleDeleteOrdGuideGroup(order, group) {
         open={isNameDialog}
         onOpenChange={(open) => !open && !isSavingName && closeDialog()}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" showCloseButton={!isSavingName}>
           <DialogHeader>
             <DialogTitle>
               {dialog?.type === "add-group"
@@ -1911,7 +1908,7 @@ async function handleDeleteOrdGuideGroup(order, group) {
               onKeyDown={(event) => {
                 if (event.key === "Enter") saveNameDialog();
               }}
-            //disabled={isSavingName}
+              disabled={isSavingName}
             />
             {nameDialogError ? (
               <p className="text-xs text-destructive">{nameDialogError}</p>
@@ -1922,14 +1919,14 @@ async function handleDeleteOrdGuideGroup(order, group) {
             <Button
               variant="outline"
               onClick={closeDialog}
-            //disabled={isSavingName}
+              disabled={isSavingName}
             >
               {t("cancel")}
             </Button>
-            {/*<Button onClick={saveNameDialog} disabled={isSavingName}>
-              {isSavingName ? "Saving..." : t("save")}
-            </Button> */}
-            <Button onClick={saveNameDialog}>{t("save")}</Button>
+            <Button onClick={saveNameDialog} disabled={isSavingName} aria-busy={isSavingName}>
+              {isSavingName && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+              {isSavingName ? t("saving") : t("saveAction")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

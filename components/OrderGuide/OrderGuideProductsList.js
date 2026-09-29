@@ -1482,6 +1482,10 @@ function EmptyProductsCard({ canAddProducts }) {
   );
 }
 
+function getCartProductId(product) {
+  return String(product.itemNumber || product.sku || product.id).trim();
+}
+
 function SavedProductCard({
   product,
   layout,
@@ -1513,7 +1517,7 @@ function SavedProductCard({
 
   const categoryLabel = product.category || product.subcategory;
   const orderControls = canPlaceOrder ? (
-    <div className="grid w-full grid-cols-[1fr_2fr] gap-2">
+    <div className="grid w-full grid-cols-[1fr_1.3fr] gap-2">
       <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
         <Button
           variant="ghost"
@@ -1679,7 +1683,7 @@ function SavedProductCard({
       <div
         className={cn(
           "relative space-y-1.5 p-2 lg:space-y-2 ",
-          listLayout && "grid min-w-0 flex-1 grid-cols-1 gap-2 self-stretch space-y-0 p-0 sm:grid-cols-[minmax(0,1fr)_18rem] sm:items-center sm:gap-4",
+          listLayout && "grid min-w-0 flex-1 grid-cols-1 gap-2 self-stretch space-y-0 p-0 sm:grid-cols-[minmax(0,1fr)_13rem] sm:items-center sm:gap-4",
         )}
       >
         <div className={cn("min-w-0 space-y-1", listLayout && "flex-1")}>
@@ -1785,7 +1789,7 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const [sortBy, setSortBy] = useState("custom");
   const isMobile = useIsMobile();
   const [preferredLayout, setLayout] = useState(null);
-  const layout = preferredLayout ?? (isMobile ? "list" : "card");
+  const layout = preferredLayout ?? (isMobile ? "list" : "list");
 
   const allProducts = selectedGroup?.products ?? [];
   const isAllView = Boolean(selectedGroup?.isAll);
@@ -1816,10 +1820,13 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   });
 
   const activeProduct = products.find((product) => product.id === activeProductId);
-  const cartQuantities = new Map(items.map((item) => [item.id, item.quantity]));
+  const cartQuantities = new Map(items.map((item) => [String(item.id).trim(), item.quantity]));
 
   const selectedProducts = products.filter((product) => selectedIds.includes(product.id));
   const selectedCount = selectedProducts.length;
+  const allSelectedInCart = selectedCount > 0 && selectedProducts.every(
+    (product) => cartQuantities.get(getCartProductId(product)) > 0,
+  );
   const allSelected = products.length > 0 && selectedCount === products.length;
   const isOnDashboard =
     Boolean(selectedOrder) && dashboardQuickOrderIds.includes(selectedOrder.id);
@@ -2384,7 +2391,7 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   // }
   async function addGuideProductsToCart(products) {
     // skip items already in the local cart
-    const pending = products.filter((p) => !cartQuantities.get(p.id))
+    const pending = products.filter((p) => !cartQuantities.get(getCartProductId(p)))
     const ids = pending.map((p) => Number(p.orderGroupItemID)).filter(Boolean)
     if (ids.length === 0) return
 
@@ -2652,6 +2659,7 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
               )}
               {canPlaceOrder && (
                 <Button size="sm"
+                  variant={allSelectedInCart ? "secondary" : "default"}
                   className="h-8 gap-1 px-2 text-[10px] sm:gap-2 sm:px-3 sm:text-xs"
                   disabled={!selectedCount}
                   onClick={() => addGuideProductsToCart(selectedProducts)}
@@ -2659,7 +2667,7 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
                 //   selectedProducts.forEach((product) => { if (!cartQuantities.get(product.id)) addItem(product, 1); });
                 // }}
 
-                ><ShoppingCart /><span className="lg:hidden">Add to Cart</span><span className="hidden lg:inline">{selectedCount ? `Add ${selectedCount} to Cart` : "Add to Cart"}</span></Button>
+                ><ShoppingCart /><span className="lg:hidden">{allSelectedInCart ? "Added" : "Add to Cart"}</span><span className="hidden lg:inline">{allSelectedInCart ? "Added" : selectedCount ? `Add ${selectedCount} to Cart` : "Add to Cart"}</span></Button>
               )}
               {canEdit && (
                 <DropdownMenu>
@@ -2747,11 +2755,11 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
                         layout={layout}
                         selected={selectedIds.includes(product.id)}
                         onSelect={() => setSelection({ group: selectionKey, ids: selectedIds.includes(product.id) ? selectedIds.filter((id) => id !== product.id) : [...selectedIds, product.id] })}
-                        cartQuantity={cartQuantities.get(product.id) ?? 0}
+                        cartQuantity={cartQuantities.get(getCartProductId(product)) ?? 0}
                         // onAddToCart={addItem}
                         onAddToCart={(product) => addGuideProductsToCart([product])}
-                        onIncrement={incrementItem}
-                        onDecrement={decrementItem}
+                        onIncrement={() => incrementItem(getCartProductId(product))}
+                        onDecrement={() => decrementItem(getCartProductId(product))}
                         onChangeGroup={(product) => { setDuplicate(false); setNewGroupName(null); setProductToMove([product]); }}
                         onEditPar={openEditParDialog}
                         onRequestDelete={setProductToDelete}

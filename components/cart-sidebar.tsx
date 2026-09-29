@@ -137,12 +137,14 @@ export function CartSidebar({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
           {isLoading ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="size-6 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Loading cart...</p>
-              </div>
-            </div>
+            <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-col h-full items-center justify-center gap-2 text-center text-muted-foreground"
+          >
+            <Loader2 className="size-6 animate-spin text-primary" />
+            <p className="text-xs font-medium">Loading cart...</p>
+          </div>
           ) :
             isEmpty ? (
               <div className="flex h-full items-center justify-center">
