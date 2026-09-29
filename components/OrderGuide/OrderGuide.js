@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, Star } from "lucide-react";
+import { Loader2, Plus, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -48,6 +48,7 @@ export function OrderGuide() {
   const [userId, setUserId] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("loggedInUser");
@@ -198,7 +199,7 @@ export function OrderGuide() {
   //   }
   // }
   async function handleSave() {
-    if (!canCreate) return;
+    if (!canCreate || isCreating) return;
 
     const name = quickOrderName.trim();
     if (!name) return;
@@ -208,6 +209,7 @@ export function OrderGuide() {
       return;
     }
     const custnmbr = localStorage.getItem("custnmbr");
+    setIsCreating(true);
     try {
       await createOrderGuideApiv1_POST({
         name,
@@ -228,6 +230,8 @@ export function OrderGuide() {
       setOpen(false);
     } catch (error) {
       console.error("Create Order Guide API Error:", error);
+    } finally {
+      setIsCreating(false);
     }
   }
 
@@ -294,6 +298,7 @@ export function OrderGuide() {
               quickOrderName={quickOrderName}
               setQuickOrderName={setQuickOrderName}
               handleSave={handleSave}
+              isCreating={isCreating}
             />
           ) : null}
         </div>
@@ -301,14 +306,18 @@ export function OrderGuide() {
 
       {/* Loader */}
       {isLoading && (
+        <>
         <div className="flex min-h-[calc(100svh-13rem)] items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="size-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
-            <p className="text-sm text-muted-foreground">
-              Loading order guides...
-            </p>
+            <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-col items-center justify-center gap-2 text-center text-muted-foreground"
+          >
+            <Loader2 className="size-6 animate-spin text-primary" />
+            <p className="text-xs font-medium">Loading order guides...</p>
           </div>
         </div>
+        </>
       )}
 
       {/* Empty state */}
@@ -352,6 +361,7 @@ export function OrderGuide() {
               quickOrderName={quickOrderName}
               setQuickOrderName={setQuickOrderName}
               handleSave={handleSave}
+              isCreating={isCreating}
             />
           ) : null}
         </>
@@ -366,12 +376,13 @@ function CreateQuickOrderDialog({
   quickOrderName,
   setQuickOrderName,
   handleSave,
+  isCreating,
 }) {
   const t = useTranslations("orderGuide");
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={(nextOpen) => !isCreating && setOpen(nextOpen)}>
+      <DialogContent className="sm:max-w-md" showCloseButton={!isCreating}>
         <DialogHeader>
           <DialogTitle>{t("createDialogTitle")}</DialogTitle>
           <DialogDescription>{t("createDialogDescription")}</DialogDescription>
@@ -383,6 +394,7 @@ function CreateQuickOrderDialog({
             id="quickOrderName"
             placeholder={t("namePlaceholder")}
             value={quickOrderName}
+            disabled={isCreating}
             onChange={(e) => setQuickOrderName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSave();
@@ -393,6 +405,7 @@ function CreateQuickOrderDialog({
         <DialogFooter>
           <Button
             variant="outline"
+            disabled={isCreating}
             onClick={() => {
               setQuickOrderName("");
               setOpen(false);
@@ -400,7 +413,10 @@ function CreateQuickOrderDialog({
           >
             {t("cancel")}
           </Button>
-          <Button onClick={handleSave}>{t("save")}</Button>
+          <Button onClick={handleSave} disabled={isCreating} aria-busy={isCreating}>
+            {isCreating && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+            {isCreating ? t("creating") : t("createAction")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

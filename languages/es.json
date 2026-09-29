@@ -246,6 +246,8 @@
     "description": "Crea y guarda listas de productos frecuentes para pedir y pagar más rápido.",
     "create": "Crear guía",
     "createDialogTitle": "Crear guía de pedidos",
+    "createAction": "Crear",
+    "creating": "Creando...",
     "createDialogDescription": "Ingresa un nombre para tu lista de guía de pedidos.",
     "nameLabel": "Nombre de la guía",
     "namePlaceholder": "Ej: Pedido semanal de mariscos",

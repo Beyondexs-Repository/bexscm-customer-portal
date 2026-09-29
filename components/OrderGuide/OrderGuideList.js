@@ -1006,7 +1006,8 @@ async function handleDeleteOrdGuideGroup(order, group) {
 
   async function loadOrderGuides() {
     try {
-      setIsLoading(true);
+      // The parent starts with isLoading=true for the initial load.
+      // Keep existing content visible when refreshing after changes.
 
       const custnmbr = localStorage.getItem("custnmbr");
 
@@ -1076,7 +1077,7 @@ async function handleDeleteOrdGuideGroup(order, group) {
 
       setQuickOrders([]);
     } finally {
-      // IMPORTANT: parent loader must stop here
+      // End the initial page loader; later refreshes leave it off.
       setIsLoading(false);
     }
   }

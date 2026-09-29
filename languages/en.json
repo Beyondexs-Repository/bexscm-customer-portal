@@ -247,6 +247,8 @@
     "description": "Create and save frequently ordered product lists for faster ordering and checkout.",
     "create": "Create Order Guide",
     "createDialogTitle": "Create Order Guide",
+    "createAction": "Create",
+    "creating": "Creating...",
     "createDialogDescription": "Enter a name for your order guide list.",
     "nameLabel": "Order Guide Name",
     "namePlaceholder": "Eg: Weekly Seafood Order",
