@@ -12,7 +12,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { cn, getItemImage } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import ItemImage from "../../components/myorders/ItemImage"
+
 
 function ItemReview({ item, feedback = {},locked = false, onChange, onImageLoading }) {
   const { rating = null, review = "", image = "" } = feedback;
@@ -45,7 +47,8 @@ function ItemReview({ item, feedback = {},locked = false, onChange, onImageLoadi
   return (
     <article className="rounded-lg border bg-card p-3">
       <div className="flex items-center gap-3">
-        <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md border bg-muted">
+        <ItemImage item={item} className="size-12" />
+        {/* <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md border bg-muted"> */}
           {/* {item.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -56,12 +59,12 @@ function ItemReview({ item, feedback = {},locked = false, onChange, onImageLoadi
           ) : (
             <ImageIcon className="size-5 text-muted-foreground" />
           )} */}
-          {getItemImage(item) ? (
+          {/* {getItemImage(item) ? (
   <img src={getItemImage(item)} alt={item.name} className="size-full object-cover" />
 ) : (
   <ImageIcon className="size-5 text-muted-foreground" />
 )}
-        </div>
+        </div> */}
         {/* <p className="min-w-0 flex-1 text-sm font-semibold">{item.name}</p> */}
          <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{item.name}</p>
