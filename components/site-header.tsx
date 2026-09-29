@@ -794,6 +794,7 @@ interface UseCartReturn {
   items: Array<{ id: string; name: string; qtybsuom: number; quantity: number; itemNumber: string; unit: string; image?: string }>
   itemCount: number
   total: number | string
+  isLoading: boolean
   incrementItem: (id: string) => void
   decrementItem: (id: string) => void
   removeItem: (id: string) => void
@@ -831,6 +832,7 @@ function SiteHeader({
     items = [],
     itemCount = 0,
     total: cartTotal = 0,
+    isLoading: cartLoading = false,
     incrementItem,
     decrementItem,
     removeItem,
@@ -1271,6 +1273,7 @@ async function handleCheckout() {
         itemCount={itemCount}
         total={formattedCartTotal}
         items={items}
+        isLoading={cartLoading}
         isCheckingOut={isCheckingOut}
         onIncrement={incrementItem}
         onDecrement={decrementItem}

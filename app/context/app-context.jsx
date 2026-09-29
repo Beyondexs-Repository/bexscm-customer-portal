@@ -222,6 +222,7 @@ function touchQuickOrder(order) {
 export function AppProvider({ children }) {
   const [cartItems, setCartItems] = useState([])
   const [quickOrders, setQuickOrders] = useState([])
+  const [cartLoading, setCartLoading] = useState(false)
   const [dashboardQuickOrderIds, setDashboardQuickOrderIds] = useState([])
   const [storageHydrated, setStorageHydrated] = useState(false)
 
@@ -250,6 +251,7 @@ export function AppProvider({ children }) {
   }, [quickOrders, storageHydrated])
 
   const fetchCustomerCart = useCallback(async (custnmbr = "400001") => {
+    setCartLoading(true)
     try {
       const data = await getCustomerCartApi(custnmbr)
 
@@ -357,6 +359,8 @@ export function AppProvider({ children }) {
         "Failed to fetch customer cart from API:",
         error
       )
+    }finally {
+      setCartLoading(false)
     }
   }, [])
 
@@ -599,6 +603,7 @@ export function AppProvider({ children }) {
       cartItemCount,
       cartTotal,
       quickOrders,
+      cartLoading,
       setQuickOrders,
       dashboardQuickOrderIds,
       setDashboardQuickOrderIds,
@@ -612,7 +617,7 @@ export function AppProvider({ children }) {
       addProductToQuickOrder,
       removeProductFromQuickOrder,
     }
-  }, [cartItems, dashboardQuickOrderIds, fetchCustomerCart, quickOrders])
+  }, [cartItems, cartLoading, dashboardQuickOrderIds, fetchCustomerCart, quickOrders])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }
@@ -660,6 +665,7 @@ export function useCart() {
     cartItems,
     cartItemCount,
     cartTotal,
+    cartLoading,
     addCartItem,
     incrementCartItem,
     decrementCartItem,
@@ -672,6 +678,7 @@ export function useCart() {
     items: cartItems,
     itemCount: cartItemCount,
     total: cartTotal,
+    isLoading: cartLoading,
     addItem: addCartItem,
     incrementItem: incrementCartItem,
     decrementItem: decrementCartItem,

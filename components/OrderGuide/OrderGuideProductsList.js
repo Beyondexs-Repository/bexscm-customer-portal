@@ -1223,9 +1223,9 @@ const changeGroupPUT = async ({
     if (!response.ok || result?.success === false) {
       throw new Error(
         result?.Msg ||
-          result?.message ||
-          result?.error ||
-          `Unable to move items. HTTP ${response.status}`,
+        result?.message ||
+        result?.error ||
+        `Unable to move items. HTTP ${response.status}`,
       );
     } // <-- this closing brace was missing
 
@@ -1284,18 +1284,18 @@ const moveTotop = async ({
     if (!response.ok) {
       throw new Error(
         result?.Msg ||
-          result?.message ||
-          result?.error ||
-          `Unable to Move to top items. HTTP ${response.status}`,
+        result?.message ||
+        result?.error ||
+        `Unable to Move to top items. HTTP ${response.status}`,
       );
     }
 
     if (!result?.success) {
       throw new Error(
         result?.Msg ||
-          result?.message ||
-          result?.error ||
-          "Failed to Move to top items.",
+        result?.message ||
+        result?.error ||
+        "Failed to Move to top items.",
       );
     }
 
@@ -1351,9 +1351,9 @@ const itemsDuplicatePost = async ({
     if (!response.ok) {
       throw new Error(
         result?.Msg ||
-          result?.message ||
-          result?.error ||
-          `Unable to duplicate items. HTTP ${response.status}`,
+        result?.message ||
+        result?.error ||
+        `Unable to duplicate items. HTTP ${response.status}`,
       );
     }
 
@@ -1403,9 +1403,9 @@ const updateParPUT = async ({ orderGroupItemID, parValue, modifyBY }) => {
   if (!response.ok) {
     throw new Error(
       result?.Msg ||
-        result?.message ||
-        result?.error ||
-        `Unable to update PAR. HTTP ${response.status}`,
+      result?.message ||
+      result?.error ||
+      `Unable to update PAR. HTTP ${response.status}`,
     );
   }
 
@@ -1508,7 +1508,7 @@ function SavedProductCard({
   const { setNodeRef, setActivatorNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: product.id,
     // disabled: !canEdit || !listLayout,
-     disabled: !canDrag,   // CHANGED from: !canEdit || !listLayout
+    disabled: !canDrag,   // CHANGED from: !canEdit || !listLayout
   });
 
   const categoryLabel = product.category || product.subcategory;
@@ -1600,19 +1600,19 @@ function SavedProductCard({
             aria-label={`Select ${product.name}`}
             className="size-4 shrink-0 cursor-pointer accent-blue-600"
           />
-        {/* {listLayout && canEdit && ( */}
-         {canDrag && (
-          <button
-            ref={setActivatorNodeRef}
-            type="button"
-            aria-label={`Drag ${product.name}`}
-            className="grid size-6 shrink-0 touch-none cursor-grab place-items-center rounded text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
-            {...attributes}
-            {...listeners}
-          >
-            <GripVertical className="size-4" />
-          </button>
-        )}
+          {/* {listLayout && canEdit && ( */}
+          {canDrag && (
+            <button
+              ref={setActivatorNodeRef}
+              type="button"
+              aria-label={`Drag ${product.name}`}
+              className="grid size-6 shrink-0 touch-none cursor-grab place-items-center rounded text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="size-4" />
+            </button>
+          )}
         </div>
       )}
       {canEdit ? (
@@ -1754,14 +1754,15 @@ export function OrderGuideProductsList({
   canEdit,
   canAddProducts,
   canPlaceOrder,
-  
+
 }) {
 
   const dispatch = useDispatch();
 const [isReordering, setIsReordering] = useState(false);
 const [isDeletingProduct, setIsDeletingProduct] = useState(false);
-  const { items, addItem, incrementItem, decrementItem } =
+  const { items, incrementItem, decrementItem, fetchCustomerCart } =
     useCart();
+
   const { dashboardQuickOrderIds, setDashboardQuickOrderIds } =
     useQuickOrders();
   const [productToMove, setProductToMove] = useState(null);
@@ -1791,13 +1792,13 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const normalizedSearch = productSearch.trim().toLowerCase();
   const filteredProducts = normalizedSearch
     ? allProducts.filter((product) =>
-        [product.name, product.sku, product.category, product.subcategory].some(
-          (value) =>
-            String(value ?? "")
-              .toLowerCase()
-              .includes(normalizedSearch),
-        ),
-      )
+      [product.name, product.sku, product.category, product.subcategory].some(
+        (value) =>
+          String(value ?? "")
+            .toLowerCase()
+            .includes(normalizedSearch),
+      ),
+    )
     : allProducts;
   const [sortField, sortDirection] = sortBy.split("-");
   const products = [...filteredProducts].sort((a, b) => {
@@ -1929,28 +1930,28 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
       orders.map((order) =>
         order.id === selectedOrder.id
           ? touchOrder({
-              ...order,
-              groups: order.groups.map((group) =>
-                selectedGroup.isAll || group.id === selectedGroup.id
-                  ? {
-                      ...group,
-                      products: group.products.map((product) =>
-                        product.id === productId
-                          ? {
-                              ...product,
-                              ...updates,
-                            }
-                          : product,
-                      ),
-                    }
-                  : group,
-              ),
-            })
+            ...order,
+            groups: order.groups.map((group) =>
+              selectedGroup.isAll || group.id === selectedGroup.id
+                ? {
+                  ...group,
+                  products: group.products.map((product) =>
+                    product.id === productId
+                      ? {
+                        ...product,
+                        ...updates,
+                      }
+                      : product,
+                  ),
+                }
+                : group,
+            ),
+          })
           : order,
       ),
     );
   }
-//locally happens 
+  //locally happens 
   // function moveProductToGroup(targetGroupId) {
   //   if (!selectedOrder || !selectedGroup || !productToMove) return;
   //   const movingIds = productToMove.map((product) => product.id);
@@ -1972,50 +1973,50 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   //   setSelection({ group: selectionKey, ids: [] });
   // }
 
-//dynamic api calls Change Group
-async function moveProductToGroup(targetGroupId) {
-  if (!selectedOrder || !selectedGroup || !productToMove) return;
+  //dynamic api calls Change Group
+  async function moveProductToGroup(targetGroupId) {
+    if (!selectedOrder || !selectedGroup || !productToMove) return;
 
-  const movingIds = productToMove.map((product) => product.id);
-  // Duplicate -> POST duplicate-items with targetOrderGuideGroupID
-  if (duplicate) {
-    await handleDuplicate({ targetGroupId });
-    return;
-  }
-  // Call the API only for "Change Group" (not "Duplicate")
-  if (!duplicate) {
-    if (!userId) {
-      toast.error("Unable to identify the logged-in user.");
+    const movingIds = productToMove.map((product) => product.id);
+    // Duplicate -> POST duplicate-items with targetOrderGuideGroupID
+    if (duplicate) {
+      await handleDuplicate({ targetGroupId });
       return;
     }
+    // Call the API only for "Change Group" (not "Duplicate")
+    if (!duplicate) {
+      if (!userId) {
+        toast.error("Unable to identify the logged-in user.");
+        return;
+      }
 
-    const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+      const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
 
-    try {
-      setIsMoving(true);
+      try {
+        setIsMoving(true);
 
-      await changeGroupPUT({
-        itemIds: productToMove.map((product) =>
-          Number(product.orderGroupItemID),   // 91, not the SKU "500141"
-        ),
-        targetOrderGuideGroupID: Number(targetGroupId), // 113
-        modifyBY,
-      });
-    } catch (error) {
-      console.error("Move items failed:", error);
-      toast.error(error?.message || "Failed to move items.");
-      return;                                // keep dialog open, don't touch UI
-    } finally {
-      setIsMoving(false);
+        await changeGroupPUT({
+          itemIds: productToMove.map((product) =>
+            Number(product.orderGroupItemID),   // 91, not the SKU "500141"
+          ),
+          targetOrderGuideGroupID: Number(targetGroupId), // 113
+          modifyBY,
+        });
+      } catch (error) {
+        console.error("Move items failed:", error);
+        toast.error(error?.message || "Failed to move items.");
+        return;                                // keep dialog open, don't touch UI
+      } finally {
+        setIsMoving(false);
+      }
     }
-  }
 
-  // API succeeded (or it's a local duplicate) -> update UI
-  setQuickOrders((orders) =>
-    orders.map((order) =>
-      order.id !== selectedOrder.id
-        ? order
-        : touchOrder({
+    // API succeeded (or it's a local duplicate) -> update UI
+    setQuickOrders((orders) =>
+      orders.map((order) =>
+        order.id !== selectedOrder.id
+          ? order
+          : touchOrder({
             ...order,
             groups: order.groups.map((group) => {
               if (group.id === targetGroupId) {
@@ -2052,126 +2053,126 @@ async function moveProductToGroup(targetGroupId) {
               return group;
             }),
           }),
-    ),
-  );
-
-  toast.success(duplicate ? "Products duplicated." : "Products moved.");
-  setProductToMove(null);
-  setSelection({ group: selectionKey, ids: [] });
-}
-//API FOR MOVE TO TOP & BOTTOM
-async function handleMovePosition(position) {
-  // position is "top" or "bottom" (lowercase, used by reorderProducts)
-  if (!selectedCount || isMoving) return;
-
-  if (!userId) {
-    toast.error("Unable to identify the logged-in user.");
-    return;
-  }
-
-  const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
-
-  try {
-    setIsMoving(true);
-
-    await moveTotop({
-      itemIds: selectedProducts.map((product) =>
-        Number(product.orderGroupItemID),
       ),
-      position: position === "top" ? "Top" : "Bottom", // API needs "Top" / "Bottom"
-      modifyBY,
-    });
-  } catch (error) {
-    console.error("Move position failed:", error);
-    toast.error(error?.message || "Failed to move items.");
-    return; // don't touch the UI if the API failed
-  } finally {
-    setIsMoving(false);
+    );
+
+    toast.success(duplicate ? "Products duplicated." : "Products moved.");
+    setProductToMove(null);
+    setSelection({ group: selectionKey, ids: [] });
   }
+  //API FOR MOVE TO TOP & BOTTOM
+  async function handleMovePosition(position) {
+    // position is "top" or "bottom" (lowercase, used by reorderProducts)
+    if (!selectedCount || isMoving) return;
 
-  // API succeeded -> update the UI with your existing local reorder
-  reorderProducts(position);
-  toast.success(position === "top" ? "Moved to top." : "Moved to bottom.");
-}
-
-//duplicate function
-async function handleDuplicate({ targetGroupId, newGroupName }) {
-  if (!productToMove?.length || isMoving) return;
-
-  if (!userId) {
-    toast.error("Unable to identify the logged-in user.");
-    return;
-  }
-
-  const createdBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
-
-  try {
-    setIsMoving(true);
-
-    const result = await itemsDuplicatePost({
-      itemIds: productToMove.map((p) => Number(p.orderGroupItemID)),
-      targetOrderGuideGroupID: targetGroupId ? Number(targetGroupId) : undefined,
-      newGroupName,
-      createdBY,
-    });
-
-    if (result.duplicatedCount === 0) {
-      toast.info("No items were duplicated (they may already exist there).");
-    } else {
-      toast.success(
-        newGroupName
-          ? `Created "${newGroupName}" with ${result.duplicatedCount} item(s).`
-          : `${result.duplicatedCount} item(s) duplicated.`,
-      );
+    if (!userId) {
+      toast.error("Unable to identify the logged-in user.");
+      return;
     }
 
-    // Reload from the API (see note below)
-    onRefresh?.();
+    const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
 
-    setProductToMove(null);
-    setNewGroupName(null);
-    setSelection({ group: selectionKey, ids: [] });
-  } catch (error) {
-    console.error("Duplicate failed:", error);
-    toast.error(error?.message || "Failed to duplicate items.");
-  } finally {
-    setIsMoving(false);
+    try {
+      setIsMoving(true);
+
+      await moveTotop({
+        itemIds: selectedProducts.map((product) =>
+          Number(product.orderGroupItemID),
+        ),
+        position: position === "top" ? "Top" : "Bottom", // API needs "Top" / "Bottom"
+        modifyBY,
+      });
+    } catch (error) {
+      console.error("Move position failed:", error);
+      toast.error(error?.message || "Failed to move items.");
+      return; // don't touch the UI if the API failed
+    } finally {
+      setIsMoving(false);
+    }
+
+    // API succeeded -> update the UI with your existing local reorder
+    reorderProducts(position);
+    toast.success(position === "top" ? "Moved to top." : "Moved to bottom.");
   }
-}
-//Changegroup-- create group
-async function handleMoveToNewGroup(name) {
-  if (!productToMove?.length || isMoving) return;
 
-  if (!userId) {
-    toast.error("Unable to identify the logged-in user.");
-    return;
+  //duplicate function
+  async function handleDuplicate({ targetGroupId, newGroupName }) {
+    if (!productToMove?.length || isMoving) return;
+
+    if (!userId) {
+      toast.error("Unable to identify the logged-in user.");
+      return;
+    }
+
+    const createdBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+
+    try {
+      setIsMoving(true);
+
+      const result = await itemsDuplicatePost({
+        itemIds: productToMove.map((p) => Number(p.orderGroupItemID)),
+        targetOrderGuideGroupID: targetGroupId ? Number(targetGroupId) : undefined,
+        newGroupName,
+        createdBY,
+      });
+
+      if (result.duplicatedCount === 0) {
+        toast.info("No items were duplicated (they may already exist there).");
+      } else {
+        toast.success(
+          newGroupName
+            ? `Created "${newGroupName}" with ${result.duplicatedCount} item(s).`
+            : `${result.duplicatedCount} item(s) duplicated.`,
+        );
+      }
+
+      // Reload from the API (see note below)
+      onRefresh?.();
+
+      setProductToMove(null);
+      setNewGroupName(null);
+      setSelection({ group: selectionKey, ids: [] });
+    } catch (error) {
+      console.error("Duplicate failed:", error);
+      toast.error(error?.message || "Failed to duplicate items.");
+    } finally {
+      setIsMoving(false);
+    }
   }
+  //Changegroup-- create group
+  async function handleMoveToNewGroup(name) {
+    if (!productToMove?.length || isMoving) return;
 
-  const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+    if (!userId) {
+      toast.error("Unable to identify the logged-in user.");
+      return;
+    }
 
-  try {
-    setIsMoving(true);
+    const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
 
-    // { itemIds, newGroupName, modifyBY }
-    await changeGroupPUT({
-      itemIds: productToMove.map((p) => Number(p.orderGroupItemID)),
-      newGroupName: name,
-      modifyBY,
-    });
+    try {
+      setIsMoving(true);
 
-    toast.success(`Moved to new group "${name}".`);
-    onRefresh?.(); // reload so the new group and its real IDs appear
+      // { itemIds, newGroupName, modifyBY }
+      await changeGroupPUT({
+        itemIds: productToMove.map((p) => Number(p.orderGroupItemID)),
+        newGroupName: name,
+        modifyBY,
+      });
 
-    setProductToMove(null);
-    setNewGroupName(null);
-    setSelection({ group: selectionKey, ids: [] });
-  } catch (error) {
-    console.error("Move to new group failed:", error);
-    toast.error(error?.message || "Failed to create group and move items.");
-  } finally {
-    setIsMoving(false);
+      toast.success(`Moved to new group "${name}".`);
+      onRefresh?.(); // reload so the new group and its real IDs appear
+
+      setProductToMove(null);
+      setNewGroupName(null);
+      setSelection({ group: selectionKey, ids: [] });
+    } catch (error) {
+      console.error("Move to new group failed:", error);
+      toast.error(error?.message || "Failed to create group and move items.");
+    } finally {
+      setIsMoving(false);
+    }
   }
-}
 
   // async function confirmDeleteProduct() {
   //   if (!productToDelete) return;
@@ -2216,80 +2217,80 @@ async function handleMoveToNewGroup(name) {
 }
 
   async function persistDragReorder(activeId, overId) {
-  if (isAllView) {
-    toast.error("Select a specific group to reorder items.");
-    return;
-  }
-  if (!userId) {
-    toast.error("Unable to identify the logged-in user.");
-    return;
-  }
+    if (isAllView) {
+      toast.error("Select a specific group to reorder items.");
+      return;
+    }
+    if (!userId) {
+      toast.error("Unable to identify the logged-in user.");
+      return;
+    }
 
-  const visibleIds = products.map((product) => product.id);
-  const from = visibleIds.indexOf(activeId);
-  const to = visibleIds.indexOf(overId);
-  if (from < 0 || to < 0) return;
+    const visibleIds = products.map((product) => product.id);
+    const from = visibleIds.indexOf(activeId);
+    const to = visibleIds.indexOf(overId);
+    if (from < 0 || to < 0) return;
 
-  const reorderedVisible = arrayMove(visibleIds, from, to);
+    const reorderedVisible = arrayMove(visibleIds, from, to);
 
-  let visibleIndex = 0;
-  const orderedIds = allProducts.map((product) =>
-    visibleIds.includes(product.id) ? reorderedVisible[visibleIndex++] : product.id,
-  );
+    let visibleIndex = 0;
+    const orderedIds = allProducts.map((product) =>
+      visibleIds.includes(product.id) ? reorderedVisible[visibleIndex++] : product.id,
+    );
 
-  const idToProduct = new Map(allProducts.map((product) => [product.id, product]));
-  const orderGroupItemIds = orderedIds.map((id) =>
-    Number(idToProduct.get(id)?.orderGroupItemID),
-  );
+    const idToProduct = new Map(allProducts.map((product) => [product.id, product]));
+    const orderGroupItemIds = orderedIds.map((id) =>
+      Number(idToProduct.get(id)?.orderGroupItemID),
+    );
 
-  const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
-  const ranks = new Map(orderedIds.map((id, index) => [id, index]));
+    const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+    const ranks = new Map(orderedIds.map((id, index) => [id, index]));
 
-  // Apply the new order to the UI immediately so the drop feels instant,
-  // and keep a snapshot to roll back to if the API call fails.
-  let previousGroupProducts = null;
-  setSortBy("custom");
-  setQuickOrders((orders) =>
-    orders.map((order) => {
-      if (order.id !== selectedOrder.id) return order;
-      return touchOrder({
-        ...order,
-        groups: order.groups.map((group) => {
-          if (group.id !== selectedGroup.id) return group;
-          previousGroupProducts = group.products;
-          return {
-            ...group,
-            products: [...group.products].sort(
-              (a, b) => ranks.get(a.id) - ranks.get(b.id),
-            ),
-          };
-        }),
-      });
-    }),
-  );
-
-  setIsReordering(true);
-  try {
-    await dispatch(
-      PutItemSequence({
-        orderGuideGroupID: Number(selectedGroup.id),
-        orderGroupItemIds,
-        modifyBY,
+    // Apply the new order to the UI immediately so the drop feels instant,
+    // and keep a snapshot to roll back to if the API call fails.
+    let previousGroupProducts = null;
+    setSortBy("custom");
+    setQuickOrders((orders) =>
+      orders.map((order) => {
+        if (order.id !== selectedOrder.id) return order;
+        return touchOrder({
+          ...order,
+          groups: order.groups.map((group) => {
+            if (group.id !== selectedGroup.id) return group;
+            previousGroupProducts = group.products;
+            return {
+              ...group,
+              products: [...group.products].sort(
+                (a, b) => ranks.get(a.id) - ranks.get(b.id),
+              ),
+            };
+          }),
+        });
       }),
-    ).unwrap();
+    );
 
-    toast.success("Order group items updated");
-  } catch (error) {
-    console.error("Reorder items failed:", error);
-    toast.error(error?.Msg || error?.message || "Failed to save the new order.");
+    setIsReordering(true);
+    try {
+      await dispatch(
+        PutItemSequence({
+          orderGuideGroupID: Number(selectedGroup.id),
+          orderGroupItemIds,
+          modifyBY,
+        }),
+      ).unwrap();
 
-    // API failed -> roll back to the order before the drag
-    if (previousGroupProducts) {
-      setQuickOrders((orders) =>
-        orders.map((order) =>
-          order.id !== selectedOrder.id
-            ? order
-            : touchOrder({
+      toast.success("Order group items updated");
+    } catch (error) {
+      console.error("Reorder items failed:", error);
+      toast.error(error?.Msg || error?.message || "Failed to save the new order.");
+
+      // API failed -> roll back to the order before the drag
+      if (previousGroupProducts) {
+        setQuickOrders((orders) =>
+          orders.map((order) =>
+            order.id !== selectedOrder.id
+              ? order
+              : touchOrder({
                 ...order,
                 groups: order.groups.map((group) =>
                   group.id !== selectedGroup.id
@@ -2297,121 +2298,119 @@ async function handleMoveToNewGroup(name) {
                     : { ...group, products: previousGroupProducts },
                 ),
               }),
-        ),
-      );
+          ),
+        );
+      }
+    } finally {
+      setIsReordering(false);
     }
-  } finally {
-    setIsReordering(false);
-  }
-}
-
-
-// async function persistDragReorder(activeId, overId) {
-//   if (isAllView) {
-//     toast.error("Select a specific group to reorder items.");
-//     return;
-//   }
-//   if (!userId) {
-//     toast.error("Unable to identify the logged-in user.");
-//     return;
-//   }
-
-//   const visibleIds = products.map((product) => product.id);
-//   const from = visibleIds.indexOf(activeId);
-//   const to = visibleIds.indexOf(overId);
-//   if (from < 0 || to < 0) return;
-
-//   const reorderedVisible = arrayMove(visibleIds, from, to);
-
-//   // Keep filtered-out products in their existing positions, same as reorderProducts
-//   let visibleIndex = 0;
-//   const orderedIds = allProducts.map((product) =>
-//     visibleIds.includes(product.id) ? reorderedVisible[visibleIndex++] : product.id,
-//   );
-
-//   const idToProduct = new Map(allProducts.map((product) => [product.id, product]));
-//   const orderGroupItemIds = orderedIds.map((id) =>
-//     Number(idToProduct.get(id)?.orderGroupItemID),
-//   );
-
-//   const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
-
-//   try {
-//     setIsReordering(true);
-
-//     await dispatch(
-//       PutItemSequence({
-//         orderGuideGroupID: Number(selectedGroup.id),
-//         orderGroupItemIds,
-//         modifyBY,
-//       }),
-//     )
-//     .unwrap()
-//       .then(() => {
-//         toast.success("Order group items updated");
-//       });
-//   } catch (error) {
-//     console.error("Reorder items failed:", error);
-//     toast.error(error?.Msg || error?.message || "Failed to save the new order.");
-//     return; // API failed — don't touch the UI, drag snaps back visually next render
-//   } finally {
-//     setIsReordering(false);
-//   }
-
-//   // API succeeded -> update the UI
-//   const ranks = new Map(orderedIds.map((id, index) => [id, index]));
-//   setSortBy("custom");
-//   setQuickOrders((orders) =>
-//     orders.map((order) =>
-//       order.id !== selectedOrder.id
-//         ? order
-//         : touchOrder({
-//             ...order,
-//             groups: order.groups.map((group) =>
-//               group.id !== selectedGroup.id
-//                 ? group
-//                 : {
-//                     ...group,
-//                     products: [...group.products].sort(
-//                       (a, b) => ranks.get(a.id) - ranks.get(b.id),
-//                     ),
-//                   },
-//             ),
-//           }),
-//     ),
-//   );
-// }
-async function addGuideProductsToCart(products) {
-  // skip items already in the local cart
-  const pending = products.filter((p) => !cartQuantities.get(p.id))
-  const ids = pending.map((p) => Number(p.orderGroupItemID)).filter(Boolean)
-  if (ids.length === 0) return
-
-  const custNmbr = localStorage.getItem("custnmbr")
-  if (!custNmbr) {
-    toast.error("Unable to identify the customer.")
-    return
   }
 
-  try {
-    const result = await dispatch(
-      PostCart({ data: { custNmbr, orderGroupItemIds: ids } })
-    ).unwrap()
 
-    // keep the local cart (badge, cart page) in sync with what the server added
-    ;(result.added ?? []).forEach((entry) => {
-      const product = pending.find((p) => String(p.id).trim() === String(entry.itemNumber).trim())
-      if (product) addItem(product, Number(entry.quantity) || 1)
-    })
+  // async function persistDragReorder(activeId, overId) {
+  //   if (isAllView) {
+  //     toast.error("Select a specific group to reorder items.");
+  //     return;
+  //   }
+  //   if (!userId) {
+  //     toast.error("Unable to identify the logged-in user.");
+  //     return;
+  //   }
 
-    const skipped = result.skipped?.length ?? 0
-    const added = result.totalAdded ?? result.added?.length ?? 0
-    if (skipped > 0) toast.warning(`${added} added, ${skipped} skipped`)
-    else toast.success(`${added} item(s) added to cart`)
-  } catch (err) {
-    toast.error(typeof err === "string" ? err : err?.Msg || err?.message || "Failed to add to cart")
+  //   const visibleIds = products.map((product) => product.id);
+  //   const from = visibleIds.indexOf(activeId);
+  //   const to = visibleIds.indexOf(overId);
+  //   if (from < 0 || to < 0) return;
+
+  //   const reorderedVisible = arrayMove(visibleIds, from, to);
+
+  //   // Keep filtered-out products in their existing positions, same as reorderProducts
+  //   let visibleIndex = 0;
+  //   const orderedIds = allProducts.map((product) =>
+  //     visibleIds.includes(product.id) ? reorderedVisible[visibleIndex++] : product.id,
+  //   );
+
+  //   const idToProduct = new Map(allProducts.map((product) => [product.id, product]));
+  //   const orderGroupItemIds = orderedIds.map((id) =>
+  //     Number(idToProduct.get(id)?.orderGroupItemID),
+  //   );
+
+  //   const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+
+  //   try {
+  //     setIsReordering(true);
+
+  //     await dispatch(
+  //       PutItemSequence({
+  //         orderGuideGroupID: Number(selectedGroup.id),
+  //         orderGroupItemIds,
+  //         modifyBY,
+  //       }),
+  //     )
+  //     .unwrap()
+  //       .then(() => {
+  //         toast.success("Order group items updated");
+  //       });
+  //   } catch (error) {
+  //     console.error("Reorder items failed:", error);
+  //     toast.error(error?.Msg || error?.message || "Failed to save the new order.");
+  //     return; // API failed — don't touch the UI, drag snaps back visually next render
+  //   } finally {
+  //     setIsReordering(false);
+  //   }
+
+  //   // API succeeded -> update the UI
+  //   const ranks = new Map(orderedIds.map((id, index) => [id, index]));
+  //   setSortBy("custom");
+  //   setQuickOrders((orders) =>
+  //     orders.map((order) =>
+  //       order.id !== selectedOrder.id
+  //         ? order
+  //         : touchOrder({
+  //             ...order,
+  //             groups: order.groups.map((group) =>
+  //               group.id !== selectedGroup.id
+  //                 ? group
+  //                 : {
+  //                     ...group,
+  //                     products: [...group.products].sort(
+  //                       (a, b) => ranks.get(a.id) - ranks.get(b.id),
+  //                     ),
+  //                   },
+  //             ),
+  //           }),
+  //     ),
+  //   );
+  // }
+  async function addGuideProductsToCart(products) {
+    // skip items already in the local cart
+    const pending = products.filter((p) => !cartQuantities.get(p.id))
+    const ids = pending.map((p) => Number(p.orderGroupItemID)).filter(Boolean)
+    if (ids.length === 0) return
+
+    const custNmbr = localStorage.getItem("custnmbr")
+    if (!custNmbr) {
+      toast.error("Unable to identify the customer.")
+      return
+    }
+
+    try {
+      const result = await dispatch(
+        PostCart({ data: { custNmbr, orderGroupItemIds: ids } })
+      ).unwrap()
+
+      // Re-fetch from the server so the header badge and cart sidebar
+      // update immediately, instead of waiting for the sidebar to open.
+      await fetchCustomerCart(custNmbr)
+
+      const skipped = result.skipped?.length ?? 0
+      const added = result.totalAdded ?? result.added?.length ?? 0
+      if (skipped > 0) toast.warning(`${added} added, ${skipped} skipped`)
+      else toast.success(`${added} item(s) added to cart`)
+    } catch (err) {
+      toast.error(typeof err === "string" ? err : err?.Msg || err?.message || "Failed to add to cart")
+    }
   }
-}
 
   function openEditParDialog(product) {
     setProductToEditPar(product);
@@ -2437,38 +2436,38 @@ async function addGuideProductsToCart(products) {
   // }
 
   async function saveProductPar() {
-  if (!productToEditPar || isSavingPar) return;
+    if (!productToEditPar || isSavingPar) return;
 
-  const nextPar = parDraft.trim() === "" ? null : Number(parDraft);
-  if (nextPar !== null && (!Number.isFinite(nextPar) || nextPar < 0)) return;
+    const nextPar = parDraft.trim() === "" ? null : Number(parDraft);
+    if (nextPar !== null && (!Number.isFinite(nextPar) || nextPar < 0)) return;
 
-  if (!userId) {
-    toast.error("Unable to identify the logged-in user.");
-    return;
+    if (!userId) {
+      toast.error("Unable to identify the logged-in user.");
+      return;
+    }
+
+    try {
+      setIsSavingPar(true);
+
+      await updateParPUT({
+        orderGroupItemID: Number(productToEditPar.orderGroupItemID),
+        parValue: nextPar,
+        modifyBY: Number.isNaN(Number(userId)) ? userId : Number(userId),
+      });
+    } catch (error) {
+      console.error("Update PAR failed:", error);
+      toast.error(error?.message || "Failed to update PAR.");
+      return; // keep the dialog open, don't touch the UI
+    } finally {
+      setIsSavingPar(false);
+    }
+
+    // API succeeded -> update the UI
+    updateProductInGroup(productToEditPar.id, { par: nextPar });
+    toast.success("PAR updated.");
+    setProductToEditPar(null);
+    setParDraft("");
   }
-
-  try {
-    setIsSavingPar(true);
-
-    await updateParPUT({
-      orderGroupItemID: Number(productToEditPar.orderGroupItemID),
-      parValue: nextPar,
-      modifyBY: Number.isNaN(Number(userId)) ? userId : Number(userId),
-    });
-  } catch (error) {
-    console.error("Update PAR failed:", error);
-    toast.error(error?.message || "Failed to update PAR.");
-    return; // keep the dialog open, don't touch the UI
-  } finally {
-    setIsSavingPar(false);
-  }
-
-  // API succeeded -> update the UI
-  updateProductInGroup(productToEditPar.id, { par: nextPar });
-  toast.success("PAR updated.");
-  setProductToEditPar(null);
-  setParDraft("");
-}
   if (!selectedOrder || !selectedGroup) {
     return (
       <section className="grid h-full min-h-[420px] place-items-center rounded-lg border bg-card">
@@ -2627,75 +2626,75 @@ async function addGuideProductsToCart(products) {
               {selectedCount ? `${selectedCount} selected` : "Select all"}
             </label>
             <div className="ml-auto flex items-center gap-1.5 lg:flex-wrap lg:gap-2">
-            {canEdit  && (
-              <div className="hidden flex-wrap gap-2 lg:flex">
-               {!isAllView && (
-  <>
-               <Button variant="outline" size="sm"
-  disabled={!selectedCount || isMoving}
-  title={isAllView ? "Select a group to reorder items" : undefined}
-  onClick={() => handleMovePosition("top")}>
-  <ArrowUpToLine />Move to Top
-</Button>
-<Button variant="outline" size="sm"
-  disabled={!selectedCount || isMoving}
-  title={isAllView ? "Select a group to reorder items" : undefined}
-  onClick={() => handleMovePosition("bottom")}>
-  <ArrowDownToLine />Move to Bottom
-</Button>
-  </>
-)}
-                {/* <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("top")}><ArrowUpToLine />Move to Top</Button>
-                <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("bottom")}><ArrowDownToLine />Move to Bottom</Button> */}
-                <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => { setDuplicate(false); setNewGroupName(null); setProductToMove(selectedProducts); }}><Folder />Change Group</Button>
-                <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => { setDuplicate(true); setNewGroupName(null); setProductToMove(selectedProducts); }}><Copy />Duplicate</Button>
-              </div>
-            )}
-            {canPlaceOrder && (
-              <Button size="sm" 
-              className="h-8 gap-1 px-2 text-[10px] sm:gap-2 sm:px-3 sm:text-xs" 
-              disabled={!selectedCount} 
-              onClick={() => addGuideProductsToCart(selectedProducts)}
-              // onClick={() => {
-              //   selectedProducts.forEach((product) => { if (!cartQuantities.get(product.id)) addItem(product, 1); });
-              // }}
-              
-              ><ShoppingCart /><span className="lg:hidden">Add to Cart</span><span className="hidden lg:inline">{selectedCount ? `Add ${selectedCount} to Cart` : "Add to Cart"}</span></Button>
-            )}
-            {canEdit && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" className="h-8 gap-1 px-2 text-[10px] sm:text-xs lg:hidden" disabled={!selectedCount}>
-                    Actions <ChevronDown className="size-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-  
-                <DropdownMenuContent align="end" className="w-44 lg:hidden">
-                                             {!isAllView && (
-  <>
-                    <DropdownMenuItem disabled={isMoving} onSelect={() => handleMovePosition("top")}>
-                    <ArrowUpToLine />Move to Top
-                  </DropdownMenuItem>
-                  <DropdownMenuItem disabled={isMoving} onSelect={() => handleMovePosition("bottom")}>
-                    <ArrowDownToLine />Move to Bottom
-                  </DropdownMenuItem>
+              {canEdit && (
+                <div className="hidden flex-wrap gap-2 lg:flex">
+                  {!isAllView && (
+                    <>
+                      <Button variant="outline" size="sm"
+                        disabled={!selectedCount || isMoving}
+                        title={isAllView ? "Select a group to reorder items" : undefined}
+                        onClick={() => handleMovePosition("top")}>
+                        <ArrowUpToLine />Move to Top
+                      </Button>
+                      <Button variant="outline" size="sm"
+                        disabled={!selectedCount || isMoving}
+                        title={isAllView ? "Select a group to reorder items" : undefined}
+                        onClick={() => handleMovePosition("bottom")}>
+                        <ArrowDownToLine />Move to Bottom
+                      </Button>
                     </>
-)}
-          {/* <DropdownMenuItem onSelect={() => reorderProducts("top")}>
+                  )}
+                  {/* <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("top")}><ArrowUpToLine />Move to Top</Button>
+                <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("bottom")}><ArrowDownToLine />Move to Bottom</Button> */}
+                  <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => { setDuplicate(false); setNewGroupName(null); setProductToMove(selectedProducts); }}><Folder />Change Group</Button>
+                  <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => { setDuplicate(true); setNewGroupName(null); setProductToMove(selectedProducts); }}><Copy />Duplicate</Button>
+                </div>
+              )}
+              {canPlaceOrder && (
+                <Button size="sm"
+                  className="h-8 gap-1 px-2 text-[10px] sm:gap-2 sm:px-3 sm:text-xs"
+                  disabled={!selectedCount}
+                  onClick={() => addGuideProductsToCart(selectedProducts)}
+                // onClick={() => {
+                //   selectedProducts.forEach((product) => { if (!cartQuantities.get(product.id)) addItem(product, 1); });
+                // }}
+
+                ><ShoppingCart /><span className="lg:hidden">Add to Cart</span><span className="hidden lg:inline">{selectedCount ? `Add ${selectedCount} to Cart` : "Add to Cart"}</span></Button>
+              )}
+              {canEdit && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="h-8 gap-1 px-2 text-[10px] sm:text-xs lg:hidden" disabled={!selectedCount}>
+                      Actions <ChevronDown className="size-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent align="end" className="w-44 lg:hidden">
+                    {!isAllView && (
+                      <>
+                        <DropdownMenuItem disabled={isMoving} onSelect={() => handleMovePosition("top")}>
+                          <ArrowUpToLine />Move to Top
+                        </DropdownMenuItem>
+                        <DropdownMenuItem disabled={isMoving} onSelect={() => handleMovePosition("bottom")}>
+                          <ArrowDownToLine />Move to Bottom
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {/* <DropdownMenuItem onSelect={() => reorderProducts("top")}>
                     <ArrowUpToLine />Move to Top
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => reorderProducts("bottom")}>
                     <ArrowDownToLine />Move to Bottom
                   </DropdownMenuItem> */}
-                  <DropdownMenuItem onSelect={() => { setDuplicate(false); setNewGroupName(null); setProductToMove(selectedProducts); }}>
-                    <Folder />Change Group
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => { setDuplicate(true); setNewGroupName(null); setProductToMove(selectedProducts); }}>
-                    <Copy />Duplicate
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                    <DropdownMenuItem onSelect={() => { setDuplicate(false); setNewGroupName(null); setProductToMove(selectedProducts); }}>
+                      <Folder />Change Group
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => { setDuplicate(true); setNewGroupName(null); setProductToMove(selectedProducts); }}>
+                      <Copy />Duplicate
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         )}
@@ -2719,50 +2718,50 @@ async function addGuideProductsToCart(products) {
               //     reorderProducts(null, active.id, over.id);
               //   }
               // }}
-                onDragCancel={() => {
-    setActiveProductId(null);
-    document.activeElement?.blur();
-  }}
-  onDragEnd={({ active, over }) => {
-    setActiveProductId(null);
-    document.activeElement?.blur();
-    if (canEdit && layout === "list" && !isAllView && over && active.id !== over.id) {
-      persistDragReorder(active.id, over.id);
-    }
-  }}
+              onDragCancel={() => {
+                setActiveProductId(null);
+                document.activeElement?.blur();
+              }}
+              onDragEnd={({ active, over }) => {
+                setActiveProductId(null);
+                document.activeElement?.blur();
+                if (canEdit && layout === "list" && !isAllView && over && active.id !== over.id) {
+                  persistDragReorder(active.id, over.id);
+                }
+              }}
             >
               <SortableContext items={products.map((product) => product.id)} strategy={verticalListSortingStrategy}>
-            <div className="no-scrollbar h-full overflow-y-auto">
-              <div
-                className={cn(
-                  "grid gap-2 sm:gap-3",
-                  layout === "list"
-                    ? "grid-cols-1"
-                    : "grid-cols-1 min-[460px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4",
-                )}
-              >
-                {products.map((product) => (
-                  <SavedProductCard
-                    key={product.id}
-                    product={product}
-                    layout={layout}
-                    selected={selectedIds.includes(product.id)}
-                    onSelect={() => setSelection({ group: selectionKey, ids: selectedIds.includes(product.id) ? selectedIds.filter((id) => id !== product.id) : [...selectedIds, product.id] })}
-                    cartQuantity={cartQuantities.get(product.id) ?? 0}
-                    // onAddToCart={addItem}
-                    onAddToCart={(product) => addGuideProductsToCart([product])}
-                    onIncrement={incrementItem}
-                    onDecrement={decrementItem}
-                    onChangeGroup={(product) => { setDuplicate(false); setNewGroupName(null); setProductToMove([product]); }}
-                    onEditPar={openEditParDialog}
-                    onRequestDelete={setProductToDelete}
-                    canEdit={canEdit}
-                    canPlaceOrder={canPlaceOrder}
-                     isAllView={isAllView}
-                  />
-                ))}
-              </div>
-            </div>
+                <div className="no-scrollbar h-full overflow-y-auto">
+                  <div
+                    className={cn(
+                      "grid gap-2 sm:gap-3",
+                      layout === "list"
+                        ? "grid-cols-1"
+                        : "grid-cols-1 min-[460px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4",
+                    )}
+                  >
+                    {products.map((product) => (
+                      <SavedProductCard
+                        key={product.id}
+                        product={product}
+                        layout={layout}
+                        selected={selectedIds.includes(product.id)}
+                        onSelect={() => setSelection({ group: selectionKey, ids: selectedIds.includes(product.id) ? selectedIds.filter((id) => id !== product.id) : [...selectedIds, product.id] })}
+                        cartQuantity={cartQuantities.get(product.id) ?? 0}
+                        // onAddToCart={addItem}
+                        onAddToCart={(product) => addGuideProductsToCart([product])}
+                        onIncrement={incrementItem}
+                        onDecrement={decrementItem}
+                        onChangeGroup={(product) => { setDuplicate(false); setNewGroupName(null); setProductToMove([product]); }}
+                        onEditPar={openEditParDialog}
+                        onRequestDelete={setProductToDelete}
+                        canEdit={canEdit}
+                        canPlaceOrder={canPlaceOrder}
+                        isAllView={isAllView}
+                      />
+                    ))}
+                  </div>
+                </div>
               </SortableContext>
               <DragOverlay>
                 {activeProduct ? (
@@ -2786,12 +2785,12 @@ async function addGuideProductsToCart(products) {
       <Dialog
         open={Boolean(productToMove)}
         // onOpenChange={(open) => !open && setProductToMove(null)}
-          onOpenChange={(open) => {
-    if (!open) {
-      setProductToMove(null);
-      setNewGroupName(null); // reset the create form when closing
-    }
-  }}
+        onOpenChange={(open) => {
+          if (!open) {
+            setProductToMove(null);
+            setNewGroupName(null); // reset the create form when closing
+          }
+        }}
 
       >
         <DialogContent className="sm:max-w-md">
@@ -2821,48 +2820,48 @@ async function addGuideProductsToCart(products) {
             ))}
           </div>
           {/* {duplicate && ( */}
-            <div className="space-y-3 border-t pt-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full justify-start"
-                aria-expanded={newGroupName !== null}
-                aria-controls="duplicate-create-group"
-                 disabled={isMoving}
-                onClick={() => setNewGroupName((name) => name ?? "")}
-              >
-                <Plus className="size-4" />
-                Create group
-              </Button>
-              {newGroupName !== null && (
-   
-                // <form
-                //   id="duplicate-create-group"
-                //   className="space-y-2"
-                //   onSubmit={(event) => {
-                //     event.preventDefault();
-                //     const name = newGroupName.trim();
-                //     if (!name || !productToMove?.length) return;
+          <div className="space-y-3 border-t pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-start"
+              aria-expanded={newGroupName !== null}
+              aria-controls="duplicate-create-group"
+              disabled={isMoving}
+              onClick={() => setNewGroupName((name) => name ?? "")}
+            >
+              <Plus className="size-4" />
+              Create group
+            </Button>
+            {newGroupName !== null && (
 
-                //     const group = {
-                //       id: crypto.randomUUID(),
-                //       name,
-                //       products: productToMove.map((product) => ({ ...product })),
-                //     };
-                //     setQuickOrders((orders) =>
-                //       orders.map((order) =>
-                //         order.id === selectedOrder.id
-                //           ? touchOrder({ ...order, groups: [...order.groups, group] })
-                //           : order,
-                //       ),
-                //     );
-                //     setProductToMove(null);
-                //     setNewGroupName(null);
-                //     setSelection({ group: selectionKey, ids: [] });
-                //     toast.success(`Created "${name}" with the selected products.`);
-                //   }}
-                // >
-                              <form
+              // <form
+              //   id="duplicate-create-group"
+              //   className="space-y-2"
+              //   onSubmit={(event) => {
+              //     event.preventDefault();
+              //     const name = newGroupName.trim();
+              //     if (!name || !productToMove?.length) return;
+
+              //     const group = {
+              //       id: crypto.randomUUID(),
+              //       name,
+              //       products: productToMove.map((product) => ({ ...product })),
+              //     };
+              //     setQuickOrders((orders) =>
+              //       orders.map((order) =>
+              //         order.id === selectedOrder.id
+              //           ? touchOrder({ ...order, groups: [...order.groups, group] })
+              //           : order,
+              //       ),
+              //     );
+              //     setProductToMove(null);
+              //     setNewGroupName(null);
+              //     setSelection({ group: selectionKey, ids: [] });
+              //     toast.success(`Created "${name}" with the selected products.`);
+              //   }}
+              // >
+              <form
                 id="dialog-create-group"
                 className="space-y-2"
                 onSubmit={(event) => {
@@ -2877,25 +2876,25 @@ async function addGuideProductsToCart(products) {
                   }
                 }}
               >
-                  <label htmlFor="duplicate-group-name" className="block text-sm font-medium">
-                    Group name
-                  </label>
-                  <Input
-                    id="duplicate-group-name"
-                    autoFocus
-                    value={newGroupName}
-                    onChange={(event) => setNewGroupName(event.target.value)}
-                    placeholder="Enter group name"
-                    required
-                  />
-                  <div className="flex justify-end pt-2">
-                    <Button type="submit" disabled={!newGroupName.trim() || isMoving}>
-                      Create
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </div>
+                <label htmlFor="duplicate-group-name" className="block text-sm font-medium">
+                  Group name
+                </label>
+                <Input
+                  id="duplicate-group-name"
+                  autoFocus
+                  value={newGroupName}
+                  onChange={(event) => setNewGroupName(event.target.value)}
+                  placeholder="Enter group name"
+                  required
+                />
+                <div className="flex justify-end pt-2">
+                  <Button type="submit" disabled={!newGroupName.trim() || isMoving}>
+                    Create
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
           {/* // )} */}
         </DialogContent>
       </Dialog>

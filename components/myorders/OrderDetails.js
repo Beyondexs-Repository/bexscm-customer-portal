@@ -25,11 +25,15 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { cn, getItemImage, formatDeliveryDate } from "@/lib/utils"
-
+import { cn, formatDeliveryDate } from "@/lib/utils"
+import ItemImage from "../../components/myorders/ItemImage"
 import { formatCurrency, statusStyles } from "./MyOrders"
 import { myOrderitemsRating } from "../../redux/slices/postSlice"   
 import OrderItemRatings, { buildRatingsFormData } from "./OrderItemRatings"
+
+
+
+
 
 export default function OrderDetails({ order, onBack, onClose }) {
 const dispatch = useDispatch();
@@ -325,8 +329,9 @@ onSubmit={async (updatedRatings) => {
             return (
               <div key={item.id} className="p-3">
                 <div className="flex gap-3">
-                  <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
-                    <img
+                  {/* <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted"> */}
+                  
+                  <ItemImage item={item} className="size-14" />  {/* <img
                       // src={item.image}
                       src={getItemImage(item) || undefined}
                       alt={item.name}
@@ -334,8 +339,8 @@ onSubmit={async (updatedRatings) => {
                       onError={(e) => {
                         e.currentTarget.style.display = "none"
                       }}
-                    />
-                  </div>
+                    /> */}
+                  {/* </div> */}
 
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold">{item.name}</p>
@@ -522,7 +527,8 @@ onSubmit={async (updatedRatings) => {
                       </Button>
 
                       {/* Product Image */}
-                      <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
+                      <ItemImage item={item} className="size-14" />
+                      {/* <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
                         <img
                           // src={item.image}
                           src={getItemImage(item) || undefined}
@@ -532,7 +538,7 @@ onSubmit={async (updatedRatings) => {
                             e.currentTarget.style.display = "none"
                           }}
                         />
-                      </div>
+                      </div> */}
 
                       {/* Product Details */}
                       <div className="min-w-0 flex-1">
