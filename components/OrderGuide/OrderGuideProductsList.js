@@ -1307,6 +1307,7 @@ const moveTotop = async ({
 };
 
 //Secondary_group_Duplicate items
+
 const itemsDuplicatePost = async ({
   itemIds,
   targetOrderGuideGroupID, // existing group
@@ -1981,92 +1982,155 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   // }
 
   //dynamic api calls Change Group
-  async function moveProductToGroup(targetGroupId) {
-    if (!selectedOrder || !selectedGroup || !productToMove) return;
+  // async function moveProductToGroup(targetGroupId) {
+  //   if (!selectedOrder || !selectedGroup || !productToMove) return;
 
-    const movingIds = productToMove.map((product) => product.id);
-    // Duplicate -> POST duplicate-items with targetOrderGuideGroupID
-    if (duplicate) {
-      await handleDuplicate({ targetGroupId });
+  //   const movingIds = productToMove.map((product) => product.id);
+  //   // Duplicate -> POST duplicate-items with targetOrderGuideGroupID
+  //   if (duplicate) {
+  //     await handleDuplicate({ targetGroupId });
+  //     return;
+  //   }
+  //   // Call the API only for "Change Group" (not "Duplicate")
+  //   if (!duplicate) {
+  //     if (!userId) {
+  //       toast.error("Unable to identify the logged-in user.");
+  //       return;
+  //     }
+
+  //     const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+
+  //     try {
+  //       setIsMoving(true);
+
+  //       await changeGroupPUT({
+  //         itemIds: productToMove.map((product) =>
+  //           Number(product.orderGroupItemID),   // 91, not the SKU "500141"
+  //         ),
+  //         targetOrderGuideGroupID: Number(targetGroupId), // 113
+  //         modifyBY,
+  //       });
+  //     } catch (error) {
+  //       console.error("Move items failed:", error);
+  //       toast.error(error?.message || "Failed to move items.");
+  //       return;                                // keep dialog open, don't touch UI
+  //     } finally {
+  //       setIsMoving(false);
+  //     }
+  //   }
+
+  //   // API succeeded (or it's a local duplicate) -> update UI
+  //   setQuickOrders((orders) =>
+  //     orders.map((order) =>
+  //       order.id !== selectedOrder.id
+  //         ? order
+  //         : touchOrder({
+  //           ...order,
+  //           groups: order.groups.map((group) => {
+  //             if (group.id === targetGroupId) {
+  //               return {
+  //                 ...group,
+  //                 products: [
+  //                   ...group.products,
+  //                   ...productToMove
+  //                     .filter(
+  //                       (product) =>
+  //                         !group.products.some((e) => e.id === product.id),
+  //                     )
+  //                     .map((product) => ({
+  //                       ...product,
+  //                       orderGuideGroupID: Number(targetGroupId),
+  //                       par: group.par ?? product.par ?? null,
+  //                     })),
+  //                 ],
+  //               };
+  //             }
+
+  //             if (
+  //               !duplicate &&
+  //               (selectedGroup.isAll || group.id === selectedGroup.id)
+  //             ) {
+  //               return {
+  //                 ...group,
+  //                 products: group.products.filter(
+  //                   (product) => !movingIds.includes(product.id),
+  //                 ),
+  //               };
+  //             }
+
+  //             return group;
+  //           }),
+  //         }),
+  //     ),
+  //   );
+
+  //   toast.success(duplicate ? "Products duplicated." : "Products moved.");
+  //   setProductToMove(null);
+  //   setSelection({ group: selectionKey, ids: [] });
+  // }
+  //chnaged by Radhika 29-09-2026 
+  async function moveProductToGroup(targetGroupId) {
+  if (!selectedOrder || !selectedGroup || !productToMove || isMoving) return;
+
+  // Duplicate -> POST duplicate-items with targetOrderGuideGroupID
+  if (duplicate) {
+    await handleDuplicate({ targetGroupId });
+    return;
+  }
+
+  if (!userId) {
+    toast.error("Unable to identify the logged-in user.");
+    return;
+  }
+
+  const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+
+  try {
+    setIsMoving(true);
+
+    const result = await changeGroupPUT({
+      itemIds: productToMove.map((product) => Number(product.orderGroupItemID)),
+      targetOrderGuideGroupID: Number(targetGroupId),
+      modifyBY,
+    });
+
+    const moved = result?.movedCount ?? 0;
+    const skipped = Array.isArray(result?.alreadyInGroup) ? result.alreadyInGroup : [];
+
+    // Nothing moved -> keep the dialog open so the user can pick another group
+    if (moved === 0) {
+      if (skipped.length > 0) {
+        toast.warning(
+          skipped.length === 1
+            ? `${formatNames(skipped)} is already in this group.`
+            : `${formatNames(skipped)} are already in this group.`,
+        );
+      } else {
+        toast.error("No items were moved.");
+      }
       return;
     }
-    // Call the API only for "Change Group" (not "Duplicate")
-    if (!duplicate) {
-      if (!userId) {
-        toast.error("Unable to identify the logged-in user.");
-        return;
-      }
 
-      const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
-
-      try {
-        setIsMoving(true);
-
-        await changeGroupPUT({
-          itemIds: productToMove.map((product) =>
-            Number(product.orderGroupItemID),   // 91, not the SKU "500141"
-          ),
-          targetOrderGuideGroupID: Number(targetGroupId), // 113
-          modifyBY,
-        });
-      } catch (error) {
-        console.error("Move items failed:", error);
-        toast.error(error?.message || "Failed to move items.");
-        return;                                // keep dialog open, don't touch UI
-      } finally {
-        setIsMoving(false);
-      }
-    }
-
-    // API succeeded (or it's a local duplicate) -> update UI
-    setQuickOrders((orders) =>
-      orders.map((order) =>
-        order.id !== selectedOrder.id
-          ? order
-          : touchOrder({
-            ...order,
-            groups: order.groups.map((group) => {
-              if (group.id === targetGroupId) {
-                return {
-                  ...group,
-                  products: [
-                    ...group.products,
-                    ...productToMove
-                      .filter(
-                        (product) =>
-                          !group.products.some((e) => e.id === product.id),
-                      )
-                      .map((product) => ({
-                        ...product,
-                        orderGuideGroupID: Number(targetGroupId),
-                        par: group.par ?? product.par ?? null,
-                      })),
-                  ],
-                };
-              }
-
-              if (
-                !duplicate &&
-                (selectedGroup.isAll || group.id === selectedGroup.id)
-              ) {
-                return {
-                  ...group,
-                  products: group.products.filter(
-                    (product) => !movingIds.includes(product.id),
-                  ),
-                };
-              }
-
-              return group;
-            }),
-          }),
-      ),
+    // At least one item moved
+    toast.success(
+      moved === 1 ? "1 item moved." : `${moved} items moved.`,
+      skipped.length > 0
+        ? { description: `Skipped ${formatNames(skipped)} (already in this group).` }
+        : undefined,
     );
 
-    toast.success(duplicate ? "Products duplicated." : "Products moved.");
+    onRefresh?.();   // reload so the source and target groups match the server
+
     setProductToMove(null);
+    setNewGroupName(null);
     setSelection({ group: selectionKey, ids: [] });
+  } catch (error) {
+    console.error("Move items failed:", error);
+    toast.error(error?.message || "Failed to move items.");
+  } finally {
+    setIsMoving(false);   // also runs after the early return
   }
+}
   //API FOR MOVE TO TOP & BOTTOM
   async function handleMovePosition(position) {
     // position is "top" or "bottom" (lowercase, used by reorderProducts)
@@ -2103,49 +2167,115 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   }
 
   //duplicate function
-  async function handleDuplicate({ targetGroupId, newGroupName }) {
-    if (!productToMove?.length || isMoving) return;
+  // async function handleDuplicate({ targetGroupId, newGroupName }) {
+  //   if (!productToMove?.length || isMoving) return;
 
-    if (!userId) {
-      toast.error("Unable to identify the logged-in user.");
+  //   if (!userId) {
+  //     toast.error("Unable to identify the logged-in user.");
+  //     return;
+  //   }
+
+  //   const createdBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+
+  //   try {
+  //     setIsMoving(true);
+
+  //     const result = await itemsDuplicatePost({
+  //       itemIds: productToMove.map((p) => Number(p.orderGroupItemID)),
+  //       targetOrderGuideGroupID: targetGroupId ? Number(targetGroupId) : undefined,
+  //       newGroupName,
+  //       createdBY,
+  //     });
+
+  //     if (result.duplicatedCount === 0) {
+  //       toast.info("No items were duplicated (they may already exist there).");
+  //     } else {
+  //       toast.success(
+  //         newGroupName
+  //           ? `Created "${newGroupName}" with ${result.duplicatedCount} item(s).`
+  //           : `${result.duplicatedCount} item(s) duplicated.`,
+  //       );
+  //     }
+
+  //     // Reload from the API (see note below)
+  //     onRefresh?.();
+
+  //     setProductToMove(null);
+  //     setNewGroupName(null);
+  //     setSelection({ group: selectionKey, ids: [] });
+  //   } catch (error) {
+  //     console.error("Duplicate failed:", error);
+  //     toast.error(error?.message || "Failed to duplicate items.");
+  //   } finally {
+  //     setIsMoving(false);
+  //   }
+  // }
+
+  function formatNames(names) {
+  const list = names.map((n) => `"${n}"`);
+  if (list.length <= 2) return list.join(" and ");
+  return `${list.slice(0, 2).join(", ")} and ${list.length - 2} more`;
+}
+
+async function handleDuplicate({ targetGroupId, newGroupName }) {
+  if (!productToMove?.length || isMoving) return;
+
+  if (!userId) {
+    toast.error("Unable to identify the logged-in user.");
+    return;
+  }
+
+  const createdBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+
+  try {
+    setIsMoving(true);
+
+    const result = await itemsDuplicatePost({
+      itemIds: productToMove.map((p) => Number(p.orderGroupItemID)),
+      targetOrderGuideGroupID: targetGroupId ? Number(targetGroupId) : undefined,
+      newGroupName,
+      createdBY,
+    });
+
+    const duplicated = result?.duplicatedCount ?? 0;
+    const skipped = Array.isArray(result?.alreadyInGroup) ? result.alreadyInGroup : [];
+
+    // Nothing was duplicated -> keep the dialog open so the user can pick another group
+    if (duplicated === 0) {
+      if (skipped.length > 0) {
+        toast.warning(
+          skipped.length === 1
+            ? `${formatNames(skipped)} is already in this group.`
+            : `${formatNames(skipped)} are already in this group.`,
+        );
+      } else {
+        toast.error("No items were duplicated.");
+      }
       return;
     }
 
-    const createdBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+    // At least one item was duplicated
+    toast.success(
+      newGroupName
+        ? `Created "${newGroupName}" with ${duplicated} item(s).`
+        : `${duplicated} item(s) duplicated.`,
+      skipped.length > 0
+        ? { description: `Skipped ${formatNames(skipped)} (already in this group).` }
+        : undefined,
+    );
 
-    try {
-      setIsMoving(true);
+    onRefresh?.();
 
-      const result = await itemsDuplicatePost({
-        itemIds: productToMove.map((p) => Number(p.orderGroupItemID)),
-        targetOrderGuideGroupID: targetGroupId ? Number(targetGroupId) : undefined,
-        newGroupName,
-        createdBY,
-      });
-
-      if (result.duplicatedCount === 0) {
-        toast.info("No items were duplicated (they may already exist there).");
-      } else {
-        toast.success(
-          newGroupName
-            ? `Created "${newGroupName}" with ${result.duplicatedCount} item(s).`
-            : `${result.duplicatedCount} item(s) duplicated.`,
-        );
-      }
-
-      // Reload from the API (see note below)
-      onRefresh?.();
-
-      setProductToMove(null);
-      setNewGroupName(null);
-      setSelection({ group: selectionKey, ids: [] });
-    } catch (error) {
-      console.error("Duplicate failed:", error);
-      toast.error(error?.message || "Failed to duplicate items.");
-    } finally {
-      setIsMoving(false);
-    }
+    setProductToMove(null);
+    setNewGroupName(null);
+    setSelection({ group: selectionKey, ids: [] });
+  } catch (error) {
+    console.error("Duplicate failed:", error);
+    toast.error(error?.message || "Failed to duplicate items.");
+  } finally {
+    setIsMoving(false);   // still runs after the early return above
   }
+}
   //Changegroup-- create group
   async function handleMoveToNewGroup(name) {
     if (!productToMove?.length || isMoving) return;

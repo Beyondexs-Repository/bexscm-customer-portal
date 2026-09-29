@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Loader2, Plus, Star } from "lucide-react";
-
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -205,10 +205,14 @@ export function OrderGuide() {
     if (!name) return;
 
     if (!userId) {
-      console.error("User ID is not available");
+      toast.error("Unable to identify the logged-in user.");
       return;
     }
     const custnmbr = localStorage.getItem("custnmbr");
+      if (!custnmbr) {
+    toast.error("Unable to identify the customer.");
+    return;
+  }
     setIsCreating(true);
     try {
       await createOrderGuideApiv1_POST({
@@ -225,11 +229,12 @@ export function OrderGuide() {
 
       // Tell OrderGuideList to reload from the API
       setRefreshKey((k) => k + 1);
-
+  toast.success(`Order guide "${name}" created successfully`);
       setQuickOrderName("");
       setOpen(false);
     } catch (error) {
       console.error("Create Order Guide API Error:", error);
+      toast.error(error?.message || "Failed to create order guide");
     } finally {
       setIsCreating(false);
     }

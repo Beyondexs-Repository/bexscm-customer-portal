@@ -1497,6 +1497,7 @@ async function handleDeleteOrdGuideGroup(order, group) {
     if (dialog.type === "add-group") {
       if (!userId) {
         setNameDialogError("Unable to identify the logged-in user.");
+        toast.error("Unable to identify the logged-in user.");
         return;
       }
 
@@ -1530,12 +1531,14 @@ async function handleDeleteOrdGuideGroup(order, group) {
         await loadOrderGuides();
         setExpandedOrderId(dialog.order.id);
         setSelectedGroupId(group.id);
+         toast.success(`Group "${name}" created successfully`);
         closeDialog();
       } catch (error) {
         console.error("Create Order Guide Group Error:", error);
         setNameDialogError(
           error?.message || "Failed to add group. Please try again.",
         );
+         toast.error(message);
       } finally {
         setIsSavingName(false);
       }
