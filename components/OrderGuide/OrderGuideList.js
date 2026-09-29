@@ -434,7 +434,8 @@ export function OrderGuideList({
   canCreate,
   canEdit,
   canDelete,
-  
+  setIsLoading,
+
 }) {
 
   const dispatch = useDispatch();

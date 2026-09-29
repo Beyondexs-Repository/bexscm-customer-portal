@@ -47,6 +47,7 @@ export function OrderGuide() {
 
   const [userId, setUserId] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("loggedInUser");
@@ -229,6 +230,20 @@ const createOrderGuideApiv1_POST = async ({
     console.error("Create Order Guide API Error:", error);
   }
 }
+
+if (isLoading) {
+  return (
+    <div className="flex min-h-[calc(100svh-13rem)] items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="size-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+        <p className="text-sm text-muted-foreground">
+          Loading order guides...
+        </p>
+      </div>
+    </div>
+  );
+}
+
   if (quickOrders.length > 0) {
     return (
       <div className="grid h-full min-h-0 gap-2 overflow-hidden bg-background p-2 lg:grid-cols-[320px_1fr] lg:gap-3 lg:p-3">
@@ -250,6 +265,7 @@ const createOrderGuideApiv1_POST = async ({
             canCreate={canCreate}
             canEdit={canEdit}
             canDelete={canDelete}
+            setIsLoading={setIsLoading}
           />
         </div>
 
