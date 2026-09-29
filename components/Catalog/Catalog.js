@@ -10,21 +10,22 @@ import {
   CalendarDays,
   Clock3,
   Star,
-  Package2,
   RotateCcw,
   Search,
-  ShoppingCart,
   SlidersHorizontal,
   Loader2,
-  Mic,
+  List,
+  LayoutGrid,
 } from "lucide-react";
+import { CatalogListView } from "./CatalogListView";
+import { CatalogCard } from "./CatalogCard";
 import { toast } from "sonner";
 
 import staticItems from "@/data/livedata/Items.json";
 import { fetchItemsApi, resolveItemImageUrl } from "@/lib/api/itemsApi";
 import { useCart, useQuickOrders } from "@/app/context/app-context";
+import { OrderGuidePickerDialog } from "./OrderGuidePickerDialog";
 import { Button } from "@/components/ui/button";
-import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,12 +42,6 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import VoiceSearch from "@/components/ai/VoiceSearch";
 import { askVoiceAi } from "@/components/ai/voiceOpenAiClient";
 
@@ -71,10 +66,6 @@ const isSameDay = (first, second) =>
   first.getFullYear() === second.getFullYear() &&
   first.getMonth() === second.getMonth() &&
   first.getDate() === second.getDate();
-
-function formatPrice(price, unit) {
-  return `$${Number(price).toFixed(2)} / ${unit}`;
-}
 
 function pluralizeFilterLabel(label) {
   return label.toLowerCase().endsWith("y")
@@ -152,306 +143,6 @@ function SelectMenu({
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
-  );
-}
-
-function ProductImage({ product }) {
-  const resolvedImg = resolveItemImageUrl(product.image) || product.image;
-  const categoryFallback = getCategoryPlaceholderImage(product.category);
-  const initialImage = resolvedImg || categoryFallback;
-
-  const [imgSrc, setImgSrc] = useState(initialImage);
-  const [prevInitial, setPrevInitial] = useState(initialImage);
-
-  if (prevInitial !== initialImage) {
-    setPrevInitial(initialImage);
-    setImgSrc(initialImage);
-  }
-
-  return (
-    <div className="relative aspect-[1.25] overflow-hidden bg-muted sm:aspect-[1.35] xl:aspect-[1.45]">
-      <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(135deg,var(--muted),var(--background))] text-primary/70">
-        <Package2 className="size-8 sm:size-10" />
-      </div>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={imgSrc}
-        alt={product.name}
-        className="absolute inset-0 size-full object-cover"
-        onError={() => {
-          if (imgSrc !== categoryFallback) {
-            setImgSrc(categoryFallback);
-          }
-        }}
-      />
-    </div>
-  );
-}
-
-function ProductCard({
-  product,
-}) {
-  const t = useTranslations("catalog")
-  const {
-    items: cartItems,
-    addItem,
-    incrementItem,
-    decrementItem,
-  } = useCart()
-  const {
-    quickOrders,
-    addProductToQuickOrder,
-    removeProductFromQuickOrder,
-  } = useQuickOrders()
-  const [draftQuantity, setDraftQuantity] = useState(1);
-  const [orderGuideOpen, setOrderGuideOpen] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
-  const [cardVoiceStatus, setCardVoiceStatus] = useState("idle");
-
-  const cartItem = cartItems.find((item) => item.id === product.id);
-  const isInCart = Boolean(cartItem);
-  const quantity = cartItem?.quantity ?? draftQuantity;
-  const isInOrderGuide = quickOrders.some((order) =>
-    order.groups.some((group) =>
-      group.products.some((item) => item.id === product.id),
-    ),
-  );
-
-  function handleProductVoiceAdd() {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      toast.error("Speech recognition is not supported in this browser.");
-      return;
-    }
-
-    setCardVoiceStatus("listening");
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onresult = async (event) => {
-      const transcript = event.results?.[0]?.[0]?.transcript?.trim();
-      if (transcript) {
-        setCardVoiceStatus("processing");
-
-        let qty = draftQuantity;
-        const numberWords = {
-          one: 1, two: 2, three: 3, four: 4, five: 5,
-          six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
-        };
-
-        const lower = transcript.toLowerCase();
-        const match = lower.match(/\d+/);
-        if (match) {
-          qty = Math.max(1, parseInt(match[0], 10));
-        } else {
-          for (const [word, num] of Object.entries(numberWords)) {
-            if (lower.includes(word)) {
-              qty = num;
-              break;
-            }
-          }
-        }
-
-        try {
-          const liveItems = await fetchItemsApi();
-          const liveItem = Array.isArray(liveItems)
-            ? liveItems.find(
-              (item) => (item.itemnmbr || item.ITEMNMBR)?.trim() === product.id,
-            )
-            : null;
-
-          const finalProduct = liveItem
-            ? {
-              ...product,
-              price: Number(liveItem.qtybsuom ?? liveItem.QTYBSUOM ?? liveItem.avgWeight) || product.price,
-              unit: (liveItem.uomschdl || liveItem.UOMSCHDL)?.trim() || product.unit,
-            }
-            : product;
-
-          addItem(finalProduct, qty);
-          toast.success(`Added ${qty} × ${product.name} to cart via voice!`);
-        } catch {
-          addItem(product, qty);
-          toast.success(`Added ${qty} × ${product.name} to cart via voice!`);
-        }
-      }
-      setCardVoiceStatus("idle");
-    };
-
-    recognition.onerror = () => {
-      setCardVoiceStatus("idle");
-    };
-
-    recognition.onend = () => {
-      setCardVoiceStatus("idle");
-    };
-
-    try {
-      recognition.start();
-    } catch {
-      setCardVoiceStatus("idle");
-    }
-  }
-
-  async function handleAddToCart() {
-    if (isInCart || isAdding) return;
-
-    setIsAdding(true);
-    try {
-      const liveItems = await fetchItemsApi();
-      const liveItem = Array.isArray(liveItems)
-        ? liveItems.find(
-          (item) =>
-            (item.itemnmbr || item.ITEMNMBR)?.trim() === product.id,
-        )
-        : null;
-
-      const finalProduct = liveItem
-        ? {
-          ...product,
-          price: Number(liveItem.qtybsuom ?? liveItem.QTYBSUOM ?? liveItem.avgWeight) || product.price,
-          unit: (liveItem.uomschdl || liveItem.UOMSCHDL)?.trim() || product.unit,
-        }
-        : product;
-
-      addItem(finalProduct, draftQuantity);
-    } catch (error) {
-      console.warn("Failed to fetch latest item details, adding product:", error);
-      addItem(product, draftQuantity);
-    } finally {
-      setIsAdding(false);
-    }
-  }
-
-  return (
-    <article className="min-w-0 overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm">
-      <div className="relative">
-        <div className="block">
-          <ProductImage product={product} />
-        </div>
-
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon-sm"
-                aria-label={`Order Guide ${product.name}`}
-                className={cn(
-                  "absolute right-1.5 top-1.5 rounded-full border bg-card text-muted-foreground shadow-md hover:text-primary dark:border-border dark:bg-card hover:dark:bg-card/60 sm:right-2 sm:top-2",
-                  isInOrderGuide && "border-sky-500 bg-sky-500 text-white hover:bg-sky-500 hover:text-white dark:border-sky-400 dark:bg-sky-500 dark:text-white dark:hover:bg-sky-500 dark:hover:text-white",
-                )}
-                onClick={() => setOrderGuideOpen(true)}
-              >
-                <Star className={cn("h-4 w-4", isInOrderGuide && "fill-current")} />
-              </Button>
-            </TooltipTrigger>
-
-            <TooltipContent>
-              <p>{t("addToOrderGuide")}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      <div className="space-y-2 p-2 lg:space-y-3 lg:p-3">
-        <div className="min-w-0 space-y-1">
-          <p className="block truncate text-xs text-muted-foreground uppercase font-bold lg:text-sm">
-            {product.brand}
-          </p>
-          <p className="block truncate text-xs font-bold lg:text-sm">
-            {product.name}
-          </p>
-          <p className="truncate text-[0.68rem] font-semibold text-muted-foreground lg:text-xs">
-            {product.category}
-          </p>
-          <div className="grid gap-0.5 text-[0.62rem] font-medium text-muted-foreground lg:text-[0.7rem]">
-            <span className="truncate">{t("packSize", { unit: product.unit })}</span>
-          </div>
-        </div>
-
-        <p className="text-sm font-bold lg:text-base">
-          {formatPrice(product.price, product.unit)}
-        </p>
-
-        <div className="grid gap-1.5 grid-cols-[3.8rem_1fr] lg:grid-cols-[4.25rem_1fr]">
-          <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={`Decrease ${product.name} quantity`}
-              className="h-full rounded-none"
-              onClick={() => {
-                if (isInCart) {
-                  decrementItem(product.id);
-                  return;
-                }
-
-                setDraftQuantity((current) => Math.max(1, current - 1));
-              }}
-            >
-              <span className="grid size-full place-items-center">-</span>
-            </Button>
-            <Input
-              value={quantity}
-              readOnly
-              aria-label={`${product.name} quantity`}
-              className="h-full rounded-none border-0 px-0 text-center text-xs font-normal shadow-none focus-visible:ring-0"
-            />
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={`Increase ${product.name} quantity`}
-              className="h-full rounded-none"
-              onClick={() => {
-                if (isInCart) {
-                  incrementItem(product.id);
-                  return;
-                }
-
-                setDraftQuantity((current) => current + 1);
-              }}
-            >
-              <span className="grid size-full place-items-center">+</span>
-            </Button>
-          </div>
-
-          <Button
-            variant={isInCart ? "secondary" : "default"}
-            disabled={isAdding}
-            className="h-8 min-w-0 rounded-md px-2 text-[0.68rem] font-bold lg:text-xs"
-            onClick={handleAddToCart}
-          >
-            {isAdding ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <ShoppingCart />
-            )}
-            <span className="truncate">
-              {isInCart
-                ? t("addedToCart")
-                : isAdding
-                  ? "Adding..."
-                  : t("addToCart")}
-            </span>
-          </Button>
-        </div>
-      </div>
-
-      <OrderGuidePickerDialog
-        product={product}
-        quickOrders={quickOrders}
-        open={orderGuideOpen}
-        onOpenChange={setOrderGuideOpen}
-        onAdd={addProductToQuickOrder}
-        onRemove={removeProductFromQuickOrder}
-      />
-    </article>
   );
 }
 
@@ -681,6 +372,20 @@ function getVisibleProductsForAi(products) {
   }));
 }
 
+function CatalogLayoutToggle({ layout, onChange }) {
+  return (
+          <div role="group" aria-label="Product layout" className="flex shrink-0 items-center rounded-lg border bg-muted/40 p-1">
+            <Button variant={layout === "list" ? "secondary" : "ghost"} size="icon-sm" aria-label="List layout" title="List layout" aria-pressed={layout === "list"} onClick={() => onChange("list")}>
+              <List className="size-4" />
+            </Button>
+            <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
+            <Button variant={layout === "card" ? "secondary" : "ghost"} size="icon-sm" aria-label="Card layout" title="Card layout" aria-pressed={layout === "card"} onClick={() => onChange("card")}>
+              <LayoutGrid className="size-4" />
+            </Button>
+          </div>
+  );
+}
+
 function CatalogFilterControls({
   searchQuery,
   categoryName,
@@ -698,6 +403,8 @@ function CatalogFilterControls({
   onSortChange,
   onClearAll,
   layout = "desktop",
+  productLayout,
+  onLayoutChange,
 }) {
   const isMobile = layout === "mobile";
   const t = useTranslations("catalog");
@@ -728,7 +435,7 @@ function CatalogFilterControls({
           />
         </div>
 
-        <Button
+        {!isMobile && <Button
           variant="outline"
           className="relative mt-1 h-10 min-w-0 justify-start rounded-md text-xs font-semibold sm:mt-0"
         >
@@ -739,7 +446,7 @@ function CatalogFilterControls({
               {activeFilterCount}
             </span>
           )}
-        </Button>
+        </Button>}
 
         {!isMobile && (
           <Button
@@ -774,22 +481,24 @@ function CatalogFilterControls({
           onChange={onSubcategoryChange}
           searchable
         />
+        <div className={cn("flex min-w-0 items-end gap-2", isMobile ? "col-span-2" : "md:col-span-1")}>
+          {isMobile && (
+            <Button variant="outline" className="relative h-9 shrink-0 gap-1 rounded-md px-2 text-xs font-semibold">
+              <SlidersHorizontal className="size-3.5" />
+              {t("filters")}
+              {activeFilterCount > 0 && <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-primary text-[10px] text-primary-foreground">{activeFilterCount}</span>}
+            </Button>
+          )}
         <SelectMenu
+          className="flex-1"
           label={t("sortBy")}
           value={sortBy}
           options={sortOptions}
           onChange={onSortChange}
         />
+          {!isMobile && <CatalogLayoutToggle layout={productLayout} onChange={onLayoutChange} />}
+        </div>
 
-        {isMobile && (
-          <Button
-            variant="outline"
-            className="mt-auto h-9 min-w-0 justify-start rounded-md text-xs font-semibold"
-          >
-            <SlidersHorizontal className="shrink-0" />
-            <span className="truncate">{t("filters")}</span>
-          </Button>
-        )}
       </div>
 
       {isMobile && (
@@ -808,6 +517,11 @@ function CatalogFilterControls({
 }
 
 export function Catalog() {
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [orderGuideOpen, setOrderGuideOpen] = useState(false);
+  const [orderGuideProducts, setOrderGuideProducts] = useState([]);
+  const { quickOrders, addProductToQuickOrder, removeProductFromQuickOrder } = useQuickOrders();
+  const [layout, setLayout] = useState("card");
   const dispatch = useDispatch();
   const t = useTranslations("catalog");
   const itemsStatus = useSelector((state) => state.getSlice.itemsStatus);
@@ -825,76 +539,82 @@ const rawItems = useMemo(() => {
 
  const {
     items: cartItems,
+    incrementItem,
     addItem,
     decrementItem,
     removeItem,
     clearCart,
   } = useCart();
 
-  // const [rawItems, setRawItems] = useState(staticItems);
-  // const [itemsLoading, setitemsLoading] = useState(false);
-  // const [isLoading, setIsLoading] = useState(true);
+  // Both layouts use the same quantities and cart actions.
+  const [draftQuantities, setDraftQuantities] = useState({});
+  const [addingIds, setAddingIds] = useState([]);
 
-  // const fetchCatalogItems = async () => {
-  //     setitemsLoading(true);
-  //      const custnmbr = localStorage.getItem("custnmbr");
-  
-  //     try {
-  //       const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/items?custNmbr=${custnmbr}`
-  
-  //       console.log("Catalog Items API URL:", url);
-  
-  //       const response = await fetch(url, {
-  //         method: "GET",
-  //         headers: {
-  //           Accept: "application/json",
-  //           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-  //         },
-  //       });
-  
-  //       console.log("Catalog Items HTTP Status:", response.status);
-  //       console.log("Catalog Items HTTP OK:", response.ok);
-  
-  //       const responseText = await response.text();
-  
-  //       console.log("Catalog Items Raw Response:", responseText);
-  
-  //       let result = null;
-  
-  //       try {
-  //         result = responseText ? JSON.parse(responseText) : null;
-  //       } catch (error) {
-  //         console.warn("Response is not JSON:", responseText);
-  //       }
-  
-  //       console.log("Catalog Items Parsed Response:", result);
-  
-  //       if (!response.ok) {
-  //         throw new Error(
-  //           result?.Msg ||
-  //           result?.message ||
-  //           result?.error ||
-  //           `Unable to fetch catalog items. HTTP ${response.status}`
-  //         );
-  //       }
-  
-  //       if (Array.isArray(result) && result.length > 0) {
-  //         setRawItems(result);
-  //       }
-  
-  //       return result;
-  //     } catch (error) {
-  //       console.error("Catalog Items Error:", error);
-  //       return null;
-  //     } finally {
-  //       setitemsLoading(false);
-  //     }
-  //   };
-  
-    useEffect(() => {
+  function getCartState(productId) {
+    const cartItem = cartItems.find((item) => item.id === productId);
+    return {
+      quantity: cartItem?.quantity ?? draftQuantities[productId] ?? 1,
+      isInCart: Boolean(cartItem),
+      isAdding: addingIds.includes(productId),
+    };
+  }
+
+  function handleQuantityChange(productId, change) {
+    if (getCartState(productId).isAdding) return;
+    if (getCartState(productId).isInCart) {
+      if (change > 0) incrementItem(productId);
+      else decrementItem(productId);
+      return;
+    }
+    setDraftQuantities((current) => ({
+      ...current,
+      [productId]: Math.max(1, (current[productId] ?? 1) + change),
+    }));
+  }
+
+  function toggleProductSelection(productId) {
+    setSelectedIds((current) => current.includes(productId)
+      ? current.filter((id) => id !== productId)
+      : [...current, productId]);
+  }
+
+  async function handleAddToCart(product) {
+    const { isInCart, isAdding, quantity } = getCartState(product.id);
+    if (isInCart || isAdding) return;
+
+    setAddingIds((current) => [...current, product.id]);
+    try {
+      const liveItems = await fetchItemsApi();
+      const liveItem = Array.isArray(liveItems)
+        ? liveItems.find(
+          (item) =>
+            (item.itemnmbr || item.ITEMNMBR)?.trim() === product.id,
+        )
+        : null;
+
+      const finalProduct = liveItem
+        ? {
+          ...product,
+          price: Number(liveItem.qtybsuom ?? liveItem.QTYBSUOM ?? liveItem.avgWeight) || product.price,
+          unit: (liveItem.uomschdl || liveItem.UOMSCHDL)?.trim() || product.unit,
+        }
+        : product;
+
+      addItem(finalProduct, quantity);
+    } catch (error) {
+      console.warn("Failed to fetch latest item details, adding product:", error);
+      addItem(product, quantity);
+    } finally {
+      setAddingIds((current) => current.filter((id) => id !== product.id));
+    }
+  }
+
+
+
+  useEffect(() => {
       // fetchCatalogItems();
       dispatch(GetItems());
-    }, []);
+    }, [dispatch]);
 
   const catalog = useMemo(() => {
     const categories = new Map();
@@ -1072,6 +792,10 @@ const rawItems = useMemo(() => {
     setSubcategoryName("All");
     setVoiceProducts([]);
     setCurrentPage(1);
+  }
+
+  function handleLayoutChange(nextLayout) {
+    setLayout(nextLayout);
   }
 
   function handleSubcategoryChange(nextSubcategoryName) {
@@ -1268,10 +992,11 @@ const rawItems = useMemo(() => {
       </div>
 
       <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <div className="mb-3 flex shrink-0 items-center gap-2 md:hidden">
         <SheetTrigger asChild>
           <Button
             variant="outline"
-            className="mb-3 h-10 w-full justify-center rounded-md text-sm font-semibold md:hidden"
+            className="h-10 min-w-0 flex-1 justify-center rounded-md text-sm font-semibold"
           >
             <SlidersHorizontal className="size-4" />
             {t("showFilters")}
@@ -1282,6 +1007,8 @@ const rawItems = useMemo(() => {
             )}
           </Button>
         </SheetTrigger>
+          <CatalogLayoutToggle layout={layout} onChange={handleLayoutChange} />
+        </div>
         <SheetContent
           side="top"
           className="max-h-[85svh] overflow-y-auto p-4 md:hidden"
@@ -1292,6 +1019,8 @@ const rawItems = useMemo(() => {
 
           <div className=" space-y-4">
             <CatalogFilterControls
+              productLayout={layout}
+              onLayoutChange={handleLayoutChange}
               layout="mobile"
               searchQuery={searchQuery}
               categoryName={categoryName}
@@ -1315,6 +1044,8 @@ const rawItems = useMemo(() => {
 
       <section className="hidden min-w-0 shrink-0 rounded-lg border bg-background p-3 shadow-sm md:block lg:p-4">
         <CatalogFilterControls
+          productLayout={layout}
+          onLayoutChange={handleLayoutChange}
           searchQuery={searchQuery}
           categoryName={categoryName}
           categoryNames={categoryNames}
@@ -1351,20 +1082,44 @@ const rawItems = useMemo(() => {
           </div>
         ) : (
           <>
-            <div className="mb-2 flex min-w-0 items-center justify-between gap-3 text-xs text-muted-foreground sm:text-sm">
-              <p className="truncate">
+            <div className="mb-3 flex min-h-10 min-w-0 items-center justify-between gap-3 text-xs text-muted-foreground sm:text-sm">
+              <p aria-live="polite">
                 {t("showingProducts", { start: products.length === 0 ? 0 : startIndex + 1, end: endIndex, total: products.length })}
               </p>
+              {selectedIds.length > 0 && (
+                <Button type="button" size="sm" onClick={() => {
+                  setOrderGuideProducts(allProducts.filter((product) => selectedIds.includes(product.id)));
+                  setOrderGuideOpen(true);
+                }} className="h-8 shrink-0 gap-1.5 whitespace-nowrap rounded-md border-primary px-3 text-xs font-semibold hover:bg-primary/90">
+                  <Star className="size-3.5" />
+                  {t("addToOrderGuide")}
+                </Button>
+              )}
             </div>
-
-            <section className="grid min-w-0 auto-rows-min grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[1800px]:grid-cols-6">
-              {visibleProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                />
-              ))}
-            </section>
+            {layout === "list" ? (
+              <CatalogListView
+                products={visibleProducts}
+                selectedIds={selectedIds}
+                onSelect={toggleProductSelection}
+                getCartState={getCartState}
+                onQuantityChange={handleQuantityChange}
+                onAddToCart={handleAddToCart}
+              />
+            ) : (
+              <section className="grid min-w-0 auto-rows-min grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[1800px]:grid-cols-6">
+                {visibleProducts.map((product) => (
+                  <CatalogCard
+                    key={product.id}
+                    product={product}
+                    selected={selectedIds.includes(product.id)}
+                    onSelect={() => toggleProductSelection(product.id)}
+                    {...getCartState(product.id)}
+                    onQuantityChange={handleQuantityChange}
+                    onAddToCart={handleAddToCart}
+                  />
+                ))}
+              </section>
+            )}
 
             <div className="mt-6 flex flex-row items-center justify-between gap-2 pb-1 text-xs text-muted-foreground sm:text-sm">
           <div className="flex items-center justify-center gap-1.5 sm:gap-2">
@@ -1454,6 +1209,17 @@ const rawItems = useMemo(() => {
         )}
       </div>
 
+      <OrderGuidePickerDialog
+        products={orderGuideProducts}
+        onAddComplete={() => {
+          setSelectedIds([]);
+        }}
+        quickOrders={quickOrders}
+        open={orderGuideOpen}
+        onOpenChange={setOrderGuideOpen}
+        onAdd={addProductToQuickOrder}
+        onRemove={removeProductFromQuickOrder}
+      />
     </main>
   );
 }
