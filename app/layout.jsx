@@ -21,8 +21,8 @@ const notoSansTamil = Noto_Sans_Tamil({
 });
 
 export const metadata = {
-  title: "Crate Inc.",
-  description: "Crate Inc. - Fresh Produce Delivered to Your Doorstep",
+  title: "Bex SCM",
+  description: "Bex SCM - Fresh Produce Delivered to Your Doorstep",
 };
 
 export default function RootLayout({children}) {

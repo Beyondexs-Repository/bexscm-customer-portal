@@ -58,14 +58,15 @@
 //   )
 // }
 "use client"
- 
+
+ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { BadgeCheckIcon, ChevronsUpDownIcon, LogOutIcon } from "lucide-react"
  
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { clearSession } from "@/lib/auth"
-import { useEmployeeAccess } from "@/components/employees/employee-access"
+// import { useEmployeeAccess } from "@/components/employees/employee-access"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,13 +77,29 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar"
- 
+   const roleMap = {
+    O: "Owner",
+    D: "Department Manager",
+    T: "Territory Manager",
+    S: "Store Manager",
+    E: "Employee",
+  };
 export function NavUser() {
-  const { role } = useEmployeeAccess();
-  console.log(role, "--find a static role");
+  // const { role } = useEmployeeAccess();
+  // console.log(role, "--find a static role");
+    //  const roleCode = localStorage.getItem("roles");
+  // const displayRole = role || roleMap[roleCode ?? ""] || "Role not assigned";
+
+
+const [displayRole, setDisplayRole] = useState("Role not assigned")
+
   const { isMobile } = useSidebar()
   const router = useRouter()
- 
+   useEffect(() => {
+    const roleCode = (localStorage.getItem("roles") ?? "").trim().toUpperCase()
+    console.log("roles from localStorage:", roleCode)
+    setDisplayRole(roleMap[roleCode] || "Role not assigned")
+  }, [])
   function handleLogout() {
     clearSession()
     router.replace("/login")
@@ -97,7 +114,7 @@ export function NavUser() {
               <Avatar className="h-8 w-8 rounded-lg"><AvatarFallback className="rounded-lg">AC</AvatarFallback></Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">Bex SCM</span>
-                <span className="truncate text-xs text-muted-foreground">{role || "Owner" || "Role not assigned"}</span>
+                <span className="truncate text-xs text-muted-foreground">{displayRole}</span>
               </div>
               <ChevronsUpDownIcon className="ml-auto size-4" />
             </SidebarMenuButton>

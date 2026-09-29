@@ -310,6 +310,7 @@ async function handleSendOtp(event) {
 // localStorage.setItem("loggedInUser", JSON.stringify(userId));
     localStorage.setItem("custnmbr", result.custnmbr);
     localStorage.setItem("loggedInUser", result.userId);
+	localStorage.setItem("roles", result.roles);
 
 
     if (result?.success === false) {

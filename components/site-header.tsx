@@ -729,7 +729,7 @@ function getHeader(pathname: string) {
   )
 
   return {
-    title: route?.[1] ?? "Crate Inc.",
+    title: route?.[1] ?? "Bex SCM",
     description: route?.[2] ?? "",
   }
 }

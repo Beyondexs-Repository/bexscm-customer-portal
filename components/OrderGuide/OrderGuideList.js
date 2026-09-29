@@ -150,7 +150,7 @@ function mapOrderGroupItemToProduct(item) {
     quantity: Number(item.quantity ?? 0),
 
     // par: item.par === undefined || item.par === null ? null : String(item.par),
-      par:
+    par:
       (item.parValue ?? item.par) == null
         ? null
         : String(item.parValue ?? item.par),
@@ -419,7 +419,8 @@ export function OrderGuideList({
   canCreate,
   canEdit,
   canDelete,
-  
+  setIsLoading,
+
 }) {
 const [isDeleting, setIsDeleting] = useState(false);
   const dispatch = useDispatch();
@@ -436,7 +437,7 @@ const [isDeleting, setIsDeleting] = useState(false);
   //primary group
   const [cusList, setCusList] = useState([]);
   const [getcusloading, setGetCusloading] = useState(false);
-//primary Group 1
+  //primary Group 1
   const [orderList, setOrderList] = useState([]);
   const [getOrderloading, setGetorderloading] = useState(false);
 
@@ -446,104 +447,104 @@ const [isDeleting, setIsDeleting] = useState(false);
 
 
 
-//PAR - bulk update (used by "All" and group Edit PAR)
-const updateBulkParPUT = async ({ items, modifyBY }) => {
-  const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/par/bulk`;
-  const requestBody = { items, modifyBY };
+  //PAR - bulk update (used by "All" and group Edit PAR)
+  const updateBulkParPUT = async ({ items, modifyBY }) => {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/par/bulk`;
+    const requestBody = { items, modifyBY };
 
-  console.log("Bulk PAR URL:", url);
-  console.log("Bulk PAR Request Body:", requestBody);
-
-  const response = await fetch(url, {
-    method: "PUT",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  const responseText = await response.text();
-  console.log("Bulk PAR Raw Response:", responseText);
-
-  let result = null;
-  try {
-    result = responseText ? JSON.parse(responseText) : null;
-  } catch (error) {
-    console.warn("Response is not JSON:", responseText);
-  }
-
-  if (!response.ok || result?.success === false) {
-    throw new Error(
-      result?.Msg ||
-        result?.message ||
-        result?.error ||
-        `Unable to update PAR. HTTP ${response.status}`,
-    );
-  }
-
-  return result; // { success: true, updatedCount: 2 }
-};
-
-  //Secondary Group get=========step 1================
-  const getOrderGroupItemsApiv1_GET = async (orderGuideGroupID) => {
-  setGetorderloading(true);
-console.log("calling Order Guide --> Primary group -- secondary Group -- group items onclick -- GET");
-  try {
-    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/group/${orderGuideGroupID}`;
-
-    console.log("Customer ID:", orderGuideGroupID);
-    console.log("Customer Orders API URL:", url);
+    console.log("Bulk PAR URL:", url);
+    console.log("Bulk PAR Request Body:", requestBody);
 
     const response = await fetch(url, {
-      method: "GET",
+      method: "PUT",
       headers: {
         Accept: "application/json",
+        "Content-Type": "application/json",
         Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
       },
+      body: JSON.stringify(requestBody),
     });
 
-    console.log("Customer Orders HTTP Status:", response.status);
-    console.log("Customer Orders HTTP OK:", response.ok);
-
     const responseText = await response.text();
-
-    console.log("Customer Orders Raw Response:", responseText);
+    console.log("Bulk PAR Raw Response:", responseText);
 
     let result = null;
-
     try {
       result = responseText ? JSON.parse(responseText) : null;
     } catch (error) {
       console.warn("Response is not JSON:", responseText);
     }
 
-    console.log("Customer Orders Parsed Response:", result);
-
-    if (!response.ok) {
+    if (!response.ok || result?.success === false) {
       throw new Error(
         result?.Msg ||
-          result?.message ||
-          result?.error ||
-          `Unable to fetch customer orders. HTTP ${response.status}`
+        result?.message ||
+        result?.error ||
+        `Unable to update PAR. HTTP ${response.status}`,
       );
     }
 
-    setOrderList(result);
+    return result; // { success: true, updatedCount: 2 }
+  };
 
-    return result;
-  } catch (error) {
-    console.error("Customer Orders Error:", error);
-    setOrderList([]);
-    return null;
-  } finally {
-    setGetorderloading(false);
-  }
-};
+  //Secondary Group get=========step 1================
+  const getOrderGroupItemsApiv1_GET = async (orderGuideGroupID) => {
+    setGetorderloading(true);
+    console.log("calling Order Guide --> Primary group -- secondary Group -- group items onclick -- GET");
+    try {
+      const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/group/${orderGuideGroupID}`;
 
-// STEP 2 IN OrderGuide file=====================
-//INITIAL GROUP LIST INSIDE CREATE GROUP=======STEP 4========
+      console.log("Customer ID:", orderGuideGroupID);
+      console.log("Customer Orders API URL:", url);
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+
+      console.log("Customer Orders HTTP Status:", response.status);
+      console.log("Customer Orders HTTP OK:", response.ok);
+
+      const responseText = await response.text();
+
+      console.log("Customer Orders Raw Response:", responseText);
+
+      let result = null;
+
+      try {
+        result = responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        console.warn("Response is not JSON:", responseText);
+      }
+
+      console.log("Customer Orders Parsed Response:", result);
+
+      if (!response.ok) {
+        throw new Error(
+          result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to fetch customer orders. HTTP ${response.status}`
+        );
+      }
+
+      setOrderList(result);
+
+      return result;
+    } catch (error) {
+      console.error("Customer Orders Error:", error);
+      setOrderList([]);
+      return null;
+    } finally {
+      setGetorderloading(false);
+    }
+  };
+
+  // STEP 2 IN OrderGuide file=====================
+  //INITIAL GROUP LIST INSIDE CREATE GROUP=======STEP 4========
 
 //Primary Group_Delete
 // const deleteOrderGuideApiv1_DEL = async (orderGuideID) => {
@@ -604,82 +605,82 @@ console.log("calling Order Guide --> Primary group -- secondary Group -- group i
 // };
 
 
-//Primary group_Renaming the Group
+  //Primary group_Renaming the Group
 
-const modifyOrderGuideApiv1_Modify = async ({
-  orderGuideID,
-  name,
-  modifyBY,
-}) => {
-  try {
-    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/${orderGuideID}`;
-
-    const requestBody = {
-      name,
-      modifyBY,
-    };
-
-    console.log("Update Order Guide ID:", orderGuideID);
-    console.log("Update Order Guide URL:", url);
-    console.log("Update Order Guide Request Body:", requestBody);
-
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log("Update Order Guide HTTP Status:", response.status);
-    console.log("Update Order Guide HTTP OK:", response.ok);
-
-    const responseText = await response.text();
-
-    console.log("Update Order Guide Raw Response:", responseText);
-
-    let result = null;
-
+  const modifyOrderGuideApiv1_Modify = async ({
+    orderGuideID,
+    name,
+    modifyBY,
+  }) => {
     try {
-      result = responseText ? JSON.parse(responseText) : null;
-    } catch (error) {
-      console.warn("Response is not JSON:", responseText);
-    }
+      const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/${orderGuideID}`;
 
-    console.log("Update Order Guide Parsed Response:", result);
+      const requestBody = {
+        name,
+        modifyBY,
+      };
 
-    if (!response.ok) {
-      throw new Error(
-        result?.Msg ||
+      console.log("Update Order Guide ID:", orderGuideID);
+      console.log("Update Order Guide URL:", url);
+      console.log("Update Order Guide Request Body:", requestBody);
+
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("Update Order Guide HTTP Status:", response.status);
+      console.log("Update Order Guide HTTP OK:", response.ok);
+
+      const responseText = await response.text();
+
+      console.log("Update Order Guide Raw Response:", responseText);
+
+      let result = null;
+
+      try {
+        result = responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        console.warn("Response is not JSON:", responseText);
+      }
+
+      console.log("Update Order Guide Parsed Response:", result);
+
+      if (!response.ok) {
+        throw new Error(
+          result?.Msg ||
           result?.message ||
           result?.error ||
           `Unable to update order guide. HTTP ${response.status}`,
-      );
-    }
+        );
+      }
 
-    if (!result?.success) {
-      throw new Error(
-        result?.Msg ||
+      if (!result?.success) {
+        throw new Error(
+          result?.Msg ||
           result?.message ||
           result?.error ||
           "Failed to update order guide.",
-      );
-    }
+        );
+      }
 
-    return result;
-  } catch (error) {
-    console.error("Update Order Guide Error:", error);
-    throw error;
-  }
-};
+      return result;
+    } catch (error) {
+      console.error("Update Order Guide Error:", error);
+      throw error;
+    }
+  };
 
 
   useEffect(() => {
     const storedUser = localStorage.getItem("loggedInUser");
-   const custnmbr = localStorage.getItem("custnmbr");
-console.log(custnmbr,storedUser,  "--find custnmbr in OrderDuideList")
+    const custnmbr = localStorage.getItem("custnmbr");
+    console.log(custnmbr, storedUser, "--find custnmbr in OrderDuideList")
     if (!storedUser) {
       console.error("Logged-in user not found");
       return;
@@ -689,7 +690,7 @@ console.log(custnmbr,storedUser,  "--find custnmbr in OrderDuideList")
       const user = JSON.parse(storedUser);
 
       // setUserId(user.userId);
- setUserId(storedUser);
+      setUserId(storedUser);
       console.log("Logged-in User ID:", storedUser);
     } catch (error) {
       console.error("Failed to parse logged-in user:", error);
@@ -698,69 +699,69 @@ console.log(custnmbr,storedUser,  "--find custnmbr in OrderDuideList")
 
 
   //secondar_Group_get
-const getOrderGuideGroupApiv1_GET = async (orderGuideID) => {
-  setsecondaryorderloading(true);
-
-  try {
-    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguidegroups/orderguide/${orderGuideID}`;
-
-    console.log("Order Guide ID:", orderGuideID);
-    console.log("Order Guide Groups API URL:", url);
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-      },
-    });
-
-    console.log("Order Guide Groups HTTP Status:", response.status);
-    console.log("Order Guide Groups HTTP OK:", response.ok);
-
-    const responseText = await response.text();
-
-    console.log("Order Guide Groups Raw Response:", responseText);
-
-    let result = null;
+  const getOrderGuideGroupApiv1_GET = async (orderGuideID) => {
+    setsecondaryorderloading(true);
 
     try {
-      result = responseText ? JSON.parse(responseText) : null;
-    } catch (error) {
-      console.warn("Response is not JSON:", responseText);
-    }
+      const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguidegroups/orderguide/${orderGuideID}`;
 
-    console.log("Order Guide Groups Parsed Response:", result);
+      console.log("Order Guide ID:", orderGuideID);
+      console.log("Order Guide Groups API URL:", url);
 
-    if (!response.ok) {
-      throw new Error(
-        result?.Msg ||
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+
+      console.log("Order Guide Groups HTTP Status:", response.status);
+      console.log("Order Guide Groups HTTP OK:", response.ok);
+
+      const responseText = await response.text();
+
+      console.log("Order Guide Groups Raw Response:", responseText);
+
+      let result = null;
+
+      try {
+        result = responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        console.warn("Response is not JSON:", responseText);
+      }
+
+      console.log("Order Guide Groups Parsed Response:", result);
+
+      if (!response.ok) {
+        throw new Error(
+          result?.Msg ||
           result?.message ||
           result?.error ||
           `Unable to fetch order guide groups. HTTP ${response.status}`,
-      );
-    }
+        );
+      }
 
-    if (!result?.success) {
-      throw new Error(
-        result?.Msg ||
+      if (!result?.success) {
+        throw new Error(
+          result?.Msg ||
           result?.message ||
           result?.error ||
           "Failed to fetch order guide groups.",
-      );
+        );
+      }
+
+      setsecondaryOrderList(result);
+
+      return result;
+    } catch (error) {
+      console.error("Order Guide Groups Error:", error);
+      setsecondaryOrderList([]);
+      throw error;
+    } finally {
+      setsecondaryorderloading(false);
     }
-
-    setsecondaryOrderList(result);
-
-    return result;
-  } catch (error) {
-    console.error("Order Guide Groups Error:", error);
-    setsecondaryOrderList([]);
-    throw error;
-  } finally {
-    setsecondaryorderloading(false);
-  }
-};
+  };
 
   // async function getGroupsForOrderGuide(order) {
   //   try {
@@ -846,7 +847,7 @@ const getOrderGuideGroupApiv1_GET = async (orderGuideID) => {
   }
 
 
- async function loadItemsForGroup(orderId, groupId) {
+  async function loadItemsForGroup(orderId, groupId) {
     try {
       console.log("Getting items for Order Guide Group:", groupId);
 
@@ -861,11 +862,11 @@ const getOrderGuideGroupApiv1_GET = async (orderGuideID) => {
           orders.map((order) =>
             order.id === orderId
               ? {
-                  ...order,
-                  groups: order.groups.map((group) =>
-                    group.id === groupId ? { ...group, products } : group,
-                  ),
-                }
+                ...order,
+                groups: order.groups.map((group) =>
+                  group.id === groupId ? { ...group, products } : group,
+                ),
+              }
               : order,
           ),
         );
@@ -942,99 +943,147 @@ async function handleDeleteOrdGuideGroup(order, group) {
   }
 }
   const fetchOrderGuideListApiv1_GET = async (customerID) => {
-  try {
-    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/customer/${customerID}`;
-
-    console.log("=================================");
-    console.log("GET ORDER GUIDES");
-    console.log("Customer ID:", customerID);
-    console.log("URL:", url);
-    console.log("=================================");
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-      },
-    });
-
-    console.log("HTTP Status:", response.status);
-    console.log("HTTP OK:", response.ok);
-
-    const responseText = await response.text();
-
-    console.log("Raw Response:", responseText);
-
-    let result = null;
-
     try {
-      result = responseText ? JSON.parse(responseText) : null;
-    } catch (error) {
-      console.error("Response is not valid JSON:", error);
-      throw new Error("Invalid JSON response from order guides API");
-    }
+      const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/customer/${customerID}`;
 
-    console.log("Parsed Response:", result);
+      console.log("=================================");
+      console.log("GET ORDER GUIDES");
+      console.log("Customer ID:", customerID);
+      console.log("URL:", url);
+      console.log("=================================");
 
-    if (!response.ok) {
-      throw new Error(
-        result?.Msg ||
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+
+      console.log("HTTP Status:", response.status);
+      console.log("HTTP OK:", response.ok);
+
+      const responseText = await response.text();
+
+      console.log("Raw Response:", responseText);
+
+      let result = null;
+
+      try {
+        result = responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        console.error("Response is not valid JSON:", error);
+        throw new Error("Invalid JSON response from order guides API");
+      }
+
+      console.log("Parsed Response:", result);
+
+      if (!response.ok) {
+        throw new Error(
+          result?.Msg ||
           result?.message ||
           result?.error ||
           `Unable to fetch order guides. HTTP ${response.status}`,
-      );
+        );
+      }
+
+      // IMPORTANT:
+      // Your component expects an ARRAY.
+      const orderGuides = Array.isArray(result)
+        ? result
+        : Array.isArray(result?.data)
+          ? result.data
+          : [];
+
+      console.log("Final Order Guides Array:", orderGuides);
+
+      return orderGuides;
+    } catch (error) {
+      console.error("Fetch Order Guides Error:", error);
+      return [];
     }
+  };
 
-    // IMPORTANT:
-    // Your component expects an ARRAY.
-    const orderGuides = Array.isArray(result)
-      ? result
-      : Array.isArray(result?.data)
-        ? result.data
-        : [];
+  async function loadOrderGuides() {
+    try {
+      setIsLoading(true);
 
-    console.log("Final Order Guides Array:", orderGuides);
+      const custnmbr = localStorage.getItem("custnmbr");
 
-    return orderGuides;
-  } catch (error) {
-    console.error("Fetch Order Guides Error:", error);
-    return [];
+      console.log("Loading Order Guides for customer:", custnmbr);
+
+      if (!custnmbr) {
+        console.error("Customer number not found");
+        setQuickOrders([]);
+        return;
+      }
+
+      const apiOrderGuides =
+        await fetchOrderGuideListApiv1_GET(custnmbr);
+
+      console.log(
+        "Order Guides API Result:",
+        apiOrderGuides
+      );
+
+      const formattedOrderGuides = await Promise.all(
+        apiOrderGuides.map(async (item) => {
+          const order = {
+            id: String(item.orderGuideID),
+            name: item.name,
+            custnmbr: item.custnmbr,
+            sequence: item.sequence,
+            createdBY: item.createdBY,
+            createdDTS: item.createdDTS,
+            updatedAt:
+              item.updatedDTS || item.createdDTS,
+            groups: [],
+          };
+
+          try {
+            const groups =
+              await getGroupsForOrderGuide(order);
+
+            return {
+              ...order,
+              groups,
+            };
+          } catch (error) {
+            console.error(
+              `Failed to load groups for order guide ${order.id}:`,
+              error
+            );
+
+            return {
+              ...order,
+              groups: [],
+            };
+          }
+        })
+      );
+
+      console.log(
+        "Final Order Guides:",
+        formattedOrderGuides
+      );
+
+      setQuickOrders(formattedOrderGuides);
+    } catch (error) {
+      console.error(
+        "Failed to load Order Guides:",
+        error
+      );
+
+      setQuickOrders([]);
+    } finally {
+      // IMPORTANT: parent loader must stop here
+      setIsLoading(false);
+    }
   }
-};
 
-async function loadOrderGuides() {
-  try {
-   const custnmbr = localStorage.getItem("custnmbr");
-    const apiOrderGuides = await fetchOrderGuideListApiv1_GET(custnmbr);
-
-    const formattedOrderGuides = await Promise.all(
-      apiOrderGuides.map(async (item) => {
-        const order = {
-          id: String(item.orderGuideID),
-          name: item.name,
-          custnmbr: item.custnmbr,
-          sequence: item.sequence,
-          createdBY: item.createdBY,
-          createdDTS: item.createdDTS,
-          updatedAt: item.updatedDTS || item.createdDTS,
-          groups: [],
-        };
-
-        const groups = await getGroupsForOrderGuide(order);
-        return { ...order, groups };
-      }),
-    );
-
-    setQuickOrders(formattedOrderGuides);
-  } catch (error) {
-    console.error("Failed to load Order Guides:", error);
-  }
-}
-
-useEffect(() => {
-  loadOrderGuides();
-}, [setQuickOrders, refreshKey]);
+  useEffect(() => {
+    loadOrderGuides();
+  }, [setQuickOrders, refreshKey]);
 
   // useEffect(() => {
   //   async function loadOrderGuides() {
@@ -1137,76 +1186,76 @@ useEffect(() => {
   }
 
 
-  
-//Secondary Group ADD GROUP POST
-const createOrderGuideGroupApiv1_POST = async ({
- orderGuideID,
-  name,
-  createdBY,
-}) => {
-  try {
-    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguidegroups`;
 
-    console.log("Create Order Guide Group URL:", url);
-
-    const requestBody = {
-      orderGuideID,
-      name,
-      createdBY,
-    };
-
-    console.log("Create Order Guide Group Request Body:", requestBody);
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log("Create Order Guide HTTP Status:", response.status);
-    console.log("Create Order Guide HTTP OK:", response.ok);
-
-    const responseText = await response.text();
-
-    console.log("Create Order Guide Raw Response:", responseText);
-
-    let result = null;
-
+  //Secondary Group ADD GROUP POST
+  const createOrderGuideGroupApiv1_POST = async ({
+    orderGuideID,
+    name,
+    createdBY,
+  }) => {
     try {
-      result = responseText ? JSON.parse(responseText) : null;
-    } catch (error) {
-      console.warn("Response is not JSON:", responseText);
-    }
+      const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguidegroups`;
 
-    console.log("Create Order Guide Parsed Response:", result);
+      console.log("Create Order Guide Group URL:", url);
 
-    if (!response.ok) {
-      throw new Error(
-        result?.Msg ||
+      const requestBody = {
+        orderGuideID,
+        name,
+        createdBY,
+      };
+
+      console.log("Create Order Guide Group Request Body:", requestBody);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("Create Order Guide HTTP Status:", response.status);
+      console.log("Create Order Guide HTTP OK:", response.ok);
+
+      const responseText = await response.text();
+
+      console.log("Create Order Guide Raw Response:", responseText);
+
+      let result = null;
+
+      try {
+        result = responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        console.warn("Response is not JSON:", responseText);
+      }
+
+      console.log("Create Order Guide Parsed Response:", result);
+
+      if (!response.ok) {
+        throw new Error(
+          result?.Msg ||
           result?.message ||
           result?.error ||
           `Unable to create order guide. HTTP ${response.status}`,
-      );
-    }
+        );
+      }
 
-    if (!result?.success) {
-      throw new Error(
-        result?.Msg ||
+      if (!result?.success) {
+        throw new Error(
+          result?.Msg ||
           result?.message ||
           "Failed to create order guide.",
-      );
-    }
+        );
+      }
 
-    return result;
-  } catch (error) {
-    console.error("Create Order Guide Error:", error);
-    throw error;
-  }
-};
+      return result;
+    } catch (error) {
+      console.error("Create Order Guide Error:", error);
+      throw error;
+    }
+  };
 
 
 //Secondary Group ADD GROUP DELETE
@@ -1268,151 +1317,151 @@ const createOrderGuideGroupApiv1_POST = async ({
 // };
 
 
-//Secondary Group_Rename
-const updateOrderGuideGroupApiv1_Modify = async ({
-  orderGuideGroupID,
-  name,
-  modifyBY,
-}) => {
-  try {
-    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguidegroups/${orderGuideGroupID}`;
-
-    const requestBody = {
-      name,
-      modifyBY,
-    };
-
-    console.log("Update Order Guide ID:", orderGuideGroupID);
-    console.log("Update Order Guide URL:", url);
-    console.log("Update Order Guide Request Body:", requestBody);
-
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log("Update Order Guide HTTP Status:", response.status);
-    console.log("Update Order Guide HTTP OK:", response.ok);
-
-    const responseText = await response.text();
-
-    console.log("Update Order Guide Raw Response:", responseText);
-
-    let result = null;
-
+  //Secondary Group_Rename
+  const updateOrderGuideGroupApiv1_Modify = async ({
+    orderGuideGroupID,
+    name,
+    modifyBY,
+  }) => {
     try {
-      result = responseText ? JSON.parse(responseText) : null;
-    } catch (error) {
-      console.warn("Response is not JSON:", responseText);
-    }
+      const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguidegroups/${orderGuideGroupID}`;
 
-    console.log("Update Order Guide Parsed Response:", result);
+      const requestBody = {
+        name,
+        modifyBY,
+      };
 
-    if (!response.ok) {
-      throw new Error(
-        result?.Msg ||
+      console.log("Update Order Guide ID:", orderGuideGroupID);
+      console.log("Update Order Guide URL:", url);
+      console.log("Update Order Guide Request Body:", requestBody);
+
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("Update Order Guide HTTP Status:", response.status);
+      console.log("Update Order Guide HTTP OK:", response.ok);
+
+      const responseText = await response.text();
+
+      console.log("Update Order Guide Raw Response:", responseText);
+
+      let result = null;
+
+      try {
+        result = responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        console.warn("Response is not JSON:", responseText);
+      }
+
+      console.log("Update Order Guide Parsed Response:", result);
+
+      if (!response.ok) {
+        throw new Error(
+          result?.Msg ||
           result?.message ||
           result?.error ||
           `Unable to update order guide. HTTP ${response.status}`,
-      );
-    }
+        );
+      }
 
-    if (!result?.success) {
-      throw new Error(
-        result?.Msg ||
+      if (!result?.success) {
+        throw new Error(
+          result?.Msg ||
           result?.message ||
           result?.error ||
           "Failed to update order guide.",
-      );
+        );
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Update Order Guide Error:", error);
+      throw error;
+    }
+  };
+
+  async function saveGroupPar() {
+    if (dialog?.type !== "edit-group-par") return;
+
+    const value = parDraft.trim() === "" ? null : Number(parDraft);
+    if (value !== null && (!Number.isFinite(value) || value < 0)) return;
+
+    if (!userId) {
+      setNameDialogError("Unable to identify the logged-in user.");
+      return;
     }
 
-    return result;
-  } catch (error) {
-    console.error("Update Order Guide Error:", error);
-    throw error;
-  }
-};
+    // Use the latest data, not the snapshot saved when the dialog opened
+    const currentOrder =
+      quickOrders.find((o) => o.id === dialog.order.id) ?? dialog.order;
 
-async function saveGroupPar() {
-  if (dialog?.type !== "edit-group-par") return;
+    // "All" -> every group's items, otherwise only this group's items
+    const targetGroups = dialog.group.isAll
+      ? currentOrder.groups
+      : currentOrder.groups.filter((g) => g.id === dialog.group.id);
 
-  const value = parDraft.trim() === "" ? null : Number(parDraft);
-  if (value !== null && (!Number.isFinite(value) || value < 0)) return;
+    const items = targetGroups
+      .flatMap((g) => g.products)
+      .map((p) => ({
+        orderGroupItemID: Number(p.orderGroupItemID),
+        parValue: value,
+      }));
 
-  if (!userId) {
-    setNameDialogError("Unable to identify the logged-in user.");
-    return;
-  }
+    if (items.length === 0) {
+      setNameDialogError("There are no products to update.");
+      return;
+    }
 
-  // Use the latest data, not the snapshot saved when the dialog opened
-  const currentOrder =
-    quickOrders.find((o) => o.id === dialog.order.id) ?? dialog.order;
+    setIsSavingName(true);
+    setNameDialogError(null);
 
-  // "All" -> every group's items, otherwise only this group's items
-  const targetGroups = dialog.group.isAll
-    ? currentOrder.groups
-    : currentOrder.groups.filter((g) => g.id === dialog.group.id);
+    try {
+      const result = await updateBulkParPUT({
+        items,
+        modifyBY: Number.isNaN(Number(userId)) ? userId : Number(userId),
+      });
 
-  const items = targetGroups
-    .flatMap((g) => g.products)
-    .map((p) => ({
-      orderGroupItemID: Number(p.orderGroupItemID),
-      parValue: value,
-    }));
+      console.log("Bulk PAR updated:", result);
 
-  if (items.length === 0) {
-    setNameDialogError("There are no products to update.");
-    return;
-  }
-
-  setIsSavingName(true);
-  setNameDialogError(null);
-
-  try {
-    const result = await updateBulkParPUT({
-      items,
-      modifyBY: Number.isNaN(Number(userId)) ? userId : Number(userId),
-    });
-
-    console.log("Bulk PAR updated:", result);
-
-    // API succeeded -> update the UI
-    setQuickOrders((orders) =>
-      orders.map((order) =>
-        order.id === dialog.order.id
-          ? touchOrder({
+      // API succeeded -> update the UI
+      setQuickOrders((orders) =>
+        orders.map((order) =>
+          order.id === dialog.order.id
+            ? touchOrder({
               ...order,
               groups: order.groups.map((group) =>
                 dialog.group.isAll || group.id === dialog.group.id
                   ? {
-                      ...group,
+                    ...group,
+                    par: value,
+                    products: group.products.map((product) => ({
+                      ...product,
                       par: value,
-                      products: group.products.map((product) => ({
-                        ...product,
-                        par: value,
-                      })),
-                    }
+                    })),
+                  }
                   : group,
               ),
             })
-          : order,
-      ),
-    );
-     toast.success("PAR value updated successfully");
-    closeDialog();
-  } catch (error) {
-    console.error("Bulk PAR error:", error);
-    setNameDialogError(error?.message || "Failed to update PAR.");
-     toast.error(error?.message || "Failed to update PAR."); 
-  } finally {
-    setIsSavingName(false);
+            : order,
+        ),
+      );
+      toast.success("PAR value updated successfully");
+      closeDialog();
+    } catch (error) {
+      console.error("Bulk PAR error:", error);
+      setNameDialogError(error?.message || "Failed to update PAR.");
+      toast.error(error?.message || "Failed to update PAR.");
+    } finally {
+      setIsSavingName(false);
+    }
   }
-}
   // function saveGroupPar() {
   //   if (dialog?.type !== "edit-group-par") return;
 
@@ -1443,7 +1492,7 @@ async function saveGroupPar() {
   //   closeDialog();
   // }
 
- async function saveNameDialog() {
+  async function saveNameDialog() {
     const name = draftName.trim();
     if (!name || !dialog) return;
 
@@ -1557,11 +1606,11 @@ async function saveGroupPar() {
           orders.map((order) =>
             order.id === dialog.order.id
               ? touchOrder({
-                  ...order,
-                  groups: order.groups.map((group) =>
-                    group.id === dialog.group.id ? { ...group, name } : group,
-                  ),
-                })
+                ...order,
+                groups: order.groups.map((group) =>
+                  group.id === dialog.group.id ? { ...group, name } : group,
+                ),
+              })
               : order,
           ),
         );
@@ -1669,40 +1718,40 @@ async function saveGroupPar() {
   //   });
   // }
   function handleDragEnd(event) {
-  if (!canEdit) return;
+    if (!canEdit) return;
 
-  const { active, over } = event;
-  setActiveOrderId(null);
+    const { active, over } = event;
+    setActiveOrderId(null);
     document.activeElement?.blur();   // add this
 
-  if (!over || active.id === over.id) return;
+    if (!over || active.id === over.id) return;
 
-  setQuickOrders((orders) => {
-    const oldIndex = orders.findIndex((order) => order.id === active.id);
-    const newIndex = orders.findIndex((order) => order.id === over.id);
+    setQuickOrders((orders) => {
+      const oldIndex = orders.findIndex((order) => order.id === active.id);
+      const newIndex = orders.findIndex((order) => order.id === over.id);
 
-    if (oldIndex === -1 || newIndex === -1) return orders;
+      if (oldIndex === -1 || newIndex === -1) return orders;
 
-    const reordered = arrayMove(orders, oldIndex, newIndex).map((order) =>
-      order.id === active.id ? touchOrder(order) : order,
-    );
+      const reordered = arrayMove(orders, oldIndex, newIndex).map((order) =>
+        order.id === active.id ? touchOrder(order) : order,
+      );
 
-    // Fire the API call with the new order, outside the state updater's purity concerns
-    const custnmbr = localStorage.getItem("custnmbr");
-    const orderGuideIds = reordered.map((order) => Number(order.id));
+      // Fire the API call with the new order, outside the state updater's purity concerns
+      const custnmbr = localStorage.getItem("custnmbr");
+      const orderGuideIds = reordered.map((order) => Number(order.id));
 
-    dispatch(PutOrderGuideSequence({ custnmbr, orderGuideIds }))
-      .unwrap()
-      .then(() => {
-        toast.success("Order items updated");
-      })
-      .catch((err) => {
-        toast.error(err?.message || err || "Failed to save new order");
-      });
+      dispatch(PutOrderGuideSequence({ custnmbr, orderGuideIds }))
+        .unwrap()
+        .then(() => {
+          toast.success("Order items updated");
+        })
+        .catch((err) => {
+          toast.error(err?.message || err || "Failed to save new order");
+        });
 
-    return reordered;
-  });
-}
+      return reordered;
+    });
+  }
 
   function handleDragCancel() {
     setActiveOrderId(null);
@@ -1735,10 +1784,10 @@ async function saveGroupPar() {
           onDragStart={({ active }) => setActiveOrderId(active.id)}
           onDragEnd={handleDragEnd}
           // onDragCancel={handleDragCancel}
-           onDragCancel={() => {
-    setActiveOrderId(null);
-    document.activeElement?.blur();
-  }}
+          onDragCancel={() => {
+            setActiveOrderId(null);
+            document.activeElement?.blur();
+          }}
         >
           <SortableContext
             items={quickOrders.map((order) => order.id)}
@@ -1861,7 +1910,7 @@ async function saveGroupPar() {
               onKeyDown={(event) => {
                 if (event.key === "Enter") saveNameDialog();
               }}
-              //disabled={isSavingName}
+            //disabled={isSavingName}
             />
             {nameDialogError ? (
               <p className="text-xs text-destructive">{nameDialogError}</p>
@@ -1872,7 +1921,7 @@ async function saveGroupPar() {
             <Button
               variant="outline"
               onClick={closeDialog}
-              //disabled={isSavingName}
+            //disabled={isSavingName}
             >
               {t("cancel")}
             </Button>

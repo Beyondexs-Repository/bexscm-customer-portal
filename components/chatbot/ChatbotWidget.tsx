@@ -82,7 +82,7 @@ const INITIAL_MESSAGES: ChatMessage[] = [
   {
     id: "welcome-1",
     sender: "bot",
-    text: "Hello! 👋 I'm your Crate Inc. AI Assistant. How can I help you with your orders, catalog, or account today? You can also upload documents, CSVs, MP3, or MP4 audio attachments directly in our chat!",
+    text: "Hello! 👋 I'm your Bex SCM AI Assistant. How can I help you with your orders, catalog, or account today? You can also upload documents, CSVs, MP3, or MP4 audio attachments directly in our chat!",
     time: "Just now",
   },
 ]

@@ -70,7 +70,7 @@ const ratings = { ...serverRatings, ...(ratingsByOrder[order.id] || {}) }
               {t("orderNumber", { number: order.orderNumber })}
             </p>
 
-            <Badge className={cn("h-auto shrink-0 px-2 py-0.5 text-[10px] leading-none ring-1", statusStyles[order.statusTone])}>
+            <Badge className={cn("h-auto shrink-0 px-2 py-0.5 text-[10px] leading-none ring-1", statusStyles[String(order.status).trim().toLowerCase() === "open" ? "green" : order.statusTone])}>
               {order.status}
             </Badge>
           </div>
