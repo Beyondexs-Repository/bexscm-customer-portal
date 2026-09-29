@@ -463,14 +463,20 @@ export const DeleteOrderGuideGroup = createAsyncThunk(
       })
 
       if (response.data?.success === false) {
-        throw new Error(response.data?.Msg || response.data?.message || "Failed to delete group.")
+        return rejectWithValue(
+          response.data?.Msg || response.data?.message || "Failed to delete group.",
+        )
       }
 
       return { orderGuideGroupID, ...response.data }
     } catch (error) {
-      return rejectWithValue(error.response ? error.response.data : error.message)
+      // always reject with a plain string so the UI can toast it directly
+      const data = error.response?.data
+      return rejectWithValue(
+        data?.Msg || data?.message || data?.error || error.message || "Failed to delete group.",
+      )
     }
-  }
+  },
 )
 
 // ── DELETE /ordergroupitems/{orderGroupItemID} ────────────────────────────────
@@ -489,14 +495,19 @@ export const DeleteOrderGroupItem = createAsyncThunk(
       })
 
       if (response.data?.success === false) {
-        throw new Error(response.data?.Msg || response.data?.message || "Failed to delete item.")
+        return rejectWithValue(
+          response.data?.Msg || response.data?.message || "Failed to delete item.",
+        )
       }
 
       return { orderGroupItemID, ...response.data }
     } catch (error) {
-      return rejectWithValue(error.response ? error.response.data : error.message)
+      const data = error.response?.data
+      return rejectWithValue(
+        data?.Msg || data?.message || data?.error || error.message || "Failed to delete item.",
+      )
     }
-  }
+  },
 )
 
 // ── PUT /orderguidegroups/move-items  (change group) ─────────────────────────
@@ -840,38 +851,38 @@ const postSlice = createSlice({
       })
 
       // ── PutOrderGuide ─────────────────────────────────────
-      .addCase(PutOrderGuide.pending, (state) => {
-        state.updateOrderGuideStatus = "loading"
-        state.updateOrderGuideLoading = true
-        state.updateOrderGuideError = null
-      })
-      .addCase(PutOrderGuide.fulfilled, (state, action) => {
-        state.updateOrderGuideStatus = "succeeded"
-        state.updateOrderGuideLoading = false
-        state.updateOrderGuideData = action.payload
-      })
-      .addCase(PutOrderGuide.rejected, (state, action) => {
-        state.updateOrderGuideStatus = "failed"
-        state.updateOrderGuideLoading = false
-        state.updateOrderGuideError = action.payload || action.error.message
-      })
+      // .addCase(PutOrderGuide.pending, (state) => {
+      //   state.updateOrderGuideStatus = "loading"
+      //   state.updateOrderGuideLoading = true
+      //   state.updateOrderGuideError = null
+      // })
+      // .addCase(PutOrderGuide.fulfilled, (state, action) => {
+      //   state.updateOrderGuideStatus = "succeeded"
+      //   state.updateOrderGuideLoading = false
+      //   state.updateOrderGuideData = action.payload
+      // })
+      // .addCase(PutOrderGuide.rejected, (state, action) => {
+      //   state.updateOrderGuideStatus = "failed"
+      //   state.updateOrderGuideLoading = false
+      //   state.updateOrderGuideError = action.payload || action.error.message
+      // })
 
       // ── DeleteOrderGuide ──────────────────────────────────
-      .addCase(DeleteOrderGuide.pending, (state) => {
-        state.deleteOrderGuideStatus = "loading"
-        state.deleteOrderGuideLoading = true
-        state.deleteOrderGuideError = null
-      })
-      .addCase(DeleteOrderGuide.fulfilled, (state, action) => {
-        state.deleteOrderGuideStatus = "succeeded"
-        state.deleteOrderGuideLoading = false
-        state.deleteOrderGuideData = action.payload
-      })
-      .addCase(DeleteOrderGuide.rejected, (state, action) => {
-        state.deleteOrderGuideStatus = "failed"
-        state.deleteOrderGuideLoading = false
-        state.deleteOrderGuideError = action.payload || action.error.message
-      })
+      // .addCase(DeleteOrderGuide.pending, (state) => {
+      //   state.deleteOrderGuideStatus = "loading"
+      //   state.deleteOrderGuideLoading = true
+      //   state.deleteOrderGuideError = null
+      // })
+      // .addCase(DeleteOrderGuide.fulfilled, (state, action) => {
+      //   state.deleteOrderGuideStatus = "succeeded"
+      //   state.deleteOrderGuideLoading = false
+      //   state.deleteOrderGuideData = action.payload
+      // })
+      // .addCase(DeleteOrderGuide.rejected, (state, action) => {
+      //   state.deleteOrderGuideStatus = "failed"
+      //   state.deleteOrderGuideLoading = false
+      //   state.deleteOrderGuideError = action.payload || action.error.message
+      // })
 
       // ── PutOrderGuideSequence ─────────────────────────────
       .addCase(PutOrderGuideSequence.pending, (state) => {

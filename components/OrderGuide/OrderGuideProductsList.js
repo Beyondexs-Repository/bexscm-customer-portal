@@ -1045,7 +1045,7 @@
 //changed by Radhika 23/09/2026 --12:02 PM =================================================================================>
 "use client";
 import { useDispatch } from "react-redux";
-import { PutItemSequence, PostCart  } from "../../redux/slices/postSlice"; 
+import { PutItemSequence, PostCart, DeleteOrderGroupItem  } from "../../redux/slices/postSlice"; 
 import { useState } from "react";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
@@ -1070,6 +1070,7 @@ import {
   ShoppingBasket,
   ShoppingCart,
   Trash2,
+  Loader2,  
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -1114,8 +1115,8 @@ const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
   try {
     const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/${orderGroupItemID}`;
 
-    console.log("Delete Order Guide ID:", orderGroupItemID);
-    console.log("Delete Order Guide URL:", url);
+    console.log("Delete Order Group items ID:", orderGroupItemID);
+    console.log("Delete Order Group items URL:", url);
 
     const response = await fetch(url, {
       method: "DELETE",
@@ -1125,12 +1126,12 @@ const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
       },
     });
 
-    console.log("Delete Order Guide HTTP Status:", response.status);
-    console.log("Delete Order Guide HTTP OK:", response.ok);
+    console.log("Delete Order Group items HTTP Status:", response.status);
+    console.log("Delete Order Group items HTTP OK:", response.ok);
 
     const responseText = await response.text();
 
-    console.log("Delete Order Guide Raw Response:", responseText);
+    console.log("Delete Order Group items Raw Response:", responseText);
 
     let result = null;
 
@@ -1140,14 +1141,14 @@ const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
       console.warn("Response is not JSON:", responseText);
     }
 
-    console.log("Delete Order Guide Parsed Response:", result);
+    console.log("Delete Order Group items Parsed Response:", result);
 
     if (!response.ok) {
       throw new Error(
         result?.Msg ||
           result?.message ||
           result?.error ||
-          `Unable to delete order guide. HTTP ${response.status}`,
+          `Unable to delete Order Group items. HTTP ${response.status}`,
       );
     }
 
@@ -1156,13 +1157,13 @@ const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
         result?.Msg ||
           result?.message ||
           result?.error ||
-          "Failed to delete order guide.",
+          "Failed to delete Order Group items.",
       );
     }
 
     return result;
   } catch (error) {
-    console.error("Delete Order Guide Error:", error);
+    console.error("Delete Order Group items Error:", error);
     throw error;
   }
 };
@@ -1758,7 +1759,7 @@ export function OrderGuideProductsList({
 
   const dispatch = useDispatch();
 const [isReordering, setIsReordering] = useState(false);
-
+const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const { items, addItem, incrementItem, decrementItem } =
     useCart();
   const { dashboardQuickOrderIds, setDashboardQuickOrderIds } =
@@ -1876,29 +1877,50 @@ const [isReordering, setIsReordering] = useState(false);
     ));
   }
 
-  function removeFromGroup(productId) {
-    if (!selectedOrder || !selectedGroup) return;
+  // function removeFromGroup(productId) {
+  //   if (!selectedOrder || !selectedGroup) return;
 
-    setQuickOrders((orders) =>
-      orders.map((order) =>
-        order.id === selectedOrder.id
-          ? touchOrder({
-              ...order,
-              groups: order.groups.map((group) =>
-                selectedGroup.isAll || group.id === selectedGroup.id
-                  ? {
-                      ...group,
-                      products: group.products.filter(
-                        (product) => product.id !== productId,
-                      ),
-                    }
-                  : group,
+  //   setQuickOrders((orders) =>
+  //     orders.map((order) =>
+  //       order.id === selectedOrder.id
+  //         ? touchOrder({
+  //             ...order,
+  //             groups: order.groups.map((group) =>
+  //               selectedGroup.isAll || group.id === selectedGroup.id
+  //                 ? {
+  //                     ...group,
+  //                     products: group.products.filter(
+  //                       (product) => product.id !== productId,
+  //                     ),
+  //                   }
+  //                 : group,
+  //             ),
+  //           })
+  //         : order,
+  //     ),
+  //   );
+  // }
+  function removeFromGroup(productToRemove) {
+  if (!selectedOrder || !selectedGroup) return;
+
+  setQuickOrders((orders) =>
+    orders.map((order) =>
+      order.id === selectedOrder.id
+        ? touchOrder({
+            ...order,
+            groups: order.groups.map((group) => ({
+              ...group,
+              products: group.products.filter(
+                (product) =>
+                  String(product.orderGroupItemID) !==
+                  String(productToRemove.orderGroupItemID),
               ),
-            })
-          : order,
-      ),
-    );
-  }
+            })),
+          })
+        : order,
+    ),
+  );
+}
 
   function updateProductInGroup(productId, updates) {
     if (!selectedOrder || !selectedGroup) return;
@@ -2151,22 +2173,47 @@ async function handleMoveToNewGroup(name) {
   }
 }
 
+  // async function confirmDeleteProduct() {
+  //   if (!productToDelete) return;
+
+  //   try {
+  //     const response = await deleteOrderGroupItemApiv1_DEL(
+  //       productToDelete.orderGroupItemID,
+  //     );
+
+  //     console.log("Delete Order Group Item Response:", response);
+  //   } catch (error) {
+  //     console.error("Delete Order Group Item Error:", error);
+  //   }
+
+  //   removeFromGroup(productToDelete.id);
+  //   setProductToDelete(null);
+  // }
   async function confirmDeleteProduct() {
-    if (!productToDelete) return;
+  if (!productToDelete || isDeletingProduct) return;
 
-    try {
-      const response = await deleteOrderGroupItemApiv1_DEL(
-        productToDelete.orderGroupItemID,
-      );
+  setIsDeletingProduct(true);
+  try {
+    await dispatch(
+      DeleteOrderGroupItem(Number(productToDelete.orderGroupItemID)),
+    ).unwrap();
 
-      console.log("Delete Order Group Item Response:", response);
-    } catch (error) {
-      console.error("Delete Order Group Item Error:", error);
-    }
-
-    removeFromGroup(productToDelete.id);
+    // API succeeded -> update the UI
+    removeFromGroup(productToDelete);
+    toast.success("Product deleted successfully");
     setProductToDelete(null);
+  } catch (error) {
+    console.error("Delete Order Group Item Error:", error);
+    toast.error(
+      typeof error === "string"
+        ? error
+        : error?.Msg || error?.message || "Failed to delete product",
+    );
+    // dialog stays open so the user can retry
+  } finally {
+    setIsDeletingProduct(false);
   }
+}
 
   async function persistDragReorder(activeId, overId) {
   if (isAllView) {
@@ -2855,7 +2902,7 @@ async function addGuideProductsToCart(products) {
 
       <Dialog
         open={Boolean(productToDelete)}
-        onOpenChange={(open) => !open && setProductToDelete(null)}
+        onOpenChange={(open) => !open && !isDeletingProduct && setProductToDelete(null)}
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -2869,9 +2916,17 @@ async function addGuideProductsToCart(products) {
             <Button variant="outline" onClick={() => setProductToDelete(null)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDeleteProduct}>
+            {/* <Button variant="destructive" onClick={confirmDeleteProduct}>
               Delete
-            </Button>
+            </Button> */}
+             <Button
+        variant="destructive"
+        onClick={confirmDeleteProduct}
+        disabled={isDeletingProduct}
+      >
+        {isDeletingProduct && <Loader2 className="size-4 animate-spin" />}
+        {isDeletingProduct ? "Deleting..." : "Delete"}
+      </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
