@@ -1,5 +1,6 @@
 "use client";
-
+import { useDispatch, useSelector } from "react-redux";
+import { GetItems } from "../../redux/slices/getSlice"; 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
@@ -807,8 +808,22 @@ function CatalogFilterControls({
 }
 
 export function Catalog() {
-  const t = useTranslations("catalog")
-  const {
+  const dispatch = useDispatch();
+  const t = useTranslations("catalog");
+  const itemsStatus = useSelector((state) => state.getSlice.itemsStatus);
+  const itemsData = useSelector((state) => state.getSlice.itemsData);
+ const itemsLoading = useSelector((state) => state.getSlice.itemsLoading);
+ 
+ console.log(itemsLoading, itemsStatus,itemsData, "--find getItems Data");
+ 
+
+const rawItems = useMemo(() => {
+  if (itemsStatus === "succeeded") return itemsData
+  if (itemsStatus === "failed") return staticItems   // offline fallback
+  return []                                          // idle / loading
+}, [itemsStatus, itemsData])
+
+ const {
     items: cartItems,
     addItem,
     decrementItem,
@@ -816,68 +831,69 @@ export function Catalog() {
     clearCart,
   } = useCart();
 
-  const [rawItems, setRawItems] = useState(staticItems);
-  const [isLoadingItems, setIsLoadingItems] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // const [rawItems, setRawItems] = useState(staticItems);
+  // const [itemsLoading, setitemsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(true);
 
-  const fetchCatalogItems = async () => {
-      setIsLoadingItems(true);
-       const custnmbr = localStorage.getItem("custnmbr");
+  // const fetchCatalogItems = async () => {
+  //     setitemsLoading(true);
+  //      const custnmbr = localStorage.getItem("custnmbr");
   
-      try {
-        const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/items?custNmbr=${custnmbr}`
+  //     try {
+  //       const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/items?custNmbr=${custnmbr}`
   
-        console.log("Catalog Items API URL:", url);
+  //       console.log("Catalog Items API URL:", url);
   
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-          },
-        });
+  //       const response = await fetch(url, {
+  //         method: "GET",
+  //         headers: {
+  //           Accept: "application/json",
+  //           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+  //         },
+  //       });
   
-        console.log("Catalog Items HTTP Status:", response.status);
-        console.log("Catalog Items HTTP OK:", response.ok);
+  //       console.log("Catalog Items HTTP Status:", response.status);
+  //       console.log("Catalog Items HTTP OK:", response.ok);
   
-        const responseText = await response.text();
+  //       const responseText = await response.text();
   
-        console.log("Catalog Items Raw Response:", responseText);
+  //       console.log("Catalog Items Raw Response:", responseText);
   
-        let result = null;
+  //       let result = null;
   
-        try {
-          result = responseText ? JSON.parse(responseText) : null;
-        } catch (error) {
-          console.warn("Response is not JSON:", responseText);
-        }
+  //       try {
+  //         result = responseText ? JSON.parse(responseText) : null;
+  //       } catch (error) {
+  //         console.warn("Response is not JSON:", responseText);
+  //       }
   
-        console.log("Catalog Items Parsed Response:", result);
+  //       console.log("Catalog Items Parsed Response:", result);
   
-        if (!response.ok) {
-          throw new Error(
-            result?.Msg ||
-            result?.message ||
-            result?.error ||
-            `Unable to fetch catalog items. HTTP ${response.status}`
-          );
-        }
+  //       if (!response.ok) {
+  //         throw new Error(
+  //           result?.Msg ||
+  //           result?.message ||
+  //           result?.error ||
+  //           `Unable to fetch catalog items. HTTP ${response.status}`
+  //         );
+  //       }
   
-        if (Array.isArray(result) && result.length > 0) {
-          setRawItems(result);
-        }
+  //       if (Array.isArray(result) && result.length > 0) {
+  //         setRawItems(result);
+  //       }
   
-        return result;
-      } catch (error) {
-        console.error("Catalog Items Error:", error);
-        return null;
-      } finally {
-        setIsLoadingItems(false);
-      }
-    };
+  //       return result;
+  //     } catch (error) {
+  //       console.error("Catalog Items Error:", error);
+  //       return null;
+  //     } finally {
+  //       setitemsLoading(false);
+  //     }
+  //   };
   
     useEffect(() => {
-      fetchCatalogItems();
+      // fetchCatalogItems();
+      dispatch(GetItems());
     }, []);
 
   const catalog = useMemo(() => {
@@ -902,16 +918,13 @@ export function Catalog() {
       const image = resolvedImg || getCategoryPlaceholderImage(categoryName);
 
       products.push({
-        id,
-        brand,
-        name,
-        sku: id,
-        unit,
-        price,
-        category: categoryName,
-        subcategory: subcategoryName,
-        image,
+      id, brand, name, sku: id, unit, price,
+  category: categoryName,
+  subcategory: subcategoryName,
+  image,
+  inOrderGuide: Boolean(item.inOrderGuide),
       });
+      
       category.subcategories.set(subcategoryName, products);
       categories.set(categoryName, category);
     });
@@ -1324,10 +1337,10 @@ export function Catalog() {
         ref={catalogScrollRef}
         className={cn(
           "no-scrollbar mt-3 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden pr-1",
-          isLoadingItems && "flex items-center justify-center",
+          itemsLoading && "flex items-center justify-center",
         )}
       >
-        {isLoadingItems ? (
+        {itemsLoading ? (
           <div
             role="status"
             aria-live="polite"

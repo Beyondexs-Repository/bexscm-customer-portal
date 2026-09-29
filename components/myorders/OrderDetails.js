@@ -25,7 +25,7 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { cn, getItemImage } from "@/lib/utils"
+import { cn, getItemImage, formatDeliveryDate } from "@/lib/utils"
 
 import { formatCurrency, statusStyles } from "./MyOrders"
 import { myOrderitemsRating } from "../../redux/slices/postSlice"   
@@ -76,7 +76,9 @@ const ratings = { ...serverRatings, ...(ratingsByOrder[order.id] || {}) }
           </div>
 
           <h2 className="mt-3 text-lg font-bold leading-tight sm:text-xl">
-            {t("deliveryOn", { deliveryDate: order.deliveryDate })}
+            {/* {t("deliveryOn", { deliveryDate: order.deliveryDate })} */}
+            {t("deliveryOn", { deliveryDate: formatDeliveryDate(order.deliveryDate) })}
+
           </h2>
         </div>
 

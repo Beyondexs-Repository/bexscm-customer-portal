@@ -12,10 +12,10 @@ const initialState = {
   loginError: null,
 
   // ── POST /cart ───────────────────────────────────────────
-  postCartData: {},
-  postCartLoading: false,
-  postCartStatus: "idle",
-  postCartError: null,
+  // postCartData: {},
+  // postCartLoading: false,
+  // postCartStatus: "idle",
+  // postCartError: null,
 
   // ── PUT /cart/customer/{custnmbr}/item/{itemNumber} ──────
   updateCartData: {},
@@ -160,42 +160,29 @@ export const PostLogin = createAsyncThunk(
 // ── POST /ordergroupitems/add-to-cart ─────────────────────────────────────────
 export const PostCart = createAsyncThunk(
   "cart/PostCart",
-  async (
-    { custNmbr = "400001", orderGroupItemIds },
-    { rejectWithValue }
-  ) => {
+  async ({ data }, { rejectWithValue }) => {
     try {
-      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/add-to-cart`;
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/add-to-cart`
 
-      console.log("PostCart URL:", URL);
-      console.log("PostCart Data:", {
-        custNmbr,
-        orderGroupItemIds,
-      });
-
-      const response = await axios.post(
-        URL,
-        {
-          custNmbr,
-          orderGroupItemIds,
+      const response = await axios.post(URL, data, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
         },
-        {
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-          },
-        }
-      );
+      })
 
-      return response.data;
+      const result = response.data
+      if (result?.success === false) {
+        return rejectWithValue(result?.Msg || result?.message || "Failed to add items to cart.")
+      }
+
+      return result
     } catch (error) {
-      return rejectWithValue(
-        error.response ? error.response.data : error.message
-      );
+      return rejectWithValue(error.response ? error.response.data : error.message)
     }
   }
-);
+)
 
 // ── PUT /cart/customer/{custnmbr}/item/{itemNumber} ──────────────────────────
 export const PutCartQuantity = createAsyncThunk(
@@ -731,12 +718,12 @@ const postSlice = createSlice({
       state.loginStatus = "idle"
       state.loginError = null
     },
-    resetCartStatus: (state) => {
-      state.postCartStatus = "idle"
-      state.updateCartStatus = "idle"
-      state.checkoutStatus = "idle"
-      state.postCartError = null
-    },
+    // resetCartStatus: (state) => {
+    //   state.postCartStatus = "idle"
+    //   state.updateCartStatus = "idle"
+    //   state.checkoutStatus = "idle"
+    //   state.postCartError = null
+    // },
     resetOrderGuideStatus: (state) => {
       state.createOrderGuideStatus = "idle"
       state.updateOrderGuideStatus = "idle"
@@ -768,21 +755,21 @@ const postSlice = createSlice({
       })
 
       // ── PostCart ──────────────────────────────────────────
-      .addCase(PostCart.pending, (state) => {
-        state.postCartStatus = "loading"
-        state.postCartLoading = true
-        state.postCartError = null
-      })
-      .addCase(PostCart.fulfilled, (state, action) => {
-        state.postCartStatus = "succeeded"
-        state.postCartLoading = false
-        state.postCartData = action.payload
-      })
-      .addCase(PostCart.rejected, (state, action) => {
-        state.postCartStatus = "failed"
-        state.postCartLoading = false
-        state.postCartError = action.payload || action.error.message
-      })
+      // .addCase(PostCart.pending, (state) => {
+      //   state.postCartStatus = "loading"
+      //   state.postCartLoading = true
+      //   state.postCartError = null
+      // })
+      // .addCase(PostCart.fulfilled, (state, action) => {
+      //   state.postCartStatus = "succeeded"
+      //   state.postCartLoading = false
+      //   state.postCartData = action.payload
+      // })
+      // .addCase(PostCart.rejected, (state, action) => {
+      //   state.postCartStatus = "failed"
+      //   state.postCartLoading = false
+      //   state.postCartError = action.payload || action.error.message
+      // })
 
       // ── PutCartQuantity ───────────────────────────────────
       .addCase(PutCartQuantity.pending, (state) => {
@@ -1071,7 +1058,7 @@ const postSlice = createSlice({
 export const {
   resetPostSlice,
   resetLoginStatus,
-  resetCartStatus,
+  // resetCartStatus,
   resetOrderGuideStatus,
 } = postSlice.actions
 
@@ -1085,9 +1072,9 @@ export const selectLoginStatus = (state) => state.postSlice.loginStatus
 export const selectLoginError = (state) => state.postSlice.loginError
 
 // Cart POST
-export const selectPostCartStatus = (state) => state.postSlice.postCartStatus
-export const selectPostCartLoading = (state) => state.postSlice.postCartLoading
-export const selectPostCartError = (state) => state.postSlice.postCartError
+// export const selectPostCartStatus = (state) => state.postSlice.postCartStatus
+// export const selectPostCartLoading = (state) => state.postSlice.postCartLoading
+// export const selectPostCartError = (state) => state.postSlice.postCartError
 
 // Cart PUT
 export const selectUpdateCartStatus = (state) => state.postSlice.updateCartStatus
