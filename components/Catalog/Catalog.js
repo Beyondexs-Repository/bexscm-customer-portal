@@ -822,9 +822,10 @@ export function Catalog() {
 
   const fetchCatalogItems = async () => {
       setIsLoadingItems(true);
+       const custnmbr = localStorage.getItem("custnmbr");
   
       try {
-        const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/items`
+        const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/items?custNmbr=${custnmbr}`
   
         console.log("Catalog Items API URL:", url);
   
@@ -923,6 +924,7 @@ export function Catalog() {
       })),
     }));
   }, [rawItems]);
+
   const categoryNames = ["All", ...catalog.map((category) => category.name)];
   const allProducts = useMemo(
     () =>

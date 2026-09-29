@@ -140,14 +140,14 @@ export const PostLogin = createAsyncThunk(
 
       const response = await axios.post(
         URL, data, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-          },
-        }
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      }
       )
 
-    return response.data;
+      return response.data;
     } catch (error) {
       return rejectWithValue(
         error.response ? error.response.data : error.message
@@ -157,30 +157,45 @@ export const PostLogin = createAsyncThunk(
 );
 
 // ── POST /cart ────────────────────────────────────────────────────────────────
+// ── POST /ordergroupitems/add-to-cart ─────────────────────────────────────────
 export const PostCart = createAsyncThunk(
   "cart/PostCart",
-  async ({ CUSTNMBR = "400001", ItemNumber, ItemName, Quantity, Source = "App/Web" }, { rejectWithValue }) => {
+  async (
+    { custNmbr = "400001", orderGroupItemIds },
+    { rejectWithValue }
+  ) => {
     try {
-      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/cart`
-      console.log("PostCart URL:", URL)
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/add-to-cart`;
+
+      console.log("PostCart URL:", URL);
+      console.log("PostCart Data:", {
+        custNmbr,
+        orderGroupItemIds,
+      });
 
       const response = await axios.post(
         URL,
-        { CUSTNMBR, ItemNumber, ItemName, Quantity, Source },
+        {
+          custNmbr,
+          orderGroupItemIds,
+        },
         {
           headers: {
             Accept: "application/json",
+            "Content-Type": "application/json",
             Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
           },
         }
-      )
+      );
 
-      return response.data
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.response ? error.response.data : error.message)
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
     }
   }
-)
+);
 
 // ── PUT /cart/customer/{custnmbr}/item/{itemNumber} ──────────────────────────
 export const PutCartQuantity = createAsyncThunk(
@@ -686,14 +701,14 @@ export const myOrderitemsRating = createAsyncThunk(
 
       const response = await axios.post(
         URL, data, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-          },
-        }
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      }
       )
 
-    return response.data;
+      return response.data;
     } catch (error) {
       return rejectWithValue(
         error.response ? error.response.data : error.message
@@ -1064,30 +1079,30 @@ export const {
 // SELECTORS
 // ============================================================
 // Auth
-export const selectLoginData    = (state) => state.postSlice.loginData
+export const selectLoginData = (state) => state.postSlice.loginData
 export const selectLoginLoading = (state) => state.postSlice.loginLoading
-export const selectLoginStatus  = (state) => state.postSlice.loginStatus
-export const selectLoginError   = (state) => state.postSlice.loginError
+export const selectLoginStatus = (state) => state.postSlice.loginStatus
+export const selectLoginError = (state) => state.postSlice.loginError
 
 // Cart POST
-export const selectPostCartStatus  = (state) => state.postSlice.postCartStatus
+export const selectPostCartStatus = (state) => state.postSlice.postCartStatus
 export const selectPostCartLoading = (state) => state.postSlice.postCartLoading
-export const selectPostCartError   = (state) => state.postSlice.postCartError
+export const selectPostCartError = (state) => state.postSlice.postCartError
 
 // Cart PUT
-export const selectUpdateCartStatus  = (state) => state.postSlice.updateCartStatus
+export const selectUpdateCartStatus = (state) => state.postSlice.updateCartStatus
 export const selectUpdateCartLoading = (state) => state.postSlice.updateCartLoading
 
 // Checkout
-export const selectCheckoutData    = (state) => state.postSlice.checkoutData
-export const selectCheckoutStatus  = (state) => state.postSlice.checkoutStatus
+export const selectCheckoutData = (state) => state.postSlice.checkoutData
+export const selectCheckoutStatus = (state) => state.postSlice.checkoutStatus
 export const selectCheckoutLoading = (state) => state.postSlice.checkoutLoading
-export const selectCheckoutError   = (state) => state.postSlice.checkoutError
+export const selectCheckoutError = (state) => state.postSlice.checkoutError
 
 // Reorder
-export const selectReorderStatus  = (state) => state.postSlice.reorderStatus
+export const selectReorderStatus = (state) => state.postSlice.reorderStatus
 export const selectReorderLoading = (state) => state.postSlice.reorderLoading
-export const selectReorderError   = (state) => state.postSlice.reorderError
+export const selectReorderError = (state) => state.postSlice.reorderError
 
 // Order Guide
 export const selectCreateOrderGuideStatus = (state) => state.postSlice.createOrderGuideStatus
@@ -1103,7 +1118,7 @@ export const selectDeleteOrderGuideGroupStatus = (state) => state.postSlice.dele
 export const selectDeleteOrderGroupItemStatus = (state) => state.postSlice.deleteOrderGroupItemStatus
 
 // PAR
-export const selectUpdateParStatus    = (state) => state.postSlice.updateParStatus
+export const selectUpdateParStatus = (state) => state.postSlice.updateParStatus
 export const selectUpdateBulkParStatus = (state) => state.postSlice.updateBulkParStatus
 
 export default postSlice.reducer
