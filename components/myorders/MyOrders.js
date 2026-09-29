@@ -384,7 +384,7 @@ function resizeDetails(width) {
     setIsLoading(true);
 
     try {
-      const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/customers/400001/orders`;
+      const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/customers/${DEFAULT_CUSTNMBR}/orders`;
 
       console.log("Customer ID:", customerId);
       console.log("Customer Orders API URL:", url);

@@ -12,6 +12,7 @@ import QuickOrderGuide from "./QuickOrderGuide"
 import WelcomeCard from "./WelcomeCard"
 import { getRecentInvoices } from "./recent-invoices"
 import { Badge } from "@/components/ui/badge"
+import RecommendedItems from "./RecommendedItems"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -212,6 +213,7 @@ export default function Overview() {
     <main className="grid gap-3 sm:gap-4">
       <WelcomeCard />
       <QuickActions />
+      <RecommendedItems />
       <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-3">
         <div className="order-1 h-full min-w-0 lg:order-2 lg:col-span-1">
           <QuickOrderGuide />

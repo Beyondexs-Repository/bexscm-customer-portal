@@ -12,9 +12,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+import { cn, getItemImage } from "@/lib/utils";
 
-function ItemReview({ item, feedback = {}, onChange, onImageLoading }) {
+function ItemReview({ item, feedback = {},locked = false, onChange, onImageLoading }) {
   const { rating = null, review = "", image = "" } = feedback;
   const [readingImage, setReadingImage] = useState(false);
   const [imageError, setImageError] = useState("");
@@ -31,7 +31,7 @@ function ItemReview({ item, feedback = {}, onChange, onImageLoading }) {
     onImageLoading(1);
     const reader = new FileReader();
     reader.onload = () => {
-      onChange({ image: reader.result });
+       onChange({ image: reader.result, imageFile: file }) 
       setReadingImage(false);
       onImageLoading(-1);
     };
@@ -46,7 +46,7 @@ function ItemReview({ item, feedback = {}, onChange, onImageLoading }) {
     <article className="rounded-lg border bg-card p-3">
       <div className="flex items-center gap-3">
         <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md border bg-muted">
-          {item.image ? (
+          {/* {item.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={item.image}
@@ -55,13 +55,27 @@ function ItemReview({ item, feedback = {}, onChange, onImageLoading }) {
             />
           ) : (
             <ImageIcon className="size-5 text-muted-foreground" />
+          )} */}
+          {getItemImage(item) ? (
+  <img src={getItemImage(item)} alt={item.name} className="size-full object-cover" />
+) : (
+  <ImageIcon className="size-5 text-muted-foreground" />
+)}
+        </div>
+        {/* <p className="min-w-0 flex-1 text-sm font-semibold">{item.name}</p> */}
+         <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">{item.name}</p>
+          {locked && (
+            <span className="mt-1 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+              Already rated
+            </span>
           )}
         </div>
-        <p className="min-w-0 flex-1 text-sm font-semibold">{item.name}</p>
         <div className="flex shrink-0 gap-2">
           <Button
             variant="ghost"
             size="icon-sm"
+              disabled={locked}
             aria-label={`Like ${item.name}`}
             aria-pressed={rating === "up"}
             onClick={() => onChange({ rating: rating === "up" ? null : "up" })}
@@ -77,6 +91,7 @@ function ItemReview({ item, feedback = {}, onChange, onImageLoading }) {
           <Button
             variant="ghost"
             size="icon-sm"
+             disabled={locked}
             aria-label={`Dislike ${item.name}`}
             aria-pressed={rating === "down"}
             onClick={() => onChange({ rating: rating === "down" ? null : "down" })}
@@ -91,7 +106,7 @@ function ItemReview({ item, feedback = {}, onChange, onImageLoading }) {
           </Button>
         </div>
       </div>
-      {rating === "down" && (
+      {rating === "down" && !locked && (
         <div className="mt-3 space-y-3 border-t pt-3">
           <label className="flex flex-col gap-2 text-sm font-medium">
             Review
@@ -115,14 +130,110 @@ function ItemReview({ item, feedback = {}, onChange, onImageLoading }) {
           )}
         </div>
       )}
+      {locked && rating === "down" && (review?.trim() || image) && (
+  <div className="mt-3 space-y-2 border-t pt-3">
+    <p className="text-xs font-semibold">Your feedback</p>
+    {review?.trim() && (
+      <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground">{review}</p>
+    )}
+    {image && (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={image} alt={`Feedback for ${item.name}`} className="h-20 w-28 rounded-md object-cover" />
+    )}
+  </div>
+)}
     </article>
   );
+}
+// export function buildRatingsFormData(items, ratings) {
+//   const formData = new FormData()
+//   let index = 0
+
+//   items.forEach((item) => {
+//     const fb = ratings[item.id]
+//     if (!fb?.rating) return // neither liked nor disliked → skip
+
+//     const isPositive = fb.rating === "up"
+//     const prefix = `items[${index}]`
+//     // "item-5650" → "5650"
+//     const orderDetailId = String(item.orderDetailID ?? item.id).replace(/^item-/, "")
+//     formData.append(`${prefix}.OrderDetailID`, orderDetailId)
+//     // formData.append(`${prefix}.OrderDetailID`, String(item.orderDetailID ?? item.id))
+//     formData.append(`${prefix}.IsPositive`, String(isPositive))
+
+//     if (!isPositive) {
+//       if (fb.review?.trim()) formData.append(`${prefix}.Review`, fb.review.trim())
+//       if (fb.imageFile) formData.append(`${prefix}.ReviewImageFile`, fb.imageFile, fb.imageFile.name)
+//     }
+//     index++
+//   })
+
+//   return { formData, count: index }
+// }
+function isChanged(fb, prev) {
+  if (!fb?.rating) return false               // no rating → nothing to send
+  if (!prev?.rating) return true              // newly rated
+  if (fb.rating !== prev.rating) return true  // like ↔ dislike switched
+  if (fb.rating === "down") {                 // dislike: review or image edited
+    return (
+      (fb.review || "").trim() !== (prev.review || "").trim() ||
+      fb.imageFile !== prev.imageFile
+    )
+  }
+  return false                                // same like → skip
+}
+
+export function buildRatingsFormData(items, ratings, savedRatings = {}) {
+  const formData = new FormData()
+  let index = 0
+
+  items.forEach((item) => {
+    const fb = ratings[item.id]
+    // if (!isChanged(fb, savedRatings[item.id])) return
+      if (!fb?.rating) return
+    if (isItemLocked(item, savedRatings)) return   // already rated → never send
+
+
+    const isPositive = fb.rating === "up"
+    const prefix = `items[${index}]`
+    const orderDetailId = String(item.orderDetailID ?? item.id).replace(/^item-/, "")
+
+    formData.append(`${prefix}.OrderDetailID`, orderDetailId)
+    formData.append(`${prefix}.IsPositive`, String(isPositive))
+
+    if (!isPositive) {
+      if (fb.review?.trim()) formData.append(`${prefix}.Review`, fb.review.trim())
+      if (fb.imageFile) formData.append(`${prefix}.ReviewImageFile`, fb.imageFile, fb.imageFile.name)
+    }
+    index++
+  })
+
+  return { formData, count: index }
+}
+
+// export function isItemLocked(item, savedRatings = {}) {
+//   const saved = savedRatings[item.id]
+//   return !!(saved?.rating || saved?.locked || item.alreadyRated)
+// }
+export function isItemLocked(item, savedRatings = {}) {
+  const saved = savedRatings[item.id]
+  return !!(item.isRated || saved?.rating || saved?.locked)
 }
 
 export default function OrderItemRatings({ open, onOpenChange, items, ratings, onSubmit }) {
   const [drafts, setDrafts] = useState(ratings);
   const [loadingImages, setLoadingImages] = useState(0);
 
+
+const [submitting, setSubmitting] = useState(false);
+ const allLocked = items.length > 0 && items.every((item) => isItemLocked(item, ratings))
+async function handleSubmit() {
+  setSubmitting(true);
+  const ok = await onSubmit(drafts);
+  setSubmitting(false);
+  if (ok !== false) onOpenChange(false);
+}
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[85svh] flex-col sm:max-w-xl">
@@ -137,6 +248,7 @@ export default function OrderItemRatings({ open, onOpenChange, items, ratings, o
             <ItemReview
               key={`${item.id ?? item.sku}-${index}`}
               item={item}
+               locked={isItemLocked(item, ratings)}
               feedback={drafts[item.id]}
               onImageLoading={(change) => setLoadingImages((count) => count + change)}
               onChange={(changes) => setDrafts((current) => ({
@@ -152,9 +264,15 @@ export default function OrderItemRatings({ open, onOpenChange, items, ratings, o
           )}
         </div>
         <DialogFooter>
-          <Button disabled={loadingImages > 0} onClick={() => { onSubmit(drafts); onOpenChange(false); }}>
+          {/* <Button disabled={loadingImages > 0} onClick={() => { onSubmit(drafts); onOpenChange(false); }}>
             Submit
-          </Button>
+          </Button> */}
+          {/* <Button disabled={loadingImages > 0 || submitting} onClick={handleSubmit}>
+  {submitting ? "Submitting…" : "Submit"}
+</Button> */}
+ <Button disabled={loadingImages > 0 || submitting || allLocked} onClick={handleSubmit}>
+    {submitting ? "Submitting…" : allLocked ? "All items rated" : "Submit"}
+  </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
