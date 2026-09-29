@@ -766,7 +766,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import PaginationCustom from "@/components/ui/pagination-custom"
-import { cn } from "@/lib/utils"
+import { cn, formatDeliveryDate } from "@/lib/utils"
 
 import { formatCurrency, statusFilters, statusStyles, typeFilters } from "./MyOrders"
 
@@ -838,7 +838,7 @@ function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
 
       <div className="hidden min-w-0 md:block">
         <p className="text-[11px] text-muted-foreground">{t("deliveryDate")}</p>
-        <p className="text-xs font-bold leading-snug">{order.deliveryDate}</p>
+        <p className="text-xs font-bold leading-snug">{formatDeliveryDate(order.deliveryDate)}</p>
       </div>
 
       <div className="hidden min-w-0 md:block">
