@@ -1,6 +1,6 @@
 "use client";
 import { useDispatch } from "react-redux";
-import { PutOrderGuideSequence } from "../../redux/slices/postSlice"; // adjust path
+import { PutOrderGuideSequence, DeleteOrderGuide, DeleteOrderGuideGroup } from "../../redux/slices/postSlice"; // adjust path
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
@@ -29,6 +29,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -51,22 +52,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-// import { fetchOrderGuideListApi } from "@/lib/api/orderguidelistapi";
-
-// import { getConfig } from "@/lib/config";
-//Primary group 
-// import { fetchOrderGuideListApi } from "@/lib/api/orderguidelistapi";
-// import { getOrderGroupItemsApi } from "@/lib/api/ordergroupitemget";
-// import { modifyOrderGuideApi } from "@/lib/api/orderguideput";
-// import { deleteOrderGuideApi } from "@/lib/api/orderguidedelete";
-
-
-//Secondary group Add Group
-// import { getOrderGuideGroupApi } from "@/lib/api/orderguidegroupget";
-
-// import { createOrderGuideGroupApi } from "@/lib/api/orderguidegrouppost";
-// import { deleteOrderGuideGroupApi } from "@/lib/api/orderguidegroupdelete";
-// import { updateOrderGuideGroupApi } from "@/lib/api/orderguidegroupput";
 
 function countOrderProducts(order) {
   return order.groups.reduce(
@@ -437,7 +422,7 @@ export function OrderGuideList({
   setIsLoading,
 
 }) {
-
+const [isDeleting, setIsDeleting] = useState(false);
   const dispatch = useDispatch();
   const t = useTranslations("orderGuide");
   const [dialog, setDialog] = useState(null);
@@ -561,63 +546,63 @@ export function OrderGuideList({
   // STEP 2 IN OrderGuide file=====================
   //INITIAL GROUP LIST INSIDE CREATE GROUP=======STEP 4========
 
-  //Primary Group_Delete
-  const deleteOrderGuideApiv1_DEL = async (orderGuideID) => {
-    try {
-      const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/${orderGuideID}`;
+//Primary Group_Delete
+// const deleteOrderGuideApiv1_DEL = async (orderGuideID) => {
+//   try {
+//     const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/${orderGuideID}`;
 
-      console.log("Delete Order Guide ID:", orderGuideID);
-      console.log("Delete Order Guide URL:", url);
+//     console.log("Delete Order Guide ID:", orderGuideID);
+//     console.log("Delete Order Guide URL:", url);
 
-      const response = await fetch(url, {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-        },
-      });
+//     const response = await fetch(url, {
+//       method: "DELETE",
+//       headers: {
+//         Accept: "application/json",
+//         Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+//       },
+//     });
 
-      console.log("Delete Order Guide HTTP Status:", response.status);
-      console.log("Delete Order Guide HTTP OK:", response.ok);
+//     console.log("Delete Order Guide HTTP Status:", response.status);
+//     console.log("Delete Order Guide HTTP OK:", response.ok);
 
-      const responseText = await response.text();
+//     const responseText = await response.text();
 
-      console.log("Delete Order Guide Raw Response:", responseText);
+//     console.log("Delete Order Guide Raw Response:", responseText);
 
-      let result = null;
+//     let result = null;
 
-      try {
-        result = responseText ? JSON.parse(responseText) : null;
-      } catch (error) {
-        console.warn("Response is not JSON:", responseText);
-      }
+//     try {
+//       result = responseText ? JSON.parse(responseText) : null;
+//     } catch (error) {
+//       console.warn("Response is not JSON:", responseText);
+//     }
 
-      console.log("Delete Order Guide Parsed Response:", result);
+//     console.log("Delete Order Guide Parsed Response:", result);
 
-      if (!response.ok) {
-        throw new Error(
-          result?.Msg ||
-          result?.message ||
-          result?.error ||
-          `Unable to delete order guide. HTTP ${response.status}`,
-        );
-      }
+//     if (!response.ok) {
+//       throw new Error(
+//         result?.Msg ||
+//           result?.message ||
+//           result?.error ||
+//           `Unable to delete order guide. HTTP ${response.status}`,
+//       );
+//     }
 
-      if (!result?.success) {
-        throw new Error(
-          result?.Msg ||
-          result?.message ||
-          result?.error ||
-          "Failed to delete order guide.",
-        );
-      }
+//     if (!result?.success) {
+//       throw new Error(
+//         result?.Msg ||
+//           result?.message ||
+//           result?.error ||
+//           "Failed to delete order guide.",
+//       );
+//     }
 
-      return result;
-    } catch (error) {
-      console.error("Delete Order Guide Error:", error);
-      throw error;
-    }
-  };
+//     return result;
+//   } catch (error) {
+//     console.error("Delete Order Guide Error:", error);
+//     throw error;
+//   }
+// };
 
 
   //Primary group_Renaming the Group
@@ -891,33 +876,72 @@ export function OrderGuideList({
     }
   }
 
-  async function handleDelete(orderGuideID) {
-    try {
-      const response = await deleteOrderGuideApiv1_DEL(orderGuideID);
+async function handleDelete(orderGuideID) {
+  try {
+    await dispatch(DeleteOrderGuide(orderGuideID)).unwrap()
 
-      console.log("Delete API Response:", response);
+    setQuickOrders((prevOrders) =>
+      prevOrders.filter(
+        (order) =>
+          String(order.id) !== String(orderGuideID) &&
+          String(order.orderGuideID) !== String(orderGuideID),
+      ),
+    )
 
-      if (response?.success) {
-        // Remove deleted order guide from UI
-        setQuickOrders((prevOrders) =>
-          prevOrders.filter(
-            (order) =>
-              String(order.id) !== String(orderGuideID) &&
-              String(order.orderGuideID) !== String(orderGuideID),
-          ),
-        );
-
-        // Clear selected guide if necessary
-        if (selectedOrderId === orderGuideID) {
-          setSelectedOrderId(null);
-          setSelectedGroupId(null);
-        }
-      }
-    } catch (error) {
-      console.error("Delete Order Guide Error:", error);
+    if (String(selectedOrderId) === String(orderGuideID)) {
+      setSelectedOrderId(null)
+      setSelectedGroupId(null)
     }
-  }
 
+    toast.success("Order guide deleted successfully")
+    return true
+  } catch (error) {
+    console.error("Delete Order Guide Error:", error)
+    toast.error(
+      typeof error === "string"
+        ? error
+        : error?.Msg || error?.message || "Failed to delete order guide",
+    )
+    return false
+  }
+}
+
+
+async function handleDeleteOrdGuideGroup(order, group) {
+  try {
+    await dispatch(DeleteOrderGuideGroup(group.id)).unwrap()
+
+    const nextGroupId =
+      order.groups.find((g) => String(g.id) !== String(group.id))?.id ?? null
+
+    // remove only this group from its order guide
+    setQuickOrders((orders) =>
+      orders.map((o) =>
+        o.id === order.id
+          ? touchOrder({
+              ...o,
+              groups: o.groups.filter((g) => String(g.id) !== String(group.id)),
+            })
+          : o,
+      ),
+    )
+
+    if (String(selectedGroupId) === String(group.id)) {
+      setSelectedGroupId(nextGroupId)
+    }
+
+    toast.success("Group items deleted successfully")
+    return true
+  } catch (error) {
+    console.error("Delete Order Guide Group Error:", error)
+    toast.error(
+      typeof error === "string"
+        ? error
+        : error?.Msg || error?.message || "Failed to delete group",
+    )
+    return false
+  }
+}
   const fetchOrderGuideListApiv1_GET = async (customerID) => {
     try {
       const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/customer/${customerID}`;
@@ -1234,63 +1258,63 @@ export function OrderGuideList({
   };
 
 
-  //Secondary Group ADD GROUP DELETE
-  const deleteOrderGuideGroupApiv1_DEL = async (orderGuideGroupID) => {
-    try {
-      const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguidegroups/${orderGuideGroupID}`;
+//Secondary Group ADD GROUP DELETE
+// const deleteOrderGuideGroupApiv1_DEL = async (orderGuideGroupID) => {
+//   try {
+//     const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguidegroups/${orderGuideGroupID}`;
 
-      console.log("Delete Order Guide ID:", orderGuideGroupID);
-      console.log("Delete Order Guide URL:", url);
+//     console.log("Delete Order Guide ID:", orderGuideGroupID);
+//     console.log("Delete Order Guide URL:", url);
 
-      const response = await fetch(url, {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-        },
-      });
+//     const response = await fetch(url, {
+//       method: "DELETE",
+//       headers: {
+//         Accept: "application/json",
+//         Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+//       },
+//     });
 
-      console.log("Delete Order Guide HTTP Status:", response.status);
-      console.log("Delete Order Guide HTTP OK:", response.ok);
+//     console.log("Delete Order Guide HTTP Status:", response.status);
+//     console.log("Delete Order Guide HTTP OK:", response.ok);
 
-      const responseText = await response.text();
+//     const responseText = await response.text();
 
-      console.log("Delete Order Guide Raw Response:", responseText);
+//     console.log("Delete Order Guide Raw Response:", responseText);
 
-      let result = null;
+//     let result = null;
 
-      try {
-        result = responseText ? JSON.parse(responseText) : null;
-      } catch (error) {
-        console.warn("Response is not JSON:", responseText);
-      }
+//     try {
+//       result = responseText ? JSON.parse(responseText) : null;
+//     } catch (error) {
+//       console.warn("Response is not JSON:", responseText);
+//     }
 
-      console.log("Delete Order Guide Parsed Response:", result);
+//     console.log("Delete Order Guide Parsed Response:", result);
 
-      if (!response.ok) {
-        throw new Error(
-          result?.Msg ||
-          result?.message ||
-          result?.error ||
-          `Unable to delete order guide. HTTP ${response.status}`,
-        );
-      }
+//     if (!response.ok) {
+//       throw new Error(
+//         result?.Msg ||
+//           result?.message ||
+//           result?.error ||
+//           `Unable to delete order guide. HTTP ${response.status}`,
+//       );
+//     }
 
-      if (!result?.success) {
-        throw new Error(
-          result?.Msg ||
-          result?.message ||
-          result?.error ||
-          "Failed to delete order guide.",
-        );
-      }
+//     if (!result?.success) {
+//       throw new Error(
+//         result?.Msg ||
+//           result?.message ||
+//           result?.error ||
+//           "Failed to delete order guide.",
+//       );
+//     }
 
-      return result;
-    } catch (error) {
-      console.error("Delete Order Guide Error:", error);
-      throw error;
-    }
-  };
+//     return result;
+//   } catch (error) {
+//     console.error("Delete Order Guide Error:", error);
+//     throw error;
+//   }
+// };
 
 
   //Secondary Group_Rename
@@ -1605,50 +1629,73 @@ export function OrderGuideList({
   }
 
   async function confirmDelete() {
-    if (!dialog) return;
+  if (!dialog || isDeleting) return
 
+  setIsDeleting(true)
+  try {
     if (dialog.type === "delete-order") {
-      await handleDelete(dialog.order.id);
-
-      if (expandedOrderId === dialog.order.id) {
-        setExpandedOrderId(null);
+      const ok = await handleDelete(dialog.order.id)
+      if (ok) {
+        if (expandedOrderId === dialog.order.id) setExpandedOrderId(null)
+        closeDialog()
       }
-      closeDialog();
-      return;
+      return
     }
 
     if (dialog.type === "delete-group") {
-      try {
-        const response = await deleteOrderGuideGroupApiv1_DEL(dialog.group.id);
-
-        console.log("Delete Order Guide Group Response:", response);
-
-        const nextGroup =
-          dialog.order.groups.find((group) => group.id !== dialog.group.id)
-            ?.id ?? null;
-
-        setQuickOrders((orders) =>
-          orders.map((order) =>
-            order.id === dialog.order.id
-              ? touchOrder({
-                ...order,
-                groups: order.groups.filter(
-                  (group) => group.id !== dialog.group.id,
-                ),
-              })
-              : order,
-          ),
-        );
-
-        if (selectedGroupId === dialog.group.id) {
-          setSelectedGroupId(nextGroup);
-        }
-        closeDialog();
-      } catch (error) {
-        console.error("Delete Order Guide Group Error:", error);
-      }
+      const ok = await handleDeleteOrdGuideGroup(dialog.order, dialog.group)
+      if (ok) closeDialog()
     }
+  } finally {
+    setIsDeleting(false)
   }
+}
+  // async function confirmDelete() {
+  //   if (!dialog) return;
+
+  //   if (dialog.type === "delete-order") {
+  //     await handleDelete(dialog.order.id);
+
+  //     if (expandedOrderId === dialog.order.id) {
+  //       setExpandedOrderId(null);
+  //     }
+  //     closeDialog();
+  //     return;
+  //   }
+
+  //   if (dialog.type === "delete-group") {
+      
+  //     try {
+  //       const response = await deleteOrderGuideGroupApiv1_DEL(dialog.group.id);
+
+  //       console.log("Delete Order Guide Group Response:", response);
+
+  //       const nextGroup =
+  //         dialog.order.groups.find((group) => group.id !== dialog.group.id)
+  //           ?.id ?? null;
+
+  //       setQuickOrders((orders) =>
+  //         orders.map((order) =>
+  //           order.id === dialog.order.id
+  //             ? touchOrder({
+  //                 ...order,
+  //                 groups: order.groups.filter(
+  //                   (group) => group.id !== dialog.group.id,
+  //                 ),
+  //               })
+  //             : order,
+  //         ),
+  //       );
+
+  //       if (selectedGroupId === dialog.group.id) {
+  //         setSelectedGroupId(nextGroup);
+  //       }
+  //       closeDialog();
+  //     } catch (error) {
+  //       console.error("Delete Order Guide Group Error:", error);
+  //     }
+  //   }
+  // }
 
   // function handleDragEnd(event) {
   //   if (!canEdit) return;
@@ -1967,7 +2014,7 @@ export function OrderGuideList({
 
       <Dialog
         open={isDeleteDialog}
-        onOpenChange={(open) => !open && closeDialog()}
+        onOpenChange={(open) => !open && !isDeleting && closeDialog()}
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -1986,9 +2033,13 @@ export function OrderGuideList({
             <Button variant="outline" onClick={closeDialog}>
               {t("cancel")}
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            {/* <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
               {t("delete")}
-            </Button>
+            </Button> */}
+                  <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
+        {isDeleting && <Loader2 className="size-4 animate-spin" />}
+        {isDeleting ? "Deleting..." : t("delete")}
+      </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
