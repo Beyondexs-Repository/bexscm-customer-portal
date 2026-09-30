@@ -118,30 +118,42 @@ export const GetOrderGuideList = createAsyncThunk(
   "orderGuide/GetOrderGuideList",
   async (_, { rejectWithValue }) => {
     try {
-   const custnmbr = localStorage.getItem("custnmbr");
-      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/customer/${custnmbr}`
-      console.log("GetOrderGuideList URL:", URL)
+      const custnmbr = localStorage.getItem("custnmbr");
+
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/customer/${custnmbr}`;
 
       const response = await axios.get(URL, {
         headers: {
           Accept: "application/json",
           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
         },
-      })
+      });
 
-      const result = response.data
+      const result = response.data;
 
       if (result?.success === false) {
-        throw new Error(result?.Msg || result?.message || "Failed to fetch order guides.")
+        throw new Error(
+          result?.Msg ||
+            result?.message ||
+            "Failed to fetch order guides."
+        );
       }
 
-      const list = Array.isArray(result) ? result : Array.isArray(result?.data) ? result.data : []
-      return list
+      const list = Array.isArray(result)
+        ? result
+        : Array.isArray(result?.data)
+          ? result.data
+          : [];
+
+      return list;
     } catch (error) {
-      return rejectWithValue(error.response ? error.response.data : error.message)
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
     }
   }
-)
+);
+
 
 // ── GET /orderguidegroups/orderguide/{orderGuideID} ──────────────────────────
 export const GetOrderGuideGroups = createAsyncThunk(
@@ -200,6 +212,114 @@ export const GetOrderGroupItems = createAsyncThunk(
   }
 )
 
+
+// ── GET /ORDERGUIDE/Download PAR Sheet ───────────────────────────
+// export const GetOrderGuidePARsheet = createAsyncThunk(
+//   "orderGuide/PARsheetdownload",
+//   async (orderGuideID, { rejectWithValue }) => {
+//     try {
+
+//       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/par-sheet/${orderGuideID}`;
+
+//       const response = await axios.get(URL, {
+//         headers: {
+//           Accept: "application/json",
+//           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+//         },
+//       });
+
+//       const result = response.data;
+
+//       if (result?.success === false) {
+//         throw new Error(
+//           result?.Msg ||
+//             result?.message ||
+//             "Failed to fetch order guides."
+//         );
+//       }
+
+//       const list = Array.isArray(result)
+//         ? result
+//         : Array.isArray(result?.data)
+//           ? result.data
+//           : [];
+
+//       return list;
+//     } catch (error) {
+//       return rejectWithValue(
+//         error.response ? error.response.data : error.message
+//       );
+//     }
+//   }
+// );
+export const GetOrderGuidePARsheet = createAsyncThunk(
+  "orderGuide/PARsheetdownload",
+  async (orderGuideID, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/par-sheet/${orderGuideID}`
+
+      const response = await axios.get(URL, {
+        responseType: "blob", // required for file downloads
+        headers: {
+          Accept: "*/*",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      })
+
+      const contentType =
+        response.headers["content-type"] || "application/octet-stream"
+
+      // Some APIs return a JSON error body with HTTP 200
+      if (contentType.includes("application/json")) {
+        const text = await response.data.text()
+        let json = null
+        try { json = JSON.parse(text) } catch {}
+        throw new Error(json?.Msg || json?.message || "Failed to download PAR sheet.")
+      }
+
+      // File name: from Content-Disposition if available, otherwise build one
+      const disposition = response.headers["content-disposition"] || ""
+      const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)
+      let fileName = match ? decodeURIComponent(match[1]) : null
+
+      if (!fileName) {
+        const ext = contentType.includes("pdf")
+          ? "pdf"
+          : contentType.includes("csv")
+            ? "csv"
+            : contentType.includes("spreadsheet") || contentType.includes("excel")
+              ? "xlsx"
+              : "xlsx" // <-- change if your API returns another type
+        fileName = `PAR-Sheet-${orderGuideID}.${ext}`
+      }
+
+      // Trigger the browser download
+      const blobUrl = window.URL.createObjectURL(
+        new Blob([response.data], { type: contentType }),
+      )
+      const link = document.createElement("a")
+      link.href = blobUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(blobUrl)
+
+      return { fileName }
+    } catch (error) {
+      // With responseType "blob", error bodies also arrive as a Blob
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text()
+          return rejectWithValue(JSON.parse(text))
+        } catch {
+          return rejectWithValue(`Failed to download PAR sheet. HTTP ${error.response.status}`)
+        }
+      }
+      return rejectWithValue(error.response ? error.response.data : error.message)
+    }
+  }
+)
 // ============================================================
 // SLICE  (Crea pattern — createSlice with extraReducers builder)
 // ============================================================
@@ -333,9 +453,9 @@ export const selectOrdersError      = (state) => state.getSlice.ordersError
 export const selectOrdersCustomerId = (state) => state.getSlice.ordersCustomerId
 
 // Order Guide List
-export const selectOrderGuideListData    = (state) => state.getSlice.orderGuideListData
-export const selectOrderGuideListLoading = (state) => state.getSlice.orderGuideListLoading
-export const selectOrderGuideListStatus  = (state) => state.getSlice.orderGuideListStatus
+// export const selectOrderGuideListData    = (state) => state.getSlice.orderGuideListData
+// export const selectOrderGuideListLoading = (state) => state.getSlice.orderGuideListLoading
+// export const selectOrderGuideListStatus  = (state) => state.getSlice.orderGuideListStatus
 
 // Order Guide Groups
 export const selectOrderGuideGroupsData    = (state) => state.getSlice.orderGuideGroupsData

@@ -1,5 +1,7 @@
 "use client";
+
 import { useDispatch } from "react-redux";
+import { GetOrderGuidePARsheet , GetOrderGuideList } from "../../redux/slices/getSlice"; 
 import { PutOrderGuideSequence, DeleteOrderGuide, DeleteOrderGuideGroup } from "../../redux/slices/postSlice"; // adjust path
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -171,7 +173,8 @@ function OrderGuideCard({
   onOpenDeleteOrder,
   onOpenDeleteGroup,
   onAddGroup,
-
+onDownloadParSheet,
+  isDownloadingPar,
   canEdit,
   canDelete,
 }) {
@@ -394,10 +397,23 @@ function OrderGuideCard({
               ) : null}
             </div>
           ) : null}
-          <Button size="sm" className="mt-0 h-8 w-full">
+          {/* <Button size="sm" className="mt-0 h-8 w-full">
             <Download className="size-4" />
             {t("downloadPARSheet")}
-          </Button>
+          </Button> */}
+          <Button
+  size="sm"
+  className="mt-0 h-8 w-full"
+  disabled={isDownloadingPar}
+  onClick={() => onDownloadParSheet(order)}
+>
+  {isDownloadingPar ? (
+    <Loader2 className="size-4 animate-spin" />
+  ) : (
+    <Download className="size-4" />
+  )}
+  {isDownloadingPar ? "Downloading..." : t("downloadPARSheet")}
+</Button>
         </div>
       ) : null}
     </section>
@@ -420,6 +436,7 @@ export function OrderGuideList({
 
 }) {
 const [isDeleting, setIsDeleting] = useState(false);
+const [downloadingParId, setDownloadingParId] = useState(null);
   const dispatch = useDispatch();
   const t = useTranslations("orderGuide");
   const [dialog, setDialog] = useState(null);
@@ -939,149 +956,231 @@ async function handleDeleteOrdGuideGroup(order, group) {
     return false
   }
 }
-  const fetchOrderGuideListApiv1_GET = async (customerID) => {
-    try {
-      const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/customer/${customerID}`;
+  // const fetchOrderGuideListApiv1_GET = async (customerID) => {
+  //   try {
+  //     const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/customer/${customerID}`;
 
-      console.log("=================================");
-      console.log("GET ORDER GUIDES");
-      console.log("Customer ID:", customerID);
-      console.log("URL:", url);
-      console.log("=================================");
+  //     console.log("=================================");
+  //     console.log("GET ORDER GUIDES");
+  //     console.log("Customer ID:", customerID);
+  //     console.log("URL:", url);
+  //     console.log("=================================");
 
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-        },
-      });
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+  //       },
+  //     });
 
-      console.log("HTTP Status:", response.status);
-      console.log("HTTP OK:", response.ok);
+  //     console.log("HTTP Status:", response.status);
+  //     console.log("HTTP OK:", response.ok);
 
-      const responseText = await response.text();
+  //     const responseText = await response.text();
 
-      console.log("Raw Response:", responseText);
+  //     console.log("Raw Response:", responseText);
 
-      let result = null;
+  //     let result = null;
 
-      try {
-        result = responseText ? JSON.parse(responseText) : null;
-      } catch (error) {
-        console.error("Response is not valid JSON:", error);
-        throw new Error("Invalid JSON response from order guides API");
-      }
+  //     try {
+  //       result = responseText ? JSON.parse(responseText) : null;
+  //     } catch (error) {
+  //       console.error("Response is not valid JSON:", error);
+  //       throw new Error("Invalid JSON response from order guides API");
+  //     }
 
-      console.log("Parsed Response:", result);
+  //     console.log("Parsed Response:", result);
 
-      if (!response.ok) {
-        throw new Error(
-          result?.Msg ||
-          result?.message ||
-          result?.error ||
-          `Unable to fetch order guides. HTTP ${response.status}`,
-        );
-      }
+  //     if (!response.ok) {
+  //       throw new Error(
+  //         result?.Msg ||
+  //         result?.message ||
+  //         result?.error ||
+  //         `Unable to fetch order guides. HTTP ${response.status}`,
+  //       );
+  //     }
 
-      // IMPORTANT:
-      // Your component expects an ARRAY.
-      const orderGuides = Array.isArray(result)
-        ? result
-        : Array.isArray(result?.data)
-          ? result.data
-          : [];
+  //     // IMPORTANT:
+  //     // Your component expects an ARRAY.
+  //     const orderGuides = Array.isArray(result)
+  //       ? result
+  //       : Array.isArray(result?.data)
+  //         ? result.data
+  //         : [];
 
-      console.log("Final Order Guides Array:", orderGuides);
+  //     console.log("Final Order Guides Array:", orderGuides);
 
-      return orderGuides;
-    } catch (error) {
-      console.error("Fetch Order Guides Error:", error);
-      return [];
-    }
-  };
+  //     return orderGuides;
+  //   } catch (error) {
+  //     console.error("Fetch Order Guides Error:", error);
+  //     return [];
+  //   }
+  // };
 
+  // async function loadOrderGuides() {
+  //   try {
+  //          const custnmbr = localStorage.getItem("custnmbr");
+
+  //     console.log("Loading Order Guides for customer:", custnmbr);
+
+  //     if (!custnmbr) {
+  //       console.error("Customer number not found");
+  //       setQuickOrders([]);
+  //       return;
+  //     }
+
+  //     const apiOrderGuides =
+  //       await fetchOrderGuideListApiv1_GET(custnmbr);
+
+  //     console.log(
+  //       "Order Guides API Result:",
+  //       apiOrderGuides
+  //     );
+
+  //     const formattedOrderGuides = await Promise.all(
+  //       apiOrderGuides.map(async (item) => {
+  //         const order = {
+  //           id: String(item.orderGuideID),
+  //           name: item.name,
+  //           custnmbr: item.custnmbr,
+  //           sequence: item.sequence,
+  //           createdBY: item.createdBY,
+  //           createdDTS: item.createdDTS,
+  //           updatedAt:
+  //             item.updatedDTS || item.createdDTS,
+  //           groups: [],
+  //         };
+
+  //         try {
+  //           const groups =
+  //             await getGroupsForOrderGuide(order);
+
+  //           return {
+  //             ...order,
+  //             groups,
+  //           };
+  //         } catch (error) {
+  //           console.error(
+  //             `Failed to load groups for order guide ${order.id}:`,
+  //             error
+  //           );
+
+  //           return {
+  //             ...order,
+  //             groups: [],
+  //           };
+  //         }
+  //       })
+  //     );
+
+  //     console.log(
+  //       "Final Order Guides:",
+  //       formattedOrderGuides
+  //     );
+
+  //     setQuickOrders(formattedOrderGuides);
+  //   } catch (error) {
+  //     console.error(
+  //       "Failed to load Order Guides:",
+  //       error
+  //     );
+
+  //     setQuickOrders([]);
+  //   } finally {
+  //     // End the initial page loader; later refreshes leave it off.
+  //     setIsLoading(false);
+  //   }
+  // }
+
+
+
+  //PARSheet
+  async function handleDownloadParSheet(order) {
+  if (downloadingParId) return;
+
+  try {
+    setDownloadingParId(order.id);
+    await dispatch(GetOrderGuidePARsheet(Number(order.id))).unwrap();
+    toast.success("PAR sheet downloaded");
+  } catch (error) {
+    console.error("PAR sheet download failed:", error);
+    toast.error(
+      typeof error === "string"
+        ? error
+        : error?.Msg || error?.message || "Failed to download PAR sheet",
+    );
+  } finally {
+    setDownloadingParId(null);
+  }
+}
   async function loadOrderGuides() {
-    try {
-      // The parent starts with isLoading=true for the initial load.
-      // Keep existing content visible when refreshing after changes.
+  try {
+    const apiOrderGuides = await dispatch(GetOrderGuideList()).unwrap();
 
-      const custnmbr = localStorage.getItem("custnmbr");
+    console.log("Order Guides from Redux API:", apiOrderGuides);
 
-      console.log("Loading Order Guides for customer:", custnmbr);
+    if (!Array.isArray(apiOrderGuides)) {
+      console.error("GetOrderGuideList did not return an array");
+      setQuickOrders([]);
+      return;
+    }
 
-      if (!custnmbr) {
-        console.error("Customer number not found");
-        setQuickOrders([]);
-        return;
-      }
+    const formattedOrderGuides = await Promise.all(
+      apiOrderGuides.map(async (item) => {
+        const order = {
+          id: String(item.orderGuideID),
+          name: item.name,
+          custnmbr: item.custnmbr,
+          sequence: item.sequence,
+          createdBY: item.createdBY,
+          createdDTS: item.createdDTS,
+          modifyBY: item.modifyBY,
+          updatedAt: item.updatedDTS || item.createdDTS,
+          quickOrder: item.quickOrder,
+          groups: [],
+        };
 
-      const apiOrderGuides =
-        await fetchOrderGuideListApiv1_GET(custnmbr);
+        try {
+          const groups = await getGroupsForOrderGuide(order);
 
-      console.log(
-        "Order Guides API Result:",
-        apiOrderGuides
-      );
+          return {
+            ...order,
+            groups,
+          };
+        } catch (error) {
+          console.error(
+            `Failed to load groups for order guide ${order.id}:`,
+            error
+          );
 
-      const formattedOrderGuides = await Promise.all(
-        apiOrderGuides.map(async (item) => {
-          const order = {
-            id: String(item.orderGuideID),
-            name: item.name,
-            custnmbr: item.custnmbr,
-            sequence: item.sequence,
-            createdBY: item.createdBY,
-            createdDTS: item.createdDTS,
-            updatedAt:
-              item.updatedDTS || item.createdDTS,
+          return {
+            ...order,
             groups: [],
           };
+        }
+      })
+    );
 
-          try {
-            const groups =
-              await getGroupsForOrderGuide(order);
+    console.log("Final Order Guides:", formattedOrderGuides);
 
-            return {
-              ...order,
-              groups,
-            };
-          } catch (error) {
-            console.error(
-              `Failed to load groups for order guide ${order.id}:`,
-              error
-            );
+    setQuickOrders(formattedOrderGuides);
+  } catch (error) {
+    console.error("Failed to load Order Guides:", error);
 
-            return {
-              ...order,
-              groups: [],
-            };
-          }
-        })
-      );
-
-      console.log(
-        "Final Order Guides:",
-        formattedOrderGuides
-      );
-
-      setQuickOrders(formattedOrderGuides);
-    } catch (error) {
-      console.error(
-        "Failed to load Order Guides:",
-        error
-      );
-
-      setQuickOrders([]);
-    } finally {
-      // End the initial page loader; later refreshes leave it off.
-      setIsLoading(false);
-    }
+    setQuickOrders([]);
+  } finally {
+    setIsLoading(false);
   }
+}
 
+  // useEffect(() => {
+  //   loadOrderGuides();
+  // }, [setQuickOrders, refreshKey]);
   useEffect(() => {
-    loadOrderGuides();
-  }, [setQuickOrders, refreshKey]);
+  loadOrderGuides();
+}, [refreshKey]);
+
 
   // useEffect(() => {
   //   async function loadOrderGuides() {
@@ -1850,6 +1949,8 @@ async function handleDeleteOrdGuideGroup(order, group) {
                       })
                     }
                     onAddGroup={openAddGroup}
+                    onDownloadParSheet={handleDownloadParSheet}
+isDownloadingPar={downloadingParId === order.id}
                   />
                 );
               })}

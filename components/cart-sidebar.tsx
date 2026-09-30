@@ -187,7 +187,10 @@ export function CartSidebar({
                               <h3 className="truncate text-sm font-semibold">
                                 {item.name}
                               </h3>
-                              {showDescription && <p className="text-xs text-muted-foreground">
+                               <p className="text-xs text-muted-foreground">item Num: {item.itemNumber}</p>
+                              {showDescription &&
+                             
+                               <p className="text-xs text-muted-foreground">
                                 {/* {item.itemNumber} · ${item.qtybsuom.toFixed(2)} / {item.unit} */}
                                 ${item.quantity}
                               </p>}

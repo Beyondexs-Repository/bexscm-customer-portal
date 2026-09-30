@@ -1045,7 +1045,7 @@
 //changed by Radhika 23/09/2026 --12:02 PM =================================================================================>
 "use client";
 import { useDispatch } from "react-redux";
-import { PutItemSequence, PostCart, DeleteOrderGroupItem  } from "../../redux/slices/postSlice"; 
+import { PutItemSequence, PostCart, DeleteOrderGroupItem, PutOrderGuideQuikorders } from "../../redux/slices/postSlice"; 
 import { useState } from "react";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
@@ -1111,62 +1111,62 @@ function touchOrder(order) {
 
 
 //PRIMARY & SECONDARY GROUP DELETE FUNCTION
-const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
-  try {
-    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/${orderGroupItemID}`;
+// const deleteOrderGroupItemApiv1_DEL = async (orderGroupItemID) => {
+//   try {
+//     const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/${orderGroupItemID}`;
 
-    console.log("Delete Order Group items ID:", orderGroupItemID);
-    console.log("Delete Order Group items URL:", url);
+//     console.log("Delete Order Group items ID:", orderGroupItemID);
+//     console.log("Delete Order Group items URL:", url);
 
-    const response = await fetch(url, {
-      method: "DELETE",
-      headers: {
-        Accept: "application/json",
-        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-      },
-    });
+//     const response = await fetch(url, {
+//       method: "DELETE",
+//       headers: {
+//         Accept: "application/json",
+//         Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+//       },
+//     });
 
-    console.log("Delete Order Group items HTTP Status:", response.status);
-    console.log("Delete Order Group items HTTP OK:", response.ok);
+//     console.log("Delete Order Group items HTTP Status:", response.status);
+//     console.log("Delete Order Group items HTTP OK:", response.ok);
 
-    const responseText = await response.text();
+//     const responseText = await response.text();
 
-    console.log("Delete Order Group items Raw Response:", responseText);
+//     console.log("Delete Order Group items Raw Response:", responseText);
 
-    let result = null;
+//     let result = null;
 
-    try {
-      result = responseText ? JSON.parse(responseText) : null;
-    } catch (error) {
-      console.warn("Response is not JSON:", responseText);
-    }
+//     try {
+//       result = responseText ? JSON.parse(responseText) : null;
+//     } catch (error) {
+//       console.warn("Response is not JSON:", responseText);
+//     }
 
-    console.log("Delete Order Group items Parsed Response:", result);
+//     console.log("Delete Order Group items Parsed Response:", result);
 
-    if (!response.ok) {
-      throw new Error(
-        result?.Msg ||
-          result?.message ||
-          result?.error ||
-          `Unable to delete Order Group items. HTTP ${response.status}`,
-      );
-    }
+//     if (!response.ok) {
+//       throw new Error(
+//         result?.Msg ||
+//           result?.message ||
+//           result?.error ||
+//           `Unable to delete Order Group items. HTTP ${response.status}`,
+//       );
+//     }
 
-    if (!result?.success) {
-      throw new Error(
-        result?.Msg ||
-          result?.message ||
-          result?.error ||
-          "Failed to delete Order Group items.",
-      );
-    }
+//     if (!result?.success) {
+//       throw new Error(
+//         result?.Msg ||
+//           result?.message ||
+//           result?.error ||
+//           "Failed to delete Order Group items.",
+//       );
+//     }
 
-    return result;
-  } catch (error) {
-    console.error("Delete Order Group items Error:", error);
-    throw error;
-  }
-};
+//     return result;
+//   } catch (error) {
+//     console.error("Delete Order Group items Error:", error);
+//     throw error;
+//   }
+// };
 
 
 //SEONDARY-GROUP_PRODUCT_LIST_CHANGE GROUP
@@ -1763,6 +1763,7 @@ export function OrderGuideProductsList({
 }) {
 
   const dispatch = useDispatch();
+  const [isUpdatingQuickOrder, setIsUpdatingQuickOrder] = useState(false);
 const [isReordering, setIsReordering] = useState(false);
 const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const { items, incrementItem, decrementItem, fetchCustomerCart } =
@@ -1832,25 +1833,78 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const isOnDashboard =
     Boolean(selectedOrder) && dashboardQuickOrderIds.includes(selectedOrder.id);
 
-  function toggleDashboardQuickOrder() {
-    if (!selectedOrder) return;
+  // function toggleDashboardQuickOrder() {
+  //   if (!selectedOrder) return;
 
-    if (isOnDashboard) {
+  //   if (isOnDashboard) {
+  //     setDashboardQuickOrderIds((ids) =>
+  //       ids.filter((id) => id !== selectedOrder.id),
+  //     );
+  //     toast.success("Removed from the Quick Order card.");
+  //     return;
+  //   }
+
+  //   if (dashboardQuickOrderIds.length >= 4) {
+  //     toast.error("You can show only 4 quick orders on the overview.");
+  //     return;
+  //   }
+
+  //   setDashboardQuickOrderIds((ids) => [...ids, selectedOrder.id]);
+  //   toast.success("Added to the Quick Order card.");
+  // }
+  async function toggleDashboardQuickOrder() {
+  if (!selectedOrder || isUpdatingQuickOrder) return;
+
+  if (!userId) {
+    toast.error("Unable to identify the logged-in user.");
+    return;
+  }
+
+  const modifyBY = Number.isNaN(Number(userId)) ? userId : Number(userId);
+  const orderGuideID = Number(selectedOrder.id);
+
+  // Removing
+  if (isOnDashboard) {
+    try {
+      setIsUpdatingQuickOrder(true);
+      await dispatch(
+        PutOrderGuideQuikorders({ orderGuideID, quickOrder: "N", modifyBY }),
+      ).unwrap();
+
       setDashboardQuickOrderIds((ids) =>
         ids.filter((id) => id !== selectedOrder.id),
       );
       toast.success("Removed from the Quick Order card.");
-      return;
+    } catch (error) {
+      console.error("Remove quick order failed:", error);
+      toast.error(error?.Msg || error?.message || "Failed to remove from Quick Order.");
+    } finally {
+      setIsUpdatingQuickOrder(false);
     }
+    return;
+  }
 
-    if (dashboardQuickOrderIds.length >= 4) {
-      toast.error("You can show only 4 quick orders on the overview.");
-      return;
-    }
+  // Adding
+  if (dashboardQuickOrderIds.length >= 4) {
+    toast.error("You can show only 4 quick orders on the overview.");
+    return;
+  }
+
+  try {
+    setIsUpdatingQuickOrder(true);
+    await dispatch(
+      PutOrderGuideQuikorders({ orderGuideID, quickOrder: "Y", modifyBY }),
+    ).unwrap();
 
     setDashboardQuickOrderIds((ids) => [...ids, selectedOrder.id]);
     toast.success("Added to the Quick Order card.");
+  } catch (error) {
+    console.error("Add quick order failed:", error);
+    toast.error(error?.Msg || error?.message || "Failed to add to Quick Order.");
+  } finally {
+    setIsUpdatingQuickOrder(false);
   }
+}
 
   function reorderProducts(position, draggedId, targetId) {
     const visibleIds = products.map((product) => product.id);
@@ -2670,9 +2724,15 @@ async function handleDuplicate({ targetGroupId, newGroupName }) {
                 variant={isOnDashboard ? "destructive" : "outline"}
                 size="sm"
                 className="h-8"
+                disabled={isUpdatingQuickOrder}
                 onClick={toggleDashboardQuickOrder}
               >
-                {!isOnDashboard ? <Plus className="size-4" /> : null}
+                {/* {!isOnDashboard ? <Plus className="size-4" /> : null} */}
+                 {isUpdatingQuickOrder ? (
+    <Loader2 className="size-4 animate-spin" />
+  ) : !isOnDashboard ? (
+    <Plus className="size-4" />
+  ) : null}
                 {isOnDashboard
                   ? "Remove from Quick Order"
                   : "Add to Quick Order"}

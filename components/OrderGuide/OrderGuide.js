@@ -26,7 +26,6 @@ import { cn } from "@/lib/utils";
 import { useQuickOrders } from "@/app/context/app-context";
 import { OrderGuideList } from "./OrderGuideList";
 import { OrderGuideProductsList } from "./OrderGuideProductsList";
-// import { createOrderGuideApi } from "@/lib/api/orderguideapi";
 import { getConfig } from "@/lib/config";
 export function OrderGuide() {
   const t = useTranslations("orderGuide");
@@ -166,38 +165,7 @@ export function OrderGuide() {
       throw error;
     }
   };
-  // async function handleSave() {
-  //   if (!canCreate) return;
 
-  //   const name = quickOrderName.trim();
-
-  //   if (!name) return;
-
-  //   if (!userId) {
-  //     console.error("User ID is not available");
-  //     return;
-  //   }
-
-  //   try {
-  //     const response = await createOrderGuideApi({
-  //       name: name,
-  //       custnmbr: custnmbr,
-  //       createdBY: userId,
-  //     });
-
-  //     console.log("Order Guide API Response:", response);
-
-  //     const newOrder = createQuickOrder(name);
-
-  //     setSelectedOrderId(newOrder.id);
-  //     setSelectedGroupId(newOrder.groups[0]?.id ?? null);
-
-  //     setQuickOrderName("");
-  //     setOpen(false);
-  //   } catch (error) {
-  //     console.error("Create Order Guide API Error:", error);
-  //   }
-  // }
   async function handleSave() {
     if (!canCreate || isCreating) return;
 

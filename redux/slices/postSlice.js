@@ -330,6 +330,66 @@ export const PutOrderGuide = createAsyncThunk(
   }
 )
 
+// ── PUT /Add to Quick orders orderguides/{orderGuideID} ──────────────────────────────────────────
+export const PutOrderGuideQuikorders = createAsyncThunk(
+  "orderGuide/Add to Quick orders",
+  async ({ orderGuideID, quickOrder, modifyBY }, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/quickorder/${orderGuideID}`
+      console.log("PutOrderGuideQuikorders URL:", URL)
+
+      const response = await axios.put(
+        URL,
+        { quickOrder, modifyBY },
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+          },
+        }
+      )
+
+      if (response.data?.success === false) {
+        throw new Error(response.data?.Msg || response.data?.message || "Failed to update order Guide Quik orders.")
+      }
+
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response ? error.response.data : error.message)
+    }
+  }
+)
+
+// ── POST /quick order to add to cart ────────────────────────────────────────────────────
+export const QuickOrdeguidetocartPOST = createAsyncThunk(
+  "Overview/QuickOrderguideToAddtocart",
+  async ({ data }, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/quickorder/add-to-cart`
+      console.log("PostOrderGuideGroup URL:", URL)
+
+      const response = await axios.post(
+        URL,
+        data,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+          },
+        }
+      )
+
+      if (response.data?.success === false) {
+        throw new Error(response.data?.Msg || response.data?.message || "Failed to create group.")
+      }
+
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response ? error.response.data : error.message)
+    }
+  }
+)
+
 // ── DELETE /orderguides/{orderGuideID} ───────────────────────────────────────
 export const DeleteOrderGuide = createAsyncThunk(
   "orderGuide/DeleteOrderGuide",
