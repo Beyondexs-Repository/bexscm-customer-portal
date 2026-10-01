@@ -234,7 +234,7 @@ const handleDownloadPdf = (invoiceNumber) => {
   ) : (
     <Download className="size-4" />
   )}
-  Download PDF
+  Invoice
 </Button>
 </td>
                     </tr>

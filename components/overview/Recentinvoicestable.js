@@ -122,7 +122,7 @@ export default function RecentInvoicesTable() {
 
         <Button asChild variant="outline" size="sm">
           <Link href="/invoices">
-            View all invoices
+            View all
             <ChevronRight className="size-4" />
           </Link>
         </Button>
@@ -204,7 +204,7 @@ export default function RecentInvoicesTable() {
                       ) : (
                         <Download className="size-4" />
                       )}
-                      Download PDF
+                      Invoice
                     </Button>
 </td>
                 </tr>

@@ -82,26 +82,30 @@ export default function InvoiceDetails({ invoiceId }) {
     </Button>
   )
 
-  if (!invoice) {
-    const message = loading
-      ? "Loading invoice..."
-      : error
-        ? typeof error === "string"
-          ? error
-          : error?.message || "Something went wrong."
-        : "Invoice not found."
+ if (!invoice) {
+  const message = loading
+    ? "Loading invoice..."
+    : typeof error === "string"
+      ? error
+      : error?.message || "Invoice not found."
 
-    return (
-      <main className="space-y-4 p-4">
-        {backButton}
-        <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
-            {message}
-          </CardContent>
-        </Card>
-      </main>
-    )
-  }
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground"
+    >
+      {loading ? (
+        <>
+          <Loader2 className="size-6 animate-spin text-primary" />
+          <p className="text-xs font-medium">{message}</p>
+        </>
+      ) : (
+        <p className="text-xs font-medium">{message}</p>
+      )}
+    </div>
+  )
+}
 
   const total = Number(invoice.total) || 0
   const balance = Number(invoice.balance) || 0
@@ -146,7 +150,7 @@ export default function InvoiceDetails({ invoiceId }) {
   ) : (
     <FileDown className="size-4" />
   )}
-  {pdfLoading ? "Preparing..." : "Download PDF"}
+  {pdfLoading ? "Preparing..." : "Download"}
 </Button>
           <Button size="sm" className="w-full">
             <Share2 className="size-4" />
