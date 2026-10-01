@@ -39,6 +39,21 @@ const initialState = {
   orderGroupItemsLoading: false,
   orderGroupItemsStatus: "idle",
   orderGroupItemsError: null,
+ 
+  // ── Ivoice GET /Customer Invoice ────
+  customerInvoicesdata: [],
+  customerInvoicesloading: false,
+  customerInvoicesStatus: "idle",
+  customerInvoiceserror: null,
+ // Invoice details
+  GetInvoicedetailsdata: null,
+  GetInvoicedetailsloading: false,
+  GetInvoicedetailsStatus: "idle",
+  GetInvoicedetailserror: null,
+
+   // InvoicePDF details
+  GetinvoicePDFloading: false,
+  GetinvoicePDFerror: null,
 
   error: null,
 }
@@ -214,44 +229,6 @@ export const GetOrderGroupItems = createAsyncThunk(
 
 
 // ── GET /ORDERGUIDE/Download PAR Sheet ───────────────────────────
-// export const GetOrderGuidePARsheet = createAsyncThunk(
-//   "orderGuide/PARsheetdownload",
-//   async (orderGuideID, { rejectWithValue }) => {
-//     try {
-
-//       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orderguides/par-sheet/${orderGuideID}`;
-
-//       const response = await axios.get(URL, {
-//         headers: {
-//           Accept: "application/json",
-//           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-//         },
-//       });
-
-//       const result = response.data;
-
-//       if (result?.success === false) {
-//         throw new Error(
-//           result?.Msg ||
-//             result?.message ||
-//             "Failed to fetch order guides."
-//         );
-//       }
-
-//       const list = Array.isArray(result)
-//         ? result
-//         : Array.isArray(result?.data)
-//           ? result.data
-//           : [];
-
-//       return list;
-//     } catch (error) {
-//       return rejectWithValue(
-//         error.response ? error.response.data : error.message
-//       );
-//     }
-//   }
-// );
 export const GetOrderGuidePARsheet = createAsyncThunk(
   "orderGuide/PARsheetdownload",
   async (orderGuideID, { rejectWithValue }) => {
@@ -317,6 +294,172 @@ export const GetOrderGuidePARsheet = createAsyncThunk(
         }
       }
       return rejectWithValue(error.response ? error.response.data : error.message)
+    }
+  }
+)
+
+
+
+// ── GET /Invoice/{CustomerInvoiceItems} ───────────────────────────
+export const GetCustomerInvoiceItems = createAsyncThunk(
+  "Invoice/CustomerInvoiceItems",
+  async (_, { rejectWithValue }) => {
+    try {
+      const custnmbr = localStorage.getItem("custnmbr");
+
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/invoices/customer/${custnmbr}`
+      console.log("CustomerInvoiceItems URL:", URL)
+
+      const response = await axios.get(URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      })
+
+      const result = response.data
+
+      if (result?.success === false) {
+        throw new Error(result?.Msg || result?.message || "Failed to fetch order group items.")
+      }
+
+      return Array.isArray(result) ? result : Array.isArray(result?.data) ? result.data : []
+    } catch (error) {
+      return rejectWithValue(error.response ? error.response.data : error.message)
+    }
+  }
+)
+
+// ── GET /invoices/{invoiceNumber}  (invoice details) ─────────────────────────
+export const GetInvoicedetails = createAsyncThunk(
+  "Invoice_list/Invoice_Details",
+  async (INVNumber, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/invoices/${encodeURIComponent(INVNumber)}`
+      console.log("Invoice_Details URL:", URL)
+ 
+      const response = await axios.get(URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      })
+ 
+      const result = response.data
+ 
+      if (result?.success === false) {
+        throw new Error(result?.Msg || result?.message || "Failed to fetch invoice details.")
+      }
+ 
+      // details endpoint: data is an OBJECT (not an array).
+      // The old line returned [] here, which is why nothing showed up.
+      const data = result?.data
+      return data && !Array.isArray(data) ? data : null
+    } catch (error) {
+      return rejectWithValue(error.response ? error.response.data : error.message)
+    }
+  }
+)
+
+// ── GET /Invoice/Download Invoice_PDF ───────────────────────────
+// export const GetinvoicePDF = createAsyncThunk(
+//   "INVOICE_GET/InvoicePDF",
+//   async (INVNumber, { rejectWithValue }) => {
+//     try {
+//       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/invoices/pdf/${INVNumber}`
+
+//       const response = await axios.get(URL, {
+//         responseType: "blob", // required for file downloads
+//         headers: {
+//           Accept: "*/*",
+//           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+//         },
+//       })
+
+//       const contentType =
+//         response.headers["content-type"] || "application/octet-stream"
+
+//       // Some APIs return a JSON error body with HTTP 200
+//       if (contentType.includes("application/json")) {
+//         const text = await response.data.text()
+//         let json = null
+//         try { json = JSON.parse(text) } catch {}
+//         throw new Error(json?.Msg || json?.message || "Failed to download PAR sheet.")
+//       }
+
+//       // File name: from Content-Disposition if available, otherwise build one
+//       const disposition = response.headers["content-disposition"] || ""
+//       const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)
+//       let fileName = match ? decodeURIComponent(match[1]) : null
+
+//       if (!fileName) {
+//         const ext = contentType.includes("pdf")
+//           ? "pdf"
+//           : contentType.includes("csv")
+//             ? "csv"
+//             : contentType.includes("spreadsheet") || contentType.includes("excel")
+//               ? "xlsx"
+//               : "xlsx" // <-- change if your API returns another type
+//         fileName = `PAR-Sheet-${orderGuideID}.${ext}`
+//       }
+
+//       // Trigger the browser download
+//       const blobUrl = window.URL.createObjectURL(
+//         new Blob([response.data], { type: contentType }),
+//       )
+//       const link = document.createElement("a")
+//       link.href = blobUrl
+//       link.download = fileName
+//       document.body.appendChild(link)
+//       link.click()
+//       link.remove()
+//       window.URL.revokeObjectURL(blobUrl)
+
+//       return { fileName }
+//     } catch (error) {
+//       // With responseType "blob", error bodies also arrive as a Blob
+//       if (error.response?.data instanceof Blob) {
+//         try {
+//           const text = await error.response.data.text()
+//           return rejectWithValue(JSON.parse(text))
+//         } catch {
+//           return rejectWithValue(`Failed to download PAR sheet. HTTP ${error.response.status}`)
+//         }
+//       }
+//       return rejectWithValue(error.response ? error.response.data : error.message)
+//     }
+//   }
+// )
+
+
+export const GetinvoicePDF = createAsyncThunk(
+  "Invoice/InvoicePDF",
+  async (invoiceNumber, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/invoices/pdf/${encodeURIComponent(invoiceNumber)}` // <-- your real PDF endpoint
+
+      const response = await axios.get(URL, {
+        responseType: "blob",
+        headers: {
+          Accept: "application/pdf",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      })
+
+      const blobUrl = window.URL.createObjectURL(
+        new Blob([response.data], { type: "application/pdf" }),
+      )
+      const a = document.createElement("a")
+      a.href = blobUrl
+      a.download = `${invoiceNumber}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(blobUrl)
+
+      return { invoiceNumber }
+    } catch (error) {
+      return rejectWithValue(error.response ? error.message : error.message)
     }
   }
 )
@@ -431,6 +574,59 @@ const getSlice = createSlice({
         state.orderGroupItemsError = action.payload || action.error.message
         state.orderGroupItemsData = []
       })
+
+      // ── GetCustomerInvoiceItems_GET addcase ──────────────────────────────────────────
+      .addCase(GetCustomerInvoiceItems.pending, (state) => {
+        state.customerInvoicesStatus = "loading"
+        state.customerInvoicesloading = true
+        state.itemsError = null
+      })
+      .addCase(GetCustomerInvoiceItems.fulfilled, (state, action) => {
+        state.customerInvoicesStatus = "succeeded"
+        state.customerInvoicesloading = false
+        state.customerInvoicesdata = action.payload
+      })
+      .addCase(GetCustomerInvoiceItems.rejected, (state, action) => {
+        state.customerInvoicesStatus = "failed"
+        state.customerInvoicesloading = false
+        state.customerInvoiceserror = action.payload || action.error.message
+        state.customerInvoicesdata = []
+      })
+
+      
+           // ── Invoice / GetInvoicedetails_GET addcase ──────────────────────────────────────────
+     // ── Invoice details ────────────────────────────────────────────────────
+      .addCase(GetInvoicedetails.pending, (state) => {
+        state.GetInvoicedetailsStatus = "loading"
+        state.GetInvoicedetailsloading = true
+        state.GetInvoicedetailserror = null // removed state.itemsError
+      })
+      .addCase(GetInvoicedetails.fulfilled, (state, action) => {
+        state.GetInvoicedetailsStatus = "succeeded"
+        state.GetInvoicedetailsloading = false
+        state.GetInvoicedetailsdata = action.payload // object or null
+      })
+      .addCase(GetInvoicedetails.rejected, (state, action) => {
+        state.GetInvoicedetailsStatus = "failed"
+        state.GetInvoicedetailsloading = false
+        state.GetInvoicedetailserror = action.payload || action.error.message
+        state.GetInvoicedetailsdata = null
+      })
+    
+
+      
+// Invoice_PDF
+  .addCase(GetinvoicePDF.pending, (state) => {
+  state.GetinvoicePDFloading = true
+  state.GetinvoicePDFerror = null
+})
+.addCase(GetinvoicePDF.fulfilled, (state) => {
+  state.GetinvoicePDFloading = false
+})
+.addCase(GetinvoicePDF.rejected, (state, action) => {
+  state.GetinvoicePDFloading = false
+  state.GetinvoicePDFerror = action.payload || action.error.message
+})
   },
 })
 

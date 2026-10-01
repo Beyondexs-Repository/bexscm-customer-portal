@@ -1,18 +1,19 @@
 "use client"
 
 import Link from "next/link"
+import { useEffect, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
-import { ArrowLeft, FileDown, Share2 } from "lucide-react"
+import { useDispatch, useSelector } from "react-redux"
+import { ArrowLeft, FileDown, Share2, Loader2 } from "lucide-react"
 
-import invoiceLines from "@/data/livedata/Invoices.json"
-import statuses from "@/data/livedata/InvoicesStatus.json"
-import items from "@/data/livedata/Items.json"
-import proprietaryItems from "@/data/livedata/ProprietaryItems.json"
+import { GetInvoicedetails,  GetinvoicePDF} from "../../redux/slices/getSlice"
 import InvoicePagination from "@/components/invoices/InvoicePagination"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
+import { resolveItemImageUrl } from "@/lib/api/itemsApi"
+
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -21,71 +22,107 @@ const money = new Intl.NumberFormat("en-US", {
 
 const clean = (value) => String(value ?? "").trim()
 
-const date = (value) =>
-  new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value))
+const date = (value) => {
+  const d = new Date(value)
+  return Number.isNaN(d.getTime())
+    ? "-"
+    : new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }).format(d)
+}
 
+// API returns image as "" or just a filename like "500002.png".
+
+const placeholderImage = getCategoryPlaceholderImage("Product")
+
+// "" / null  -> default placeholder
+// "500002.png" -> resolved image URL (same logic as cart-sidebar)
+const resolveImage = (image) => {
+  const file = clean(image)
+  if (!file) return placeholderImage
+  return resolveItemImageUrl(file) || file
+}
 const rowOptions = [5, 10, 20, 50, 100]
 
 export default function InvoiceDetails({ invoiceId }) {
   const searchParams = useSearchParams()
+  const dispatch = useDispatch()
+
+  const invoiceData = useSelector((state) => state.getSlice.GetInvoicedetailsdata)
+  const loading = useSelector((state) => state.getSlice.GetInvoicedetailsloading)
+  const error = useSelector((state) => state.getSlice.GetInvoicedetailserror)
+
+
+  const pdfLoading = useSelector((state) => state.getSlice.GetinvoicePDFloading)
+
   const requestedPage = Number.parseInt(searchParams.get("page") ?? "", 10) || 1
-  const requestedPageSize =
-    Number.parseInt(searchParams.get("rows") ?? "", 10) || 5
-  const pageSize = rowOptions.includes(requestedPageSize)
-    ? requestedPageSize
-    : 5
-  const lines = invoiceLines.filter(
-    (line) => clean(line.InvoiceNumber) === invoiceId,
+  const requestedPageSize = Number.parseInt(searchParams.get("rows") ?? "", 10) || 5
+  const pageSize = rowOptions.includes(requestedPageSize) ? requestedPageSize : 5
+
+  useEffect(() => {
+    if (invoiceId) dispatch(GetInvoicedetails(invoiceId))
+  }, [invoiceId, dispatch])
+
+  // Ignore stale data from a previously opened invoice
+  const invoice = useMemo(() => {
+    if (!invoiceData || clean(invoiceData.invoiceNumber) !== clean(invoiceId)) return null
+    return invoiceData
+  }, [invoiceData, invoiceId])
+
+  const lines = invoice?.items ?? []
+
+  const backButton = (
+    <Button asChild variant="ghost" size="sm" className="px-0">
+      <Link href="/invoices">
+        <ArrowLeft className="size-4" />
+        Back to Invoices
+      </Link>
+    </Button>
   )
 
-  if (lines.length === 0) {
+  if (!invoice) {
+    const message = loading
+      ? "Loading invoice..."
+      : error
+        ? typeof error === "string"
+          ? error
+          : error?.message || "Something went wrong."
+        : "Invoice not found."
+
     return (
       <main className="space-y-4 p-4">
-        <Button asChild variant="ghost" size="sm" className="px-0">
-          <Link href="/invoices">
-            <ArrowLeft className="size-4" />
-            Back to Invoices
-          </Link>
-        </Button>
+        {backButton}
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
-            Invoice not found.
+            {message}
           </CardContent>
         </Card>
       </main>
     )
   }
 
-  const firstLine = lines[0]
-  const status =
-    statuses.find((item) => clean(item.InvoiceNumber) === invoiceId) ?? {}
-  const total = Number(firstLine.OrderAmount) || 0
-  const balance = Number(status.Balance) || 0
-  const paidAmount = Number.isFinite(Number(status.PaidAmount))
-    ? Number(status.PaidAmount)
-    : Math.max(total - balance, 0)
-  const statusLabel = clean(status.Status) || "Open"
+  const total = Number(invoice.total) || 0
+  const balance = Number(invoice.balance) || 0
+  const paidAmount = Number(invoice.paidAmount) || 0
+  const statusLabel = clean(invoice.status) || "Open"
+
   const totalPages = Math.max(1, Math.ceil(lines.length / pageSize))
   const currentPage = Math.min(Math.max(requestedPage, 1), totalPages)
   const start = (currentPage - 1) * pageSize
   const products = lines.slice(start, start + pageSize)
-  const itemsByNumber = new Map(items.map((item) => [clean(item.ITEMNMBR), item]))
-  const proprietaryByNumber = new Map(
-    proprietaryItems.map((item) => [clean(item.ItemNmbr), item]),
-  )
+
+  const handleDownloadPdf = () => {
+  dispatch(GetinvoicePDF(invoiceId))
+    .unwrap()
+    .catch((err) => console.error("PDF download failed:", err))
+}
+
 
   return (
     <main className="space-y-5 p-4">
-      <Button asChild variant="ghost" size="sm" className="px-0">
-        <Link href="/invoices">
-          <ArrowLeft className="size-4" />
-          Back to Invoices
-        </Link>
-      </Button>
+      {backButton}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -96,15 +133,21 @@ export default function InvoiceDetails({ invoiceId }) {
             </Badge>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {date(firstLine.InvoiceDate)} - Due {date(firstLine.DueDate)}
+            {date(invoice.invoiceDate)} - Due {date(invoice.dueDate)}
           </p>
         </div>
 
         <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:min-w-80">
-          <Button variant="outline" size="sm" className="w-full">
-            <FileDown className="size-4" />
-            Download PDF
-          </Button>
+          <Button variant="outline" size="sm" className="w-full"
+          onClick={handleDownloadPdf}
+          disabled={pdfLoading}>
+            {pdfLoading ? (
+    <Loader2 className="size-4 animate-spin" />
+  ) : (
+    <FileDown className="size-4" />
+  )}
+  {pdfLoading ? "Preparing..." : "Download PDF"}
+</Button>
           <Button size="sm" className="w-full">
             <Share2 className="size-4" />
             Share
@@ -121,9 +164,7 @@ export default function InvoiceDetails({ invoiceId }) {
         ].map(([label, value]) => (
           <Card key={label} className="py-0">
             <CardContent className="p-4">
-              <p className="text-xs font-semibold text-muted-foreground">
-                {label}
-              </p>
+              <p className="text-xs font-semibold text-muted-foreground">{label}</p>
               <p className="mt-2 text-lg font-bold">{value}</p>
             </CardContent>
           </Card>
@@ -147,57 +188,55 @@ export default function InvoiceDetails({ invoiceId }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {products.map((product) => {
-                    const item =
-                      itemsByNumber.get(clean(product.ItemNumber)) ??
-                      proprietaryByNumber.get(clean(product.ItemNumber))
-                    const image = getCategoryPlaceholderImage(
-                      item?.MainGroup || "Product",
-                    )
-
-                    return (
-                      <tr key={`${product.ItemNumber}-${product.LineItemAmount}`}>
+                  {products.length > 0 ? (
+                    products.map((product, index) => (
+                      <tr key={`${product.itemNumber}-${start + index}`}>
                         <td className="px-4 py-3">
                           <div className="flex min-w-0 items-center gap-3">
                             <div
                               role="img"
-                              aria-label={clean(product.ItemDescription)}
+                              aria-label={clean(product.itemDescription)}
                               className="size-11 shrink-0 rounded-md border bg-cover bg-center"
-                              style={{ backgroundImage: `url(${image})` }}
+                              style={{ backgroundImage: `url("${resolveImage(product.image)}")` }}
                             />
                             <div className="min-w-0">
                               <p className="truncate font-semibold">
-                                {clean(product.ItemDescription)}
+                                {clean(product.itemDescription)}
                               </p>
                               <p className="truncate text-xs text-muted-foreground">
-                                {clean(product.PackSizeDescription)}
+                                {clean(product.packSizeDescription)}
                               </p>
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          {money.format(Number(product.UnitPrice) || 0)}
+                          {money.format(Number(product.unitPrice) || 0)}
                         </td>
-                        <td className="px-4 py-3">
-                          {Number(product.ShippedQuantity) || 0}
-                        </td>
-                        <td className="px-4 py-3">
-                          {clean(product.SellByUnitofMeasure)}
-                        </td>
+                        <td className="px-4 py-3">{Number(product.quantity) || 0}</td>
+                        <td className="px-4 py-3">{clean(product.unit)}</td>
                         <td className="px-4 py-3 text-right font-semibold">
-                          {money.format(Number(product.LineItemAmount) || 0)}
+                          {money.format(Number(product.total) || 0)}
                         </td>
                       </tr>
-                    )
-                  })}
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-4 py-12 text-center text-muted-foreground"
+                      >
+                        No products found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
 
             <div className="flex flex-col gap-3 border-t px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
               <span>
-                Showing {start + 1} to {Math.min(start + pageSize, lines.length)}{" "}
-                of {lines.length} products
+                Showing {lines.length === 0 ? 0 : start + 1} to{" "}
+                {Math.min(start + pageSize, lines.length)} of {lines.length} products
               </span>
               <InvoicePagination
                 currentPage={currentPage}
