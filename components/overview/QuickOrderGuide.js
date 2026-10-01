@@ -370,7 +370,7 @@ export default function QuickOrderGuide() {
 
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
-      <div className="flex items-center justify-between gap-2 border-b px-4 py-4">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b px-4 py-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300">
             <BookOpen className="size-5" />
@@ -391,7 +391,7 @@ export default function QuickOrderGuide() {
         </Button>
       </div>
 
-      <div className="flex h-full flex-1 flex-col p-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
         {isLoading ? (
           <div
             role="status"
@@ -402,7 +402,7 @@ export default function QuickOrderGuide() {
             <p className="text-xs font-medium">Loading quick orders...</p>
           </div>
         ) : guides.length > 0 ? (
-          <div className="flex-1">
+          <div className="min-h-0 flex-1 overflow-y-auto pr-2">
             <div className="grid gap-2">
               {guides.map((guide) => {
                 const isSelected = selectedIds.includes(guide.id)
@@ -465,7 +465,7 @@ export default function QuickOrderGuide() {
           </div>
         )}
 
-        <div className="mt-auto grid grid-cols-2 gap-2 border-t pt-3">
+        <div className="mt-auto grid shrink-0 grid-cols-2 gap-2 border-t pt-3">
           <Button
             type="button"
             variant="outline"

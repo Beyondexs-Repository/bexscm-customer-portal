@@ -7,6 +7,7 @@
       { "id": "order-guide", "title": "Order Guide", "path": "/order-guide", "footer": true },
       { "id": "catalog", "title": "Catalog", "path": "/catalog", "footer": true },
       { "id": "my-orders", "title": "My Orders", "path": "/my-orders", "footer": true },
+      { "id": "metrics", "title": "Metrics", "path": "/metrics" },
       { "id": "invoices", "title": "Invoices", "path": "/invoices" },
       { "id": "messages", "title": "Messages", "path": "/messages", "footer": true },
       { "id": "employees", "title": "Employees", "path": "/employees" }
