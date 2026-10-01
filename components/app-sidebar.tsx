@@ -28,6 +28,7 @@ import {
   MegaphoneIcon,
   ReceiptTextIcon,
   UserRoundIcon,
+  ChartNoAxesCombined,
 } from "lucide-react";
 import { RxDashboard } from "react-icons/rx";
 import { LuNotepadText } from "react-icons/lu";
@@ -46,6 +47,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
     "my-orders": <LuNotepadText />,
     invoices: <ReceiptTextIcon />,
     messages: <MessageCircle />,
+    metrics: <ChartNoAxesCombined />,
     employees: <Users />,
     users: <UserCog />,
     orders: <ClipboardListIcon />,

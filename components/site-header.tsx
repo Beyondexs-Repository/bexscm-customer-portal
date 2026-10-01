@@ -701,6 +701,7 @@ const HEADER_ROUTES = [
   ["/my-orders", "My Orders", "Review current and previous orders"],
   ["/invoices/details", "Invoice Details", "Review invoice charges, payments, and balances"],
   ["/invoices", "Invoices", "Review invoice totals, payments, balances, and status", true],
+  ["/metrics", "Metrics", "Review purchasing trends, order activity, and invoice balances"],
   ["/messages", "Messages", "Contact support and review conversations"],
   ["/employees", "Employees", "View and manage store employees"],
   ["/users", "Users", "View and manage customer portal users"],

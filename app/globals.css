@@ -193,7 +193,7 @@ button{
 /* Scroll bar Styles */
 
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 5px;
   height: 8px;
 }
 

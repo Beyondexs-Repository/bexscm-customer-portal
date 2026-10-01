@@ -214,11 +214,11 @@ export default function Overview() {
       <WelcomeCard />
       <QuickActions />
       <RecommendedItems />
-      <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-3">
-        <div className="order-1 h-full min-w-0 lg:order-2 lg:col-span-1">
+        <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-3">
+        <div className="order-1 h-full min-h-0 min-w-0 lg:order-2 lg:col-span-1">
           <QuickOrderGuide />
         </div>
-        <div className="order-2 h-full min-w-0 lg:order-1 lg:col-span-2">
+        <div className="order-2 h-full min-h-0 min-w-0 lg:order-1 lg:col-span-2">
           <RecentOrdersTable />
         </div>
       </div>

@@ -1769,8 +1769,7 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const { items, incrementItem, decrementItem, fetchCustomerCart } =
     useCart();
 
-  const { dashboardQuickOrderIds, setDashboardQuickOrderIds } =
-    useQuickOrders();
+  const { quickOrders } = useQuickOrders();
   const [productToMove, setProductToMove] = useState(null);
   const [duplicate, setDuplicate] = useState(false);
   const [activeProductId, setActiveProductId] = useState(null);
@@ -1830,8 +1829,10 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
     (product) => cartQuantities.get(getCartProductId(product)) > 0,
   );
   const allSelected = products.length > 0 && selectedCount === products.length;
-  const isOnDashboard =
-    Boolean(selectedOrder) && dashboardQuickOrderIds.includes(selectedOrder.id);
+  const isOnDashboard = selectedOrder?.quickOrder === "Y";
+  const dashboardQuickOrderCount = quickOrders.filter(
+    (order) => order.quickOrder === "Y",
+  ).length;
 
   // function toggleDashboardQuickOrder() {
   //   if (!selectedOrder) return;
@@ -1871,8 +1872,10 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
         PutOrderGuideQuikorders({ orderGuideID, quickOrder: "N", modifyBY }),
       ).unwrap();
 
-      setDashboardQuickOrderIds((ids) =>
-        ids.filter((id) => id !== selectedOrder.id),
+      setQuickOrders((orders) =>
+        orders.map((order) =>
+          order.id === selectedOrder.id ? { ...order, quickOrder: "N" } : order,
+        ),
       );
       toast.success("Removed from the Quick Order card.");
     } catch (error) {
@@ -1885,7 +1888,7 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   }
 
   // Adding
-  if (dashboardQuickOrderIds.length >= 4) {
+  if (dashboardQuickOrderCount >= 4) {
     toast.error("You can show only 4 quick orders on the overview.");
     return;
   }
@@ -1896,7 +1899,11 @@ const [isDeletingProduct, setIsDeletingProduct] = useState(false);
       PutOrderGuideQuikorders({ orderGuideID, quickOrder: "Y", modifyBY }),
     ).unwrap();
 
-    setDashboardQuickOrderIds((ids) => [...ids, selectedOrder.id]);
+    setQuickOrders((orders) =>
+      orders.map((order) =>
+        order.id === selectedOrder.id ? { ...order, quickOrder: "Y" } : order,
+      ),
+    );
     toast.success("Added to the Quick Order card.");
   } catch (error) {
     console.error("Add quick order failed:", error);
