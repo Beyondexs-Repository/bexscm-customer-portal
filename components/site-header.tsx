@@ -996,7 +996,7 @@ async function handleCheckout() {
     <header
       data-slot="site-header"
       className={cn(
-        "sticky top-0 z-30 flex min-h-16 shrink-0 items-center justify-between gap-3 border-b bg-background px-3 py-2 transition-[width] ease-linear sm:px-4 lg:px-6",
+        "@container/header sticky top-0 z-30 flex min-h-16 shrink-0 items-center justify-between gap-3 border-b bg-background px-3 py-2 transition-[width] ease-linear sm:px-4 lg:px-6",
         className
       )}
       {...props}
@@ -1008,21 +1008,21 @@ async function handleCheckout() {
           className="mr-2 data-vertical:h-4 data-vertical:self-auto"
         />
         {(title || description) && (
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             {title && (
               <h1 className="truncate text-sm font-semibold leading-tight sm:text-base sm:leading-5">
                 {title}
               </h1>
             )}
             {description && (
-  <p className="mt-0.5 hidden max-w-full break-words text-[11px] leading-tight text-muted-foreground sm:block sm:text-xs sm:leading-5">
-    {description}
-  </p>
-)}
+              <p className="mt-0.5 hidden truncate text-xs leading-5 text-muted-foreground @min-[900px]/header:block">
+                {description}
+              </p>
+            )}
           </div>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-2 pr-1 sm:gap-4 sm:pr-3">
+      <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 pr-1 @min-[900px]/header:gap-4">
         {isMessagesPage ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1061,7 +1061,7 @@ async function handleCheckout() {
             <button
               ref={calendarTriggerRef}
               type="button"
-              className="hidden rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:block"
+              className="hidden shrink-0 rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring @min-[900px]/header:block"
               onClick={() => setCalendarOpen((open) => !open)}
               aria-expanded={calendarOpen}
             >
@@ -1077,7 +1077,7 @@ async function handleCheckout() {
             {calendarOpen && (
               <div
                 ref={calendarRef}
-                className="absolute top-14 right-28 z-40 w-64 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg"
+                className="absolute right-3 top-full z-40 mt-1 w-64 max-w-[calc(100%-1.5rem)] rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg"
               >
                 <div className="mb-3 flex items-center justify-between">
                   <button
@@ -1147,21 +1147,21 @@ async function handleCheckout() {
                 </div>
               </div>
             )}
-            <Separator orientation="vertical" className="hidden h-8 sm:block" />
+            <Separator orientation="vertical" className="hidden h-8 @min-[900px]/header:block" />
             <HeaderInfoItem
               icon={Clock3Icon}
               caption={t("cutoffTime")}
               label={`${CUTOFF_TIME} ${CUTOFF_DATE}`}
-              className="hidden sm:block"
+              className="hidden shrink-0 @min-[900px]/header:block"
             />
-            <Separator orientation="vertical" className="hidden h-8 sm:block" />
+            <Separator orientation="vertical" className="hidden h-8 @min-[900px]/header:block" />
           </>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="rounded-full outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
+              className="shrink-0 rounded-full outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring @min-[900px]/header:hidden"
               aria-label={t("openProfileMenu")}
             >
               <Avatar className="size-8">
@@ -1202,35 +1202,35 @@ async function handleCheckout() {
         </DropdownMenu>
         <button
           type="button"
-          className="relative flex size-9 items-center justify-center rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:size-auto sm:px-1"
+          className="relative flex size-9 shrink-0 items-center justify-center rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring @min-[900px]/header:size-auto @min-[900px]/header:px-1"
           onClick={() => setUploadOpen(true)}
           aria-label="Upload Files"
         >
-          <UploadCloudIcon className="size-5 text-primary sm:hidden" />
+          <UploadCloudIcon className="size-5 text-primary @min-[900px]/header:hidden" />
           <HeaderInfoItem
             icon={UploadCloudIcon}
             caption="AI Quick Action"
             label="Upload"
-            className="hidden sm:block"
+            className="hidden @min-[900px]/header:block"
           />
         </button>
-        <Separator orientation="vertical" className="hidden h-8 sm:block" />
+        <Separator orientation="vertical" className="hidden h-8 @min-[900px]/header:block" />
 
         {!isMessagesPage && (
           <button
             type="button"
-            className="relative flex size-9 items-center justify-center rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:size-auto sm:px-1"
+            className="relative flex size-9 shrink-0 items-center justify-center rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring @min-[900px]/header:size-auto @min-[900px]/header:px-1"
             onClick={() => setCartOpen(true)}
             aria-label={t("openCart")}
           >
-            <ShoppingCartIcon className="size-5 text-primary sm:hidden" />
+            <ShoppingCartIcon className="size-5 text-primary @min-[900px]/header:hidden" />
             <HeaderInfoItem
               icon={ShoppingCartIcon}
               caption={t("cart")}
               label={formattedCartTotal}
-              className="hidden sm:block"
+              className="hidden @min-[900px]/header:block"
             />
-            <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-primary text-[10px] font-semibold leading-none text-primary-foreground sm:right-1">
+            <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-primary text-[10px] font-semibold leading-none text-primary-foreground @min-[900px]/header:right-1">
               {itemCount}
             </span>
           </button>
