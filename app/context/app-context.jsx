@@ -2,7 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 
-import catalog from "@/data/data.json"
+import { useSelector } from "react-redux"
+import { getCatalogProducts } from "@/lib/catalog-products"
+import { getCustomerNumber } from "@/lib/customer"
 import { findCatalogProduct } from "@/lib/catalog-products"
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
 import { postCartApi, updateCartQuantityApi, checkoutOrderApi, importDocumentCartApi, getCustomerCartApi } from "@/lib/api/cartApi"
@@ -74,7 +76,7 @@ function mapCustomerCartItems(cartItems, liveItems) {
       item.itemNumber ?? item.ItemNumber ?? item.cartId ?? ""
     ).trim()
     const liveItem = liveItemsById.get(itemNum)
-    const catalogItem = findCatalogProduct(itemNum)
+    const catalogItem = findCatalogProduct(itemNum, liveItems)
     const name =
       item.itemName ??
       item.ItemName ??
@@ -220,6 +222,8 @@ function touchQuickOrder(order) {
 }
 
 export function AppProvider({ children }) {
+  const liveItems = useSelector(state => state.getSlice.itemsData)
+  const catalog = useMemo(() => getCatalogProducts(liveItems), [liveItems])
   const [cartItems, setCartItems] = useState([])
   const [quickOrders, setQuickOrders] = useState([])
   const [cartLoading, setCartLoading] = useState(false)
@@ -250,7 +254,7 @@ export function AppProvider({ children }) {
     )
   }, [quickOrders, storageHydrated])
 
-  const fetchCustomerCart = useCallback(async (custnmbr = "400001") => {
+  const fetchCustomerCart = useCallback(async (custnmbr = getCustomerNumber()) => {
     setCartLoading(true)
     try {
       const data = await getCustomerCartApi(custnmbr)
@@ -263,7 +267,7 @@ export function AppProvider({ children }) {
     item.cartId
   ).trim()
 
-          const matchedCatalogItem = findCatalogProduct(itemNum)
+          const matchedCatalogItem = findCatalogProduct(itemNum, liveItems)
 
           const name =
             item.itemName ||
@@ -362,12 +366,12 @@ export function AppProvider({ children }) {
     }finally {
       setCartLoading(false)
     }
-  }, [])
+  }, [liveItems])
 
   useEffect(() => {
-    if (!storageHydrated) return
+    if (!storageHydrated || !getCustomerNumber()) return
 
-    fetchCustomerCart()
+    queueMicrotask(() => fetchCustomerCart())
   }, [storageHydrated, fetchCustomerCart])
 
   // useEffect(() => {
@@ -377,7 +381,7 @@ export function AppProvider({ children }) {
   //       if (!ignore && Array.isArray(data)) {
   //         const mappedItems = data.map((item) => {
   //           const itemNum = String(item.itemNumber || item.ItemNumber || item.cartId).trim()
-  //           const matchedCatalogItem = findCatalogProduct(itemNum)
+  //           const matchedCatalogItem = findCatalogProduct(itemNum, liveItems)
   //           const name = item.itemName || item.requestedItemName || matchedCatalogItem?.name || `Item ${itemNum}`
   //           const price = matchedCatalogItem?.price || 12.50
   //           const unit = matchedCatalogItem?.unit || "LB"
@@ -440,7 +444,7 @@ export function AppProvider({ children }) {
       itemNumber: product.ITEMNMBR || product.ItemNumber || product.itemnmbr || product.sku || product.id,
       itemName: product.ITEMDESC || product.ItemName || product.itemdesc || product.name,
       quantity,
-      custnmbr: "400001",
+      custnmbr: getCustomerNumber(),
       source: "App/Web",
     }).catch((error) => {
       console.warn("Failed to sync cart item to Cart API endpoint:", error.message)
@@ -462,7 +466,7 @@ export function AppProvider({ children }) {
     updateCartQuantityApi({
       itemNumber: productId,
       quantity: nextQuantity,
-      custnmbr: "400001",
+      custnmbr: getCustomerNumber(),
     }).catch((error) => {
       console.warn("Failed to sync cart item quantity PUT request:", error.message)
     })
@@ -485,7 +489,7 @@ export function AppProvider({ children }) {
     updateCartQuantityApi({
       itemNumber: productId,
       quantity: nextQuantity,
-      custnmbr: "400001",
+      custnmbr: getCustomerNumber(),
     }).catch((error) => {
       console.warn("Failed to sync cart item quantity PUT request:", error.message)
     })
@@ -499,7 +503,7 @@ export function AppProvider({ children }) {
     updateCartQuantityApi({
       itemNumber: productId,
       quantity: 0,
-      custnmbr: "400001",
+      custnmbr: getCustomerNumber(),
     }).catch((error) => {
       console.warn("Failed to sync cart item delete PUT request:", error.message)
     })
@@ -617,7 +621,7 @@ export function AppProvider({ children }) {
       addProductToQuickOrder,
       removeProductFromQuickOrder,
     }
-  }, [cartItems, cartLoading, dashboardQuickOrderIds, fetchCustomerCart, quickOrders])
+  }, [catalog, cartItems, cartLoading, dashboardQuickOrderIds, fetchCustomerCart, quickOrders])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }

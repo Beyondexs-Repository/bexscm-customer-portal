@@ -1,4 +1,5 @@
 "use client"
+import { getCustomerNumber } from "@/lib/customer"
 
 import * as React from "react"
 import {
@@ -170,7 +171,7 @@ export function ChatbotWidget() {
     const text = userText.toLowerCase()
 
     if (text.includes("order") || text.includes("status") || text.includes("track")) {
-      return "You can view, search, and track all your live customer orders on the 'My Orders' page. Enter customer ID 400001 to review your order activity!"
+      return "You can view, search, and track your live customer orders on the 'My Orders' page."
     }
     if (text.includes("import") || text.includes("upload") || text.includes("csv") || text.includes("excel")) {
       return "You can upload documents, CSVs, or images right here in our chat or via the header Upload button to extract items into your cart automatically!"
@@ -224,10 +225,9 @@ export function ChatbotWidget() {
       // Intercept customer credentials queries (customer number / email address)
       const cleanPrompt = promptText.trim().toLowerCase()
       if (
-        cleanPrompt === "400001" ||
-        cleanPrompt === "yogeshbose2016@gmail.com" ||
+        cleanPrompt === getCustomerNumber() ||
         cleanPrompt === "customer number" ||
-        cleanPrompt === "customer number 400001" ||
+        cleanPrompt === `customer number ${getCustomerNumber()}` ||
         cleanPrompt === "email address" ||
         cleanPrompt === "customer email"
       ) {
@@ -235,7 +235,7 @@ export function ChatbotWidget() {
         const botMsg: ChatMessage = {
           id: botMsgId,
           sender: "bot",
-          text: "Customer Number 400001 and email yogeshbose2016@gmail.com are set for your account. What order number or cart items would you like me to process?",
+          text: `Your customer number is ${getCustomerNumber()}. What order number or cart items would you like me to process?`,
           time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         }
         setMessages((prev) => [...prev, botMsg])
@@ -255,7 +255,7 @@ export function ChatbotWidget() {
             toast.info(`Uploading & importing ${att.name}...`)
             const importRes = await postImportApi({
               file: att.file,
-              custnmbr: "400001",
+              custnmbr: getCustomerNumber(),
             })
 
             if (importRes) {
@@ -276,7 +276,7 @@ export function ChatbotWidget() {
         }
 
         if (importSuccess && typeof fetchCustomerCart === "function") {
-          await fetchCustomerCart("400001")
+          await fetchCustomerCart(getCustomerNumber())
           if (totalAddedCount > 0) {
             toast.success(`Successfully imported ${totalAddedCount} item(s) into your cart!`)
           }
@@ -299,7 +299,7 @@ export function ChatbotWidget() {
 
           const msgResponse = await postMessageApi({
             message: messageToPost,
-            custnmbr: "400001",
+            custnmbr: getCustomerNumber(),
           })
 
           if (msgResponse && msgResponse.reply) {
@@ -308,7 +308,7 @@ export function ChatbotWidget() {
 
           if (msgResponse && Array.isArray(msgResponse.added) && msgResponse.added.length > 0) {
             if (typeof fetchCustomerCart === "function") {
-              await fetchCustomerCart("400001")
+              await fetchCustomerCart(getCustomerNumber())
             }
             toast.success(`Added ${msgResponse.added.length} item(s) to your cart!`)
           }
@@ -322,8 +322,8 @@ export function ChatbotWidget() {
         try {
           const apiResponse = await sendChatMessage({
             message: promptText,
-            customerNumber: "400001",
-            email: "yogeshbose2016@gmail.com",
+            customerNumber: getCustomerNumber(),
+            email: "",
             history: historyPayload,
           })
 

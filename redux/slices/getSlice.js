@@ -1,3 +1,4 @@
+import { getCustomerNumber, requireCustomerNumber } from "@/lib/customer"
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axios from "axios"
 
@@ -20,7 +21,7 @@ const initialState = {
   ordersLoading: false,
   ordersStatus: "idle",
   ordersError: null,
-  ordersCustomerId: "400001",
+  ordersCustomerId: "",
 
   // ── Order Guide List  GET /orderguides/customer/{custnmbr} ─
   orderGuideListData: [],
@@ -68,7 +69,7 @@ export const GetItems = createAsyncThunk(
   "items/GetItems",
   async (_, { rejectWithValue }) => {
     try {
-      const custnmbr = localStorage.getItem("custnmbr")
+      const custnmbr = requireCustomerNumber()
       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/items?custNmbr=${custnmbr}`
 
       const response = await axios.get(URL, {
@@ -101,9 +102,9 @@ export const GetItems = createAsyncThunk(
 // ── GET /customers/{custnmbr}/orders ─────────────────────────────────────────
 export const GetCustomerOrders = createAsyncThunk(
   "orders/GetCustomerOrders",
-  async (custnmbr = "400001", { rejectWithValue }) => {
+  async (custnmbr = getCustomerNumber(), { rejectWithValue }) => {
     try {
-      const resolvedCust = String(custnmbr || "400001").trim()
+      const resolvedCust = requireCustomerNumber(custnmbr)
       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/customers/${resolvedCust}/orders`
       console.log("GetCustomerOrders URL:", URL)
 

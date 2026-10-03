@@ -155,7 +155,7 @@ const ratings = { ...serverRatings, ...(ratingsByOrder[order.id] || {}) }
                   {order.customerName || "Central Foodservice, Inc."}
                 </h4>
                 <p className="text-[11px] font-semibold text-muted-foreground mt-0.5">
-                  ID: {order.customerID || "400001"}
+                  ID: {order.customerID || "—"}
                 </p>
               </div>
             </div>

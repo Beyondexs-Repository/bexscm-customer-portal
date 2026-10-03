@@ -1,4 +1,5 @@
 "use client"
+import { getCustomerNumber } from "@/lib/customer"
 
 import * as React from "react"
 import {
@@ -130,12 +131,12 @@ export function GlobalUploadModal({
       // 1. Exclusively call POST https://crateapi.bexlgems.com/api/cartimport/import-document with CustNmbr: "400001" and File
       const response = await importDocumentCartApi({
         file: selectedFile,
-        custnmbr: "400001",
+        custnmbr: getCustomerNumber(),
       })
       console.log("Import document API response:", response)
 
       // 2. Immediately call GET Cart API (/cart/customer/400001) to fetch updated items from backend cart table!
-      await fetchCustomerCart("400001")
+      await fetchCustomerCart(getCustomerNumber())
 
       toast.success("Document imported successfully into cart!")
     } catch (error: unknown) {

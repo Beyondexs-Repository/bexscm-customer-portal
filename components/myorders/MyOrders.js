@@ -229,7 +229,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 
-import { DEFAULT_CUSTNMBR } from "@/lib/api/ordersApi"
 import { cn } from "@/lib/utils"
 
 import OrderList from "./OrderList"

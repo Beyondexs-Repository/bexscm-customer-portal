@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axios from "axios"
+import { getCustomerNumber } from "@/lib/customer"
 
 // ============================================================
 // INITIAL STATE  (Crea pattern — Data / Loading / Status / Error per thunk)
@@ -187,7 +188,7 @@ export const PostCart = createAsyncThunk(
 // ── PUT /cart/customer/{custnmbr}/item/{itemNumber} ──────────────────────────
 export const PutCartQuantity = createAsyncThunk(
   "cart/PutCartQuantity",
-  async ({ custnmbr = "400001", itemNumber, quantity }, { rejectWithValue }) => {
+  async ({ custnmbr = getCustomerNumber(), itemNumber, quantity }, { rejectWithValue }) => {
     try {
       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/cart/customer/${custnmbr}/item/${itemNumber}`
       console.log("PutCartQuantity URL:", URL)
@@ -213,7 +214,7 @@ export const PutCartQuantity = createAsyncThunk(
 // ── POST /checkout/{custnmbr} ────────────────────────────────────────────────
 export const PostCheckout = createAsyncThunk(
   "cart/PostCheckout",
-  async (custnmbr = "400001", { rejectWithValue }) => {
+  async (custnmbr = getCustomerNumber(), { rejectWithValue }) => {
     try {
       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/checkout/${custnmbr}`
       console.log("PostCheckout URL:", URL)

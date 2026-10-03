@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
 
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
@@ -21,7 +20,6 @@ import {
   Star,
   MessageCircle,
   Users,
-  UserCog,
   ShieldCheckIcon,
   BookOpenIcon,
   ClipboardListIcon,
@@ -36,10 +34,7 @@ import routes from "@/data/routes.json";
 import { LocationSwitcher } from "./location-switcher";
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
-  const pathname = usePathname()
-  const routeGroup = pathname.startsWith(routes.internal.basePath)
-    ? routes.internal
-    : routes.customer
+  const routeGroup = routes.customer
   const pageIcons: Record<string, React.ReactNode> = {
     overview: <RxDashboard />,
     "order-guide": <Star />,
@@ -49,7 +44,6 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
     messages: <MessageCircle />,
     metrics: <ChartNoAxesCombined />,
     employees: <Users />,
-    users: <UserCog />,
     orders: <ClipboardListIcon />,
     "roles-permissions": <ShieldCheckIcon />,
     profile: <UserRoundIcon />,

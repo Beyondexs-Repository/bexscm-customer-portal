@@ -21,7 +21,6 @@ import { CatalogListView } from "./CatalogListView";
 import { CatalogCard } from "./CatalogCard";
 import { toast } from "sonner";
 
-import staticItems from "@/data/livedata/Items.json";
 import { fetchItemsApi, resolveItemImageUrl } from "@/lib/api/itemsApi";
 import { useCart, useQuickOrders } from "@/app/context/app-context";
 import { OrderGuidePickerDialog } from "./OrderGuidePickerDialog";
@@ -533,7 +532,6 @@ export function Catalog() {
 
 const rawItems = useMemo(() => {
   if (itemsStatus === "succeeded") return itemsData
-  if (itemsStatus === "failed") return staticItems   // offline fallback
   return []                                          // idle / loading
 }, [itemsStatus, itemsData])
 
@@ -1079,6 +1077,11 @@ const rawItems = useMemo(() => {
           >
             <Loader2 className="size-6 animate-spin text-primary" />
             <p className="text-xs font-medium">Loading products...</p>
+          </div>
+        ) : itemsStatus === "failed" ? (
+          <div role="alert" className="grid justify-items-center gap-3 p-6 text-center">
+            <p className="text-sm text-muted-foreground">Unable to load products from the API.</p>
+            <Button variant="outline" onClick={() => dispatch(GetItems())}>Try again</Button>
           </div>
         ) : (
           <>

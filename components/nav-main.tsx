@@ -51,7 +51,7 @@ export function NavMain({
       <SidebarMenu className="gap-1">
         {items.map((item) => {
           const isActive =
-            item.url === "/" || item.url === "/backoffice"
+            item.url === "/"
               ? pathname === item.url
               : pathname.startsWith(item.url)
 

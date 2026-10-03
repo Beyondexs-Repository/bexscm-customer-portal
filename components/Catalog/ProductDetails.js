@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { GetItems } from "../../redux/slices/getSlice";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
@@ -13,8 +12,7 @@ import {
   Star,
 } from "lucide-react";
 
-import staticItems from "@/data/livedata/Items.json";
-import { fetchItemsApi, resolveItemImageUrl } from "@/lib/api/itemsApi";
+import { resolveItemImageUrl } from "@/lib/api/itemsApi";
 import { useCart, useQuickOrders } from "@/app/context/app-context";
 import { OrderGuidePickerDialog } from "@/components/Catalog/OrderGuidePickerDialog";
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
@@ -84,10 +82,7 @@ export function ProductDetails({ productId, backHref }) {
     addProductToQuickOrder,
     removeProductFromQuickOrder,
   } = useQuickOrders()
-  const pathname = usePathname()
-  const catalogPath = backHref ?? (pathname.startsWith("/backoffice")
-    ? "/backoffice/catalog"
-    : "/catalog")
+  const catalogPath = backHref ?? "/catalog"
   
 const dispatch = useDispatch();
 const itemsData = useSelector((state) => state.getSlice.itemsData);
@@ -98,10 +93,7 @@ useEffect(() => {
   if (itemsStatus === "idle") dispatch(GetItems());
 }, [itemsStatus, dispatch]);
 
-const rawItems = useMemo(
-  () => (itemsData.length > 0 ? itemsData : itemsStatus === "failed" ? staticItems : []),
-  [itemsData, itemsStatus],
-);
+  const rawItems = itemsData;
 
 //   useEffect(() => {
 //     let isMounted = true;
@@ -178,6 +170,17 @@ const rawItems = useMemo(
   return (
     <main className="grid h-full min-h-0 place-items-center p-4">
       <p className="text-sm text-muted-foreground">Loading product…</p>
+    </main>
+  );
+}
+
+if (itemsStatus === "failed") {
+  return (
+    <main className="grid h-full place-items-center p-4">
+      <section role="alert" className="grid gap-3 text-center">
+        <p>Unable to load this product from the API.</p>
+        <Button variant="outline" onClick={() => dispatch(GetItems())}>Try again</Button>
+      </section>
     </main>
   );
 }

@@ -12,19 +12,5 @@
       { "id": "messages", "title": "Messages", "path": "/messages", "footer": true },
       { "id": "employees", "title": "Employees", "path": "/employees" }
     ]
-  },
-  "internal": {
-    "label": "Internal",
-    "basePath": "/backoffice",
-    "routes": [
-      { "id": "overview", "title": "Overview", "path": "/backoffice/overview" },
-      { "id": "orders", "title": "Orders", "path": "/backoffice/orders", "footer": true },
-      { "id": "catalog", "title": "Catalog", "path": "/backoffice/catalog", "footer": true },
-      { "id": "order-guide", "title": "Order Guide", "path": "/backoffice/order-guide", "footer": true },
-      { "id": "employees", "title": "Employees", "path": "/backoffice/employees", "footer": true },
-      { "id": "users", "title": "Users", "path": "/backoffice/users" },
-      { "id": "roles-permissions", "title": "Roles & Permissions", "path": "/backoffice/roles-permissions" },
-      { "id": "promotions", "title": "Promotions", "path": "/backoffice/promotions" }
-    ]
   }
 }

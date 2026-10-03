@@ -6,6 +6,7 @@ import { defaultLocale } from "@/lib/i18n"
 import { AppProvider } from "@/app/context/app-context"
 import { StaticIntlProvider } from "@/components/static-intl-provider"
 import { StoreProvider } from "@/redux/StoreProvider"
+import { PortalLayout } from "@/components/portal-layout"
 // import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget"
 
 const poppins = Poppins({
@@ -42,7 +43,7 @@ export default function RootLayout({children}) {
                 enableSystem
                 disableTransitionOnChange
               >
-                {children}
+                <PortalLayout>{children}</PortalLayout>
                 {/* <ChatbotWidget /> */}
                 <Toaster richColors position="top-center" />
               </ThemeProvider>

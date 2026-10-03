@@ -1,4 +1,5 @@
 "use client";
+import { buildApiUrl } from "@/lib/api/apiClient"
 
 import { DEFAULT_AUTHORIZATION_TOKEN } from "@/lib/api/apiClient";
 import { OPENAI_API_KEY, OPENAI_MODEL } from "./voiceConfig";
@@ -122,11 +123,11 @@ function parseAiResponse(data, transcript = "") {
 export async function askVoiceAi({ transcript, products }) {
   // 1. Try backend voice API first
   try {
-    const response = await fetch("https://crateapi.bexlgems.com/api/voice/command", {
+    const response = await fetch(buildApiUrl("/voice/command"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: DEFAULT_AUTHORIZATION_TOKEN || "EDBh8df8gF4GyvPiIysdrEKBbP6pA4Qxswkbd4tv8Q",
+        Authorization: DEFAULT_AUTHORIZATION_TOKEN,
       },
       body: JSON.stringify({ transcript }),
     });

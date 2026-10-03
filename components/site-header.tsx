@@ -55,20 +55,7 @@
 //   ["/invoices", "Invoices", "Review invoice totals, payments, balances, and status", true],
 //   ["/messages", "Messages", "Contact support and review conversations"],
 //   ["/employees", "Employees", "View and manage store employees"],
-//   ["/users", "Users", "View and manage customer portal users"],
 //   ["/profile", "Profile", "Manage your account and contact information"],
-//   ["/backoffice", "Backoffice Overview", "Review internal activity and operational status"],
-//   ["/backoffice/overview", "Backoffice Overview", "Review internal activity and operational status"],
-//   ["/backoffice/orders", "Backoffice Orders", "Review and manage customer order activity"],
-//   ["/backoffice/catalog/details", "Backoffice Product Details", "Review product information, pricing, and availability"],
-//   ["/backoffice/catalog", "Backoffice Catalog", "Browse products, pricing, and availability", true],
-//   ["/backoffice/order-guide", "Backoffice Order Guide", "Review and manage customer order guides"],
-//   ["/backoffice/employees", "Employees", "Review and manage employee records"],
-//   ["/backoffice/users", "Users", "Review and manage application users"],
-//   ["/backoffice/roles-permissions", "Roles and Permissions", "Review access rules and role-based capabilities"],
-//   ["/backoffice/promotions/create", "Create Promotion", "Create a customer promotion"],
-//   ["/backoffice/promotions", "Promotions", "Review and manage customer promotions"],
-//   ["/backoffice/profile", "Profile", "Manage your account and contact information"],
 // ] as const
 
 // function getHeader(pathname: string) {
@@ -169,10 +156,7 @@
 //   const isMessagesPage = pathname === "/messages"
 //   const canSearchMessages = true
 //   const canClearChat = true
-//   const profileUrl =
-//     pathname === "/backoffice" || pathname.startsWith("/backoffice/")
-//       ? "/backoffice/profile"
-//       : "/profile"
+//   const profileUrl = "/profile"
 //   const profile: HeaderProfile = {
 //     ...DEFAULT_PROFILE,
 //     ...initialProfile,
@@ -210,7 +194,7 @@
 
 //   React.useEffect(() => {
 //     if (cartOpen && typeof fetchCustomerCart === "function") {
-//       fetchCustomerCart("400001");
+//       fetchCustomerCart();
 //     }
 //   }, [cartOpen, fetchCustomerCart])
 //   const today = React.useMemo(() => startOfDay(new Date()), [])
@@ -649,6 +633,7 @@
 "use client"
 
 import * as React from "react"
+import { requireCustomerNumber } from "@/lib/customer"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
@@ -704,20 +689,7 @@ const HEADER_ROUTES = [
   ["/metrics", "Metrics", "Review purchasing trends, order activity, and invoice balances"],
   ["/messages", "Messages", "Contact support and review conversations"],
   ["/employees", "Employees", "View and manage store employees"],
-  ["/users", "Users", "View and manage customer portal users"],
   ["/profile", "Profile", "Manage your account and contact information"],
-  ["/backoffice", "Backoffice Overview", "Review internal activity and operational status"],
-  ["/backoffice/overview", "Backoffice Overview", "Review internal activity and operational status"],
-  ["/backoffice/orders", "Backoffice Orders", "Review and manage customer order activity"],
-  ["/backoffice/catalog/details", "Backoffice Product Details", "Review product information, pricing, and availability"],
-  ["/backoffice/catalog", "Backoffice Catalog", "Browse products, pricing, and availability", true],
-  ["/backoffice/order-guide", "Backoffice Order Guide", "Review and manage customer order guides"],
-  ["/backoffice/employees", "Employees", "Review and manage employee records"],
-  ["/backoffice/users", "Users", "Review and manage application users"],
-  ["/backoffice/roles-permissions", "Roles and Permissions", "Review access rules and role-based capabilities"],
-  ["/backoffice/promotions/create", "Create Promotion", "Create a customer promotion"],
-  ["/backoffice/promotions", "Promotions", "Review and manage customer promotions"],
-  ["/backoffice/profile", "Profile", "Manage your account and contact information"],
 ] as const
 
 function getHeader(pathname: string) {
@@ -819,10 +791,7 @@ function SiteHeader({
   const isMessagesPage = pathname === "/messages"
   const canSearchMessages = true
   const canClearChat = true
-  const profileUrl =
-    pathname === "/backoffice" || pathname.startsWith("/backoffice/")
-      ? "/backoffice/profile"
-      : "/profile"
+  const profileUrl = "/profile"
   const profile: HeaderProfile = {
     ...DEFAULT_PROFILE,
     ...initialProfile,
@@ -861,7 +830,7 @@ const [notes, setNotes] = React.useState("")
 
   React.useEffect(() => {
     if (cartOpen && typeof fetchCustomerCart === "function") {
-      fetchCustomerCart("400001")
+      fetchCustomerCart()
     }
   }, [cartOpen, fetchCustomerCart])
   const today = React.useMemo(() => startOfDay(new Date()), [])
@@ -929,7 +898,7 @@ async function handleCheckout() {
 
   try {
     const res = await checkoutOrderApi({
-      custNmbr: "400001",
+      custNmbr: requireCustomerNumber(),
       deliveryDate: checkoutDeliveryDate,
       cutOffTime: "14:00:00",
       notes,

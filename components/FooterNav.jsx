@@ -11,7 +11,6 @@ import {
   MessageCircleIcon,
   StarIcon,
   UsersIcon,
-  UserCogIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -20,9 +19,7 @@ import routes from "@/data/routes.json";
 export function FooterNav() {
   const pathname = usePathname();
   const t = useTranslations("footerNav");
-  const routeGroup = pathname.startsWith(routes.internal.basePath)
-    ? routes.internal
-    : routes.customer;
+  const routeGroup = routes.customer;
   const pageIcons = {
     overview: LayoutDashboardIcon,
     "order-guide": StarIcon,
@@ -31,7 +28,6 @@ export function FooterNav() {
     messages: MessageCircleIcon,
     orders: ClipboardListIcon,
     employees: UsersIcon,
-    users: UserCogIcon,
   };
   const footerNavItems = routeGroup.routes
     .filter((page) => page.footer)
@@ -55,7 +51,7 @@ export function FooterNav() {
         {footerNavItems.map((item) => {
           const Icon = item.icon;
           const isActive =
-            item.url === "/" || item.url === "/backoffice"
+            item.url === "/"
               ? pathname === item.url
               : pathname.startsWith(item.url);
 
