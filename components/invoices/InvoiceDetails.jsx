@@ -237,7 +237,7 @@ export default function InvoiceDetails({ invoiceId }) {
               </table>
             </div>
 
-            <div className="flex flex-col gap-3 border-t px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <div className="@container flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3 text-sm text-muted-foreground">
               <span>
                 Showing {lines.length === 0 ? 0 : start + 1} to{" "}
                 {Math.min(start + pageSize, lines.length)} of {lines.length} products

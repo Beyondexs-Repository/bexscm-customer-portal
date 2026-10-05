@@ -12,10 +12,15 @@ export default function InvoicePagination({
   query,
   basePath = "/invoices",
   rowOptions = [10, 20, 50, 100],
+  onPageChange,
 }) {
   const router = useRouter()
 
   const changePage = (page, rows = pageSize) => {
+    if (onPageChange) {
+      onPageChange(page, rows)
+      return
+    }
     const [path, search = ""] = basePath.split("?")
     const params = new URLSearchParams(search)
 
@@ -31,8 +36,8 @@ export default function InvoicePagination({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <label className="flex items-center gap-2">
+    <nav aria-label="Pagination" className="flex w-full min-w-0 flex-wrap items-center gap-3 @min-[700px]:w-auto">
+      <label className="flex basis-full items-center justify-between gap-2 whitespace-nowrap @min-[420px]:basis-auto">
         Rows per page
         <select
           value={pageSize}
@@ -46,31 +51,33 @@ export default function InvoicePagination({
           ))}
         </select>
       </label>
-      <span className="px-2">
-        Page {currentPage} of {totalPages}
-      </span>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        disabled={currentPage === 1}
-        onClick={() => changePage(currentPage - 1)}
-        aria-label="Previous page"
-        title="Previous page"
-      >
-        <ChevronLeft />
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        disabled={currentPage === totalPages}
-        onClick={() => changePage(currentPage + 1)}
-        aria-label="Next page"
-        title="Next page"
-      >
-        <ChevronRight />
-      </Button>
-    </div>
+      <div className="ml-auto flex items-center gap-2">
+        <span className="whitespace-nowrap px-2" aria-live="polite">
+          Page {currentPage} of {totalPages}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          disabled={currentPage <= 1}
+          onClick={() => changePage(currentPage - 1)}
+          aria-label="Previous page"
+          title="Previous page"
+        >
+          <ChevronLeft />
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          disabled={currentPage >= totalPages}
+          onClick={() => changePage(currentPage + 1)}
+          aria-label="Next page"
+          title="Next page"
+        >
+          <ChevronRight />
+        </Button>
+      </div>
+    </nav>
   )
 }
