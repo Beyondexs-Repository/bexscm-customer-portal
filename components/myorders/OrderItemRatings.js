@@ -223,19 +223,21 @@ export function isItemLocked(item, savedRatings = {}) {
   return !!(item.isRated || saved?.rating || saved?.locked)
 }
 
-export default function OrderItemRatings({ open, onOpenChange, items, ratings, onSubmit }) {
-  const [drafts, setDrafts] = useState(ratings);
+export default function OrderItemRatings({ open, onOpenChange, items = [], ratings = {}, onSubmit }) {
+  const [drafts, setDrafts] = useState(ratings ?? {});
   const [loadingImages, setLoadingImages] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const allLocked = items.length > 0 && items.every((item) => isItemLocked(item, ratings));
 
-
-const [submitting, setSubmitting] = useState(false);
- const allLocked = items.length > 0 && items.every((item) => isItemLocked(item, ratings))
-async function handleSubmit() {
-  setSubmitting(true);
-  const ok = await onSubmit(drafts);
-  setSubmitting(false);
-  if (ok !== false) onOpenChange(false);
-}
+  async function handleSubmit() {
+    setSubmitting(true);
+    try {
+      const ok = await onSubmit?.(drafts);
+      if (ok !== false) onOpenChange(false);
+    } finally {
+      setSubmitting(false);
+    }
+  }
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

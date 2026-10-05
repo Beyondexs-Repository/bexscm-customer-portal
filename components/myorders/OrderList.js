@@ -1,5 +1,3 @@
-"use client"
-import { getCustomerNumber } from "@/lib/customer"
 // "use client"
 
 // import { useEffect, useMemo, useState } from "react"
@@ -740,6 +738,7 @@ import { getCustomerNumber } from "@/lib/customer"
 //     </div>
 //   )
 // }
+"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
@@ -863,7 +862,7 @@ export default function OrderList({
   selectedOrder,
   statusFilter,
   typeFilter,
-  customerId = getCustomerNumber(),
+  customerId = "400001",
   isLoading = false,
   error = null,
   onCustomerIdChange,
@@ -951,7 +950,7 @@ export default function OrderList({
   // (server-side), while typing itself filters instantly (client-side).
   const handleCustomerSubmit = (e) => {
     e.preventDefault()
-    const val = inputCustomer.trim() || getCustomerNumber()
+    const val = inputCustomer.trim() || "400001"
     if (onCustomerIdChange) {
       onCustomerIdChange(val)
     }

@@ -1,9 +1,8 @@
 "use client"
-import { useDispatch } from "react-redux"
-import { useState, useMemo } from "react"
+
 import { createPortal } from "react-dom"
 import { useTranslations } from "next-intl"
-import { toast } from "sonner" 
+import { toast } from "sonner"
 import {
   Building2,
   CalendarClock,
@@ -16,35 +15,154 @@ import {
   PackageCheck,
   Phone,
   Store,
-  ThumbsDown,
-  ThumbsUp,
   Trash2,
   User,
   X,
 } from "lucide-react"
-
+import { useState, useMemo } from "react"
+import { useDispatch } from "react-redux"
+import OrderItemRatings, { buildRatingsFormData } from "./OrderItemRatings"
+import { myOrderitemsRating } from "../../redux/slices/postSlice"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { cn, formatDeliveryDate } from "@/lib/utils"
-import ItemImage from "../../components/myorders/ItemImage"
+import { cn } from "@/lib/utils"
+import { useCart } from "@/app/context/app-context"
 import { formatCurrency, statusStyles } from "./MyOrders"
-import { myOrderitemsRating } from "../../redux/slices/postSlice"   
-import OrderItemRatings, { buildRatingsFormData } from "./OrderItemRatings"
+// import defaultimage from "/placeholder.png"
+import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
+import { resolveItemImageUrl } from "@/lib/api/itemsApi"
+export default function OrderDetails({ order, onBack, onClose, onReorderSuccess }) {
+const dispatch = useDispatch()
+const [ratingsByOrder, setRatingsByOrder] = useState({})
+   const { fetchCustomerCart } = useCart()
+  const imageurl = `https://crateapi.bexlgems.com/Images/Items`;
 
-
-
-
-
-export default function OrderDetails({ order, onBack, onClose }) {
-const dispatch = useDispatch();
+  console.log(order, "--find order in order details");
   const [reOrderModalOpen, setReOrderModalOpen] = useState(false);
-  const [reOrderItems, setReOrderItems] = useState([])
-  const [ratingOrderId, setRatingOrderId] = useState(null)
-  const [ratingsByOrder, setRatingsByOrder] = useState({})
-  const [expandedFeedback, setExpandedFeedback] = useState({})
+  const [reOrderItems, setReOrderItems] = useState([]);
+  const [ratingOrderId, setRatingOrderId] = useState(null);
+  //reorderapi
+  const [isReOrdering, setIsReOrdering] = useState(false);
 
-  // const ratings = ratingsByOrder[order.id] || {}
-  // replace: const ratings = ratingsByOrder[order.id] || {}
+  const t = useTranslations("myOrders")
+  const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
+
+const reorderOrderApi = async (orderNumber, items) => {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orders/reorder/${orderNumber}`;
+
+    console.log("Reorder API URL:", url);
+
+    const requestBody = {
+      items: items.map((item) => ({
+        itemNumber: String(item.itemNumber),
+        quantity: Number(item.quantity),
+      })),
+    };
+
+    console.log("Reorder Request Body:", requestBody);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log("Reorder HTTP Status:", response.status);
+    console.log("Reorder HTTP OK:", response.ok);
+
+    const responseText = await response.text();
+
+    console.log("Reorder Raw Response:", responseText);
+
+    let result = null;
+
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch (error) {
+      console.warn("Reorder response is not JSON:", responseText);
+    }
+
+    console.log("Reorder Parsed Response:", result);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          `Unable to reorder. HTTP ${response.status}`,
+      );
+    }
+
+    if (!result?.success) {
+      throw new Error(
+        result?.Msg ||
+          result?.message ||
+          result?.error ||
+          "Failed to reorder.",
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Reorder API Error:", error);
+    throw error;
+  }
+};
+
+
+const getItemNumber = (item) =>
+  String(item.itemNumber ?? item.sku ?? item.itemCode ?? "").trim()
+
+const handleReorder = async () => {
+  console.log("handleReorder clicked", reOrderItems)
+
+  if (!order?.orderNumber) {
+    toast.error("Order number is missing.")
+    return
+  }
+
+  const requestItems = reOrderItems.map((item) => ({
+    itemNumber: getItemNumber(item),
+    quantity: Number(item.quantity) || 0,
+  }))
+
+  if (!requestItems.length) {
+    toast.error("Please select at least one item.")
+    return
+  }
+
+  // Stop before calling the API if any item number is missing
+  const invalid = requestItems.filter((i) => !i.itemNumber || i.quantity < 1)
+  if (invalid.length) {
+    console.error("Invalid reorder items:", invalid, "source items:", reOrderItems)
+    toast.error("Some items have no item number, so they can't be reordered.")
+    return
+  }
+
+  try {
+    setIsReOrdering(true)
+    const result = await reorderOrderApi(order.orderNumber, requestItems)
+
+    if (result?.success) {
+      toast.success("Items added to cart successfully.")
+      setReOrderModalOpen(false)
+      setReOrderItems([])
+      onReorderSuccess?.()
+      fetchCustomerCart(localStorage.getItem("custnmbr"))
+    }
+  } catch (error) {
+    console.error("Reorder failed:", error)
+    toast.error(error?.message || "Unable to add the reordered items to cart.")
+  } finally {
+    setIsReOrdering(false)
+  }
+}
+
 const serverRatings = useMemo(() => {
   const map = {}
   order.items.forEach((item) => {
@@ -59,11 +177,31 @@ const serverRatings = useMemo(() => {
   return map
 }, [order.items])
 
-// ratings submitted in this session override/extend the server ones
 const ratings = { ...serverRatings, ...(ratingsByOrder[order.id] || {}) }
 
-  const t = useTranslations("myOrders")
-  const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
+const handleSubmitRatings = async (drafts) => {
+  const { formData, count } = buildRatingsFormData(order.items, drafts, ratings)
+  if (!count) {
+    toast.error("Please like or dislike at least one item.")
+    return false                       // keeps the dialog open
+  }
+  try {
+    await dispatch(myOrderitemsRating(formData)).unwrap()
+    toast.success("Thanks for your feedback.")
+
+    const locked = {}
+    Object.entries(drafts).forEach(([id, fb]) => {
+      if (fb?.rating) locked[id] = { ...fb, locked: true }
+    })
+    setRatingsByOrder((cur) => ({ ...cur, [order.id]: { ...(cur[order.id] || {}), ...locked } }))
+    return true
+  } catch (error) {
+    toast.error(
+      typeof error === "string" ? error : error?.Msg || error?.message || "Unable to submit ratings."
+    )
+    return false
+  }
+}
 
   return (
     <section className="flex h-full min-h-0 flex-col rounded-lg border bg-card shadow-sm">
@@ -74,15 +212,13 @@ const ratings = { ...serverRatings, ...(ratingsByOrder[order.id] || {}) }
               {t("orderNumber", { number: order.orderNumber })}
             </p>
 
-            <Badge className={cn("h-auto shrink-0 px-2 py-0.5 text-[10px] leading-none ring-1", statusStyles[String(order.status).trim().toLowerCase() === "open" ? "green" : order.statusTone])}>
+            <Badge className={cn("h-auto shrink-0 px-2 py-0.5 text-[10px] leading-none ring-1", statusStyles[order.statusTone])}>
               {order.status}
             </Badge>
           </div>
 
           <h2 className="mt-3 text-lg font-bold leading-tight sm:text-xl">
-            {/* {t("deliveryOn", { deliveryDate: order.deliveryDate })} */}
-            {t("deliveryOn", { deliveryDate: formatDeliveryDate(order.deliveryDate) })}
-
+            {t("deliveryOn", { deliveryDate: order.deliveryDate })}
           </h2>
         </div>
 
@@ -155,7 +291,7 @@ const ratings = { ...serverRatings, ...(ratingsByOrder[order.id] || {}) }
                   {order.customerName || "Central Foodservice, Inc."}
                 </h4>
                 <p className="text-[11px] font-semibold text-muted-foreground mt-0.5">
-                  ID: {order.customerID || "—"}
+                  ID: {order.customerID || "400001"}
                 </p>
               </div>
             </div>
@@ -208,217 +344,82 @@ const ratings = { ...serverRatings, ...(ratingsByOrder[order.id] || {}) }
           <h3 className="text-sm font-bold">{t("orderItems")}</h3>
           <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setRatingOrderId(order.id)}>Rate items</Button>
         </div>
-        {ratingOrderId === order.id && (
-          <OrderItemRatings
-            open
-            onOpenChange={(open) => setRatingOrderId(open ? order.id : null)}
-            items={order.items}
-            ratings={ratings}
-            // onSubmit={(updatedRatings) => {
-            //   setRatingsByOrder((current) => ({ ...current, [order.id]: updatedRatings }))
-            //   setExpandedFeedback({})
-            // }}
-
-//            onSubmit={async (updatedRatings) => {
-//   const { formData, count } = buildRatingsFormData(order.items, updatedRatings)
-//   if (count === 0) return true
-
-//   try {
-//     const result = await dispatch(myOrderitemsRating({ data: formData })).unwrap()
-
-//     setRatingsByOrder((current) => ({ ...current, [order.id]: updatedRatings }))
-//     setExpandedFeedback({})
-
-//     if (result?.errorCount > 0) {
-//       toast.warning(`${result.savedCount} rated, ${result.errorCount} failed`)
-//     } else {
-//       toast.success("Items rating updated successfully")
-//     }
-//     return true
-//   } catch (err) {
-//     console.error("Rating failed:", err)
-//     toast.error(err?.message || "Failed to update items rating")
-//     return false
-//   }
-// }}
-// onSubmit={async (updatedRatings) => {
-//   const { formData, count } = buildRatingsFormData(order.items, updatedRatings, ratings)
-
-//   if (count === 0) {
-//     toast.info("No rating changes to save")
-//     return true
-//   }
-
-//   try {
-//     const result = await dispatch(myOrderitemsRating({ data: formData })).unwrap()
-
-//     setRatingsByOrder((current) => ({ ...current, [order.id]: updatedRatings }))
-//     setExpandedFeedback({})
-
-//     if (result?.errorCount > 0) {
-//       toast.warning(`${result.savedCount} rated, ${result.errorCount} failed`)
-//     } else {
-//       toast.success("Items rating updated successfully")
-//     }
-//     return true
-//   } catch (err) {
-//     console.error("Rating failed:", err)
-//     toast.error(err?.message || "Failed to update items rating")
-//     return false
-//   }
-// }}
-//locked changes
-onSubmit={async (updatedRatings) => {
-  const { formData, count } = buildRatingsFormData(order.items, updatedRatings, ratings)
-
-  if (count === 0) {
-    toast.info("No new ratings to save")
-    return true
-  }
-
-  try {
-    const result = await dispatch(myOrderitemsRating({ data: formData })).unwrap()
-
-    const errors = result?.data?.errors || []
-    const failedIds = new Set(errors.map((e) => String(e.orderDetailID)))
-    const alreadyIds = new Set(
-      errors.filter((e) => /already rated/i.test(e.error)).map((e) => String(e.orderDetailID))
-    )
-    const toId = (item) => String(item.orderDetailID ?? item.id).replace(/^item-/, "")
-
-    const next = { ...ratings }
-    order.items.forEach((item) => {
-      const fb = updatedRatings[item.id]
-      if (!fb?.rating || next[item.id]?.rating || next[item.id]?.locked) return
-      const id = toId(item)
-
-      if (alreadyIds.has(id)) next[item.id] = { locked: true }  // backend says it's rated → lock the row
-      else if (failedIds.has(id)) return                        // other error → leave editable
-      else next[item.id] = fb                                   // saved
-    })
-
-    setRatingsByOrder((current) => ({ ...current, [order.id]: next }))
-    setExpandedFeedback({})
-
-    if (result?.savedCount > 0 && result?.errorCount === 0) {
-      toast.success("Items rating updated successfully")
-    } else if (result?.savedCount > 0) {
-      toast.warning(`${result.savedCount} rated, ${result.errorCount} could not be saved`)
-    } else {
-      toast.error(errors[0]?.error || "Failed to update items rating")
-      return false
-    }
-    return true
-  } catch (err) {
-    console.error("Rating failed:", err)
-    toast.error(err?.message || "Failed to update items rating")
-    return false
-  }
-}}
-          />
-        )}
+        <OrderItemRatings key={order.id} open={ratingOrderId === order.id} onOpenChange={(open) => setRatingOrderId(open ? order.id : null)} items={order.items}
+          ratings={ratings}
+  onSubmit={handleSubmitRatings}
+        />
 
         <div className="mt-3 divide-y rounded-lg border">
-          {order.items.map((item) => {
-            const feedback = ratings[item.id]
-            const feedbackId = `feedback-${order.id}-${item.id}`
-            const isExpanded = !!expandedFeedback[feedbackId]
-            const hasFeedback = feedback?.rating === "down" && (feedback.review?.trim() || feedback.image)
-            const Thumb = feedback?.rating === "up" ? ThumbsUp : ThumbsDown
+           {order.items.map((item) => {
+    const resolvedImg = resolveItemImageUrl(item.image) || item.image
+    const image = resolvedImg || getCategoryPlaceholderImage(item.category)
 
-            return (
-              <div key={item.id} className="p-3">
-                <div className="flex gap-3">
-                  {/* <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted"> */}
-                  
-                  <ItemImage item={item} className="size-14" />  {/* <img
-                      // src={item.image}
-                      src={getItemImage(item) || undefined}
-                      alt={item.name}
-                      className="size-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none"
-                      }}
-                    /> */}
-                  {/* </div> */}
+    return (
+      <div key={item.id} className="flex gap-3 p-3">
+        <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
+          <img
+            src={image}
+            alt={item.name}
+            className="size-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = getCategoryPlaceholderImage(item.category)
+            }}
+          />
+        </div>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold">{item.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {t("brand")} {item.brand}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {t("packSize")} {item.packSize}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      SKU: {item.sku}
-                    </p>
-                  </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold">{item.name}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {t("brand")} {item.brand}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {t("packSize")} {item.packSize}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {t("itemNumber")} {item.itemNumber}
+          </p>
+        </div>
 
-                  <div className="flex max-w-20 shrink-0 flex-col items-end text-right sm:max-w-none">
-                    <p className="text-xs font-bold leading-snug">{t("units", { count: item.quantity })}</p>
-                    <p className="mt-1 text-xs leading-snug">{formatCurrency(item.price)}</p>
-                    {feedback?.rating && (
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className={cn(
-                          "mt-2",
-                          feedback.rating === "up"
-                            ? "bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-600 aria-expanded:bg-green-500/10 aria-expanded:text-green-600"
-                            : "bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-500 aria-expanded:bg-red-500/10 aria-expanded:text-red-500",
-                        )}
-                        aria-label={`${feedback.rating === "up" ? "Liked" : "Disliked"} ${item.name}${hasFeedback ? `: ${isExpanded ? "hide" : "show"} feedback` : ""}`}
-                        aria-expanded={hasFeedback ? isExpanded : undefined}
-                        aria-controls={hasFeedback ? feedbackId : undefined}
-                        disabled={!hasFeedback}
-                        onClick={() => setExpandedFeedback((current) => ({ ...current, [feedbackId]: !current[feedbackId] }))}
-                      >
-                        <Thumb className="size-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                {hasFeedback && isExpanded && (
-                  <div id={feedbackId} className="mt-3 space-y-2 rounded-md border bg-muted/30 p-3">
-                    <div className="flex items-start justify-between gap-2 text-xs">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold">Your feedback</span>
-                          {feedback.date && (
-    <span className="text-muted-foreground">
-      {new Date(feedback.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-    </span>
-  )}
-                        {/* <span className="text-muted-foreground">
-                          {new Date(feedback.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                        </span> */}
-                      </div>
-                      <button
-                        type="button"
-                        className="shrink-0 text-blue-500 hover:text-blue-400 hover:underline"
-                        onClick={() => setExpandedFeedback((current) => ({ ...current, [feedbackId]: false }))}
-                      >
-                        Hide
-                      </button>
-                    </div>
-                    {feedback.review?.trim() && <p className="whitespace-pre-wrap break-words text-xs">{feedback.review}</p>}
-                    {feedback.image && (
-                      <a
-                        href={feedback.image}
-                        download={`feedback-${item.sku || item.id}`}
-                        aria-label={`Download feedback image for ${item.name}`}
-                        title="Download image"
-                        className="block w-fit rounded-md focus-visible:outline-2 focus-visible:outline-ring"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={feedback.image} alt={`Feedback for ${item.name}`} className="h-20 w-28 rounded-md object-cover" />
-                      </a>
-                    )}
-                  </div>
-                )}
+        <div className="max-w-20 shrink-0 text-right sm:max-w-none">
+          <p className="text-xs font-bold leading-snug">{t("units", { count: item.quantity })}</p>
+          <p className="mt-1 text-xs leading-snug">{formatCurrency(item.price)}</p>
+        </div>
+      </div>
+    )
+  })}
+          {/* {order.items.map((item) => (
+            <div key={item.id} className="flex gap-3 p-3">
+              <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="size-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none"
+                  }}
+                />
+               
               </div>
-            )
-          })}
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold">{item.name}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {t("brand")} {item.brand}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {t("packSize")} {item.packSize}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {t("itemNumber")} {item.itemNumber}
+                </p>
+              </div>
+
+              <div className="max-w-20 shrink-0 text-right sm:max-w-none">
+                <p className="text-xs font-bold leading-snug">{t("units", { count: item.quantity })}</p>
+                <p className="mt-1 text-xs leading-snug">{formatCurrency(item.price)}</p>
+              </div>
+            </div>
+          ))} */}
         </div>
 
         <div className="mt-4 space-y-2 text-sm">
@@ -443,10 +444,14 @@ onSubmit={async (updatedRatings) => {
               className="h-11 w-full text-primary"
               onClick={() => {
                 setReOrderItems(
-                  order.items.map((item) => ({
-                    ...item,
-                    quantity: Number(item.quantity) || 1,
-                  }))
+                  order.items.map((item) => {
+                    const qty = Number(item.quantity) || 1
+                    return {
+                      ...item,
+                      quantity: qty,
+                      unitPrice: (Number(item.price) || 0) / qty,
+                    }
+                  })
                 )
                 setReOrderModalOpen(true)
               }}
@@ -499,9 +504,12 @@ onSubmit={async (updatedRatings) => {
               <div className="mt-0 divide-y rounded-lg border">
                 {reOrderItems.map((item) => {
                   const quantity = Number(item.quantity) || 1
-                  const price = Number(item.price) || 0
-                  const itemTotal = quantity * price
-
+                   const unitPrice = Number(item.unitPrice) || 0
+                const itemTotal = quantity * unitPrice
+                  // const price = Number(item.price) || 0
+                  // const itemTotal = quantity * price
+ const resolvedImg = resolveItemImageUrl(item.image) || item.image
+  const image = resolvedImg || getCategoryPlaceholderImage(item.category)
                   return (
                     <div
                       key={item.id}
@@ -527,18 +535,24 @@ onSubmit={async (updatedRatings) => {
                       </Button>
 
                       {/* Product Image */}
-                      <ItemImage item={item} className="size-14" />
-                      {/* <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
-                        <img
-                          // src={item.image}
-                          src={getItemImage(item) || undefined}
+                      <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
+                        {/* <img
+                          src={item.image}
                           alt={item.name}
                           className="size-full object-cover"
                           onError={(e) => {
                             e.currentTarget.style.display = "none"
                           }}
-                        />
-                      </div> */}
+                        /> */}
+ <img
+          src={image}
+          alt={item.name}
+          className="size-full object-cover"
+          onError={(e) => {
+            e.currentTarget.src = getCategoryPlaceholderImage(item.category)
+          }}
+        />
+                      </div>
 
                       {/* Product Details */}
                       <div className="min-w-0 flex-1">
@@ -555,7 +569,7 @@ onSubmit={async (updatedRatings) => {
                         </p>
 
                         <p className="truncate text-xs text-muted-foreground">
-                          SKU: {item.sku}
+                           {t("itemNumber")} {item.itemNumber}
                         </p>
 
                         {/* Quantity Selector */}
@@ -658,7 +672,7 @@ onSubmit={async (updatedRatings) => {
                         (sum, item) =>
                           sum +
                           (Number(item.quantity) || 0) *
-                          (Number(item.price) || 0),
+                          (Number(item.unitPrice) || 0),
                         0
                       )
                     )}
@@ -667,7 +681,21 @@ onSubmit={async (updatedRatings) => {
               </div>
             {/* Modal Footer */}
             <div className="flex justify-end gap-2 border-t p-4">
-              <Button
+               <Button
+    variant="outline"
+    onClick={() => setReOrderModalOpen(false)}
+    disabled={isReOrdering}
+  >
+    Cancel
+  </Button>
+
+  <Button
+    onClick={handleReorder}
+    disabled={isReOrdering || reOrderItems.length === 0}
+  >
+    {isReOrdering ? "Adding..." : "Add to Cart"}
+  </Button>
+              {/* <Button
                 variant="outline"
                 onClick={() => setReOrderModalOpen(false)}
               >
@@ -680,7 +708,7 @@ onSubmit={async (updatedRatings) => {
                 }}
               >
                 Add to Cart
-              </Button>
+              </Button> */}
             </div>
             </div>
           </div>
