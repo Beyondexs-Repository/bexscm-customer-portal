@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axios from "axios"
-import { getCustomerNumber } from "@/lib/customer"
 
 // ============================================================
 // INITIAL STATE  (Crea pattern — Data / Loading / Status / Error per thunk)
@@ -25,10 +24,10 @@ const initialState = {
   updateCartError: null,
 
   // ── POST /checkout/{custnmbr} ────────────────────────────
-  checkoutData: {},
-  checkoutLoading: false,
-  checkoutStatus: "idle",
-  checkoutError: null,
+  // checkoutData: {},
+  // checkoutLoading: false,
+  // checkoutStatus: "idle",
+  // checkoutError: null,
 
   // ── POST /orders/reorder/{orderNumber} ───────────────────
   reorderData: {},
@@ -48,11 +47,7 @@ const initialState = {
   updateOrderGuideStatus: "idle",
   updateOrderGuideError: null,
 
-  // ── DELETE /orderguides/{orderGuideID} ───────────────────
-  deleteOrderGuideData: {},
-  deleteOrderGuideLoading: false,
-  deleteOrderGuideStatus: "idle",
-  deleteOrderGuideError: null,
+
 
   // ── PUT /orderguides/sequence ────────────────────────────
   orderGuideSequenceData: {},
@@ -188,8 +183,9 @@ export const PostCart = createAsyncThunk(
 // ── PUT /cart/customer/{custnmbr}/item/{itemNumber} ──────────────────────────
 export const PutCartQuantity = createAsyncThunk(
   "cart/PutCartQuantity",
-  async ({ custnmbr = getCustomerNumber(), itemNumber, quantity }, { rejectWithValue }) => {
+  async ({ data }, { rejectWithValue }) => {
     try {
+      const custnmbr = localStorage.getItem("custnmbr");
       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/cart/customer/${custnmbr}/item/${itemNumber}`
       console.log("PutCartQuantity URL:", URL)
 
@@ -214,25 +210,41 @@ export const PutCartQuantity = createAsyncThunk(
 // ── POST /checkout/{custnmbr} ────────────────────────────────────────────────
 export const PostCheckout = createAsyncThunk(
   "cart/PostCheckout",
-  async (custnmbr = getCustomerNumber(), { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/checkout/${custnmbr}`
-      console.log("PostCheckout URL:", URL)
+      const custnmbr =
+        typeof window !== "undefined" ? localStorage.getItem("custnmbr") : null
 
-      const response = await axios.post(
-        URL,
-        null,
-        {
-          headers: {
-            Accept: "application/json",
-            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-          },
-        }
-      )
+      if (!custnmbr) {
+        return rejectWithValue("Customer number not found. Please log in again.")
+      }
 
-      return response.data
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/checkout/${encodeURIComponent(custnmbr)}`
+
+      const response = await axios.post(URL, null, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      })
+
+      const result = response.data
+
+      // some backends return 200 with success: false
+      if (result?.success === false) {
+        return rejectWithValue(
+          result?.Msg || result?.message || "Checkout failed."
+        )
+      }
+
+      return result
     } catch (error) {
-      return rejectWithValue(error.response ? error.response.data : error.message)
+      return rejectWithValue(
+        error.response?.data?.Msg ||
+          error.response?.data?.message ||
+          error.response?.data ||
+          error.message
+      )
     }
   }
 )
@@ -790,16 +802,10 @@ const postSlice = createSlice({
       state.loginStatus = "idle"
       state.loginError = null
     },
-    // resetCartStatus: (state) => {
-    //   state.postCartStatus = "idle"
-    //   state.updateCartStatus = "idle"
-    //   state.checkoutStatus = "idle"
-    //   state.postCartError = null
-    // },
+  
     resetOrderGuideStatus: (state) => {
       state.createOrderGuideStatus = "idle"
       state.updateOrderGuideStatus = "idle"
-      state.deleteOrderGuideStatus = "idle"
       state.createOrderGuideGroupStatus = "idle"
       state.updateOrderGuideGroupStatus = "idle"
       state.deleteOrderGuideGroupStatus = "idle"
@@ -826,22 +832,7 @@ const postSlice = createSlice({
         state.loginError = action.payload || action.error.message
       })
 
-      // ── PostCart ──────────────────────────────────────────
-      // .addCase(PostCart.pending, (state) => {
-      //   state.postCartStatus = "loading"
-      //   state.postCartLoading = true
-      //   state.postCartError = null
-      // })
-      // .addCase(PostCart.fulfilled, (state, action) => {
-      //   state.postCartStatus = "succeeded"
-      //   state.postCartLoading = false
-      //   state.postCartData = action.payload
-      // })
-      // .addCase(PostCart.rejected, (state, action) => {
-      //   state.postCartStatus = "failed"
-      //   state.postCartLoading = false
-      //   state.postCartError = action.payload || action.error.message
-      // })
+     
 
       // ── PutCartQuantity ───────────────────────────────────
       .addCase(PutCartQuantity.pending, (state) => {
@@ -860,23 +851,7 @@ const postSlice = createSlice({
         state.updateCartError = action.payload || action.error.message
       })
 
-      // ── PostCheckout ──────────────────────────────────────
-      .addCase(PostCheckout.pending, (state) => {
-        state.checkoutStatus = "loading"
-        state.checkoutLoading = true
-        state.checkoutError = null
-      })
-      .addCase(PostCheckout.fulfilled, (state, action) => {
-        state.checkoutStatus = "succeeded"
-        state.checkoutLoading = false
-        state.checkoutData = action.payload
-      })
-      .addCase(PostCheckout.rejected, (state, action) => {
-        state.checkoutStatus = "failed"
-        state.checkoutLoading = false
-        state.checkoutError = action.payload || action.error.message
-      })
-
+     
       // ── PostReorder ───────────────────────────────────────
       .addCase(PostReorder.pending, (state) => {
         state.reorderStatus = "loading"
@@ -911,40 +886,7 @@ const postSlice = createSlice({
         state.createOrderGuideError = action.payload || action.error.message
       })
 
-      // ── PutOrderGuide ─────────────────────────────────────
-      // .addCase(PutOrderGuide.pending, (state) => {
-      //   state.updateOrderGuideStatus = "loading"
-      //   state.updateOrderGuideLoading = true
-      //   state.updateOrderGuideError = null
-      // })
-      // .addCase(PutOrderGuide.fulfilled, (state, action) => {
-      //   state.updateOrderGuideStatus = "succeeded"
-      //   state.updateOrderGuideLoading = false
-      //   state.updateOrderGuideData = action.payload
-      // })
-      // .addCase(PutOrderGuide.rejected, (state, action) => {
-      //   state.updateOrderGuideStatus = "failed"
-      //   state.updateOrderGuideLoading = false
-      //   state.updateOrderGuideError = action.payload || action.error.message
-      // })
-
-      // ── DeleteOrderGuide ──────────────────────────────────
-      // .addCase(DeleteOrderGuide.pending, (state) => {
-      //   state.deleteOrderGuideStatus = "loading"
-      //   state.deleteOrderGuideLoading = true
-      //   state.deleteOrderGuideError = null
-      // })
-      // .addCase(DeleteOrderGuide.fulfilled, (state, action) => {
-      //   state.deleteOrderGuideStatus = "succeeded"
-      //   state.deleteOrderGuideLoading = false
-      //   state.deleteOrderGuideData = action.payload
-      // })
-      // .addCase(DeleteOrderGuide.rejected, (state, action) => {
-      //   state.deleteOrderGuideStatus = "failed"
-      //   state.deleteOrderGuideLoading = false
-      //   state.deleteOrderGuideError = action.payload || action.error.message
-      // })
-
+     
       // ── PutOrderGuideSequence ─────────────────────────────
       .addCase(PutOrderGuideSequence.pending, (state) => {
         state.orderGuideSequenceStatus = "loading"
@@ -1138,10 +1080,10 @@ export const {
 // SELECTORS
 // ============================================================
 // Auth
-export const selectLoginData = (state) => state.postSlice.loginData
-export const selectLoginLoading = (state) => state.postSlice.loginLoading
-export const selectLoginStatus = (state) => state.postSlice.loginStatus
-export const selectLoginError = (state) => state.postSlice.loginError
+// export const selectLoginData = (state) => state.postSlice.loginData
+// export const selectLoginLoading = (state) => state.postSlice.loginLoading
+// export const selectLoginStatus = (state) => state.postSlice.loginStatus
+// export const selectLoginError = (state) => state.postSlice.loginError
 
 // Cart POST
 // export const selectPostCartStatus = (state) => state.postSlice.postCartStatus
@@ -1149,35 +1091,35 @@ export const selectLoginError = (state) => state.postSlice.loginError
 // export const selectPostCartError = (state) => state.postSlice.postCartError
 
 // Cart PUT
-export const selectUpdateCartStatus = (state) => state.postSlice.updateCartStatus
-export const selectUpdateCartLoading = (state) => state.postSlice.updateCartLoading
+// export const selectUpdateCartStatus = (state) => state.postSlice.updateCartStatus
+// export const selectUpdateCartLoading = (state) => state.postSlice.updateCartLoading
 
 // Checkout
-export const selectCheckoutData = (state) => state.postSlice.checkoutData
-export const selectCheckoutStatus = (state) => state.postSlice.checkoutStatus
-export const selectCheckoutLoading = (state) => state.postSlice.checkoutLoading
-export const selectCheckoutError = (state) => state.postSlice.checkoutError
+// export const selectCheckoutData = (state) => state.postSlice.checkoutData
+// export const selectCheckoutStatus = (state) => state.postSlice.checkoutStatus
+// export const selectCheckoutLoading = (state) => state.postSlice.checkoutLoading
+// export const selectCheckoutError = (state) => state.postSlice.checkoutError
 
 // Reorder
-export const selectReorderStatus = (state) => state.postSlice.reorderStatus
-export const selectReorderLoading = (state) => state.postSlice.reorderLoading
-export const selectReorderError = (state) => state.postSlice.reorderError
+// export const selectReorderStatus = (state) => state.postSlice.reorderStatus
+// export const selectReorderLoading = (state) => state.postSlice.reorderLoading
+// export const selectReorderError = (state) => state.postSlice.reorderError
 
 // Order Guide
-export const selectCreateOrderGuideStatus = (state) => state.postSlice.createOrderGuideStatus
-export const selectUpdateOrderGuideStatus = (state) => state.postSlice.updateOrderGuideStatus
-export const selectDeleteOrderGuideStatus = (state) => state.postSlice.deleteOrderGuideStatus
+// export const selectCreateOrderGuideStatus = (state) => state.postSlice.createOrderGuideStatus
+// export const selectUpdateOrderGuideStatus = (state) => state.postSlice.updateOrderGuideStatus
+// export const selectDeleteOrderGuideStatus = (state) => state.postSlice.deleteOrderGuideStatus
 
 // Order Guide Group
-export const selectCreateOrderGuideGroupStatus = (state) => state.postSlice.createOrderGuideGroupStatus
-export const selectUpdateOrderGuideGroupStatus = (state) => state.postSlice.updateOrderGuideGroupStatus
-export const selectDeleteOrderGuideGroupStatus = (state) => state.postSlice.deleteOrderGuideGroupStatus
+// export const selectCreateOrderGuideGroupStatus = (state) => state.postSlice.createOrderGuideGroupStatus
+// export const selectUpdateOrderGuideGroupStatus = (state) => state.postSlice.updateOrderGuideGroupStatus
+// export const selectDeleteOrderGuideGroupStatus = (state) => state.postSlice.deleteOrderGuideGroupStatus
 
 // Order Group Item
-export const selectDeleteOrderGroupItemStatus = (state) => state.postSlice.deleteOrderGroupItemStatus
+// export const selectDeleteOrderGroupItemStatus = (state) => state.postSlice.deleteOrderGroupItemStatus
 
 // PAR
-export const selectUpdateParStatus = (state) => state.postSlice.updateParStatus
-export const selectUpdateBulkParStatus = (state) => state.postSlice.updateBulkParStatus
+// export const selectUpdateParStatus = (state) => state.postSlice.updateParStatus
+// export const selectUpdateBulkParStatus = (state) => state.postSlice.updateBulkParStatus
 
 export default postSlice.reducer

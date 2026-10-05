@@ -1,5 +1,4 @@
 "use client"
-import { getCustomerNumber } from "@/lib/customer"
 
 import * as React from "react"
 import {
@@ -108,47 +107,39 @@ export function GlobalUploadModal({
   const removeFile = (id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id))
   }
+            const custnmbr = localStorage.getItem("custnmbr");
 
-  const startUpload = async () => {
-    if (files.length === 0 || isUploading) return
-    setIsUploading(true)
+ const startUpload = async () => {
+  if (files.length === 0 || isUploading) return
+  setIsUploading(true)
 
-    const selectedFile = files[0]?.file
+  // read inside the handler (client-only), convert null -> undefined
+  const custnmbr = localStorage.getItem("custnmbr") ?? undefined
 
-    // Progress animation
-    for (let p = 25; p <= 100; p += 35) {
-      await new Promise((resolve) => setTimeout(resolve, 120))
-      setFiles((prev) =>
-        prev.map((f) => ({
-          ...f,
-          progress: p,
-          status: p === 100 ? "completed" : "uploading",
-        }))
-      )
+  setFiles((prev) => prev.map((f) => ({ ...f, status: "uploading", progress: 50 })))
+
+  try {
+    // upload every selected file
+    for (const item of files) {
+      await importDocumentCartApi({ file: item.file, custnmbr })
     }
 
-    try {
-      // 1. Exclusively call POST https://crateapi.bexlgems.com/api/cartimport/import-document with CustNmbr: "400001" and File
-      const response = await importDocumentCartApi({
-        file: selectedFile,
-        custnmbr: getCustomerNumber(),
-      })
-      console.log("Import document API response:", response)
+    setFiles((prev) => prev.map((f) => ({ ...f, status: "completed", progress: 100 })))
+    await fetchCustomerCart(custnmbr)
+    toast.success("Document imported successfully into cart!")
 
-      // 2. Immediately call GET Cart API (/cart/customer/400001) to fetch updated items from backend cart table!
-      await fetchCustomerCart(getCustomerNumber())
-
-      toast.success("Document imported successfully into cart!")
-    } catch (error: unknown) {
-      console.error("Import document API error:", error)
-      const errorMsg = error instanceof Error ? error.message : "Failed to import document"
-      toast.error(`Import Document Failed: ${errorMsg}`)
-    } finally {
-      setIsUploading(false)
-      setFiles([])
-      onOpenChange(false)
-    }
+    setFiles([])
+    onOpenChange(false)
+  } catch (error: unknown) {
+    console.error("Import document API error:", error)
+    setFiles((prev) => prev.map((f) => ({ ...f, status: "error" })))
+    toast.error(
+      `Import Document Failed: ${error instanceof Error ? error.message : "Failed to import document"}`
+    )
+  } finally {
+    setIsUploading(false)
   }
+}
 
   const getFileIcon = (ext: string) => {
     if (["png", "jpg", "jpeg", "webp", "gif"].includes(ext)) {

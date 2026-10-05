@@ -1,4 +1,3 @@
-import { getCustomerNumber, requireCustomerNumber } from "@/lib/customer"
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axios from "axios"
 
@@ -10,6 +9,13 @@ import axios from "axios"
 // INITIAL STATE  (Crea pattern — Data / Loading / Status / Error per thunk)
 // ============================================================
 const initialState = {
+
+    // ── CART_GET /overview ─────────────────────────────
+  GetCartData: [],
+  GetCartLoading: false,
+  GetCartStatus: "idle",
+  GetCartError: null,
+  
   // ── Catalog Items  GET /items ─────────────────────────────
   itemsData: [],
   itemsLoading: false,
@@ -21,7 +27,6 @@ const initialState = {
   ordersLoading: false,
   ordersStatus: "idle",
   ordersError: null,
-  ordersCustomerId: "",
 
   // ── Order Guide List  GET /orderguides/customer/{custnmbr} ─
   orderGuideListData: [],
@@ -64,12 +69,55 @@ const initialState = {
 // (axios written inline — no lib/api folder — Crea architecture)
 // ============================================================
 
+
+// ── GetCart ─────────────────────────────────────
+export const GetCart= createAsyncThunk(
+  "Overview/GetCartAPI",
+  async (_, { rejectWithValue }) => {
+    try {
+      const custnmbr = localStorage.getItem("custnmbr");
+
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/cart/customer/${custnmbr}`;
+
+      const response = await axios.get(URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+
+      const result = response.data;
+
+      if (result?.success === false) {
+        throw new Error(
+          result?.Msg ||
+            result?.message ||
+            "Failed to fetch order guides."
+        );
+      }
+
+      const list = Array.isArray(result)
+        ? result
+        : Array.isArray(result?.data)
+          ? result.data
+          : [];
+
+      return list;
+    } catch (error) {
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
+    }
+  }
+);
+
+
 // ── GET /items ───────────────────────────────────────────────────────────────
 export const GetItems = createAsyncThunk(
   "items/GetItems",
   async (_, { rejectWithValue }) => {
     try {
-      const custnmbr = requireCustomerNumber()
+      const custnmbr = localStorage.getItem("custnmbr");
       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/items?custNmbr=${custnmbr}`
 
       const response = await axios.get(URL, {
@@ -102,10 +150,10 @@ export const GetItems = createAsyncThunk(
 // ── GET /customers/{custnmbr}/orders ─────────────────────────────────────────
 export const GetCustomerOrders = createAsyncThunk(
   "orders/GetCustomerOrders",
-  async (custnmbr = getCustomerNumber(), { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const resolvedCust = requireCustomerNumber(custnmbr)
-      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/customers/${resolvedCust}/orders`
+      const custnmbr = localStorage.getItem("custnmbr");
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/customers/${custnmbr}/orders`
       console.log("GetCustomerOrders URL:", URL)
 
       const response = await axios.get(URL, {
@@ -122,7 +170,7 @@ export const GetCustomerOrders = createAsyncThunk(
       }
 
       const orders = Array.isArray(result) ? result : result?.orders || result?.data || []
-      return { custnmbr: resolvedCust, orders }
+      return { custnmbr, orders }
     } catch (error) {
       return rejectWithValue(error.response ? error.response.data : error.message)
     }
@@ -484,6 +532,23 @@ const getSlice = createSlice({
   extraReducers(builder) {
     builder
 
+       // ── GetcartAPI ──────────────────────────────────────────
+      .addCase(GetCart.pending, (state) => {
+        state.GetCartStatus = "loading"
+        state.GetCartLoading = true
+        state.GetCartError = null
+      })
+      .addCase(GetCart.fulfilled, (state, action) => {
+        state.GetCartStatus = "succeeded"
+        state.GetCartLoading = false
+        state.GetCartData = action.payload
+      })
+      .addCase(GetCart.rejected, (state, action) => {
+        state.GetCartStatus = "failed"
+        state.GetCartLoading = false
+        state.GetCartError = action.payload || action.error.message
+        state.GetCartData = []
+      })
       // ── GetItems ──────────────────────────────────────────
       .addCase(GetItems.pending, (state) => {
         state.itemsStatus = "loading"
@@ -512,7 +577,7 @@ const getSlice = createSlice({
         state.ordersStatus = "succeeded"
         state.ordersLoading = false
         state.ordersData = action.payload.orders
-        state.ordersCustomerId = action.payload.custnmbr
+        
       })
       .addCase(GetCustomerOrders.rejected, (state, action) => {
         state.ordersStatus = "failed"
@@ -643,11 +708,11 @@ export const { resetGetSlice, clearOrderGroupItems, clearOrderGuideGroups } = ge
 // export const selectItemsError       = (state) => state.getSlice.itemsError
 
 // Orders
-export const selectOrdersData       = (state) => state.getSlice.ordersData
-export const selectOrdersLoading    = (state) => state.getSlice.ordersLoading
-export const selectOrdersStatus     = (state) => state.getSlice.ordersStatus
-export const selectOrdersError      = (state) => state.getSlice.ordersError
-export const selectOrdersCustomerId = (state) => state.getSlice.ordersCustomerId
+// export const selectOrdersData       = (state) => state.getSlice.ordersData
+// export const selectOrdersLoading    = (state) => state.getSlice.ordersLoading
+// export const selectOrdersStatus     = (state) => state.getSlice.ordersStatus
+// export const selectOrdersError      = (state) => state.getSlice.ordersError
+// export const selectOrdersCustomerId = (state) => state.getSlice.ordersCustomerId
 
 // Order Guide List
 // export const selectOrderGuideListData    = (state) => state.getSlice.orderGuideListData
@@ -655,13 +720,13 @@ export const selectOrdersCustomerId = (state) => state.getSlice.ordersCustomerId
 // export const selectOrderGuideListStatus  = (state) => state.getSlice.orderGuideListStatus
 
 // Order Guide Groups
-export const selectOrderGuideGroupsData    = (state) => state.getSlice.orderGuideGroupsData
-export const selectOrderGuideGroupsLoading = (state) => state.getSlice.orderGuideGroupsLoading
-export const selectOrderGuideGroupsStatus  = (state) => state.getSlice.orderGuideGroupsStatus
+// export const selectOrderGuideGroupsData    = (state) => state.getSlice.orderGuideGroupsData
+// export const selectOrderGuideGroupsLoading = (state) => state.getSlice.orderGuideGroupsLoading
+// export const selectOrderGuideGroupsStatus  = (state) => state.getSlice.orderGuideGroupsStatus
 
 // Order Group Items
-export const selectOrderGroupItemsData    = (state) => state.getSlice.orderGroupItemsData
-export const selectOrderGroupItemsLoading = (state) => state.getSlice.orderGroupItemsLoading
-export const selectOrderGroupItemsStatus  = (state) => state.getSlice.orderGroupItemsStatus
+// export const selectOrderGroupItemsData    = (state) => state.getSlice.orderGroupItemsData
+// export const selectOrderGroupItemsLoading = (state) => state.getSlice.orderGroupItemsLoading
+// export const selectOrderGroupItemsStatus  = (state) => state.getSlice.orderGroupItemsStatus
 
 export default getSlice.reducer
