@@ -408,10 +408,10 @@ async function handleSendOtp(event) {
 	}
 
 	return (
-		<main className="min-h-svh bg-[#fff2dc] bg-[url(/login.png)] bg-cover bg-right bg-no-repeat text-[#071936] sm:bg-center">
-			<section className="mx-auto flex min-h-svh w-full max-w-7xl items-center justify-center px-4 py-8 sm:px-8 lg:justify-end lg:px-14 xl:px-20">
+		<main className="login-page min-h-dvh bg-[#fff2dc] bg-[url(/login.png)] bg-cover bg-right bg-no-repeat text-[#071936] md:bg-left">
+			<section className="login-layout mx-auto flex min-h-dvh w-full max-w-7xl items-center justify-center px-4 py-4 sm:px-8 sm:py-6 md:justify-end lg:px-10 xl:px-14">
 				{/* Login Card */}
-				<section className="relative w-full min-w-0 max-w-[380px] rounded-2xl border border-white/70 bg-white/95 p-5 shadow-2xl shadow-orange-950/10 backdrop-blur sm:max-w-md sm:p-6 lg:max-w-[380px] lg:p-7">
+				<section className="login-card relative w-full min-w-0 max-w-[380px] rounded-2xl border border-white/70 bg-white/95 p-5 shadow-2xl shadow-orange-950/10 backdrop-blur sm:max-w-md sm:p-6 md:max-w-[380px] lg:p-7">
 					<div className="absolute right-3 top-3 z-40">
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>

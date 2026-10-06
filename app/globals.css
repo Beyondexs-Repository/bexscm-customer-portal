@@ -54,6 +54,38 @@ body {
   font-family: var(--font-sans), sans-serif;
 }
 
+.login-page {
+  background-color: #fff5e8;
+}
+
+@media (max-height: 700px) {
+  .login-layout {
+    padding-block: 1rem;
+  }
+
+  .login-card {
+    padding: 1.25rem;
+  }
+
+  .login-card > .size-14 {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .login-card > .mt-4 {
+    margin-top: 0.75rem;
+  }
+
+  .login-card form {
+    margin-top: 1rem;
+  }
+
+  .login-card form.space-y-4 > :not(:last-child),
+  .login-card form.space-y-5 > :not(:last-child) {
+    margin-bottom: 0.75rem;
+  }
+}
+
 :root {
   --font-sans: var(--font-poppins);
 }
