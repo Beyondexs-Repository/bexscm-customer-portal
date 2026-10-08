@@ -1,32 +1,45 @@
 "use client"
 
 import { useState } from "react"
-import { CircleCheck } from "lucide-react"
+import { ChevronDown, CircleCheck } from "lucide-react"
+import { getCountries, getCountryCallingCode, parsePhoneNumberFromString } from "libphonenumber-js/min"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+
+const countryNames = new Intl.DisplayNames(["en"], { type: "region" })
+const phoneCountries = getCountries()
+  .map(country => ({ country, name: countryNames.of(country), code: getCountryCallingCode(country) }))
+  .sort((first, second) => first.name.localeCompare(second.name))
 
 export default function SMSConsent() {
   const [status, setStatus] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isError, setIsError] = useState(false)
+  const [selectedCountry, setSelectedCountry] = useState("US")
 
   async function handleSubmit(event) {
     event.preventDefault()
     if (isSubmitting) return
 
     const form = event.currentTarget
-    const contactInput = form.elements.namedItem("email")
-    const contact = contactInput.value.trim()
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)
-    if (!isEmail) {
-      contactInput.setCustomValidity("Enter a valid email address.")
-      contactInput.reportValidity()
+    const mobileInput = form.elements.namedItem("mobile")
+    const country = form.elements.namedItem("country").value
+    const callingCode = getCountryCallingCode(country)
+    const phone = parsePhoneNumberFromString(mobileInput.value.trim(), {
+      defaultCountry: country,
+      extract: false,
+    })
+
+    if (!phone?.isValid() || phone.countryCallingCode !== callingCode || phone.ext) {
+      mobileInput.setCustomValidity("Enter a valid mobile number for the selected country code.")
+      mobileInput.reportValidity()
       return
     }
 
     const payload = {
       name: form.elements.namedItem("name").value.trim(),
-      email: contact,
+      countryCode: `+${callingCode}`,
+      mobile: phone.number,
       smsConsent: form.elements.namedItem("smsConsent").checked,
     }
 
@@ -62,7 +75,7 @@ export default function SMSConsent() {
 
   return (
     <main
-      className="flex min-h-svh items-center justify-center bg-muted/30 px-3 py-5 text-foreground sm:px-4 sm:py-10"
+      className="flex min-h-svh items-center justify-center bg-muted/30 px-3 py-4 text-foreground sm:px-4 sm:py-6"
       style={{
         "--primary": "#0D4E4D",
         "--primary-foreground": "#FFFFFF",
@@ -84,10 +97,10 @@ export default function SMSConsent() {
       ) : (
       <section
         aria-labelledby="sms-consent-title"
-        className="w-full max-w-lg rounded-2xl border bg-card p-4 shadow-sm sm:p-8"
+        className="w-full max-w-md rounded-2xl border bg-card p-4 shadow-sm sm:p-6"
       >
-        <div className="mb-5 text-center sm:mb-8">
-          <svg role="img" aria-label="Plymouth Poultry" className="mx-auto mb-3 h-auto w-24 text-primary sm:mb-5 sm:w-36" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 222.63 138.47">
+        <div className="mb-4 text-center sm:mb-5">
+          <svg role="img" aria-label="Plymouth Poultry" className="mx-auto mb-2 h-auto w-24 text-primary sm:mb-3 sm:w-36" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 222.63 138.47">
           <title>plymouth-logo</title>
           <path d="M20,72.22h6.17v2.17H22.36v1.88h3v2.17h-3v2h4v2.17H20V72.22Z" fill="currentColor">
           </path>
@@ -148,8 +161,8 @@ export default function SMSConsent() {
           <rect x="178.4" y="113.2" width="0.03" height="0.03" fill="currentColor">
           </rect>
           </svg>
-          <h1 id="sms-consent-title" className="text-xl font-semibold text-primary sm:text-2xl">SMS Consent</h1>
-          <p className="mt-1 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
+          <h1 id="sms-consent-title" className="text-lg font-semibold text-primary sm:text-lg">SMS Consent</h1>
+          <p className="mt-1 text-xs text-muted-foreground sm:mt-2 ">
             Sign up for weekly pricing and promotional text messages.
           </p>
         </div>
@@ -158,9 +171,9 @@ export default function SMSConsent() {
           onSubmit={handleSubmit}
           aria-busy={isSubmitting}
           onChange={() => setStatus("")}
-          className="space-y-4 sm:space-y-6"
+          className="space-y-3 sm:space-y-4"
         >
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <label htmlFor="sms-name" className="block text-sm font-medium">
               Name
             </label>
@@ -175,28 +188,60 @@ export default function SMSConsent() {
               title="Enter your name."
               autoComplete="name"
               placeholder="Enter your name"
-              className="h-11"
+              className="h-10"
             />
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="sms-email" className="block text-sm font-medium">
-              Email ID
+          <div className="space-y-1.5">
+            <label htmlFor="sms-mobile" className="block text-sm font-medium">
+              Mobile number
             </label>
-            <Input
-              id="sms-email"
-              name="email"
-              type="email"
-              disabled={isSubmitting}
-              maxLength={254}
-              required
-              autoComplete="email"
-              autoCapitalize="none"
-              spellCheck={false}
-              placeholder="Enter your email address"
-              className="h-11"
-              onChange={event => event.currentTarget.setCustomValidity("")}
-            />
+            <div className="flex gap-2">
+              <div className="relative w-20 shrink-0 sm:w-24">
+              <select
+                id="sms-country"
+                name="country"
+                aria-label="Country calling code"
+                autoComplete="country"
+                value={selectedCountry}
+                disabled={isSubmitting}
+                className="h-10 w-full appearance-none rounded-lg border border-input bg-background px-2 text-base text-transparent outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 sm:text-sm"
+                onChange={event => {
+                  setSelectedCountry(event.currentTarget.value)
+                  event.currentTarget.form.elements.namedItem("mobile").setCustomValidity("")
+                }}
+              >
+                {phoneCountries.map(({ country, name, code }) => (
+                  <option key={country} value={country} className="bg-background text-foreground">
+                    {name} (+{code})
+                  </option>
+                ))}
+              </select>
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-base sm:text-sm"
+              >
+                +{getCountryCallingCode(selectedCountry)}
+              </span>
+              <ChevronDown
+                aria-hidden="true"
+                className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2"
+              />
+              </div>
+              <Input
+                id="sms-mobile"
+                name="mobile"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel-national"
+                required
+                maxLength={30}
+                disabled={isSubmitting}
+                placeholder="Mobile number"
+                className="h-10"
+                onChange={event => event.currentTarget.setCustomValidity("")}
+              />
+            </div>
           </div>
 
           <div className="flex items-start gap-2 sm:gap-3">
@@ -210,14 +255,14 @@ export default function SMSConsent() {
               aria-labelledby="sms-consent-description"
               className="mt-1 size-4 shrink-0 cursor-pointer accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             />
-            <div className="text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">
+            <div className="text-xs leading-5 text-muted-foreground sm:text-xs sm:leading-6">
               <span id="sms-consent-description">
                 I agree to receive pricing updates and promotional texts from
                 Plymouth Poultry.
               </span>{" "}
               See our{" "}
               <a
-                href="https://www.plymouthinc.com/Privay-Policy"
+                href="https://www.plymouthinc.com/Privacy-Policy"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="break-words text-primary underline underline-offset-4"
@@ -240,7 +285,7 @@ export default function SMSConsent() {
             </div>
           </div>
 
-          <Button type="submit" disabled={isSubmitting} className="h-11 w-full">
+          <Button type="submit" disabled={isSubmitting} className="h-10 w-full">
             {isSubmitting ? "Submitting..." : "Submit"}
           </Button>
 
