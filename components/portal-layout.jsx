@@ -13,13 +13,6 @@ const portalPaths = [...routes.customer.routes.map(route => route.path), "/profi
 export function PortalLayout({ children }) {
   const pathname = usePathname()
 
-  // Standalone public pages
-  const isStandalonePage = pathname === "/sms-consent"
-
-  if (isStandalonePage) {
-    return children
-  }
-
   const isPortalPage = portalPaths.some(
     path =>
       pathname === path ||
