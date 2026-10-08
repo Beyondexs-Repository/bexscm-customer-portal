@@ -356,6 +356,8 @@ export const GetCustomerInvoiceItems = createAsyncThunk(
     try {
       const custnmbr = localStorage.getItem("custnmbr");
 
+      
+
       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/invoices/customer/${custnmbr}`
       console.log("CustomerInvoiceItems URL:", URL)
 

@@ -1,14 +1,14 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useSyncExternalStore } from "react"
 
-import { hasSession } from "@/lib/auth"
+import { hasSession, subscribeToSession } from "@/lib/auth"
 
 export function AuthGuard({ children }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [checked] = useState(() => hasSession())
+  const checked = useSyncExternalStore(subscribeToSession, hasSession, () => false)
 
   useEffect(() => {
     if (!hasSession()) {

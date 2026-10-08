@@ -714,6 +714,7 @@ import { useDispatch, useSelector } from "react-redux"
 
 import { getCatalogProducts, findCatalogProduct } from "@/lib/catalog-products"
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
+import { getCustomerNumber } from "@/lib/customer"
 import { postCartApi, updateCartQuantityApi, checkoutOrderApi, importDocumentCartApi } from "@/lib/api/cartApi"
 import { resolveItemImageUrl } from "@/lib/api/itemsApi"
 import { GetCart } from "../../redux/slices/getSlice" // adjust path if needed
@@ -725,8 +726,7 @@ const DASHBOARD_QUICK_ORDERS_STORAGE_KEY = "aloha.dashboardQuickOrders.v1"
 
 // Reads custnmbr from localStorage (safe during SSR)
 function getCustnmbr() {
-  if (typeof window === "undefined") return undefined
-  return window.localStorage.getItem("custnmbr") || undefined
+  return getCustomerNumber() || undefined
 }
 
 function createDefaultGroup() {
