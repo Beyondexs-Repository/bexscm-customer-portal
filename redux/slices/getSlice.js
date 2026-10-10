@@ -77,7 +77,7 @@ export const GetCart= createAsyncThunk(
     try {
       const custnmbr = localStorage.getItem("custnmbr");
 
-      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/cart/customer/${custnmbr}`;
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/cartgroups/customer/${custnmbr}`;
 
       const response = await axios.get(URL, {
         headers: {
@@ -355,6 +355,8 @@ export const GetCustomerInvoiceItems = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const custnmbr = localStorage.getItem("custnmbr");
+
+      
 
       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/invoices/customer/${custnmbr}`
       console.log("CustomerInvoiceItems URL:", URL)

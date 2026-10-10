@@ -11,11 +11,7 @@ const initialState = {
   loginStatus: "idle",
   loginError: null,
 
-  // ── POST /cart ───────────────────────────────────────────
-  // postCartData: {},
-  // postCartLoading: false,
-  // postCartStatus: "idle",
-  // postCartError: null,
+
 
   // ── PUT /cart/customer/{custnmbr}/item/{itemNumber} ──────
   updateCartData: {},
@@ -23,11 +19,7 @@ const initialState = {
   updateCartStatus: "idle",
   updateCartError: null,
 
-  // ── POST /checkout/{custnmbr} ────────────────────────────
-  // checkoutData: {},
-  // checkoutLoading: false,
-  // checkoutStatus: "idle",
-  // checkoutError: null,
+
 
   // ── POST /orders/reorder/{orderNumber} ───────────────────
   reorderData: {},
@@ -152,7 +144,6 @@ export const PostLogin = createAsyncThunk(
   }
 );
 
-// ── POST /cart ────────────────────────────────────────────────────────────────
 // ── POST /ordergroupitems/add-to-cart ─────────────────────────────────────────
 export const PostCart = createAsyncThunk(
   "cart/PostCart",

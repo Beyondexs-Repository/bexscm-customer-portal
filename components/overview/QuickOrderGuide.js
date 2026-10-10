@@ -335,7 +335,8 @@ export default function QuickOrderGuide() {
         QuickOrdeguidetocartPOST({
           data: {
             custNmbr,
-            orderGuideIDs: pendingIds.map(Number), // <-- confirm field names with your API
+            orderGuideIDs: pendingIds.map(Number), 
+            cartGroupId: "",
           },
         }),
       ).unwrap()

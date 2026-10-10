@@ -22,7 +22,7 @@ const notoSansTamil = Noto_Sans_Tamil({
 });
 
 export const metadata = {
-  title: "Bex SCM",
+  title: "Bex SCM Customer",
   description: "Bex SCM - Fresh Produce Delivered to Your Doorstep",
 };
 

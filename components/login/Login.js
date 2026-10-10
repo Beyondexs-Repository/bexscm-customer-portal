@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { localeStorageKey, locales } from "@/lib/i18n";
 import { hasSession, saveSession } from "@/lib/auth";
+import { getCustomerNumber, normalizeCustomerNumber } from "@/lib/customer";
 import { loginAuthApi } from "@/lib/api/authApi";
 
 const localeLabels = {
@@ -306,15 +307,21 @@ async function handleSendOtp(event) {
 
   try {
     const result = await dispatch(PostLogin({ data: payload })).unwrap();
-	console.log(result, "--find result in postLogin");
-// localStorage.setItem("loggedInUser", JSON.stringify(userId));
-    localStorage.setItem("custnmbr", result.custnmbr);
-    localStorage.setItem("loggedInUser", result.userId);
-	localStorage.setItem("roles", result.roles);
-
-
     if (result?.success === false) {
       throw new Error(result?.message || result?.Msg || "Unable to send OTP.");
+    }
+
+    const user = result?.data;
+    const customerNumber = normalizeCustomerNumber(user?.custnmbr);
+    if (!customerNumber) {
+      throw new Error("The login API did not return a customer number. Please contact support.");
+    }
+
+    localStorage.setItem("custnmbr", customerNumber);
+    for (const key of ["loggedInUser", "roles"]) {
+      const value = user[key === "loggedInUser" ? "userId" : key];
+      if (value == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, value);
     }
 
     setStep("otp");
@@ -384,6 +391,11 @@ async function handleSendOtp(event) {
 
 		if (otpValue.length !== 6) {
 			setMessage(t("enterOtp"));
+			return;
+		}
+
+		if (!getCustomerNumber()) {
+			setMessage("Customer number not found. Please request a new OTP.");
 			return;
 		}
 
