@@ -10,12 +10,20 @@ import axios from "axios"
 // ============================================================
 const initialState = {
 
-    // ── CART_GET /overview ─────────────────────────────
+  // ── CART_GET /overview ─────────────────────────────
   GetCartData: [],
   GetCartLoading: false,
   GetCartStatus: "idle",
   GetCartError: null,
-  
+
+  // ── CARTGROUPS_GET /overview ─────────────────────────────
+  GetCartGroupsData: null,
+  GetCartGroupsLoading: false,
+  GetCartGroupsStatus: "idle",
+  GetCartGroupsError: null,
+
+
+
   // ── Catalog Items  GET /items ─────────────────────────────
   itemsData: [],
   itemsLoading: false,
@@ -45,19 +53,19 @@ const initialState = {
   orderGroupItemsLoading: false,
   orderGroupItemsStatus: "idle",
   orderGroupItemsError: null,
- 
+
   // ── Ivoice GET /Customer Invoice ────
   customerInvoicesdata: [],
   customerInvoicesloading: false,
   customerInvoicesStatus: "idle",
   customerInvoiceserror: null,
- // Invoice details
+  // Invoice details
   GetInvoicedetailsdata: null,
   GetInvoicedetailsloading: false,
   GetInvoicedetailsStatus: "idle",
   GetInvoicedetailserror: null,
 
-   // InvoicePDF details
+  // InvoicePDF details
   GetinvoicePDFloading: false,
   GetinvoicePDFerror: null,
 
@@ -71,8 +79,50 @@ const initialState = {
 
 
 // ── GetCart ─────────────────────────────────────
-export const GetCart= createAsyncThunk(
+export const GetCart = createAsyncThunk(
   "Overview/GetCartAPI",
+  async (_, { rejectWithValue }) => {
+    try {
+      const custnmbr = localStorage.getItem("custnmbr");
+
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/cart/customer/${custnmbr}`;
+
+      const response = await axios.get(URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+
+      const result = response.data;
+
+      if (result?.success === false) {
+        throw new Error(
+          result?.Msg ||
+          result?.message ||
+          "Failed to fetch order guides."
+        );
+      }
+
+      const list = Array.isArray(result)
+        ? result
+        : Array.isArray(result?.data)
+          ? result.data
+          : [];
+
+      return list;
+    } catch (error) {
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
+    }
+  }
+);
+
+
+// ── GetCartGroups ─────────────────────────────────────
+export const GetCartGroups = createAsyncThunk(
+  "Overview/GetCartGroupsAPI",
   async (_, { rejectWithValue }) => {
     try {
       const custnmbr = localStorage.getItem("custnmbr");
@@ -91,18 +141,12 @@ export const GetCart= createAsyncThunk(
       if (result?.success === false) {
         throw new Error(
           result?.Msg ||
-            result?.message ||
-            "Failed to fetch order guides."
+          result?.message ||
+          "Failed to fetch cart groups."
         );
       }
 
-      const list = Array.isArray(result)
-        ? result
-        : Array.isArray(result?.data)
-          ? result.data
-          : [];
-
-      return list;
+      return result;
     } catch (error) {
       return rejectWithValue(
         error.response ? error.response.data : error.message
@@ -110,6 +154,8 @@ export const GetCart= createAsyncThunk(
     }
   }
 );
+
+
 
 
 // ── GET /items ───────────────────────────────────────────────────────────────
@@ -198,8 +244,8 @@ export const GetOrderGuideList = createAsyncThunk(
       if (result?.success === false) {
         throw new Error(
           result?.Msg ||
-            result?.message ||
-            "Failed to fetch order guides."
+          result?.message ||
+          "Failed to fetch order guides."
         );
       }
 
@@ -299,7 +345,7 @@ export const GetOrderGuidePARsheet = createAsyncThunk(
       if (contentType.includes("application/json")) {
         const text = await response.data.text()
         let json = null
-        try { json = JSON.parse(text) } catch {}
+        try { json = JSON.parse(text) } catch { }
         throw new Error(json?.Msg || json?.message || "Failed to download PAR sheet.")
       }
 
@@ -356,7 +402,7 @@ export const GetCustomerInvoiceItems = createAsyncThunk(
     try {
       const custnmbr = localStorage.getItem("custnmbr");
 
-      
+
 
       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/invoices/customer/${custnmbr}`
       console.log("CustomerInvoiceItems URL:", URL)
@@ -388,20 +434,20 @@ export const GetInvoicedetails = createAsyncThunk(
     try {
       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/invoices/${encodeURIComponent(INVNumber)}`
       console.log("Invoice_Details URL:", URL)
- 
+
       const response = await axios.get(URL, {
         headers: {
           Accept: "application/json",
           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
         },
       })
- 
+
       const result = response.data
- 
+
       if (result?.success === false) {
         throw new Error(result?.Msg || result?.message || "Failed to fetch invoice details.")
       }
- 
+
       // details endpoint: data is an OBJECT (not an array).
       // The old line returned [] here, which is why nothing showed up.
       const data = result?.data
@@ -534,7 +580,7 @@ const getSlice = createSlice({
   extraReducers(builder) {
     builder
 
-       // ── GetcartAPI ──────────────────────────────────────────
+      // ── GetcartAPI ──────────────────────────────────────────
       .addCase(GetCart.pending, (state) => {
         state.GetCartStatus = "loading"
         state.GetCartLoading = true
@@ -551,6 +597,30 @@ const getSlice = createSlice({
         state.GetCartError = action.payload || action.error.message
         state.GetCartData = []
       })
+
+
+      // ── GetCartGroups API ─────────────────────────────────
+      .addCase(GetCartGroups.pending, (state) => {
+        state.GetCartGroupsStatus = "loading";
+        state.GetCartGroupsLoading = true;
+        state.GetCartGroupsError = null;
+      })
+
+      .addCase(GetCartGroups.fulfilled, (state, action) => {
+        state.GetCartGroupsStatus = "succeeded";
+        state.GetCartGroupsLoading = false;
+        state.GetCartGroupsData = action.payload;
+      })
+
+      .addCase(GetCartGroups.rejected, (state, action) => {
+        state.GetCartGroupsStatus = "failed";
+        state.GetCartGroupsLoading = false;
+        state.GetCartGroupsError =
+          action.payload || action.error.message;
+        state.GetCartGroupsData = null;
+      })
+
+
       // ── GetItems ──────────────────────────────────────────
       .addCase(GetItems.pending, (state) => {
         state.itemsStatus = "loading"
@@ -579,7 +649,7 @@ const getSlice = createSlice({
         state.ordersStatus = "succeeded"
         state.ordersLoading = false
         state.ordersData = action.payload.orders
-        
+
       })
       .addCase(GetCustomerOrders.rejected, (state, action) => {
         state.ordersStatus = "failed"
@@ -661,9 +731,9 @@ const getSlice = createSlice({
         state.customerInvoicesdata = []
       })
 
-      
-           // ── Invoice / GetInvoicedetails_GET addcase ──────────────────────────────────────────
-     // ── Invoice details ────────────────────────────────────────────────────
+
+      // ── Invoice / GetInvoicedetails_GET addcase ──────────────────────────────────────────
+      // ── Invoice details ────────────────────────────────────────────────────
       .addCase(GetInvoicedetails.pending, (state) => {
         state.GetInvoicedetailsStatus = "loading"
         state.GetInvoicedetailsloading = true
@@ -680,21 +750,21 @@ const getSlice = createSlice({
         state.GetInvoicedetailserror = action.payload || action.error.message
         state.GetInvoicedetailsdata = null
       })
-    
 
-      
-// Invoice_PDF
-  .addCase(GetinvoicePDF.pending, (state) => {
-  state.GetinvoicePDFloading = true
-  state.GetinvoicePDFerror = null
-})
-.addCase(GetinvoicePDF.fulfilled, (state) => {
-  state.GetinvoicePDFloading = false
-})
-.addCase(GetinvoicePDF.rejected, (state, action) => {
-  state.GetinvoicePDFloading = false
-  state.GetinvoicePDFerror = action.payload || action.error.message
-})
+
+
+      // Invoice_PDF
+      .addCase(GetinvoicePDF.pending, (state) => {
+        state.GetinvoicePDFloading = true
+        state.GetinvoicePDFerror = null
+      })
+      .addCase(GetinvoicePDF.fulfilled, (state) => {
+        state.GetinvoicePDFloading = false
+      })
+      .addCase(GetinvoicePDF.rejected, (state, action) => {
+        state.GetinvoicePDFloading = false
+        state.GetinvoicePDFerror = action.payload || action.error.message
+      })
   },
 })
 

@@ -1766,7 +1766,7 @@ export function OrderGuideProductsList({
   const [isUpdatingQuickOrder, setIsUpdatingQuickOrder] = useState(false);
 const [isReordering, setIsReordering] = useState(false);
 const [isDeletingProduct, setIsDeletingProduct] = useState(false);
-  const { items, incrementItem, decrementItem, fetchCustomerCart } =
+  const { items, incrementItem, decrementItem, fetchCustomerCart, newCartGroupID } =
     useCart();
 
   const { quickOrders } = useQuickOrders();
@@ -2594,7 +2594,7 @@ async function handleDuplicate({ targetGroupId, newGroupName }) {
 
     try {
       const result = await dispatch(
-        PostCart({ data: { custNmbr, orderGroupItemIds: ids } })
+        PostCart({ data: { custNmbr, orderGroupItemIds: ids, cartGroupId: newCartGroupID,} })
       ).unwrap()
 
       // Re-fetch from the server so the header badge and cart sidebar

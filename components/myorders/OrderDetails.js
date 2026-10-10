@@ -34,7 +34,7 @@ import { resolveItemImageUrl } from "@/lib/api/itemsApi"
 export default function OrderDetails({ order, onBack, onClose, onReorderSuccess }) {
 const dispatch = useDispatch()
 const [ratingsByOrder, setRatingsByOrder] = useState({})
-   const { fetchCustomerCart } = useCart()
+   const { fetchCustomerCart, newCartGroupID } = useCart()
   const imageurl = `https://crateapi.bexlgems.com/Images/Items`;
 
   console.log(order, "--find order in order details");
@@ -47,13 +47,14 @@ const [ratingsByOrder, setRatingsByOrder] = useState({})
   const t = useTranslations("myOrders")
   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
-const reorderOrderApi = async (orderNumber, items) => {
+const reorderOrderApi = async (orderNumber, items, cartGroupId) => {
   try {
     const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orders/reorder/${orderNumber}`;
 
     console.log("Reorder API URL:", url);
 
     const requestBody = {
+       cartGroupID: cartGroupId,
       items: items.map((item) => ({
         itemNumber: String(item.itemNumber),
         quantity: Number(item.quantity),
@@ -143,10 +144,13 @@ const handleReorder = async () => {
     toast.error("Some items have no item number, so they can't be reordered.")
     return
   }
-
+  if (!newCartGroupID) {
+    toast.error("No cart selected. Please select a cart and try again.")
+    return
+  }
   try {
     setIsReOrdering(true)
-    const result = await reorderOrderApi(order.orderNumber, requestItems)
+    const result = await reorderOrderApi(order.orderNumber, requestItems, newCartGroupID)
 
     if (result?.success) {
       toast.success("Items added to cart successfully.")

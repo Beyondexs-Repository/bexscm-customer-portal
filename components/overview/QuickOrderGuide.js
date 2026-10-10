@@ -229,7 +229,7 @@ export default function QuickOrderGuide() {
 
   // setCartOpen exists only if you moved the cart-open state into app-context.
   // It is called with optional chaining below, so this file works either way.
-  const { fetchCustomerCart, items: cartItems, setCartOpen } = useCart()
+  const { fetchCustomerCart, items: cartItems, setCartOpen, newCartGroupID  } = useCart()
 
   const [guides, setGuides] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -336,7 +336,7 @@ export default function QuickOrderGuide() {
           data: {
             custNmbr,
             orderGuideIDs: pendingIds.map(Number), 
-            cartGroupId: "",
+            cartGroupId: newCartGroupID,
           },
         }),
       ).unwrap()

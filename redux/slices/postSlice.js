@@ -33,6 +33,7 @@ const initialState = {
   createOrderGuideStatus: "idle",
   createOrderGuideError: null,
 
+
   // ── PUT /orderguides/{orderGuideID} ──────────────────────
   updateOrderGuideData: {},
   updateOrderGuideLoading: false,
@@ -232,9 +233,9 @@ export const PostCheckout = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.Msg ||
-          error.response?.data?.message ||
-          error.response?.data ||
-          error.message
+        error.response?.data?.message ||
+        error.response?.data ||
+        error.message
       )
     }
   }
@@ -273,6 +274,60 @@ export const PostReorder = createAsyncThunk(
     }
   }
 )
+
+
+// ── POST /cartgroups ─────────────────────────────────────
+
+export const PostCartGroup = createAsyncThunk(
+  "cartGroup/PostCartGroup",
+  async (
+      {
+          custnmbr,
+          name,
+          fulfillmentDate,
+          visibility,
+          createdBY,
+        },
+    { rejectWithValue }
+  ) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/cartgroups`;
+
+      const response = await axios.post(
+        URL,
+        {
+          custnmbr,
+          name,
+          fulfillmentDate,
+          visibility,
+          createdBY,
+        },
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+          },
+        }
+      );
+
+      if (response.data?.success === false) {
+        throw new Error(
+          response.data?.Msg ||
+          response.data?.message ||
+          "Failed to create cart."
+        );
+      }
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || error.message
+      );
+    }
+  }
+);
+
 
 // ── POST /orderguides ─────────────────────────────────────────────────────────
 export const PostOrderGuide = createAsyncThunk(
@@ -793,7 +848,7 @@ const postSlice = createSlice({
       state.loginStatus = "idle"
       state.loginError = null
     },
-  
+
     resetOrderGuideStatus: (state) => {
       state.createOrderGuideStatus = "idle"
       state.updateOrderGuideStatus = "idle"
@@ -823,7 +878,7 @@ const postSlice = createSlice({
         state.loginError = action.payload || action.error.message
       })
 
-     
+
 
       // ── PutCartQuantity ───────────────────────────────────
       .addCase(PutCartQuantity.pending, (state) => {
@@ -842,7 +897,7 @@ const postSlice = createSlice({
         state.updateCartError = action.payload || action.error.message
       })
 
-     
+
       // ── PostReorder ───────────────────────────────────────
       .addCase(PostReorder.pending, (state) => {
         state.reorderStatus = "loading"
@@ -859,6 +914,9 @@ const postSlice = createSlice({
         state.reorderLoading = false
         state.reorderError = action.payload || action.error.message
       })
+
+    
+
 
       // ── PostOrderGuide ────────────────────────────────────
       .addCase(PostOrderGuide.pending, (state) => {
@@ -877,7 +935,7 @@ const postSlice = createSlice({
         state.createOrderGuideError = action.payload || action.error.message
       })
 
-     
+
       // ── PutOrderGuideSequence ─────────────────────────────
       .addCase(PutOrderGuideSequence.pending, (state) => {
         state.orderGuideSequenceStatus = "loading"
