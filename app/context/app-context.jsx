@@ -304,7 +304,7 @@
 //           //   Number.isFinite(parsedApiPrice) && parsedApiPrice > 0
 //           //     ? parsedApiPrice
 //           //     : catalogPrice
-          
+
 //           // Use qtybsuom straight from the API — this IS the unit price
 //   const price = Number(item.qtybsuom) || 0
 
@@ -717,7 +717,9 @@ import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
 import { getCustomerNumber } from "@/lib/customer"
 import { postCartApi, updateCartQuantityApi, checkoutOrderApi, importDocumentCartApi } from "@/lib/api/cartApi"
 import { resolveItemImageUrl } from "@/lib/api/itemsApi"
-import { GetCart } from "../../redux/slices/getSlice" // adjust path if needed
+import { GetCart, GetCartGroups, } from "../../redux/slices/getSlice";
+import { PostCartGroup } from "../../redux/slices/postSlice"
+import { toast } from "sonner"
 
 const AppContext = createContext(null)
 const CART_STORAGE_KEY = "aloha.cart.v1"
@@ -727,6 +729,13 @@ const DASHBOARD_QUICK_ORDERS_STORAGE_KEY = "aloha.dashboardQuickOrders.v1"
 // Reads custnmbr from localStorage (safe during SSR)
 function getCustnmbr() {
   return getCustomerNumber() || undefined
+}
+
+// Reads the logged-in user's id (used as createdBY)
+function getLoginId() {
+  if (typeof window === "undefined") return undefined
+  const raw = window.localStorage.getItem("userId") // <-- change this key
+  return raw ? Number(raw) : undefined
 }
 
 function createDefaultGroup() {
@@ -783,16 +792,16 @@ function getInitialCartItems() {
     const items = JSON.parse(window.localStorage.getItem(CART_STORAGE_KEY))
     return Array.isArray(items)
       ? items.map((item) => {
-          const catalogItem = findCatalogProduct(item.id)
+        const catalogItem = findCatalogProduct(item.id)
 
-          return {
-            ...item,
-            price: Number(item.price ?? catalogItem?.price ?? 0),
-            category: item.category || catalogItem?.category,
-            subcategory: item.subcategory || catalogItem?.subcategory,
-            image: getCartItemImage(catalogItem ? { ...catalogItem, ...item } : item),
-          }
-        })
+        return {
+          ...item,
+          price: Number(item.price ?? catalogItem?.price ?? 0),
+          category: item.category || catalogItem?.category,
+          subcategory: item.subcategory || catalogItem?.subcategory,
+          image: getCartItemImage(catalogItem ? { ...catalogItem, ...item } : item),
+        }
+      })
       : []
   } catch {
     return []
@@ -802,16 +811,16 @@ function getInitialCartItems() {
 function normalizeQuickOrders(orders) {
   return Array.isArray(orders)
     ? orders.map((order) => ({
-        ...order,
-        groups:
-          Array.isArray(order.groups) && order.groups.length > 0
-            ? order.groups.map((group, index) => ({
-                ...group,
-                name: group.name || (index === 0 ? "Default Group" : "Group"),
-                products: Array.isArray(group.products) ? group.products : [],
-              }))
-            : [createDefaultGroup()],
-      }))
+      ...order,
+      groups:
+        Array.isArray(order.groups) && order.groups.length > 0
+          ? order.groups.map((group, index) => ({
+            ...group,
+            name: group.name || (index === 0 ? "Default Group" : "Group"),
+            products: Array.isArray(group.products) ? group.products : [],
+          }))
+          : [createDefaultGroup()],
+    }))
     : []
 }
 
@@ -857,6 +866,20 @@ export function AppProvider({ children }) {
   const [cartLoading, setCartLoading] = useState(false)
   const [dashboardQuickOrderIds, setDashboardQuickOrderIds] = useState([])
   const [storageHydrated, setStorageHydrated] = useState(false)
+
+  const cartGroupsRaw = useSelector((state) => state.getSlice.GetCartGroupsData)
+  const cartGroupsLoading = useSelector((state) => state.getSlice.GetCartGroupsLoading)
+
+  // works whether the API returns [...] or { Data: [...] }
+  const cartGroups = useMemo(() => {
+    const list = Array.isArray(cartGroupsRaw)
+      ? cartGroupsRaw
+      : cartGroupsRaw?.Data ?? cartGroupsRaw?.data ?? []
+    return Array.isArray(list) ? list : []
+  }, [cartGroupsRaw])
+
+  const [selectedCartGroupID, setSelectedCartGroupID] = useState(null)
+  const [creatingCartGroup, setCreatingCartGroup] = useState(false)
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -964,6 +987,72 @@ export function AppProvider({ children }) {
     },
     [dispatch, liveItems]
   )
+
+  const fetchCartGroups = useCallback(async () => {
+    try {
+      return await dispatch(GetCartGroups()).unwrap()
+    } catch (error) {
+      console.warn("Failed to fetch cart groups:", error)
+    }
+  }, [dispatch])
+
+
+  async function createCartGroup({ name, visibility, fulfillmentDate }) {
+    const custnmbr = getCustnmbr()
+    const createdBY = getLoginId()
+
+    if (!custnmbr || !createdBY) {
+      toast.error("Missing customer or login id. Please log in again.")
+      return false // keeps the modal open
+    }
+
+    setCreatingCartGroup(true)
+    try {
+      await dispatch(
+        PostCartGroup({
+          custnmbr,
+          name,
+          fulfillmentDate, // "2026-10-11"
+          visibility,      // "Public" | "Private"
+          createdBY,
+        })
+      ).unwrap()
+
+      // Refresh tabs, then select the new cart
+      const payload = await fetchCartGroups()
+      const list = Array.isArray(payload) ? payload : payload?.Data ?? payload?.data ?? []
+      const created = list
+        .filter((g) => g.name === name)
+        .sort((a, b) => Number(b.cartGroupID) - Number(a.cartGroupID))[0]
+      if (created) setSelectedCartGroupID(created.cartGroupID)
+
+      toast.success(`Cart "${name}" created`)
+      return true
+    } catch (error) {
+      const msg =
+        typeof error === "string" ? error : error?.Msg || error?.message || "Failed to create cart."
+      toast.error(msg)
+      return false
+    } finally {
+      setCreatingCartGroup(false)
+    }
+  }
+
+  // load groups once the customer is known (same pattern as the cart fetch)
+  useEffect(() => {
+    if (!storageHydrated || !getCustnmbr()) return
+    queueMicrotask(() => fetchCartGroups())
+  }, [storageHydrated, fetchCartGroups])
+
+  // keep a valid selection: default cart first, otherwise the first one
+  useEffect(() => {
+    if (cartGroups.length === 0) return
+    setSelectedCartGroupID((prev) =>
+      cartGroups.some((g) => String(g.cartGroupID) === String(prev))
+        ? prev
+        : (cartGroups.find((g) => g.isDefault) ?? cartGroups[0]).cartGroupID
+    )
+  }, [cartGroups])
 
   useEffect(() => {
     if (!storageHydrated || !getCustnmbr()) return
@@ -1140,18 +1229,18 @@ export function AppProvider({ children }) {
       orders.map((order) =>
         order.id === orderId
           ? touchQuickOrder({
-              ...order,
-              groups: order.groups.map((group, index) =>
-                (groupId ? group.id === groupId : index === 0)
-                  ? {
-                      ...group,
-                      products: group.products.filter(
-                        (product) => product.id !== productId
-                      ),
-                    }
-                  : group
-              ),
-            })
+            ...order,
+            groups: order.groups.map((group, index) =>
+              (groupId ? group.id === groupId : index === 0)
+                ? {
+                  ...group,
+                  products: group.products.filter(
+                    (product) => product.id !== productId
+                  ),
+                }
+                : group
+            ),
+          })
           : order
       )
     )
@@ -1184,8 +1273,17 @@ export function AppProvider({ children }) {
       createQuickOrder,
       addProductToQuickOrder,
       removeProductFromQuickOrder,
+      cartGroups,
+      cartGroupsLoading,
+      fetchCartGroups,
+      selectedCartGroupID,
+      setSelectedCartGroupID,
+      creatingCartGroup,
+       createCartGroup,
     }
-  }, [catalog, cartItems, cartLoading, dashboardQuickOrderIds, fetchCustomerCart, quickOrders])
+  }, [catalog, cartItems, cartLoading, dashboardQuickOrderIds, fetchCustomerCart, quickOrders,
+    cartGroups, cartGroupsLoading, selectedCartGroupID, creatingCartGroup,
+  ])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }
@@ -1239,6 +1337,13 @@ export function useCart() {
     removeCartItem,
     clearCart,
     fetchCustomerCart,
+    cartGroups,
+    cartGroupsLoading,
+    fetchCartGroups,
+    selectedCartGroupID,
+    setSelectedCartGroupID,
+    creatingCartGroup,
+    createCartGroup,
   } = useAppContext()
 
   return {
@@ -1257,5 +1362,12 @@ export function useCart() {
     updateCartQuantityApi,
     checkoutOrderApi,
     importDocumentCartApi,
+    cartGroups,
+    cartGroupsLoading,
+    fetchCartGroups,
+    selectedCartGroupID,
+    setSelectedCartGroupID,
+    creatingCartGroup,
+     createCartGroup,
   }
 }

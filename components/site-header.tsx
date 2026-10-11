@@ -772,6 +772,30 @@ interface UseCartReturn {
   decrementItem: (id: string) => void
   removeItem: (id: string) => void
   clearCart: () => void
+
+  // Cart Groups
+  cartGroups: Array<{
+    cartGroupID: number
+    name: string
+    fulfillmentDate: string | null
+    visibility: string
+    isDefault: boolean
+    unitsCount: number
+    estimatedTotal: number
+    itemCount: number
+  }>
+  cartGroupsLoading: boolean
+  selectedCartGroupID: number | null
+  setSelectedCartGroupID: (id: number) => void
+
+  fetchCartGroups: () => Promise<unknown>
+  creatingCartGroup: boolean
+  createCartGroup: (data: {
+    name: string
+    visibility: "Public" | "Private"
+    fulfillmentDate: string
+  }) => Promise<boolean>
+
   // checkoutOrderApi: (custnmbr: string) => Promise<{ success?: boolean; message?: string; error?: string; orderNumber?: string; OrderNumber?: string; orderAmount?: number; OrderAmount?: number; total?: number }>
   fetchCustomerCart: (custnmbr?: string) => Promise<unknown>
 }
@@ -807,6 +831,13 @@ function SiteHeader({
     decrementItem,
     removeItem,
     clearCart,
+    cartGroups = [],
+    cartGroupsLoading = false,
+    fetchCartGroups,
+    selectedCartGroupID,
+    setSelectedCartGroupID,
+    creatingCartGroup,
+    createCartGroup,
     // checkoutOrderApi,
     fetchCustomerCart,
   } = (useCart() as unknown) as UseCartReturn
@@ -815,8 +846,8 @@ function SiteHeader({
     typeof cartTotal === "number"
       ? `$${cartTotal.toFixed(2)}`
       : String(cartTotal || "").startsWith("$")
-      ? String(cartTotal)
-      : `$${cartTotal || "0.00"}`
+        ? String(cartTotal)
+        : `$${cartTotal || "0.00"}`
 
   const calendarRef = React.useRef<HTMLDivElement>(null)
   const calendarTriggerRef = React.useRef<HTMLButtonElement>(null)
@@ -824,15 +855,17 @@ function SiteHeader({
   const [cartOpen, setCartOpen] = React.useState(false)
   const [isCheckingOut, setIsCheckingOut] = React.useState(false)
   const [checkoutDeliveryDate, setCheckoutDeliveryDate] = React.useState("2026-09-21")
-const [poNumber, setPoNumber] = React.useState("")
-const [promoCode, setPromoCode] = React.useState("")
-const [notes, setNotes] = React.useState("")
+  const [poNumber, setPoNumber] = React.useState("")
+  const [promoCode, setPromoCode] = React.useState("")
+  const [notes, setNotes] = React.useState("")
 
   React.useEffect(() => {
-    if (cartOpen && typeof fetchCustomerCart === "function") {
-      fetchCustomerCart()
+    if (cartOpen) {
+      if (typeof fetchCustomerCart === "function") fetchCustomerCart()
+      if (typeof fetchCartGroups === "function") fetchCartGroups()
     }
-  }, [cartOpen, fetchCustomerCart])
+  }, [cartOpen, fetchCustomerCart, fetchCartGroups])
+
   const today = React.useMemo(() => startOfDay(new Date()), [])
   const [calendarOpen, setCalendarOpen] = React.useState(false)
   const [deliveryDate, setDeliveryDate] = React.useState(
@@ -843,99 +876,99 @@ const [notes, setNotes] = React.useState("")
   )
 
 
-// async function checkoutOrderApi({ custNmbr, deliveryDate, cutOffTime, notes, discountCode, poNumber }) {
+  // async function checkoutOrderApi({ custNmbr, deliveryDate, cutOffTime, notes, discountCode, poNumber }) {
   async function checkoutOrderApi({
-  custNmbr,
-  deliveryDate,
-  cutOffTime,
-  notes,
-  discountCode,
-  poNumber,
-}: {
-  custNmbr: string
-  deliveryDate: string
-  cutOffTime: string
-  notes: string
-  discountCode: string
-  poNumber: string
-}) {
-const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/checkout`
+    custNmbr,
+    deliveryDate,
+    cutOffTime,
+    notes,
+    discountCode,
+    poNumber,
+  }: {
+    custNmbr: string
+    deliveryDate: string
+    cutOffTime: string
+    notes: string
+    discountCode: string
+    poNumber: string
+  }) {
+    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/checkout`
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
         Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-    },
-    body: JSON.stringify({
-      custNmbr,
-      deliveryDate,
-      cutOffTime,
-      notes,
-      discountCode,
-      poNumber,
-    }),
-  })
-
-  const text = await response.text()
-  let result = null
-  try {
-    result = text ? JSON.parse(text) : null
-  } catch {
-    console.warn("Checkout response is not JSON:", text)
-  }
-
-  if (!response.ok) {
-    throw new Error(result?.message || result?.error || `Checkout failed. HTTP ${response.status}`)
-  }
-
-  return result
-}
-async function handleCheckout() {
-  if (items.length === 0 || isCheckingOut) return
-  setIsCheckingOut(true)
-
-  try {
-    const res = await checkoutOrderApi({
-      custNmbr: requireCustomerNumber(),
-      deliveryDate: checkoutDeliveryDate,
-      cutOffTime: "14:00:00",
-      notes,
-      discountCode: promoCode,
-      poNumber,
+      },
+      body: JSON.stringify({
+        custNmbr,
+        deliveryDate,
+        cutOffTime,
+        notes,
+        discountCode,
+        poNumber,
+      }),
     })
 
-    if (!res || res.success === false) {
-      throw new Error(res?.message || res?.error || "Order creation failed on backend server.")
+    const text = await response.text()
+    let result = null
+    try {
+      result = text ? JSON.parse(text) : null
+    } catch {
+      console.warn("Checkout response is not JSON:", text)
     }
 
-    const orderNum = res?.orderNumber ?? res?.OrderNumber ?? "CREATED"
-    const amount = Number(res?.orderAmount ?? res?.OrderAmount ?? res?.total) || 0
+    if (!response.ok) {
+      throw new Error(result?.message || result?.error || `Checkout failed. HTTP ${response.status}`)
+    }
 
-    toast.success(
-      amount > 0
-        ? `Order #${orderNum} placed successfully! Total: $${amount.toFixed(2)}`
-        : `Order #${orderNum} placed successfully!`
-    )
-    clearCart()
-    setCartOpen(false)
-    setPoNumber("")
-    setPromoCode("")
-    setNotes("")
-
-    // Tell My Orders (and anything else listening) to refetch, the same
-    // way its own Refresh button does — no full page reload needed.
-    window.dispatchEvent(new CustomEvent("aloha-orders-refresh"))
-  } catch (error) {
-    console.error("Checkout request failed:", error)
-    // const errorMsg = error?.message || "Checkout request failed. Please check API endpoint."
-    const errorMsg = error instanceof Error ? error.message : "Checkout request failed. Please check API endpoint."
-    toast.error(`Checkout Failed: ${errorMsg}`)
-  } finally {
-    setIsCheckingOut(false)
+    return result
   }
-}
+  async function handleCheckout() {
+    if (items.length === 0 || isCheckingOut) return
+    setIsCheckingOut(true)
+
+    try {
+      const res = await checkoutOrderApi({
+        custNmbr: requireCustomerNumber(),
+        deliveryDate: checkoutDeliveryDate,
+        cutOffTime: "14:00:00",
+        notes,
+        discountCode: promoCode,
+        poNumber,
+      })
+
+      if (!res || res.success === false) {
+        throw new Error(res?.message || res?.error || "Order creation failed on backend server.")
+      }
+
+      const orderNum = res?.orderNumber ?? res?.OrderNumber ?? "CREATED"
+      const amount = Number(res?.orderAmount ?? res?.OrderAmount ?? res?.total) || 0
+
+      toast.success(
+        amount > 0
+          ? `Order #${orderNum} placed successfully! Total: $${amount.toFixed(2)}`
+          : `Order #${orderNum} placed successfully!`
+      )
+      clearCart()
+      setCartOpen(false)
+      setPoNumber("")
+      setPromoCode("")
+      setNotes("")
+
+      // Tell My Orders (and anything else listening) to refetch, the same
+      // way its own Refresh button does — no full page reload needed.
+      window.dispatchEvent(new CustomEvent("aloha-orders-refresh"))
+    } catch (error) {
+      console.error("Checkout request failed:", error)
+      // const errorMsg = error?.message || "Checkout request failed. Please check API endpoint."
+      const errorMsg = error instanceof Error ? error.message : "Checkout request failed. Please check API endpoint."
+      toast.error(`Checkout Failed: ${errorMsg}`)
+    } finally {
+      setIsCheckingOut(false)
+    }
+  }
 
   const calendarDays = React.useMemo(() => {
     const year = calendarMonth.getFullYear()
@@ -1249,14 +1282,20 @@ async function handleCheckout() {
         onDecrement={decrementItem}
         onRemove={removeItem}
         onCheckout={handleCheckout}
-  deliveryDate={checkoutDeliveryDate}
-  onDeliveryDateChange={setCheckoutDeliveryDate}
-  poNumber={poNumber}
-  onPoNumberChange={setPoNumber}
-  promoCode={promoCode}
-  onPromoCodeChange={setPromoCode}
-  notes={notes}
-  onNotesChange={setNotes}
+        deliveryDate={checkoutDeliveryDate}
+        onDeliveryDateChange={setCheckoutDeliveryDate}
+        poNumber={poNumber}
+        onPoNumberChange={setPoNumber}
+        promoCode={promoCode}
+        onPromoCodeChange={setPromoCode}
+        notes={notes}
+        onNotesChange={setNotes}
+        cartGroups={cartGroups}
+        cartGroupsLoading={cartGroupsLoading}
+        selectedCartGroupID={selectedCartGroupID}
+       // onSelectCartGroup={setSelectedCartGroupID}
+        onCreate={createCartGroup}
+        isCreating={creatingCartGroup}
       />
       <GlobalUploadModal
         open={uploadOpen}
