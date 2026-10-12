@@ -185,10 +185,10 @@ export function CartSidebar({
         </SheetHeader>
 
 
-        <div className="shrink-0 px-3 pt-2 pb-2">
+        <div className="flex shrink-0 items-center gap-2 px-3 pt-2 pb-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-10 w-full justify-start gap-3 px-3 py-1" disabled={cartGroupsLoading}>
+              <Button variant="outline" className="h-10 min-w-0 flex-1 justify-start gap-2 px-3 py-1" disabled={cartGroupsLoading}>
                 {cartGroupsLoading ? <Loader2 className="size-5 animate-spin" /> : <ShoppingCartIcon className="size-5 text-primary" />}
                 <span className="min-w-0 flex-1 truncate text-left text-xs">
                   <span className="font-normal text-muted-foreground">Selected Cart: </span>
@@ -224,22 +224,23 @@ export function CartSidebar({
                   )
                 })}
               </DropdownMenuRadioGroup>
-              <DropdownMenuItem
-                disabled={!onCreate || isCreating || isCheckingOut}
-                className="mt-2 h-9 cursor-pointer justify-center gap-2 bg-primary px-3 font-medium text-primary-foreground hover:bg-primary/80 focus:bg-primary/80 focus:text-primary-foreground not-data-[variant=destructive]:focus:**:text-primary-foreground"
-                onSelect={() => {
-                  setName("")
-                  setDate("")
-                  setVisibility("Public")
-                  setMinDate(new Date().toLocaleDateString("en-CA"))
-                  setNewCartDialogOpen(true)
-                }}
-              >
-                <PlusIcon className="size-4" />
-                New Cart
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button
+            type="button"
+            className="h-10 gap-1 whitespace-nowrap px-3"
+            disabled={!onCreate || isCreating || isCheckingOut}
+            onClick={() => {
+              setName("")
+              setDate("")
+              setVisibility("Public")
+              setMinDate(new Date().toLocaleDateString("en-CA"))
+              setNewCartDialogOpen(true)
+            }}
+          >
+            <PlusIcon className="size-4" />
+            New Cart
+          </Button>
             <Dialog
               open={newCartDialogOpen}
               onOpenChange={setNewCartDialogOpen}
