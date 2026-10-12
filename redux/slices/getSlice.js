@@ -459,76 +459,6 @@ export const GetInvoicedetails = createAsyncThunk(
 )
 
 // ── GET /Invoice/Download Invoice_PDF ───────────────────────────
-// export const GetinvoicePDF = createAsyncThunk(
-//   "INVOICE_GET/InvoicePDF",
-//   async (INVNumber, { rejectWithValue }) => {
-//     try {
-//       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/invoices/pdf/${INVNumber}`
-
-//       const response = await axios.get(URL, {
-//         responseType: "blob", // required for file downloads
-//         headers: {
-//           Accept: "*/*",
-//           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-//         },
-//       })
-
-//       const contentType =
-//         response.headers["content-type"] || "application/octet-stream"
-
-//       // Some APIs return a JSON error body with HTTP 200
-//       if (contentType.includes("application/json")) {
-//         const text = await response.data.text()
-//         let json = null
-//         try { json = JSON.parse(text) } catch {}
-//         throw new Error(json?.Msg || json?.message || "Failed to download PAR sheet.")
-//       }
-
-//       // File name: from Content-Disposition if available, otherwise build one
-//       const disposition = response.headers["content-disposition"] || ""
-//       const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)
-//       let fileName = match ? decodeURIComponent(match[1]) : null
-
-//       if (!fileName) {
-//         const ext = contentType.includes("pdf")
-//           ? "pdf"
-//           : contentType.includes("csv")
-//             ? "csv"
-//             : contentType.includes("spreadsheet") || contentType.includes("excel")
-//               ? "xlsx"
-//               : "xlsx" // <-- change if your API returns another type
-//         fileName = `PAR-Sheet-${orderGuideID}.${ext}`
-//       }
-
-//       // Trigger the browser download
-//       const blobUrl = window.URL.createObjectURL(
-//         new Blob([response.data], { type: contentType }),
-//       )
-//       const link = document.createElement("a")
-//       link.href = blobUrl
-//       link.download = fileName
-//       document.body.appendChild(link)
-//       link.click()
-//       link.remove()
-//       window.URL.revokeObjectURL(blobUrl)
-
-//       return { fileName }
-//     } catch (error) {
-//       // With responseType "blob", error bodies also arrive as a Blob
-//       if (error.response?.data instanceof Blob) {
-//         try {
-//           const text = await error.response.data.text()
-//           return rejectWithValue(JSON.parse(text))
-//         } catch {
-//           return rejectWithValue(`Failed to download PAR sheet. HTTP ${error.response.status}`)
-//         }
-//       }
-//       return rejectWithValue(error.response ? error.response.data : error.message)
-//     }
-//   }
-// )
-
-
 export const GetinvoicePDF = createAsyncThunk(
   "Invoice/InvoicePDF",
   async (invoiceNumber, { rejectWithValue }) => {
@@ -770,35 +700,6 @@ const getSlice = createSlice({
 
 export const { resetGetSlice, clearOrderGroupItems, clearOrderGuideGroups } = getSlice.actions
 
-// ============================================================
-// SELECTORS
-// ============================================================
-// Items
-// export const selectItemsData        = (state) => state.getSlice.itemsData
-// export const selectItemsLoading     = (state) => state.getSlice.itemsLoading
-// export const selectItemsStatus      = (state) => state.getSlice.itemsStatus
-// export const selectItemsError       = (state) => state.getSlice.itemsError
 
-// Orders
-// export const selectOrdersData       = (state) => state.getSlice.ordersData
-// export const selectOrdersLoading    = (state) => state.getSlice.ordersLoading
-// export const selectOrdersStatus     = (state) => state.getSlice.ordersStatus
-// export const selectOrdersError      = (state) => state.getSlice.ordersError
-// export const selectOrdersCustomerId = (state) => state.getSlice.ordersCustomerId
-
-// Order Guide List
-// export const selectOrderGuideListData    = (state) => state.getSlice.orderGuideListData
-// export const selectOrderGuideListLoading = (state) => state.getSlice.orderGuideListLoading
-// export const selectOrderGuideListStatus  = (state) => state.getSlice.orderGuideListStatus
-
-// Order Guide Groups
-// export const selectOrderGuideGroupsData    = (state) => state.getSlice.orderGuideGroupsData
-// export const selectOrderGuideGroupsLoading = (state) => state.getSlice.orderGuideGroupsLoading
-// export const selectOrderGuideGroupsStatus  = (state) => state.getSlice.orderGuideGroupsStatus
-
-// Order Group Items
-// export const selectOrderGroupItemsData    = (state) => state.getSlice.orderGroupItemsData
-// export const selectOrderGroupItemsLoading = (state) => state.getSlice.orderGroupItemsLoading
-// export const selectOrderGroupItemsStatus  = (state) => state.getSlice.orderGroupItemsStatus
 
 export default getSlice.reducer
