@@ -1,19 +1,22 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState } from "react"
 import { Label } from "@/components/ui/label"
 
 import { useTranslations } from "next-intl"
 import { Tabs } from "radix-ui"
-import { CheckIcon, Loader2, LockIcon, UsersIcon, MinusIcon, MoreVertical, PlusIcon, ShoppingBagIcon, Trash2Icon, XIcon } from "lucide-react"
+import { ChevronDownIcon, Loader2, LockIcon, UsersIcon, MinusIcon, MoreVertical, PlusIcon, ShoppingBagIcon, ShoppingCartIcon, Trash2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -36,69 +39,13 @@ import {
 } from "@/components/ui/dialog"
 
 
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "@/components/ui/select"
-
-function CartItemSkeleton() {
-  return (
-    <div className="rounded-md border bg-card p-3">
-      <div className="flex items-start gap-3">
-        <div className="size-16 shrink-0 animate-pulse rounded-md bg-muted" />
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-          <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <div className="h-8 w-24 animate-pulse rounded-md bg-muted" />
-            <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-
 export type NewCartPayload = {
   name: string
   visibility: "Public" | "Private"
   fulfillmentDate: string
 }
 
-type DeliveryDateOption = { value: string; label: string }
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 const MAX_NAME_LENGTH = 36
-
-function pad(n: number) {
-  return String(n).padStart(2, "0")
-}
-
-// local date -> "2026-10-10" (no UTC shift)
-function toISODate(date: Date) {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-}
-
-// next `days` days starting tomorrow -> "DELIVERY Oct 10"
-function buildDeliveryDates(days = 14): DeliveryDateOption[] {
-  const options: DeliveryDateOption[] = []
-  const start = new Date()
-  start.setHours(0, 0, 0, 0)
-
-  for (let i = 1; i <= days; i++) {
-    const date = new Date(start)
-    date.setDate(start.getDate() + i)
-    options.push({
-      value: toISODate(date),
-      label: `DELIVERY ${MONTHS[date.getMonth()]} ${date.getDate()}`,
-    })
-  }
-  return options
-}
 
 export function CartSidebar({
   open,
@@ -112,7 +59,6 @@ export function CartSidebar({
   onDecrement,
   onRemove,
   onCheckout,
-  //add new
   deliveryDate,
   onDeliveryDateChange,
   poNumber,
@@ -125,17 +71,13 @@ export function CartSidebar({
   cartGroupsLoading = false,
   selectedCartGroupID,
   onSelectCartGroup,
-  onCreateCartGroup,
-  isCreatingCartGroup = false,
   onCreate,
   isCreating = false,
-  deliveryDates,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onCreate?: (data: NewCartPayload) => Promise<boolean | void>
   isCreating?: boolean
-  deliveryDates?: DeliveryDateOption[]
   itemCount: number
   total: string
   items?: {
@@ -169,6 +111,7 @@ export function CartSidebar({
     cartGroupID: number | string
     name: string
     isDefault?: boolean
+    visibility?: string
     itemCount?: number
     unitsCount?: number
     estimatedTotal?: number
@@ -176,59 +119,20 @@ export function CartSidebar({
   cartGroupsLoading?: boolean
   selectedCartGroupID?: number | string | null
   onSelectCartGroup?: (id: number | string) => void
-  onCreateCartGroup?: (name: string) => Promise<boolean | void>
-  isCreatingCartGroup?: boolean
 }) {
   const isEmpty = items.length === 0
   const t = useTranslations("cart")
 
   const [showDescription, setShowDescription] = useState(true)
-  console.log("CartSidebar isLoading----:", isLoading)
-
-
-  const [addingCart, setAddingCart] = useState(false)
-  const [newCartName, setNewCartName] = useState("")
-  const [cartVisibility, setCartVisibility] = useState<"public" | "private">("public")
   const [newCartDialogOpen, setNewCartDialogOpen] = useState(false)
-
-  async function submitNewCart(event: React.FormEvent) {
-    event.preventDefault()
-
-    const name = newCartName.trim()
-    if (!name) return
-
-    const ok = await onCreateCartGroup?.(name)
-
-    if (ok !== false) {
-      setNewCartName("")
-      setAddingCart(false)
-      setCartVisibility("public")
-    }
-  }
-
-
-  const dateOptions = useMemo(
-    () => (deliveryDates && deliveryDates.length > 0 ? deliveryDates : buildDeliveryDates()),
-    // rebuild each time the dialog opens so "tomorrow" is always current
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [deliveryDates, open]
-  )
 
   const [name, setName] = useState("")
   const [date, setDate] = useState("")
   const [visibility, setVisibility] = useState<"Public" | "Private">("Public")
 
-  // reset the form every time the dialog opens
-  useEffect(() => {
-    if (newCartDialogOpen) {
-      setName("")
-      setVisibility("Public")
-      setDate("")
-    }
-  }, [newCartDialogOpen])
-
-  const selectedLabel = dateOptions.find((option) => option.value === date)?.label
-  const canCreate = name.trim().length > 0 && !isCreating
+  const [minDate, setMinDate] = useState("")
+  const selectedCart = cartGroups.find((group) => String(group.cartGroupID) === String(selectedCartGroupID))
+  const canCreate = name.trim().length > 0 && !!date && !isCreating && !!onCreate
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -237,7 +141,7 @@ export function CartSidebar({
     const ok = await onCreate?.({
       name: name.trim(),
       visibility,
-      fulfillmentDate: date, // "2026-10-11"
+      fulfillmentDate: date,
     })
 
     if (ok !== false) setNewCartDialogOpen(false)
@@ -248,7 +152,7 @@ export function CartSidebar({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="gap-0 p-0 data-[side=right]:w-screen data-[side=right]:max-w-none sm:data-[side=right]:w-[min(100vw,24rem)] sm:data-[side=right]:max-w-md"
+        className="gap-0 p-0 data-[side=right]:w-screen data-[side=right]:max-w-none sm:data-[side=right]:w-[min(100vw,26rem)] sm:data-[side=right]:max-w-md"
       >
         <SheetHeader className="border-b px-3 py-4">
           <SheetTitle className="pr-16 text-lg font-semibold">
@@ -281,50 +185,66 @@ export function CartSidebar({
         </SheetHeader>
 
 
-        <div className="border-b px-3 py-3">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {cartGroupsLoading && cartGroups.length === 0 ? (
-              <>
-                <div className="h-9 w-24 shrink-0 animate-pulse rounded-lg bg-muted" />
-                <div className="h-9 w-20 shrink-0 animate-pulse rounded-lg bg-muted" />
-              </>
-            ) : (
-              cartGroups.map((group) => {
-                const active = String(group.cartGroupID) === String(selectedCartGroupID)
-                return (
-                  <button
-                    key={group.cartGroupID}
-                    type="button"
-                    onClick={() => onSelectCartGroup?.(group.cartGroupID)}
-                    title={`${group.itemCount ?? 0} items · ${group.unitsCount ?? 0} units`}
-                    className={`h-9 shrink-0 whitespace-nowrap rounded-lg border px-3 text-sm font-semibold transition-colors ${active
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-input bg-background text-foreground hover:bg-muted"
-                      }`}
-                  >
-                    {group.name}
-                  </button>
-                )
-              })
-            )}
-
-
-
-            <button
-              type="button"
-              aria-label="Create new cart"
-              onClick={() => setNewCartDialogOpen(true)}
-              className="grid size-9 shrink-0 place-items-center rounded-lg border border-dashed border-input text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <PlusIcon className="size-4" />
-            </button>
-
-
+        <div className="shrink-0 px-3 pt-2 pb-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-10 w-full justify-start gap-3 px-3 py-1" disabled={cartGroupsLoading}>
+                {cartGroupsLoading ? <Loader2 className="size-5 animate-spin" /> : <ShoppingCartIcon className="size-5 text-primary" />}
+                <span className="min-w-0 flex-1 truncate text-left text-xs">
+                  <span className="font-normal text-muted-foreground">Selected Cart: </span>
+                  {selectedCart?.name ?? "Select cart"}
+                </span>
+                {selectedCart && <Badge variant="secondary" aria-label={`${itemCount} items`}>{itemCount}</Badge>}
+                <ChevronDownIcon className="size-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 p-2">
+              <DropdownMenuRadioGroup
+                value={selectedCartGroupID == null ? "" : String(selectedCartGroupID)}
+                onValueChange={(value) => {
+                  const group = cartGroups.find((group) => String(group.cartGroupID) === value)
+                  if (group) onSelectCartGroup?.(group.cartGroupID)
+                }}
+              >
+                {cartGroups.map((group) => {
+                  const active = String(group.cartGroupID) === String(selectedCartGroupID)
+                  return (
+                    <DropdownMenuRadioItem
+                      key={group.cartGroupID}
+                      value={String(group.cartGroupID)}
+                      disabled={!onSelectCartGroup || isCheckingOut}
+                      className={`gap-2 py-3 pl-2 pr-8 ${active ? "bg-primary/10 text-primary" : ""}`}
+                    >
+                      <ShoppingCartIcon className="size-4 text-blue-500" />
+                      <span className="truncate">{group.name}</span>
+                      <Badge variant="secondary" aria-label={`${active ? itemCount : group.itemCount ?? 0} items`}>
+                        {active ? itemCount : group.itemCount ?? 0}
+                      </Badge>
+                    </DropdownMenuRadioItem>
+                  )
+                })}
+              </DropdownMenuRadioGroup>
+              <DropdownMenuItem
+                disabled={!onCreate || isCreating || isCheckingOut}
+                className="mt-2 h-9 cursor-pointer justify-center gap-2 bg-primary px-3 font-medium text-primary-foreground hover:bg-primary/80 focus:bg-primary/80 focus:text-primary-foreground not-data-[variant=destructive]:focus:**:text-primary-foreground"
+                onSelect={() => {
+                  setName("")
+                  setDate("")
+                  setVisibility("Public")
+                  setMinDate(new Date().toLocaleDateString("en-CA"))
+                  setNewCartDialogOpen(true)
+                }}
+              >
+                <PlusIcon className="size-4" />
+                New Cart
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
             <Dialog
               open={newCartDialogOpen}
               onOpenChange={setNewCartDialogOpen}
             >
-              <DialogContent className="gap-0 rounded-2xl p-6 sm:max-w-xl" showCloseButton={false}>
+              <DialogContent className="gap-0 rounded-2xl p-6 sm:max-w-xl">
                 <DialogHeader className="gap-1 text-left">
                   <DialogTitle className="text-xl font-semibold">New cart</DialogTitle>
                   <DialogDescription className="text-sm">
@@ -354,7 +274,6 @@ export function CartSidebar({
 
 
                   {/* Fulfillment date */}
-                  {/* Fulfillment date */}
                   <div className="grid gap-1.5">
                     <Label
                       htmlFor="fulfillment-date"
@@ -367,7 +286,7 @@ export function CartSidebar({
                       id="fulfillment-date"
                       type="date"
                       value={date}
-                      min={toISODate(new Date(Date.now() - new Date().getTimezoneOffset() * 60000))}
+                      min={minDate}
                       onChange={(event) => setDate(event.target.value)}
                       className="h-12 w-full rounded-lg px-4 text-base"
                       required
@@ -409,55 +328,27 @@ export function CartSidebar({
                   </div>
 
                   {/* Actions */}
-                  <div className="mt-2 grid grid-cols-3 gap-3">
+                  <DialogFooter className="-mx-6 -mb-6 mt-2 flex-row justify-end rounded-b-2xl p-4">
                     <Button
                       type="button"
-                      variant="ghost"
-                      className="h-12 text-base font-semibold"
+                      variant="outline"
                       onClick={() => setNewCartDialogOpen(false)}
                       disabled={isCreating}
                     >
                       Cancel
                     </Button>
-                    <Button type="submit" className="col-span-2 h-12 text-base font-semibold" disabled={!canCreate}>
+                    <Button type="submit" disabled={!canCreate}>
                       {isCreating ? <Loader2 className="size-4 animate-spin" /> : null}
                       Create cart
                     </Button>
-                  </div>
+                  </DialogFooter>
                 </form>
               </DialogContent>
             </Dialog>
-          </div>
-
-          {addingCart && (
-            <form onSubmit={submitNewCart} className="mt-2 flex items-center gap-2">
-              <Input
-                autoFocus
-                value={newCartName}
-                maxLength={40}
-                onChange={(e) => setNewCartName(e.target.value)}
-                placeholder="Cart name"
-                aria-label="New cart name"
-                className="h-9 rounded-sm"
-              />
-              <Button type="submit" size="icon-sm" disabled={!newCartName.trim() || isCreatingCartGroup} aria-label="Create cart">
-                {isCreatingCartGroup ? <Loader2 className="animate-spin" /> : <CheckIcon />}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => { setAddingCart(false); setNewCartName("") }}
-                aria-label="Cancel"
-              >
-                <XIcon />
-              </Button>
-            </form>
-          )}
         </div>
 
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-0 pb-3">
           {isLoading ? (
             <div
               role="status"
@@ -491,10 +382,10 @@ export function CartSidebar({
                   return (
                     <article
                       key={item.id}
-                      className="rounded-md border bg-card p-3 text-card-foreground"
+                      className="rounded-xl border bg-card p-3 text-card-foreground shadow-sm"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="relative size-16 shrink-0 overflow-hidden rounded-md border bg-muted">
+                        <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={image}
@@ -506,16 +397,15 @@ export function CartSidebar({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <h3 className="truncate text-sm font-semibold">
+                              <h3 className="text-sm font-semibold leading-5">
                                 {item.name}
                               </h3>
-                              <p className="text-xs text-muted-foreground">item Num: {item.itemNumber}</p>
-                              {showDescription &&
-
+                              <p className="text-xs text-muted-foreground">Item Num: {item.itemNumber}</p>
+                              {showDescription && (
                                 <p className="text-xs text-muted-foreground">
-                                  {/* {item.itemNumber} · ${item.qtybsuom.toFixed(2)} / {item.unit} */}
-                                  ${item.quantity}
-                                </p>}
+                                  ${item.qtybsuom.toFixed(2)}{item.unit ? ` / ${item.unit}` : ""}
+                                </p>
+                              )}
                             </div>
 
                             <Button
@@ -529,7 +419,7 @@ export function CartSidebar({
                           </div>
 
                           <div className="mt-3 flex items-center justify-between gap-3">
-                            <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
+                            <div className="grid h-8 grid-cols-3 overflow-hidden rounded-lg border bg-background">
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
