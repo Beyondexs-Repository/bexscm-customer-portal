@@ -785,7 +785,6 @@ export function useCart() {
     clearCart,
     fetchCustomerCart,
     refetchCart: fetchCustomerCart,
-    // postCartApi,
     updateCartQuantityApi,
     checkoutOrderApi,
     importDocumentCartApi,
