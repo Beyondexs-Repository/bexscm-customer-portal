@@ -1766,7 +1766,7 @@ export function OrderGuideProductsList({
   const [isUpdatingQuickOrder, setIsUpdatingQuickOrder] = useState(false);
 const [isReordering, setIsReordering] = useState(false);
 const [isDeletingProduct, setIsDeletingProduct] = useState(false);
-  const { items, incrementItem, decrementItem, fetchCustomerCart, newCartGroupID } =
+  const { items, incrementItem, decrementItem, fetchCustomerCart, selectedCartGroupID } =
     useCart();
 
   const { quickOrders } = useQuickOrders();
@@ -2591,10 +2591,14 @@ async function handleDuplicate({ targetGroupId, newGroupName }) {
       toast.error("Unable to identify the customer.")
       return
     }
+    if (selectedCartGroupID == null) {
+  toast.error("Please select a cart first.");
+  return;
+}
 
     try {
       const result = await dispatch(
-        PostCart({ data: { custNmbr, orderGroupItemIds: ids, cartGroupId: newCartGroupID,} })
+        PostCart({ data: { custNmbr, orderGroupItemIds: ids, cartGroupId: selectedCartGroupID,} })
       ).unwrap()
 
       // Re-fetch from the server so the header badge and cart sidebar

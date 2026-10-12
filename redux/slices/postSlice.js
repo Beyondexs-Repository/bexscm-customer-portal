@@ -179,6 +179,47 @@ export const PostReorder = createAsyncThunk(
   }
 )
 
+//Catelog/ADD TO CART// POST===================================
+export const PostCartcatelog = createAsyncThunk(
+  "Catelog/CART_POST",
+  async (
+    { custnmbr, itemNumber, itemName, quantity, cartGroupID, source = "App/Web" },
+    { rejectWithValue }
+  ) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/cart`;
+
+      const response = await axios.post(
+        URL,
+        {
+          CUSTNMBR: custnmbr,
+          ItemNumber: itemNumber,
+          ItemName: itemName,
+          Quantity: quantity,
+          Source: source,
+          cartGroupID,
+        },
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+          },
+        }
+      );
+
+      if (response.data?.success === false) {
+        throw new Error(
+          response.data?.Msg || response.data?.message || "Failed to add item to cart."
+        );
+      }
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
 
 // ── POST /cartgroups ─────────────────────────────────────
 

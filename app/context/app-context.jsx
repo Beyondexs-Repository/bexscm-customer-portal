@@ -5,10 +5,10 @@ import { useDispatch, useSelector } from "react-redux"
 import { usePathname } from "next/navigation"
 import { getCatalogProducts, findCatalogProduct } from "@/lib/catalog-products"
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
-import { postCartApi, updateCartQuantityApi, checkoutOrderApi, importDocumentCartApi } from "@/lib/api/cartApi"
+import { updateCartQuantityApi, checkoutOrderApi, importDocumentCartApi } from "@/lib/api/cartApi"
 import { resolveItemImageUrl } from "@/lib/api/itemsApi"
 import { GetCart, GetCartGroups } from "../../redux/slices/getSlice"
-import { PostCartGroup } from "../../redux/slices/postSlice"
+import { PostCartGroup, PostCartcatelog } from "../../redux/slices/postSlice"
 import { toast } from "sonner"
 
 const AppContext = createContext(null)
@@ -393,55 +393,135 @@ if (createdCartGroupID != null) {
     fetchCartGroups()
   }, [pathname, storageHydrated, fetchCustomerCart, fetchCartGroups])
 
-  function addCartItem(product, quantity = 1) {
-    setCartItems((currentItems) => {
-      const existingItem = currentItems.find((item) => item.id === product.id)
+  // function addCartItem(product, quantity = 1) {
+  //   setCartItems((currentItems) => {
+  //     const existingItem = currentItems.find((item) => item.id === product.id)
 
-      if (existingItem) {
-        return currentItems.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        )
-      }
+  //     if (existingItem) {
+  //       return currentItems.map((item) =>
+  //         item.id === product.id
+  //           ? { ...item, quantity: item.quantity + quantity }
+  //           : item
+  //       )
+  //     }
 
-      return [
-        ...currentItems,
-        {
-          id: product.id,
-          name: product.name,
-          price: Number(product.price ?? 0),
-          unit: product.unit,
-          sku: product.sku,
-          category: product.category,
-          subcategory: product.subcategory,
-          image: getCartItemImage(product),
-           cartGroupID: selectedCartGroupID,
-          quantity,
-        },
-      ]
-    })
+  //     return [
+  //       ...currentItems,
+  //       {
+  //         id: product.id,
+  //         name: product.name,
+  //         price: Number(product.price ?? 0),
+  //         unit: product.unit,
+  //         sku: product.sku,
+  //         category: product.category,
+  //         subcategory: product.subcategory,
+  //         image: getCartItemImage(product),
+  //          cartGroupID: selectedCartGroupID,
+  //         quantity,
+  //       },
+  //     ]
+  //   })
 
-    postCartApi({
-      itemNumber:
-        product.ITEMNMBR ||
-        product.ItemNumber ||
-        product.itemnmbr ||
-        product.sku ||
-        product.id,
-      itemName:
-        product.ITEMDESC ||
-        product.ItemName ||
-        product.itemdesc ||
-        product.name,
-      quantity,
-      custnmbr: getCustnmbr(),
-       cartGroupID: selectedCartGroupID,
-      source: "App/Web",
-    }).catch((error) => {
-      console.warn("Failed to sync cart item to Cart API endpoint:", error.message)
-    })
+  //   postCartApi({
+  //     itemNumber:
+  //       product.ITEMNMBR ||
+  //       product.ItemNumber ||
+  //       product.itemnmbr ||
+  //       product.sku ||
+  //       product.id,
+  //     itemName:
+  //       product.ITEMDESC ||
+  //       product.ItemName ||
+  //       product.itemdesc ||
+  //       product.name,
+  //     quantity,
+  //     custnmbr: getCustnmbr(),
+  //      cartGroupID: selectedCartGroupID,
+  //     source: "App/Web",
+  //   }).catch((error) => {
+  //     console.warn("Failed to sync cart item to Cart API endpoint:", error.message)
+  //   })
+  // }
+
+  async function addCartItem(product, quantity = 1) {
+  // selected cart; if nothing is selected yet, use the default cart
+  const defaultGroupID = (cartGroups.find((g) => g.isDefault) ?? cartGroups[0])?.cartGroupID
+  const groupID = selectedCartGroupID ?? defaultGroupID
+
+  if (groupID == null) {
+    toast.error("Please select a cart first.")
+    return
   }
+
+  // optimistic UI update (same item + same cart => increase quantity)
+  setCartItems((currentItems) => {
+    const existingItem = currentItems.find(
+      (item) =>
+        item.id === product.id &&
+        String(item.cartGroupID ?? defaultGroupID) === String(groupID)
+    )
+
+    if (existingItem) {
+      return currentItems.map((item) =>
+        item === existingItem
+          ? { ...item, quantity: item.quantity + quantity }
+          : item
+      )
+    }
+const unitPrice = Number(product.price ?? 0)
+const itemNum = String(product.sku ?? product.itemNumber ?? product.id ?? "").trim()
+
+    return [
+      ...currentItems,
+      {
+        id: product.id,
+        name: product.name,
+         price: unitPrice,
+    qtybsuom: unitPrice,  
+        unit: product.unit,
+        sku: product.sku,
+          itemNumber: itemNum,   
+        category: product.category,
+        subcategory: product.subcategory,
+        image: getCartItemImage(product),
+        cartGroupID: groupID,
+        quantity,
+      },
+    ]
+  })
+
+  try {
+    await dispatch(
+      PostCartcatelog({
+        custnmbr: getCustnmbr(),
+        itemNumber:
+          product.ITEMNMBR ||
+          product.ItemNumber ||
+          product.itemnmbr ||
+          product.sku ||
+          product.id,
+        itemName:
+          product.ITEMDESC ||
+          product.ItemName ||
+          product.itemdesc ||
+          product.name,
+        quantity,
+        cartGroupID: groupID,
+        source: "App/Web",
+      })
+    ).unwrap()
+
+    // sync with the server so the sidebar and badge are accurate
+    await fetchCustomerCart(getCustnmbr())
+  } catch (error) {
+    console.warn("Failed to add item to cart:", error)
+    toast.error(
+      typeof error === "string" ? error : error?.Msg || error?.message || "Failed to add to cart"
+    )
+    // roll back the optimistic update
+    await fetchCustomerCart(getCustnmbr())
+  }
+}
 
   function incrementCartItem(productId) {
     let nextQuantity = 1
@@ -705,7 +785,7 @@ export function useCart() {
     clearCart,
     fetchCustomerCart,
     refetchCart: fetchCustomerCart,
-    postCartApi,
+    // postCartApi,
     updateCartQuantityApi,
     checkoutOrderApi,
     importDocumentCartApi,

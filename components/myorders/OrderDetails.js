@@ -34,7 +34,7 @@ import { resolveItemImageUrl } from "@/lib/api/itemsApi"
 export default function OrderDetails({ order, onBack, onClose, onReorderSuccess }) {
 const dispatch = useDispatch()
 const [ratingsByOrder, setRatingsByOrder] = useState({})
-   const { fetchCustomerCart, newCartGroupID } = useCart()
+   const { fetchCustomerCart, selectedCartGroupID  } = useCart()
   const imageurl = `https://crateapi.bexlgems.com/Images/Items`;
 
   console.log(order, "--find order in order details");
@@ -144,13 +144,13 @@ const handleReorder = async () => {
     toast.error("Some items have no item number, so they can't be reordered.")
     return
   }
-  if (!newCartGroupID) {
+  if (!selectedCartGroupID ) {
     toast.error("No cart selected. Please select a cart and try again.")
     return
   }
   try {
     setIsReOrdering(true)
-    const result = await reorderOrderApi(order.orderNumber, requestItems, newCartGroupID)
+    const result = await reorderOrderApi(order.orderNumber, requestItems, selectedCartGroupID )
 
     if (result?.success) {
       toast.success("Items added to cart successfully.")
