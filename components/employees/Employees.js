@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useEmployeeAccess } from "./employee-access"
+import { useMemo, useState } from "react"
+import { employeeRoles, useEmployeeAccess } from "./employee-access"
 import { Network, Plus, Search, Table2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -13,11 +13,23 @@ import { AlertDialog } from "radix-ui"
 import EmpTable from "./EmpTable"
 
 export default function Employees() {
-  const { allowedRoles } = useEmployeeAccess()
+   const { allowedRoles, role } = useEmployeeAccess()
   const [view, setView] = useState("table")
   const [employees, setEmployees] = useState(() => employeeData.map((employee) => ({ ...employee, status: "Active" })))
   const [form, setForm] = useState(null)
   const [deleting, setDeleting] = useState(null)
+
+// Show only employees with the same role as the logged-in user
+const visibleEmployees = useMemo(
+  () => employees.filter((e) => e.role === role),
+  [employees, role]
+)
+    // Logged-in role sees its own level and everything below it
+  // const visibleEmployees = useMemo(() => {
+  //   const myIndex = employeeRoles.indexOf(role)
+  //   if (myIndex < 0) return []
+  //   return employees.filter((e) => employeeRoles.indexOf(e.role) >= myIndex)
+  // }, [employees, role])
 
   function saveEmployee(employee) {
     setEmployees((current) => current.some((item) => item.id === employee.id)
@@ -72,7 +84,11 @@ export default function Employees() {
           </Button>}
         </div>
       </section>
-      {view === "chart" ? <EmpChart employees={employees} onEdit={(employee) => setForm({ employee })} onDelete={setDeleting} /> : <EmpTable employees={employees} onEdit={(employee) => setForm({ employee })} onDelete={setDeleting} />}
+      {/* {view === "chart" ? <EmpChart employees={employees} onEdit={(employee) => setForm({ employee })} onDelete={setDeleting} /> : <EmpTable employees={employees} onEdit={(employee) => setForm({ employee })} onDelete={setDeleting} />} */}
+      {view === "chart"
+  ? <EmpChart employees={visibleEmployees} onEdit={(employee) => setForm({ employee })} onDelete={setDeleting} />
+  : <EmpTable employees={visibleEmployees} onEdit={(employee) => setForm({ employee })} onDelete={setDeleting} />}
+
       {form && allowedRoles.length > 0 && (!form.employee || allowedRoles.includes(form.employee.role)) && <EmployeeForm employee={form.employee} employees={employees} onClose={() => setForm(null)} onSave={saveEmployee} />}
       <AlertDialog.Root open={!!deleting && allowedRoles.includes(deleting.role)} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialog.Portal>

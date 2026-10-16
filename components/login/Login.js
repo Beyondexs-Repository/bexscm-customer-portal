@@ -29,16 +29,16 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { localeStorageKey, locales } from "@/lib/i18n";
+import { localeStorageKey, locales, localeLabels } from "@/lib/i18n";
 import { hasSession, saveSession } from "@/lib/auth";
 import { getCustomerNumber, normalizeCustomerNumber } from "@/lib/customer";
 import { loginAuthApi } from "@/lib/api/authApi";
 
-const localeLabels = {
-	en: "English",
-	es: "Spanish",
-	ta: "Tamil",
-};
+// const localeLabels = {
+// 	en: "English",
+// 	es: "Spanish",
+// 	ta: "Tamil",
+// };
 
 const preferredCountries = ["US", "IN", "GB", "AE", "CA", "AU"];
 
@@ -323,7 +323,7 @@ async function handleSendOtp(event) {
       if (value == null) localStorage.removeItem(key);
       else localStorage.setItem(key, value);
     }
-
+localStorage.setItem("mobileNumber", String(user.mobileNumber ?? rawDigits));
     setStep("otp");
     setMessage(
       result?.message || t("otpSent", { phone: formattedPhone ?? maskedPhone })
@@ -490,8 +490,8 @@ async function handleSendOtp(event) {
 									className="grid grid-cols-2 gap-1 mb-3"
 								>
 									{[
-										["phone", "Phone Number"],
-										["email", "Email ID"],
+										["phone", t("phone")],
+										["email", t("email")],
 									].map(([method, label]) => (
 										<button
 											key={method}

@@ -4,14 +4,21 @@
     "english": "English",
     "spanish": "Spanish",
     "darkMode": "Dark Mode",
-    "toggleDarkMode": "Toggle dark mode"
+    "toggleDarkMode": "Toggle dark mode",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
   },
   "nav": {
     "main": "Main",
+    "customer": "Customer",
     "overview": "Overview",
     "orderGuide": "Order Guide",
     "catalog": "Catalog",
     "myOrders": "My Orders",
+    "metrics": "Metrics",
+    "invoices": "Invoices",
     "messages": "Messages",
     "employees": "Employees",
     "users": "Users"
@@ -26,6 +33,19 @@
     "employees": "Employees",
     "users": "Users"
   },
+"pageHeader": {
+  "overview": { "title": "Overview", "description": "View account activity, recent orders, and shortcuts" },
+  "productDetails": { "title": "Product Details", "description": "Review product information, pricing, and availability" },
+  "catalog": { "title": "Catalog", "description": "Browse products, pricing, and availability" },
+  "orderGuide": { "title": "Order Guide", "description": "Build and manage frequently ordered product lists" },
+  "myOrders": { "title": "My Orders", "description": "Review current and previous orders" },
+  "invoiceDetails": { "title": "Invoice Details", "description": "Review invoice charges, payments, and balances" },
+  "invoices": { "title": "Invoices", "description": "Review invoice totals, payments, balances, and status" },
+  "metrics": { "title": "Metrics", "description": "Review purchasing trends, order activity, and invoice balances" },
+  "messages": { "title": "Messages", "description": "Contact support and review conversations" },
+  "employees": { "title": "Employees", "description": "View and manage store employees" },
+  "profile": { "title": "Profile", "description": "Manage your account and contact information" }
+},
   
   "userMenu": {
     "myProfile": "Manage account",
@@ -40,7 +60,13 @@
     "logOut": "Log out",
     "openProfileMenu": "Open profile menu",
     "openCart": "Open cart",
-    "cart": "Cart"
+    "cart": "Cart",
+    "aiQuickAction": "AI Quick Action",
+    "upload": "Upload",
+    "uploadFiles": "Upload Files",
+    "openMessageOptions": "Open message options",
+    "search": "Search",
+    "clearChat": "Clear Chat"
   },
   "cart": {
     "title": "Your Cart",
@@ -51,7 +77,40 @@
     "proceed": "Proceed to Checkout",
     "remove": "Remove {name}",
     "decrease": "Decrease {name}",
-    "increase": "Increase {name}"
+    "increase": "Increase {name}",
+    "cartOptions": "Cart options",
+    "showDescription": "Show description",
+    "clearAll": "Clear all items",
+    "selectedCart": "Selected Cart:",
+    "selectCart": "Select cart",
+    "itemsLabel": "{count} items",
+    "newCart": "New Cart",
+    "newCartTitle": "New cart",
+    "newCartDescription": "Name it, set the delivery date and visibility before creating.",
+    "cartName": "Cart name",
+    "cartNamePlaceholder": "e.g. Line Prep",
+    "fulfillmentDate": "Fulfillment date",
+    "visibility": "Visibility",
+    "public": "Public",
+    "publicHint": "Everyone on the account",
+    "private": "Private",
+    "privateHint": "Only you can see it",
+    "cancel": "Cancel",
+    "createCart": "Create cart",
+    "loadingCart": "Loading cart...",
+    "itemNum": "Item Num",
+    "orderDetails": "Order details",
+    "deliveryDate": "Delivery Date",
+    "poNumber": "PO Number",
+    "promoCode": "Promo Code",
+    "orderNotes": "Order Notes",
+    "deliveryDateHint": "Enter your preferred delivery date.",
+    "poNumberHint": "Enter your purchase order number.",
+    "promoCodeHint": "Enter your promo code.",
+    "poNumberPlaceholder": "Enter PO number",
+    "promoCodePlaceholder": "Enter promo code",
+    "orderNotesPlaceholder": "Enter order notes",
+    "processing": "Processing..."
   },
   "dashboard": {
     "overview": {
@@ -349,6 +408,8 @@
     "changeNumber": "Change number",
     "otpDigit": "OTP digit {index}",
     "verifyContinue": "Verify and continue",
-    "footerNote": "Fast, private, and protected sign in"
+    "footerNote": "Fast, private, and protected sign in",
+    "phone": "Phone Number",
+    "email": "Email ID"
   }
 }

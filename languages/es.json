@@ -3,15 +3,22 @@
     "language": "Idioma",
     "english": "Inglés",
     "spanish": "Español",
+    "theme": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema",
     "darkMode": "Modo oscuro",
     "toggleDarkMode": "Cambiar modo oscuro"
   },
   "nav": {
     "main": "Principal",
+    "customer": "Cliente",
     "overview": "Resumen",
     "orderGuide": "Guía de pedidos",
     "catalog": "Catálogo",
     "myOrders": "Mis pedidos",
+    "metrics": "Métricas",
+    "invoices": "Facturas",
     "messages": "Mensajes",
     "employees": "Empleados",
     "users": "Usuarios"
@@ -26,6 +33,19 @@
     "employees": "Empleados",
     "users": "Usuarios"
   },
+  "pageHeader": {
+  "overview": { "title": "Resumen", "description": "Consulta la actividad de la cuenta, los pedidos recientes y los accesos directos" },
+  "productDetails": { "title": "Detalles del producto", "description": "Revisa la información, el precio y la disponibilidad del producto" },
+  "catalog": { "title": "Catálogo", "description": "Explora productos, precios y disponibilidad" },
+  "orderGuide": { "title": "Guía de pedidos", "description": "Crea y administra listas de productos pedidos con frecuencia" },
+  "myOrders": { "title": "Mis pedidos", "description": "Revisa los pedidos actuales y anteriores" },
+  "invoiceDetails": { "title": "Detalles de la factura", "description": "Revisa los cargos, pagos y saldos de la factura" },
+  "invoices": { "title": "Facturas", "description": "Revisa los totales, pagos, saldos y estado de las facturas" },
+  "metrics": { "title": "Métricas", "description": "Revisa las tendencias de compra, la actividad de pedidos y los saldos de facturas" },
+  "messages": { "title": "Mensajes", "description": "Contacta con soporte y revisa las conversaciones" },
+  "employees": { "title": "Empleados", "description": "Consulta y administra los empleados de la tienda" },
+  "profile": { "title": "Perfil", "description": "Administra tu cuenta y tu información de contacto" }
+},
   "userMenu": {
     "myProfile": "Administrar cuenta",
     "logOut": "Cerrar sesión"
@@ -39,7 +59,13 @@
     "logOut": "Cerrar sesión",
     "openProfileMenu": "Abrir menú de perfil",
     "openCart": "Abrir carrito",
-    "cart": "Carrito"
+    "cart": "Carrito",
+    "aiQuickAction": "Acción rápida con IA",
+    "upload": "Subir",
+    "uploadFiles": "Subir archivos",
+    "openMessageOptions": "Abrir opciones de mensajes",
+    "search": "Buscar",
+    "clearChat": "Borrar chat"
   },
   "cart": {
     "title": "Tu carrito",
@@ -50,7 +76,40 @@
     "proceed": "Ir al pago",
     "remove": "Eliminar {name}",
     "decrease": "Disminuir {name}",
-    "increase": "Aumentar {name}"
+    "increase": "Aumentar {name}",
+    "cartOptions": "Opciones del carrito",
+    "showDescription": "Mostrar descripción",
+    "clearAll": "Vaciar todos los artículos",
+    "selectedCart": "Carrito seleccionado:",
+    "selectCart": "Seleccionar carrito",
+    "itemsLabel": "{count} artículos",
+    "newCart": "Nuevo carrito",
+    "newCartTitle": "Nuevo carrito",
+    "newCartDescription": "Asígnale un nombre, define la fecha de entrega y la visibilidad antes de crearlo.",
+    "cartName": "Nombre del carrito",
+    "cartNamePlaceholder": "p. ej. Preparación de línea",
+    "fulfillmentDate": "Fecha de entrega",
+    "visibility": "Visibilidad",
+    "public": "Público",
+    "publicHint": "Todos en la cuenta",
+    "private": "Privado",
+    "privateHint": "Solo tú puedes verlo",
+    "cancel": "Cancelar",
+    "createCart": "Crear carrito",
+    "loadingCart": "Cargando carrito...",
+    "itemNum": "N.º de artículo",
+    "orderDetails": "Detalles del pedido",
+    "deliveryDate": "Fecha de entrega",
+    "poNumber": "N.º de orden de compra",
+    "promoCode": "Código promocional",
+    "orderNotes": "Notas del pedido",
+    "deliveryDateHint": "Introduce tu fecha de entrega preferida.",
+    "poNumberHint": "Introduce tu número de orden de compra.",
+    "promoCodeHint": "Introduce tu código promocional.",
+    "poNumberPlaceholder": "Introduce el n.º de orden de compra",
+    "promoCodePlaceholder": "Introduce el código promocional",
+    "orderNotesPlaceholder": "Introduce las notas del pedido",
+    "processing": "Procesando..."
   },
   "dashboard": {
     "overview": {
@@ -348,7 +407,8 @@
     "changeNumber": "Cambiar número",
     "otpDigit": "Dígito OTP {index}",
     "verifyContinue": "Verificar y continuar",
-    "footerNote": "Inicio de sesión rápido, privado y protegido"
+    "footerNote": "Inicio de sesión rápido, privado y protegido",
+    "phone": "Número de teléfono",
+    "email": "Correo electrónico"
   }
 }
-

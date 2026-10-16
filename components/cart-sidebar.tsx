@@ -163,13 +163,13 @@ export function CartSidebar({
           </SheetTitle>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="absolute right-11 top-3" aria-label="Cart options">
+              <Button variant="ghost" size="icon-sm" className="absolute right-11 top-3" aria-label={t("cartOptions")}>
                 <MoreVertical />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 whitespace-nowrap">
               <DropdownMenuCheckboxItem checked={showDescription} onCheckedChange={setShowDescription}>
-                Show description
+                {t("showDescription")}
               </DropdownMenuCheckboxItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -178,23 +178,23 @@ export function CartSidebar({
                 onSelect={() => items.forEach((item) => onRemove?.(item.id))}
               >
                 <Trash2Icon />
-                Clear all items
+                {t("clearAll")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </SheetHeader>
 
 
-        <div className="shrink-0 px-3 pt-2 pb-2">
+        <div className="flex shrink-0 items-center gap-2 px-3 pt-2 pb-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-10 w-full justify-start gap-3 px-3 py-1" disabled={cartGroupsLoading}>
+              <Button variant="outline" className="h-10 min-w-0 flex-1 justify-start gap-2 px-3 py-1" disabled={cartGroupsLoading}>
                 {cartGroupsLoading ? <Loader2 className="size-5 animate-spin" /> : <ShoppingCartIcon className="size-5 text-primary" />}
                 <span className="min-w-0 flex-1 truncate text-left text-xs">
-                  <span className="font-normal text-muted-foreground">Selected Cart: </span>
-                  {selectedCart?.name ?? "Select cart"}
+                  <span className="font-normal text-muted-foreground">{t("selectedCart")}{" "}</span>
+                  {selectedCart?.name ?? t("selectCart")}
                 </span>
-                {selectedCart && <Badge variant="secondary" aria-label={`${itemCount} items`}>{itemCount}</Badge>}
+                {selectedCart && <Badge variant="secondary" aria-label={t("itemsLabel", { count: itemCount })}>{itemCount}</Badge>}
                 <ChevronDownIcon className="size-4 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
@@ -208,6 +208,7 @@ export function CartSidebar({
               >
                 {cartGroups.map((group) => {
                   const active = String(group.cartGroupID) === String(selectedCartGroupID)
+                  const count = active ? itemCount : group.itemCount ?? 0
                   return (
                     <DropdownMenuRadioItem
                       key={group.cartGroupID}
@@ -217,134 +218,135 @@ export function CartSidebar({
                     >
                       <ShoppingCartIcon className="size-4 text-blue-500" />
                       <span className="truncate">{group.name}</span>
-                      <Badge variant="secondary" aria-label={`${active ? itemCount : group.itemCount ?? 0} items`}>
-                        {active ? itemCount : group.itemCount ?? 0}
+                      <Badge variant="secondary" aria-label={t("itemsLabel", { count })}>
+                        {count}
                       </Badge>
                     </DropdownMenuRadioItem>
                   )
                 })}
               </DropdownMenuRadioGroup>
-              <DropdownMenuItem
-                disabled={!onCreate || isCreating || isCheckingOut}
-                className="mt-2 h-9 cursor-pointer justify-center gap-2 bg-primary px-3 font-medium text-primary-foreground hover:bg-primary/80 focus:bg-primary/80 focus:text-primary-foreground not-data-[variant=destructive]:focus:**:text-primary-foreground"
-                onSelect={() => {
-                  setName("")
-                  setDate("")
-                  setVisibility("Public")
-                  setMinDate(new Date().toLocaleDateString("en-CA"))
-                  setNewCartDialogOpen(true)
-                }}
-              >
-                <PlusIcon className="size-4" />
-                New Cart
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-            <Dialog
-              open={newCartDialogOpen}
-              onOpenChange={setNewCartDialogOpen}
-            >
-              <DialogContent className="gap-0 rounded-2xl p-6 sm:max-w-xl">
-                <DialogHeader className="gap-1 text-left">
-                  <DialogTitle className="text-xl font-semibold">New cart</DialogTitle>
-                  <DialogDescription className="text-sm">
-                    Name it, set the delivery date and visibility before creating.
-                  </DialogDescription>
-                </DialogHeader>
+          <Button
+            type="button"
+            className="h-10 gap-1 whitespace-nowrap px-3"
+            disabled={!onCreate || isCreating || isCheckingOut}
+            onClick={() => {
+              setName("")
+              setDate("")
+              setVisibility("Public")
+              setMinDate(new Date().toLocaleDateString("en-CA"))
+              setNewCartDialogOpen(true)
+            }}
+          >
+            <PlusIcon className="size-4" />
+            {t("newCart")}
+          </Button>
+          <Dialog
+            open={newCartDialogOpen}
+            onOpenChange={setNewCartDialogOpen}
+          >
+            <DialogContent className="gap-0 rounded-2xl p-6 sm:max-w-xl">
+              <DialogHeader className="gap-1 text-left">
+                <DialogTitle className="text-xl font-semibold">{t("newCartTitle")}</DialogTitle>
+                <DialogDescription className="text-sm">
+                  {t("newCartDescription")}
+                </DialogDescription>
+              </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="mt-5 grid gap-4">
-                  {/* Cart name */}
-                  <div className="grid gap-1.5">
-                    <Label htmlFor="new-cart-name" className="text-xs font-medium text-muted-foreground">
-                      Cart name
-                    </Label>
-                    <Input
-                      id="new-cart-name"
-                      autoFocus
-                      value={name}
-                      maxLength={MAX_NAME_LENGTH}
-                      onChange={(event) => setName(event.target.value)}
-                      placeholder="e.g. Line Prep"
-                      className="h-12 rounded-lg px-4 text-base"
-                    />
-                    <p className="mt-1 text-right text-xs text-muted-foreground">
-                      {name.length} / {MAX_NAME_LENGTH}
-                    </p>
+              <form onSubmit={handleSubmit} className="mt-5 grid gap-4">
+                {/* Cart name */}
+                <div className="grid gap-1.5">
+                  <Label htmlFor="new-cart-name" className="text-xs font-medium text-muted-foreground">
+                    {t("cartName")}
+                  </Label>
+                  <Input
+                    id="new-cart-name"
+                    autoFocus
+                    value={name}
+                    maxLength={MAX_NAME_LENGTH}
+                    onChange={(event) => setName(event.target.value)}
+                    placeholder={t("cartNamePlaceholder")}
+                    className="h-12 rounded-lg px-4 text-base"
+                  />
+                  <p className="mt-1 text-right text-xs text-muted-foreground">
+                    {name.length} / {MAX_NAME_LENGTH}
+                  </p>
+                </div>
+
+
+                {/* Fulfillment date */}
+                <div className="grid gap-1.5">
+                  <Label
+                    htmlFor="fulfillment-date"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    {t("fulfillmentDate")}
+                  </Label>
+
+                  <Input
+                    id="fulfillment-date"
+                    type="date"
+                    value={date}
+                    min={minDate}
+                    onChange={(event) => setDate(event.target.value)}
+                    className="h-12 w-full rounded-lg px-4 text-base"
+                    required
+                  />
+                </div>
+
+                {/* Visibility */}
+                <div className="grid gap-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">{t("visibility")}</Label>
+                  <div role="radiogroup" aria-label={t("visibility")} className="grid grid-cols-2 gap-3">
+                    {(
+                      [
+                        { value: "Public", title: t("public"), hint: t("publicHint"), Icon: UsersIcon },
+                        { value: "Private", title: t("private"), hint: t("privateHint"), Icon: LockIcon },
+                      ] as const
+                    ).map(({ value, title, hint, Icon }) => {
+                      const active = visibility === value
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => setVisibility(value)}
+                          className={`rounded-lg border px-3.5 py-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${active
+                            ? "border-primary bg-primary/10"
+                            : "border-input bg-background hover:bg-muted/50"
+                            }`}
+                        >
+                          <span className="flex items-center gap-2 text-sm font-semibold">
+                            <Icon className="size-4" />
+                            {title}
+                          </span>
+                          <span className="mt-0.5 block text-xs text-muted-foreground">{hint}</span>
+                        </button>
+                      )
+                    })}
                   </div>
+                </div>
 
-
-                  {/* Fulfillment date */}
-                  <div className="grid gap-1.5">
-                    <Label
-                      htmlFor="fulfillment-date"
-                      className="text-xs font-medium text-muted-foreground"
-                    >
-                      Fulfillment date
-                    </Label>
-
-                    <Input
-                      id="fulfillment-date"
-                      type="date"
-                      value={date}
-                      min={minDate}
-                      onChange={(event) => setDate(event.target.value)}
-                      className="h-12 w-full rounded-lg px-4 text-base"
-                      required
-                    />
-                  </div>
-
-                  {/* Visibility */}
-                  <div className="grid gap-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">Visibility</Label>
-                    <div role="radiogroup" aria-label="Visibility" className="grid grid-cols-2 gap-3">
-                      {(
-                        [
-                          { value: "Public", title: "Public", hint: "Everyone on the account", Icon: UsersIcon },
-                          { value: "Private", title: "Private", hint: "Only you can see it", Icon: LockIcon },
-                        ] as const
-                      ).map(({ value, title, hint, Icon }) => {
-                        const active = visibility === value
-                        return (
-                          <button
-                            key={value}
-                            type="button"
-                            role="radio"
-                            aria-checked={active}
-                            onClick={() => setVisibility(value)}
-                            className={`rounded-lg border px-3.5 py-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${active
-                              ? "border-primary bg-primary/10"
-                              : "border-input bg-background hover:bg-muted/50"
-                              }`}
-                          >
-                            <span className="flex items-center gap-2 text-sm font-semibold">
-                              <Icon className="size-4" />
-                              {title}
-                            </span>
-                            <span className="mt-0.5 block text-xs text-muted-foreground">{hint}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <DialogFooter className="-mx-6 -mb-6 mt-2 flex-row justify-end rounded-b-2xl p-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setNewCartDialogOpen(false)}
-                      disabled={isCreating}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={!canCreate}>
-                      {isCreating ? <Loader2 className="size-4 animate-spin" /> : null}
-                      Create cart
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+                {/* Actions */}
+                <DialogFooter className="-mx-6 -mb-6 mt-2 flex-row justify-end rounded-b-2xl p-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setNewCartDialogOpen(false)}
+                    disabled={isCreating}
+                  >
+                    {t("cancel")}
+                  </Button>
+                  <Button type="submit" disabled={!canCreate}>
+                    {isCreating ? <Loader2 className="size-4 animate-spin" /> : null}
+                    {t("createCart")}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
 
@@ -356,7 +358,7 @@ export function CartSidebar({
               className="flex flex-col h-full items-center justify-center gap-2 text-center text-muted-foreground"
             >
               <Loader2 className="size-6 animate-spin text-primary" />
-              <p className="text-xs font-medium">Loading cart...</p>
+              <p className="text-xs font-medium">{t("loadingCart")}</p>
             </div>
           ) :
             isEmpty ? (
@@ -400,10 +402,10 @@ export function CartSidebar({
                               <h3 className="text-sm font-semibold leading-5">
                                 {item.name}
                               </h3>
-                              <p className="text-xs text-muted-foreground">Item Num: {item.itemNumber}</p>
+                              <p className="text-xs text-muted-foreground">{t("itemNum")}: {item.itemNumber}</p>
                               {showDescription && (
                                 <p className="text-xs text-muted-foreground">
-                               ${(Number(item.qtybsuom ?? item.price ?? 0) * item.quantity).toFixed(2)}
+                                  ${(Number(item.qtybsuom ?? 0) * item.quantity).toFixed(2)}
                                 </p>
                               )}
                             </div>
@@ -458,14 +460,14 @@ export function CartSidebar({
         <SheetFooter className="border-t px-3 py-4">
           <Tabs.Root defaultValue="delivery-date" className="mb-2 w-full">
             <Tabs.List
-              aria-label="Order details"
+              aria-label={t("orderDetails")}
               className="flex w-full items-center"
             >
               {[
-                ["delivery-date", "Delivery Date"],
-                ["po-number", "PO Number"],
-                ["promo-code", "Promo Code"],
-                ["order-notes", "Order Notes"],
+                ["delivery-date", t("deliveryDate")],
+                ["po-number", t("poNumber")],
+                ["promo-code", t("promoCode")],
+                ["order-notes", t("orderNotes")],
               ].map(([value, label]) => (
                 <Tabs.Trigger
                   key={value}
@@ -477,30 +479,30 @@ export function CartSidebar({
               ))}
             </Tabs.List>
             <Tabs.Content value="delivery-date" forceMount className="mt-3 min-h-20 space-y-2 data-[state=inactive]:hidden">
-              <p className="text-xs text-muted-foreground">Enter your preferred delivery date.</p>
+              <p className="text-xs text-muted-foreground">{t("deliveryDateHint")}</p>
               <Input
                 type="date"
-                aria-label="Delivery Date"
+                aria-label={t("deliveryDate")}
                 className="w-full rounded-sm"
                 value={deliveryDate}
                 onChange={(e) => onDeliveryDateChange?.(e.target.value)}
               />
             </Tabs.Content>
             <Tabs.Content value="po-number" forceMount className="mt-3 min-h-20 space-y-2 data-[state=inactive]:hidden">
-              <p className="text-xs text-muted-foreground">Enter your purchase order number.</p>
+              <p className="text-xs text-muted-foreground">{t("poNumberHint")}</p>
               <Input
-                aria-label="PO Number"
-                placeholder="Enter PO number"
+                aria-label={t("poNumber")}
+                placeholder={t("poNumberPlaceholder")}
                 className="rounded-sm"
                 value={poNumber}
                 onChange={(e) => onPoNumberChange?.(e.target.value)}
               />
             </Tabs.Content>
             <Tabs.Content value="promo-code" forceMount className="mt-3 min-h-20 space-y-2 data-[state=inactive]:hidden">
-              <p className="text-xs text-muted-foreground">Enter your promo code.</p>
+              <p className="text-xs text-muted-foreground">{t("promoCodeHint")}</p>
               <Input
-                aria-label="Promo Code"
-                placeholder="Enter promo code"
+                aria-label={t("promoCode")}
+                placeholder={t("promoCodePlaceholder")}
                 className="rounded-sm"
                 value={promoCode}
                 onChange={(e) => onPromoCodeChange?.(e.target.value)}
@@ -509,8 +511,8 @@ export function CartSidebar({
             <Tabs.Content value="order-notes" forceMount className="mt-3 min-h-20 data-[state=inactive]:hidden">
               <textarea
                 rows={3}
-                aria-label="Order Notes"
-                placeholder="Enter order notes"
+                aria-label={t("orderNotes")}
+                placeholder={t("orderNotesPlaceholder")}
                 className="block h-20 w-full resize-none rounded-sm border border-input bg-transparent px-2.5 py-2 text-sm leading-5 outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
                 value={notes}
                 onChange={(e) => onNotesChange?.(e.target.value)}
@@ -529,7 +531,7 @@ export function CartSidebar({
             {isCheckingOut ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
-                Processing...
+                {t("processing")}
               </>
             ) : (
               t("proceed")
@@ -540,8 +542,3 @@ export function CartSidebar({
     </Sheet>
   )
 }
-
-
-
-
-
