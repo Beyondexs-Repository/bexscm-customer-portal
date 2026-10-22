@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar"
+import { useTranslations } from "next-intl"
 
 const themes = [
   { value: "light", label: "Light", icon: SunIcon },
@@ -19,6 +20,7 @@ const themes = [
 ]
 
 export function ModeToggle() {
+  const t = useTranslations("sidebar")
   const { theme, setTheme } = useTheme()
   const mounted = React.useSyncExternalStore(
     () => () => {},
@@ -40,7 +42,7 @@ export function ModeToggle() {
               aria-label="Theme"
             >
               <CurrentIcon />
-              <span className="truncate group-data-[collapsible=icon]:hidden">Theme</span>
+              <span className="truncate group-data-[collapsible=icon]:hidden">{t("theme")}</span>
               <span className="ml-auto truncate group-data-[collapsible=icon]:hidden">
                 {current.label}
               </span>

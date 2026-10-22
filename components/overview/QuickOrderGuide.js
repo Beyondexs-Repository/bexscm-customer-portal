@@ -207,6 +207,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useDispatch } from "react-redux"
+import { useTranslations } from "next-intl"
 import {
   BookOpen,
   ChevronRight,
@@ -225,10 +226,9 @@ import { QuickOrdeguidetocartPOST } from "../../redux/slices/postSlice"
 const ADDED_KEY = "quickOrder.addedGuideIds"
 
 export default function QuickOrderGuide() {
+  const t = useTranslations("quickOrderGuide")
   const dispatch = useDispatch()
 
-  // setCartOpen exists only if you moved the cart-open state into app-context.
-  // It is called with optional chaining below, so this file works either way.
   const { fetchCustomerCart, items: cartItems, setCartOpen, selectedCartGroupID } = useCart()
 
   const [guides, setGuides] = useState([])
@@ -266,7 +266,7 @@ export default function QuickOrderGuide() {
         toast.error(
           typeof error === "string"
             ? error
-            : error?.Msg || error?.message || "Failed to load quick order guides.",
+            : error?.Msg || error?.message || t("toast.loadFailed"),
         )
         setGuides([])
       } finally {
@@ -278,7 +278,7 @@ export default function QuickOrderGuide() {
     return () => {
       ignore = true
     }
-  }, [dispatch])
+  }, [dispatch, t])
 
   // Load previously added guides after mount (localStorage isn't available during SSR)
   useEffect(() => {
@@ -324,7 +324,7 @@ export default function QuickOrderGuide() {
 
     const custNmbr = localStorage.getItem("custnmbr")
     if (!custNmbr) {
-      toast.error("Unable to identify the customer.")
+      toast.error(t("toast.customerNotFound"))
       return
     }
 
@@ -335,8 +335,8 @@ export default function QuickOrderGuide() {
         QuickOrdeguidetocartPOST({
           data: {
             custNmbr,
-            orderGuideIDs: pendingIds.map(Number), 
-            cartGroupId: selectedCartGroupID ,
+            orderGuideIDs: pendingIds.map(Number),
+            cartGroupId: selectedCartGroupID,
           },
         }),
       ).unwrap()
@@ -352,8 +352,11 @@ export default function QuickOrderGuide() {
       const added = result?.totalAdded ?? result?.added?.length ?? 0
       const skipped = result?.skipped?.length ?? 0
 
-      if (skipped > 0) toast.warning(`${added} added, ${skipped} skipped`)
-      else toast.success(added > 0 ? `${added} item(s) added to cart` : "Added to cart")
+      if (skipped > 0) toast.warning(t("toast.addedSkipped", { added, skipped }))
+      else
+        toast.success(
+          added > 0 ? t("toast.itemsAdded", { count: added }) : t("toast.addedToCart"),
+        )
 
       setSelectedGuideIds([])
       setCartOpen?.(true) // open the cart sidebar (no-op if not wired up in app-context)
@@ -362,7 +365,7 @@ export default function QuickOrderGuide() {
       toast.error(
         typeof error === "string"
           ? error
-          : error?.Msg || error?.message || "Failed to add to cart",
+          : error?.Msg || error?.message || t("toast.addFailed"),
       )
     } finally {
       setIsAddingToCart(false)
@@ -378,15 +381,15 @@ export default function QuickOrderGuide() {
           </div>
 
           <div className="min-w-0">
-            <h2 className="text-base font-bold sm:text-lg">Quick Order Guides</h2>
+            <h2 className="text-base font-bold sm:text-lg">{t("title")}</h2>
             <p className="truncate text-xs text-muted-foreground">
-              Select guides to add their products
+              {t("description")}
             </p>
           </div>
         </div>
 
         <Button asChild variant="outline" size="icon-sm">
-          <Link href="/order-guide" aria-label="Open order guides">
+          <Link href="/order-guide" aria-label={t("openGuidesAria")}>
             <ChevronRight className="size-4" />
           </Link>
         </Button>
@@ -400,7 +403,7 @@ export default function QuickOrderGuide() {
             className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground"
           >
             <Loader2 className="size-5 animate-spin text-primary" />
-            <p className="text-xs font-medium">Loading quick orders...</p>
+            <p className="text-xs font-medium">{t("loading")}</p>
           </div>
         ) : guides.length > 0 ? (
           <div className="min-h-0 flex-1 overflow-y-auto pr-2">
@@ -429,7 +432,7 @@ export default function QuickOrderGuide() {
                       onChange={() => toggleGuide(guide.id)}
                       onClick={(event) => event.stopPropagation()}
                       className="size-4 shrink-0 cursor-pointer rounded border-border accent-primary"
-                      aria-label={`Select ${guide.name}`}
+                      aria-label={t("selectGuideAria", { name: guide.name })}
                     />
 
                     <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -439,15 +442,13 @@ export default function QuickOrderGuide() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">{guide.name}</p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {guide.groupCount}{" "}
-                        {guide.groupCount === 1 ? "group" : "groups"} ·{" "}
-                        {guide.itemsCount}{" "}
-                        {guide.itemsCount === 1 ? "product" : "products"}
+                        {t("groups", { count: guide.groupCount })} ·{" "}
+                        {t("products", { count: guide.itemsCount })}
                       </p>
                     </div>
 
                     {isAdded ? (
-                      <Badge className="ml-auto shrink-0">Added</Badge>
+                      <Badge className="ml-auto shrink-0">{t("added")}</Badge>
                     ) : null}
                   </article>
                 )
@@ -459,9 +460,9 @@ export default function QuickOrderGuide() {
             <div className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
               <BookOpen className="size-5" />
             </div>
-            <p className="mt-3 text-sm font-semibold">No Order Guides Yet</p>
+            <p className="mt-3 text-sm font-semibold">{t("emptyTitle")}</p>
             <p className="mt-1 max-w-48 text-xs leading-relaxed text-muted-foreground">
-              Create a reusable guide for products you order regularly.
+              {t("emptyDescription")}
             </p>
           </div>
         )}
@@ -475,7 +476,7 @@ export default function QuickOrderGuide() {
             disabled={guides.length === 0}
             onClick={toggleAllGuides}
           >
-            {allSelected ? "Clear all" : "Select all"}
+            {allSelected ? t("clearAll") : t("selectAll")}
           </Button>
 
           <Button
@@ -490,7 +491,11 @@ export default function QuickOrderGuide() {
             ) : (
               <ShoppingCart className="size-4" />
             )}
-            {isAddingToCart ? "Adding..." : selectedAllAdded ? "Added" : "Add to cart"}
+            {isAddingToCart
+              ? t("adding")
+              : selectedAllAdded
+                ? t("added")
+                : t("addToCart")}
           </Button>
         </div>
       </div>

@@ -90,7 +90,7 @@ export function OrderGuide() {
     selectedOrder && selectedGroupId === "all"
       ? {
         id: "all",
-        name: "All",
+       name: t("allGroup"),
         products: allProducts,
         isAll: true,
       }
@@ -173,12 +173,12 @@ export function OrderGuide() {
     if (!name) return;
 
     if (!userId) {
-      toast.error("Unable to identify the logged-in user.");
+     toast.error(t("toast.userNotFound"));
       return;
     }
     const custnmbr = localStorage.getItem("custnmbr");
       if (!custnmbr) {
-    toast.error("Unable to identify the customer.");
+    toast.error(t("toast.customerNotFound"));
     return;
   }
     setIsCreating(true);
@@ -197,12 +197,12 @@ export function OrderGuide() {
 
       // Tell OrderGuideList to reload from the API
       setRefreshKey((k) => k + 1);
-  toast.success(`Order guide "${name}" created successfully`);
+ toast.success(t("toast.created", { name }));
       setQuickOrderName("");
       setOpen(false);
     } catch (error) {
       console.error("Create Order Guide API Error:", error);
-      toast.error(error?.message || "Failed to create order guide");
+      toast.error(error?.message || t("toast.createFailed"));
     } finally {
       setIsCreating(false);
     }
@@ -287,7 +287,7 @@ export function OrderGuide() {
             className="flex flex-col items-center justify-center gap-2 text-center text-muted-foreground"
           >
             <Loader2 className="size-6 animate-spin text-primary" />
-            <p className="text-xs font-medium">Loading order guides...</p>
+            <p className="text-xs font-medium">{t("loading")}</p>
           </div>
         </div>
         </>

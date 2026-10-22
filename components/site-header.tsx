@@ -633,7 +633,6 @@
 "use client"
 
 import * as React from "react"
-import { requireCustomerNumber } from "@/lib/customer"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
@@ -650,7 +649,8 @@ import {
   UploadCloudIcon,
 } from "lucide-react"
 import { toast } from "sonner"
-
+import { useDispatch } from "react-redux"
+import { proceedtoCheckoutPOST } from "../redux//slices/postSlice"
 import { cn } from "@/lib/utils"
 import { clearSession } from "@/lib/auth"
 import { useCart } from "@/app/context/app-context"
@@ -669,6 +669,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
+
 const CUTOFF_TIME = "8:00 AM"
 const CUTOFF_DATE = "6/6"
 const DEFAULT_PROFILE = {
@@ -678,34 +679,60 @@ const DEFAULT_PROFILE = {
   avatar: "",
 }
 
+// const HEADER_ROUTES = [
+//   ["/", "Overview", "View account activity, recent orders, and shortcuts"],
+//   ["/catalog/details", "Product Details", "Review product information, pricing, and availability"],
+//   ["/catalog", "Catalog", "Browse products, pricing, and availability", true],
+//   ["/order-guide", "Order Guide", "Build and manage frequently ordered product lists"],
+//   ["/my-orders", "My Orders", "Review current and previous orders"],
+//   ["/invoices/details", "Invoice Details", "Review invoice charges, payments, and balances"],
+//   ["/invoices", "Invoices", "Review invoice totals, payments, balances, and status", true],
+//   ["/metrics", "Metrics", "Review purchasing trends, order activity, and invoice balances"],
+//   ["/messages", "Messages", "Contact support and review conversations"],
+//   ["/employees", "Employees", "View and manage store employees"],
+//   ["/profile", "Profile", "Manage your account and contact information"],
+// ] as const
+
+// function getHeader(pathname: string) {
+//   const normalizedPath =
+//     pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname
+//   const route = HEADER_ROUTES.find(([path, , , matchesChildren]) =>
+//     matchesChildren
+//       ? normalizedPath === path || normalizedPath.startsWith(`${path}/`)
+//       : normalizedPath === path
+//   )
+
+//   return {
+//     title: route?.[1] ?? "Bex SCM",
+//     description: route?.[2] ?? "",
+//   }
+// }
 const HEADER_ROUTES = [
-  ["/", "Overview", "View account activity, recent orders, and shortcuts"],
-  ["/catalog/details", "Product Details", "Review product information, pricing, and availability"],
-  ["/catalog", "Catalog", "Browse products, pricing, and availability", true],
-  ["/order-guide", "Order Guide", "Build and manage frequently ordered product lists"],
-  ["/my-orders", "My Orders", "Review current and previous orders"],
-  ["/invoices/details", "Invoice Details", "Review invoice charges, payments, and balances"],
-  ["/invoices", "Invoices", "Review invoice totals, payments, balances, and status", true],
-  ["/metrics", "Metrics", "Review purchasing trends, order activity, and invoice balances"],
-  ["/messages", "Messages", "Contact support and review conversations"],
-  ["/employees", "Employees", "View and manage store employees"],
-  ["/profile", "Profile", "Manage your account and contact information"],
+  ["/", "overview"],
+  ["/catalog/details", "productDetails"],
+  ["/catalog", "catalog", true],
+  ["/order-guide", "orderGuide"],
+  ["/my-orders", "myOrders"],
+  ["/invoices/details", "invoiceDetails"],
+  ["/invoices", "invoices", true],
+  ["/metrics", "metrics"],
+  ["/messages", "messages"],
+  ["/employees", "employees"],
+  ["/profile", "profile"],
 ] as const
 
 function getHeader(pathname: string) {
   const normalizedPath =
     pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname
-  const route = HEADER_ROUTES.find(([path, , , matchesChildren]) =>
+  const route = HEADER_ROUTES.find(([path, , matchesChildren]) =>
     matchesChildren
       ? normalizedPath === path || normalizedPath.startsWith(`${path}/`)
       : normalizedPath === path
   )
 
-  return {
-    title: route?.[1] ?? "Bex SCM",
-    description: route?.[2] ?? "",
-  }
+  return route?.[1] ?? null
 }
+
 
 type HeaderProfile = typeof DEFAULT_PROFILE
 
@@ -796,7 +823,6 @@ setSelectedCartGroupID: (id: number | string) => void
     fulfillmentDate: string
   }) => Promise<boolean>
 
-  // checkoutOrderApi: (custnmbr: string) => Promise<{ success?: boolean; message?: string; error?: string; orderNumber?: string; OrderNumber?: string; orderAmount?: number; OrderAmount?: number; total?: number }>
   fetchCustomerCart: (custnmbr?: string) => Promise<unknown>
 }
 
@@ -809,9 +835,15 @@ function SiteHeader({
   initialProfile?: Partial<HeaderProfile> | null
 }>) {
   const router = useRouter()
+  const dispatch = useDispatch<any>()
   const pathname = usePathname()
   const t = useTranslations("header")
-  const { title, description } = getHeader(pathname)
+  // const { title, description } = getHeader(pathname)
+  const tPage = useTranslations("pageHeader")
+const headerKey = getHeader(pathname)
+  const title = headerKey ? tPage(`${headerKey}.title`) : "Bex SCM"
+const description = headerKey ? tPage(`${headerKey}.description`) : ""
+
   const isMessagesPage = pathname === "/messages"
   const canSearchMessages = true
   const canClearChat = true
@@ -838,7 +870,6 @@ function SiteHeader({
     setSelectedCartGroupID,
     creatingCartGroup,
     createCartGroup,
-    // checkoutOrderApi,
     fetchCustomerCart,
   } = (useCart() as unknown) as UseCartReturn
 
@@ -854,7 +885,12 @@ function SiteHeader({
   const [uploadOpen, setUploadOpen] = React.useState(false)
   const [cartOpen, setCartOpen] = React.useState(false)
   const [isCheckingOut, setIsCheckingOut] = React.useState(false)
-  const [checkoutDeliveryDate, setCheckoutDeliveryDate] = React.useState("2026-09-21")
+  // const [checkoutDeliveryDate, setCheckoutDeliveryDate] = React.useState("2026-09-21")
+  const [checkoutDeliveryDate, setCheckoutDeliveryDate] = React.useState(() => {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  return d.toLocaleDateString("en-CA") // "YYYY-MM-DD"
+})
   const [poNumber, setPoNumber] = React.useState("")
   const [promoCode, setPromoCode] = React.useState("")
   const [notes, setNotes] = React.useState("")
@@ -875,100 +911,62 @@ function SiteHeader({
     () => new Date(2026, 5, 1)
   )
 
+function getCustnmbr() {
+  if (typeof window === "undefined") return undefined
+  return window.localStorage.getItem("custnmbr") || undefined
+}
 
-  // async function checkoutOrderApi({ custNmbr, deliveryDate, cutOffTime, notes, discountCode, poNumber }) {
-  async function checkoutOrderApi({
-    custNmbr,
-    deliveryDate,
-    cutOffTime,
-    notes,
-    discountCode,
-    poNumber,
-  }: {
-    custNmbr: string
-    deliveryDate: string
-    cutOffTime: string
-    notes: string
-    discountCode: string
-    poNumber: string
-  }) {
-    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/checkout`
+async function handleCheckout() {
+  if (items.length === 0 || isCheckingOut) return
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-      },
-      body: JSON.stringify({
-        custNmbr,
-        deliveryDate,
-        cutOffTime,
-        notes,
-        discountCode,
-        poNumber,
-      }),
-    })
-
-    const text = await response.text()
-    let result = null
-    try {
-      result = text ? JSON.parse(text) : null
-    } catch {
-      console.warn("Checkout response is not JSON:", text)
-    }
-
-    if (!response.ok) {
-      throw new Error(result?.message || result?.error || `Checkout failed. HTTP ${response.status}`)
-    }
-
-    return result
+  const custNmbr = getCustnmbr()
+  if (!custNmbr) {
+    toast.error("Missing customer number. Please log in again.")
+    return
   }
-  async function handleCheckout() {
-    if (items.length === 0 || isCheckingOut) return
-    setIsCheckingOut(true)
 
-    try {
-      const res = await checkoutOrderApi({
-        custNmbr: requireCustomerNumber(),
+  setIsCheckingOut(true)
+  try {
+    const res = await dispatch(
+      proceedtoCheckoutPOST({
+        custNmbr,
         deliveryDate: checkoutDeliveryDate,
         cutOffTime: "14:00:00",
         notes,
         discountCode: promoCode,
         poNumber,
       })
+    ).unwrap()
 
-      if (!res || res.success === false) {
-        throw new Error(res?.message || res?.error || "Order creation failed on backend server.")
-      }
+    const orderNum = res?.orderNumber ?? res?.OrderNumber ?? "CREATED"
+    const amount = Number(res?.orderAmount ?? res?.OrderAmount ?? res?.total) || 0
 
-      const orderNum = res?.orderNumber ?? res?.OrderNumber ?? "CREATED"
-      const amount = Number(res?.orderAmount ?? res?.OrderAmount ?? res?.total) || 0
+    toast.success(
+      amount > 0
+        ? `Order #${orderNum} placed successfully! Total: $${amount.toFixed(2)}`
+        : `Order #${orderNum} placed successfully!`
+    )
 
-      toast.success(
-        amount > 0
-          ? `Order #${orderNum} placed successfully! Total: $${amount.toFixed(2)}`
-          : `Order #${orderNum} placed successfully!`
-      )
-      clearCart()
-      setCartOpen(false)
-      setPoNumber("")
-      setPromoCode("")
-      setNotes("")
+    // re-sync from the server instead of wiping every cart locally
+    await fetchCustomerCart()
+    await fetchCartGroups()
 
-      // Tell My Orders (and anything else listening) to refetch, the same
-      // way its own Refresh button does — no full page reload needed.
-      window.dispatchEvent(new CustomEvent("aloha-orders-refresh"))
-    } catch (error) {
-      console.error("Checkout request failed:", error)
-      // const errorMsg = error?.message || "Checkout request failed. Please check API endpoint."
-      const errorMsg = error instanceof Error ? error.message : "Checkout request failed. Please check API endpoint."
-      toast.error(`Checkout Failed: ${errorMsg}`)
-    } finally {
-      setIsCheckingOut(false)
-    }
+    setCartOpen(false)
+    setPoNumber("")
+    setPromoCode("")
+    setNotes("")
+    window.dispatchEvent(new CustomEvent("aloha-orders-refresh"))
+  } catch (error: any) {
+    console.error("Checkout request failed:", error)
+    const errorMsg =
+      typeof error === "string"
+        ? error
+        : error?.Msg || error?.message || error?.error || "Checkout request failed. Please check API endpoint."
+    toast.error(`Checkout Failed: ${errorMsg}`)
+  } finally {
+    setIsCheckingOut(false)
   }
+}
 
   const calendarDays = React.useMemo(() => {
     const year = calendarMonth.getFullYear()
@@ -1074,7 +1072,7 @@ function SiteHeader({
                   onClick={() => dispatchMessagesAction("search")}
                 >
                   <SearchIcon />
-                  Search
+                {t("search")}
                 </DropdownMenuItem>
               )}
               {canClearChat && (
@@ -1084,7 +1082,7 @@ function SiteHeader({
                   onClick={() => dispatchMessagesAction("clear")}
                 >
                   <Trash2Icon />
-                  Clear Chat
+                 {t("clearChat")}
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -1169,6 +1167,7 @@ function SiteHeader({
                         )}
                         onClick={() => {
                           setDeliveryDate(date)
+                           setCheckoutDeliveryDate(date.toLocaleDateString("en-CA"))
                           setCalendarOpen(false)
                         }}
                       >
@@ -1244,8 +1243,8 @@ function SiteHeader({
           <UploadCloudIcon className="size-5 text-primary @min-[900px]/header:hidden" />
           <HeaderInfoItem
             icon={UploadCloudIcon}
-            caption="AI Quick Action"
-            label="Upload"
+           caption={t("aiQuickAction")}
+            label={t("upload")}
             className="hidden @min-[900px]/header:block"
           />
         </button>

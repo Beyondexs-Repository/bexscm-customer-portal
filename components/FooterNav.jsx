@@ -20,6 +20,15 @@ export function FooterNav() {
   const pathname = usePathname();
   const t = useTranslations("footerNav");
   const routeGroup = routes.customer;
+  const navKeys = {
+  overview: "overview",
+  "order-guide": "orderGuide",
+  catalog: "catalog",
+  "my-orders": "myOrders",
+  messages: "messages",
+  employees: "employees",
+  users: "users",
+};
   const pageIcons = {
     overview: LayoutDashboardIcon,
     "order-guide": StarIcon,
@@ -32,7 +41,9 @@ export function FooterNav() {
   const footerNavItems = routeGroup.routes
     .filter((page) => page.footer)
     .map((page) => ({
-    title: page.title,
+    // title: page.title,
+    title: navKeys[page.id] ? t(navKeys[page.id]) : page.title,
+     title: t(page.key),
     url: page.path,
     icon: pageIcons[page.id] ?? CircleIcon,
   }));

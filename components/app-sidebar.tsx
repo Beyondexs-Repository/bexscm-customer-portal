@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-
+import { useTranslations } from "next-intl";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import { TeamSwitcher } from "@/components/team-switcher";
@@ -33,7 +33,21 @@ import { LuNotepadText } from "react-icons/lu";
 import routes from "@/data/routes.json";
 import { LocationSwitcher } from "./location-switcher";
 
+
+const navKeys: Record<string, string> = {
+  overview: "overview",
+  "order-guide": "orderGuide",
+  catalog: "catalog",
+  "my-orders": "myOrders",
+  metrics: "metrics",
+  invoices: "invoices",
+  messages: "messages",
+  employees: "employees",
+  users: "users",
+};
+
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+   const t = useTranslations("nav");
   const routeGroup = routes.customer
   const pageIcons: Record<string, React.ReactNode> = {
     overview: <RxDashboard />,
@@ -50,7 +64,8 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
     promotions: <MegaphoneIcon />,
   }
   const navMain = routeGroup.routes.map((page) => ({
-    title: page.title,
+    // title: page.title,
+     title: navKeys[page.id] ? t(navKeys[page.id]) : page.title,
     url: page.path,
     icon: pageIcons[page.id] ?? <CircleIcon />,
   }))
@@ -63,7 +78,8 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} label={routeGroup.label} />
+        {/* <NavMain items={navMain} label={routeGroup.label} /> */}
+        <NavMain items={navMain} label={t("customer")} />
       </SidebarContent>
       <SidebarFooter>
         <LocationSwitcher />

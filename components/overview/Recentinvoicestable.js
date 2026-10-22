@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
+import { useLocale, useTranslations } from "next-intl"
 import { useDispatch, useSelector } from "react-redux"
 import { ChevronRight, Download, Loader2, PackageCheck } from "lucide-react"
 import { GetCustomerInvoiceItems, GetinvoicePDF } from "../../redux/slices/getSlice"
@@ -43,6 +44,8 @@ const formatDate = (value) => {
 }
 
 export default function RecentInvoicesTable() {
+    const t = useTranslations("recentInvoices")
+  const locale = useLocale()
   const dispatch = useDispatch()
 
   const customerInvoicesdata = useSelector((state) => state.getSlice.customerInvoicesdata)
@@ -85,14 +88,18 @@ export default function RecentInvoicesTable() {
         }),
     [customerInvoicesdata],
   )
-
+  // Translate API status (e.g. "Open") if a key exists, otherwise show it as-is
+  const translateStatus = (status) => {
+    const key = `status.${status.toLowerCase()}`
+    return t.has(key) ? t(key) : status
+  }
   const emptyMessage = loading
-    ? "Loading invoices..."
+    ? t("loading")
     : error
       ? typeof error === "string"
         ? error
-        : error?.message || "Something went wrong."
-      : "No invoices found."
+        : error?.message || t("error")
+      : t("empty")
 
       
        const [downloadingId, setDownloadingId] = useState(null)
@@ -113,16 +120,16 @@ export default function RecentInvoicesTable() {
             <PackageCheck className="size-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold sm:text-lg">Recent Invoices</h2>
+            <h2 className="text-base font-bold sm:text-lg">{t("title")}</h2>
             <p className="text-xs text-muted-foreground">
-              View and manage your latest orders
+              {t("description")}
             </p>
           </div>
         </div>
 
         <Button asChild variant="outline" size="sm">
           <Link href="/invoices">
-            View all
+           {t("viewAll")}
             <ChevronRight className="size-4" />
           </Link>
         </Button>
@@ -131,7 +138,7 @@ export default function RecentInvoicesTable() {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="bg-muted/50 text-[11px] uppercase tracking-wide text-muted-foreground">
-            <tr>
+            {/* <tr>
               <th className="px-4 py-3 font-semibold">Invoice</th>
               <th className="px-4 py-3 font-semibold">Invoice date</th>
               <th className="px-4 py-3 font-semibold">Due date</th>
@@ -139,8 +146,17 @@ export default function RecentInvoicesTable() {
               <th className="px-4 py-3 font-semibold">Total</th>
               {/* <th className="px-4 py-3 font-semibold">Paid amount</th>
               <th className="px-4 py-3 font-semibold">Balance</th> */}
-              <th className="px-4 py-3 font-semibold">Status</th>
+              {/* <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Action</th>
+            </tr> */} 
+             <tr>
+              <th className="px-4 py-3 font-semibold">{t("columns.invoice")}</th>
+              <th className="px-4 py-3 font-semibold">{t("columns.invoiceDate")}</th>
+              <th className="px-4 py-3 font-semibold">{t("columns.dueDate")}</th>
+              <th className="px-4 py-3 font-semibold">{t("columns.items")}</th>
+              <th className="px-4 py-3 font-semibold">{t("columns.total")}</th>
+              <th className="px-4 py-3 font-semibold">{t("columns.status")}</th>
+              <th className="px-4 py-3 font-semibold">{t("columns.action")}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -167,9 +183,9 @@ export default function RecentInvoicesTable() {
                     {order.dueDateLabel}
                   </td>
                   <td className="px-4 py-2 text-xs">
-                    {order.itemCount} products
+                   {t("products", { count: order.itemCount })}
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {order.units} units
+                      {t("units", { count: order.units })}
                     </p>
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 font-semibold">
@@ -188,7 +204,7 @@ export default function RecentInvoicesTable() {
                         statusStyles[order.statusTone],
                       )}
                     >
-                      {order.status}
+                    {translateStatus(order.status)}
                     </Badge>
                   </td>
                    <td className="px-4 py-4">
@@ -204,7 +220,7 @@ export default function RecentInvoicesTable() {
                       ) : (
                         <Download className="size-4" />
                       )}
-                      Invoice
+                    {t("invoiceButton")}
                     </Button>
 </td>
                 </tr>

@@ -2,7 +2,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { GetItems } from "../../redux/slices/getSlice"; 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ChevronDown,
   ChevronLeft,
@@ -48,11 +48,17 @@ import { askVoiceAi } from "@/components/ai/voiceOpenAiClient";
 
 const pageSizeOptions = [10, 20, 40, 60];
 const sortOptions = ["Name A-Z", "Price Low to High", "Price High to Low"];
+const sortLabelKeys = {
+  "Name A-Z": "sortNameAsc",
+  "Price Low to High": "sortPriceAsc",
+  "Price High to Low": "sortPriceDesc",
+};
+
 const DEFAULT_SORT = sortOptions[0];
 const CUTOFF_TIME = "8:00 AM 6/6";
 
-const formatDeliveryDate = (date) =>
-  date.toLocaleDateString("en-US", {
+const formatDeliveryDate = (date, locale) =>
+  date.toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -66,11 +72,11 @@ const isSameDay = (first, second) =>
   first.getMonth() === second.getMonth() &&
   first.getDate() === second.getDate();
 
-function pluralizeFilterLabel(label) {
-  return label.toLowerCase().endsWith("y")
-    ? `${label.toLowerCase().slice(0, -1)}ies`
-    : `${label.toLowerCase()}s`;
-}
+// function pluralizeFilterLabel(label) {
+//   return label.toLowerCase().endsWith("y")
+//     ? `${label.toLowerCase().slice(0, -1)}ies`
+//     : `${label.toLowerCase()}s`;
+// }
 
 function SelectMenu({
   label,
@@ -79,15 +85,19 @@ function SelectMenu({
   onChange,
   className,
   searchable = false,
+   getOptionLabel = (option) => option,
 }) {
+   const t = useTranslations("catalog");
   const [open, setOpen] = useState(false);
   const [optionSearch, setOptionSearch] = useState("");
-  const searchPlaceholder = `Search ${label.toLowerCase()}...`;
-  const emptyStateLabel = pluralizeFilterLabel(label);
-  const filteredOptions = searchable
+  const searchPlaceholder = t("searchPlaceholder", { label: label.toLowerCase() });
+  // const emptyStateLabel = pluralizeFilterLabel(label);
+   const filteredOptions = searchable
     ? options.filter((option) =>
-      option.toLowerCase().includes(optionSearch.trim().toLowerCase()),
-    )
+        getOptionLabel(option)
+          .toLowerCase()
+          .includes(optionSearch.trim().toLowerCase()),
+      )
     : options;
 
   return (
@@ -110,7 +120,7 @@ function SelectMenu({
             variant="outline"
             className="h-9 w-full min-w-0 justify-between rounded-md px-2 text-xs font-semibold lg:h-10 lg:px-3"
           >
-            <span className="truncate">{value}</span>
+            <span className="truncate">{getOptionLabel(value)}</span>
             <ChevronDown className="shrink-0 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
@@ -131,12 +141,12 @@ function SelectMenu({
           )}
           {filteredOptions.map((option) => (
             <DropdownMenuItem key={option} onSelect={() => onChange(option)}>
-              {option}
+              {getOptionLabel(option)}
             </DropdownMenuItem>
           ))}
           {filteredOptions.length === 0 && (
             <div className="px-2 py-2 text-xs font-medium text-muted-foreground">
-              No {emptyStateLabel} found
+             {t("noMatches", { label: label.toLowerCase() })}
             </div>
           )}
         </DropdownMenuContent>
@@ -147,6 +157,7 @@ function SelectMenu({
 
 function MobileDeliveryInfo() {
   const t = useTranslations("catalog")
+  const locale = useLocale()
   const today = startOfDay(new Date());
   const calendarRef = useRef(null);
   const calendarTriggerRef = useRef(null);
@@ -172,11 +183,16 @@ function MobileDeliveryInfo() {
     });
   }, [calendarMonth]);
 
-  const calendarTitle = calendarMonth.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
+ const calendarTitle = calendarMonth.toLocaleDateString(locale, {
+  month: "long",
+  year: "numeric",
+});
 
+const weekdayLabels = useMemo(() => {
+  const formatter = new Intl.DateTimeFormat(locale, { weekday: "narrow" });
+  // Jan 1, 2023 was a Sunday
+  return Array.from({ length: 7 }, (_, i) => formatter.format(new Date(2023, 0, 1 + i)));
+}, [locale]);
   useEffect(() => {
     if (!calendarOpen) {
       return undefined;
@@ -218,7 +234,7 @@ function MobileDeliveryInfo() {
           </span>
         </div>
         <p className="mt-1 text-sm font-bold">
-          {formatDeliveryDate(deliveryDate)}
+         {formatDeliveryDate(deliveryDate, locale)}
         </p>
       </button>
 
@@ -271,9 +287,12 @@ function MobileDeliveryInfo() {
             </button>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
-            {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
+            {/* {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
               <span key={`${day}-${index}`}>{day}</span>
-            ))}
+            ))} */}
+            {weekdayLabels.map((day, index) => (
+  <span key={`${day}-${index}`}>{day}</span>
+))}
           </div>
           <div className="mt-1 grid grid-cols-7 gap-1">
             {calendarDays.map((date, index) => {
@@ -372,16 +391,17 @@ function getVisibleProductsForAi(products) {
 }
 
 function CatalogLayoutToggle({ layout, onChange }) {
+   const t = useTranslations("catalog")
   return (
-          <div role="group" aria-label="Product layout" className="flex shrink-0 items-center rounded-lg border bg-muted/40 p-1">
-            <Button variant={layout === "list" ? "secondary" : "ghost"} size="icon-sm" aria-label="List layout" title="List layout" aria-pressed={layout === "list"} onClick={() => onChange("list")}>
-              <List className="size-4" />
-            </Button>
-            <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
-            <Button variant={layout === "card" ? "secondary" : "ghost"} size="icon-sm" aria-label="Card layout" title="Card layout" aria-pressed={layout === "card"} onClick={() => onChange("card")}>
-              <LayoutGrid className="size-4" />
-            </Button>
-          </div>
+         <div role="group" aria-label={t("productLayout")} className="flex shrink-0 items-center rounded-lg border bg-muted/40 p-1">
+      <Button variant={layout === "list" ? "secondary" : "ghost"} size="icon-sm" aria-label={t("listLayout")} title={t("listLayout")} aria-pressed={layout === "list"} onClick={() => onChange("list")}>
+        <List className="size-4" />
+      </Button>
+      <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
+      <Button variant={layout === "card" ? "secondary" : "ghost"} size="icon-sm" aria-label={t("cardLayout")} title={t("cardLayout")} aria-pressed={layout === "card"} onClick={() => onChange("card")}>
+        <LayoutGrid className="size-4" />
+      </Button>
+    </div>
   );
 }
 
@@ -407,6 +427,8 @@ function CatalogFilterControls({
 }) {
   const isMobile = layout === "mobile";
   const t = useTranslations("catalog");
+  const getAllLabel = (option) => (option === "All" ? t("all") : option);
+  const getSortLabel = (option) => t(sortLabelKeys[option]);
 
   return (
     <div className="min-w-0 space-y-4">
@@ -434,18 +456,20 @@ function CatalogFilterControls({
           />
         </div>
 
-        {!isMobile && <Button
-          variant="outline"
-          className="relative mt-1 h-10 min-w-0 justify-start rounded-md text-xs font-semibold sm:mt-0"
-        >
-          <SlidersHorizontal className="shrink-0" />
-          <span className="truncate">{t("filters")}</span>
-          {activeFilterCount > 0 && (
-            <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
-              {activeFilterCount}
-            </span>
-          )}
-        </Button>}
+        {!isMobile && (
+          <Button
+            variant="outline"
+            className="relative mt-1 h-10 min-w-0 justify-start rounded-md text-xs font-semibold sm:mt-0"
+          >
+            <SlidersHorizontal className="shrink-0" />
+            <span className="truncate">{t("filters")}</span>
+            {activeFilterCount > 0 && (
+              <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-bold text-primary-foreground">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
+        )}
 
         {!isMobile && (
           <Button
@@ -472,6 +496,7 @@ function CatalogFilterControls({
           options={categoryNames}
           onChange={onCategoryChange}
           searchable
+          getOptionLabel={getAllLabel}
         />
         <SelectMenu
           label={t("subcategory")}
@@ -479,25 +504,43 @@ function CatalogFilterControls({
           options={subcategoryNames}
           onChange={onSubcategoryChange}
           searchable
+          getOptionLabel={getAllLabel}
         />
-        <div className={cn("flex min-w-0 items-end gap-2", isMobile ? "col-span-2" : "md:col-span-1")}>
+        <div
+          className={cn(
+            "flex min-w-0 items-end gap-2",
+            isMobile ? "col-span-2" : "md:col-span-1",
+          )}
+        >
           {isMobile && (
-            <Button variant="outline" className="relative h-9 shrink-0 gap-1 rounded-md px-2 text-xs font-semibold">
+            <Button
+              variant="outline"
+              className="relative h-9 shrink-0 gap-1 rounded-md px-2 text-xs font-semibold"
+            >
               <SlidersHorizontal className="size-3.5" />
               {t("filters")}
-              {activeFilterCount > 0 && <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-primary text-[10px] text-primary-foreground">{activeFilterCount}</span>}
+              {activeFilterCount > 0 && (
+                <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
           )}
-        <SelectMenu
-          className="flex-1"
-          label={t("sortBy")}
-          value={sortBy}
-          options={sortOptions}
-          onChange={onSortChange}
-        />
-          {!isMobile && <CatalogLayoutToggle layout={productLayout} onChange={onLayoutChange} />}
+          <SelectMenu
+            className="flex-1"
+            label={t("sortBy")}
+            value={sortBy}
+            options={sortOptions}
+            onChange={onSortChange}
+            getOptionLabel={getSortLabel}
+          />
+          {!isMobile && (
+            <CatalogLayoutToggle
+              layout={productLayout}
+              onChange={onLayoutChange}
+            />
+          )}
         </div>
-
       </div>
 
       {isMobile && (
@@ -884,10 +927,10 @@ const rawItems = useMemo(() => {
             : product;
 
           addItem(finalProduct, quantity);
-          toast.success(`Added ${quantity} × ${finalProduct.name} to cart!`);
+          toast.success(t("voiceAdded", { quantity, name: finalProduct.name }));
         } catch {
           addItem(product, quantity);
-          toast.success(`Added ${quantity} × ${product.name} to cart!`);
+          toast.success(t("voiceAdded", { quantity, name: product.name }));
         }
         return;
       }
@@ -933,7 +976,7 @@ const rawItems = useMemo(() => {
       await handleVoiceAction(aiResult, transcript);
     } catch (error) {
       console.error(error);
-      alert(error.message || "Voice search failed.");
+      alert(error.message || t("voiceFailed"));
     }
   }
 
@@ -973,11 +1016,11 @@ const rawItems = useMemo(() => {
             <Loader2 className="mx-auto size-5 animate-spin text-primary" />
             <div className="space-y-1">
               <p className="text-sm font-semibold">
-                {voiceStatus === "listening" ? "Listening..." : "Just a sec..."}
+                {voiceStatus === "listening" ? t("listening") : t("justASec")}
               </p>
               {voiceTranscript ? (
                 <p className="text-xs font-medium text-muted-foreground">
-                  You said: {voiceTranscript}
+                 {t("youSaid", { text: voiceTranscript })}
                 </p>
               ) : null}
             </div>
@@ -1076,12 +1119,12 @@ const rawItems = useMemo(() => {
             className="flex flex-col items-center justify-center gap-2 text-center text-muted-foreground"
           >
             <Loader2 className="size-6 animate-spin text-primary" />
-            <p className="text-xs font-medium">Loading products...</p>
+            <p className="text-xs font-medium">{t("loadingProducts")}</p>
           </div>
         ) : itemsStatus === "failed" ? (
           <div role="alert" className="grid justify-items-center gap-3 p-6 text-center">
-            <p className="text-sm text-muted-foreground">Unable to load products from the API.</p>
-            <Button variant="outline" onClick={() => dispatch(GetItems())}>Try again</Button>
+            <p className="text-sm text-muted-foreground">{t("loadFailed")}</p>
+<Button variant="outline" onClick={() => dispatch(GetItems())}>{t("tryAgain")}</Button>
           </div>
         ) : (
           <>
@@ -1157,7 +1200,7 @@ const rawItems = useMemo(() => {
                   <Button
                     variant={page === safePage ? "default" : "outline"}
                     size="icon-sm"
-                    aria-label={`Page ${page}`}
+                   aria-label={t("pageAria", { page })}
                     onClick={() => {
                       setCurrentPage(page);
                       scrollCatalogToTop();

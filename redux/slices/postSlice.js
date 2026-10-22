@@ -79,11 +79,10 @@ export const PostCart = createAsyncThunk(
 // ── PUT /cart/customer/{custnmbr}/item/{itemNumber} ──────────────────────────
 export const PutCartQuantity = createAsyncThunk(
   "cart/PutCartQuantity",
-  async ({ data }, { rejectWithValue }) => {
+  async ({ itemNumber, quantity }, { rejectWithValue }) => {
     try {
-      const custnmbr = localStorage.getItem("custnmbr");
+      const custnmbr = localStorage.getItem("custnmbr")
       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/cart/customer/${custnmbr}/item/${itemNumber}`
-      console.log("PutCartQuantity URL:", URL)
 
       const response = await axios.put(
         URL,
@@ -103,44 +102,45 @@ export const PutCartQuantity = createAsyncThunk(
   }
 )
 
-// ── POST /checkout/{custnmbr} ────────────────────────────────────────────────
-export const PostCheckout = createAsyncThunk(
-  "cart/PostCheckout",
-  async (_, { rejectWithValue }) => {
-    try {
-      const custnmbr =
-        typeof window !== "undefined" ? localStorage.getItem("custnmbr") : null
 
-      if (!custnmbr) {
-        return rejectWithValue("Customer number not found. Please log in again.")
+
+
+// ── CART_SIDEBAR_Proceed_to_checkout_POST ──
+export const proceedtoCheckoutPOST = createAsyncThunk(
+  "cartsidebar/Post_proceedtocheckout",
+  async (
+    { custNmbr, deliveryDate, cutOffTime, notes, discountCode, poNumber },
+    { rejectWithValue }
+  ) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/checkout`
+
+      const requestBody = {
+        custNmbr,
+        deliveryDate, // "2026-09-21"
+        cutOffTime, // "14:00:00"
+        notes,
+        discountCode,
+        poNumber,
+        createType: "Web",
       }
 
-      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/checkout/${encodeURIComponent(custnmbr)}`
-
-      const response = await axios.post(URL, null, {
+      const response = await axios.post(URL, requestBody, {
         headers: {
           Accept: "application/json",
           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
         },
       })
 
-      const result = response.data
-
-      // some backends return 200 with success: false
-      if (result?.success === false) {
-        return rejectWithValue(
-          result?.Msg || result?.message || "Checkout failed."
+      if (response.data?.success === false) {
+        throw new Error(
+          response.data?.Msg || response.data?.message || response.data?.error || "Checkout failed."
         )
       }
 
-      return result
+      return response.data // { success, orderNumber, orderAmount }
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.Msg ||
-        error.response?.data?.message ||
-        error.response?.data ||
-        error.message
-      )
+      return rejectWithValue(error.response ? error.response.data : error.message)
     }
   }
 )
@@ -178,6 +178,8 @@ export const PostReorder = createAsyncThunk(
     }
   }
 )
+
+
 
 //Catelog/ADD TO CART// POST===================================
 export const PostCartcatelog = createAsyncThunk(

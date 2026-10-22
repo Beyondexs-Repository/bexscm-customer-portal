@@ -228,6 +228,7 @@
 //   )
 // }
 
+"use client"
 
 import Link from "next/link"
 import {
@@ -236,7 +237,7 @@ import {
   MessageSquareText,
   ShoppingBag,
 } from "lucide-react"
-
+import { useTranslations } from "next-intl"
 import QuickOrderGuide from "./QuickOrderGuide"
 import WelcomeCard from "./WelcomeCard"
 import RecentInvoicesTable from "../overview/Recentinvoicestable"
@@ -245,34 +246,64 @@ import { cn } from "@/lib/utils"
 import { can, canAct } from "@/lib/permissions"
 import { useEffect, useState } from "react"
 
+// const quickActions = [
+//   {
+//     title: "Order Guide",
+//     description: "Step-by-step ordering",
+//     href: "/order-guide",
+//     icon: BookOpen,
+//     iconClassName:
+//       "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300",
+//   },
+//   {
+//     title: "Browse Catalog",
+//     description: "Explore all products",
+//     href: "/catalog",
+//     icon: ShoppingBag,
+//     iconClassName:
+//       "bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300",
+//   },
+//   {
+//     title: "Recent Orders",
+//     description: "View your past orders",
+//     href: "/my-orders",
+//     icon: ClipboardList,
+//     iconClassName:
+//       "bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-300",
+//   },
+//   {
+//     title: "Messages",
+//     description: "Contact your team",
+//     href: "/messages",
+//     icon: MessageSquareText,
+//     iconClassName:
+//       "bg-cyan-50 text-cyan-600 dark:bg-cyan-950/50 dark:text-cyan-300",
+//   },
+// ]
 const quickActions = [
   {
-    title: "Order Guide",
-    description: "Step-by-step ordering",
+    key: "orderGuide",
     href: "/order-guide",
     icon: BookOpen,
     iconClassName:
       "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300",
   },
   {
-    title: "Browse Catalog",
-    description: "Explore all products",
+    key: "catalog",
     href: "/catalog",
     icon: ShoppingBag,
     iconClassName:
       "bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300",
   },
   {
-    title: "Recent Orders",
-    description: "View your past orders",
+    key: "recentOrders",
     href: "/my-orders",
     icon: ClipboardList,
     iconClassName:
       "bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-300",
   },
   {
-    title: "Messages",
-    description: "Contact your team",
+    key: "messages",
     href: "/messages",
     icon: MessageSquareText,
     iconClassName:
@@ -281,15 +312,17 @@ const quickActions = [
 ]
 
 function QuickActions() {
+  const t = useTranslations("quickActions")
+
   return (
-    <section aria-label="Quick actions">
+    <section aria-label={t("ariaLabel")}>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
         {quickActions.map((action) => {
           const Icon = action.icon
 
           return (
             <Link
-              key={action.title}
+              key={action.key}
               href={action.href}
               className="group flex min-w-0 items-center gap-2 rounded-xl border bg-card p-2.5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md sm:gap-3 sm:p-3"
             >
@@ -303,10 +336,10 @@ function QuickActions() {
               </div>
               <div className="min-w-0">
                 <p className="truncate text-xs font-semibold sm:text-sm">
-                  {action.title}
+                  {t(`${action.key}.title`)}
                 </p>
                 <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
-                  {action.description}
+                  {t(`${action.key}.description`)}
                 </p>
               </div>
             </Link>

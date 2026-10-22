@@ -855,7 +855,10 @@ function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
     </button>
   )
 }
-
+function getCustnmbr() {
+  if (typeof window === "undefined") return undefined
+  return window.localStorage.getItem("custnmbr") || undefined
+}
 export default function OrderList({
   orders = [],
   filteredOrders = [],

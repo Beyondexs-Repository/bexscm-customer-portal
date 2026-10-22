@@ -79,16 +79,16 @@ function touchOrder(order) {
 
 function formatUpdatedAt(value) {
   if (!value) return "Updated just now";
-
+ 
   const diff = Date.now() - new Date(value).getTime();
   const minutes = Math.max(0, Math.floor(diff / 60000));
-
+ 
   if (minutes < 1) return "Updated just now";
   if (minutes < 60) return `Updated ${minutes} min ago`;
-
+ 
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `Updated ${hours} hr ago`;
-
+ 
   const days = Math.floor(hours / 24);
   return `Updated ${days} day${days === 1 ? "" : "s"} ago`;
 }
@@ -208,7 +208,7 @@ onDownloadParSheet,
         <button
           type="button"
           ref={setActivatorNodeRef}
-          aria-label={`Drag ${order.name}`}
+          aria-label={t("dragAria", { name: order.name })}
           className="mt-1 grid size-7 shrink-0 cursor-grab place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
           {...(canEdit ? attributes : {})}
           {...(canEdit ? listeners : {})}
@@ -226,8 +226,8 @@ onDownloadParSheet,
               <h3 className="truncate text-sm font-semibold">{order.name}</h3>
             </div>
             <p className="truncate text-xs text-muted-foreground">
-              {countOrderProducts(order)} items -{" "}
-              {formatUpdatedAt(order.updatedAt)}
+             {t("itemsCount", { count: countOrderProducts(order) })} -{" "}
+              {formatUpdatedAt(order.updatedAt, t)}
             </p>
           </div>
 
@@ -255,7 +255,7 @@ onDownloadParSheet,
               className="min-w-0 flex-1 truncate text-left font-medium"
               onClick={() => onSelectGroup(order.id, "all")}
             >
-              All
+              {t("allGroup")}
             </button>
             <span className="rounded-full bg-background/75 px-2 py-0.5 text-xs font-semibold">
               {countUniqueOrderProducts(order)}
@@ -266,7 +266,7 @@ onDownloadParSheet,
                   <Button
                     variant="ghost"
                     size="icon-xs"
-                    aria-label="All options"
+                   aria-label={t("allOptionsAria")}
                   >
                     <MoreVertical />
                   </Button>
@@ -276,7 +276,7 @@ onDownloadParSheet,
                     onSelect={() =>
                       onOpenEditGroupPar(order, {
                         id: "all",
-                        name: "All",
+                         name: t("allGroup"),
                         isAll: true,
                         products: order.groups.flatMap(
                           (group) => group.products,
@@ -323,7 +323,7 @@ onDownloadParSheet,
                       <Button
                         variant="ghost"
                         size="icon-xs"
-                        aria-label={`${group.name} options`}
+                         aria-label={t("optionsAria", { name: group.name })}
                       >
                         <MoreVertical />
                       </Button>
@@ -412,7 +412,7 @@ onDownloadParSheet,
   ) : (
     <Download className="size-4" />
   )}
-  {isDownloadingPar ? "Downloading..." : t("downloadPARSheet")}
+  {isDownloadingPar ? t("downloading") : t("downloadPARSheet")}
 </Button>
         </div>
       ) : null}
@@ -907,14 +907,14 @@ async function handleDelete(orderGuideID) {
       setSelectedGroupId(null)
     }
 
-    toast.success("Order guide deleted successfully")
+   toast.success(t("toast.guideDeleted"))
     return true
   } catch (error) {
     console.error("Delete Order Guide Error:", error)
     toast.error(
       typeof error === "string"
         ? error
-        : error?.Msg || error?.message || "Failed to delete order guide",
+        : error?.Msg || error?.message || t("toast.guideDeleteFailed"),
     )
     return false
   }
@@ -944,14 +944,14 @@ async function handleDeleteOrdGuideGroup(order, group) {
       setSelectedGroupId(nextGroupId)
     }
 
-    toast.success("Group items deleted successfully")
+    toast.success(t("toast.groupDeleted"))
     return true
   } catch (error) {
     console.error("Delete Order Guide Group Error:", error)
     toast.error(
       typeof error === "string"
         ? error
-        : error?.Msg || error?.message || "Failed to delete group",
+        : error?.Msg || error?.message || t("toast.groupDeleteFailed"),
     )
     return false
   }
@@ -1102,13 +1102,13 @@ async function handleDeleteOrdGuideGroup(order, group) {
   try {
     setDownloadingParId(order.id);
     await dispatch(GetOrderGuidePARsheet(Number(order.id))).unwrap();
-    toast.success("PAR sheet downloaded");
+     toast.success(t("toast.parSheetDownloaded"));
   } catch (error) {
     console.error("PAR sheet download failed:", error);
     toast.error(
       typeof error === "string"
         ? error
-        : error?.Msg || error?.message || "Failed to download PAR sheet",
+        : error?.Msg || error?.message || t("toast.parSheetFailed"),
     );
   } finally {
     setDownloadingParId(null);
@@ -1491,7 +1491,7 @@ async function handleDeleteOrdGuideGroup(order, group) {
     if (value !== null && (!Number.isFinite(value) || value < 0)) return;
 
     if (!userId) {
-      setNameDialogError("Unable to identify the logged-in user.");
+       setNameDialogError(t("toast.userNotFound"));
       return;
     }
 
@@ -1512,7 +1512,7 @@ async function handleDeleteOrdGuideGroup(order, group) {
       }));
 
     if (items.length === 0) {
-      setNameDialogError("There are no products to update.");
+        setNameDialogError(t("toast.noProductsToUpdate"));
       return;
     }
 
@@ -1549,12 +1549,12 @@ async function handleDeleteOrdGuideGroup(order, group) {
             : order,
         ),
       );
-      toast.success("PAR value updated successfully");
+      toast.success(t("toast.parUpdated"));
       closeDialog();
     } catch (error) {
       console.error("Bulk PAR error:", error);
-      setNameDialogError(error?.message || "Failed to update PAR.");
-      toast.error(error?.message || "Failed to update PAR.");
+      setNameDialogError(error?.message || t("toast.parUpdateFailed"));
+      toast.error(error?.message || t("toast.parUpdateFailed"));
     } finally {
       setIsSavingName(false);
     }
@@ -1595,8 +1595,8 @@ async function handleDeleteOrdGuideGroup(order, group) {
 
     if (dialog.type === "add-group") {
       if (!userId) {
-        setNameDialogError("Unable to identify the logged-in user.");
-        toast.error("Unable to identify the logged-in user.");
+        setNameDialogError(t("toast.userNotFound"));
+        toast.error(t("toast.userNotFound"));
         return;
       }
 
@@ -1630,14 +1630,14 @@ async function handleDeleteOrdGuideGroup(order, group) {
         await loadOrderGuides();
         setExpandedOrderId(dialog.order.id);
         setSelectedGroupId(group.id);
-         toast.success(`Group "${name}" created successfully`);
+         toast.success(t("toast.groupCreated", { name }));
         closeDialog();
       } catch (error) {
         console.error("Create Order Guide Group Error:", error);
         setNameDialogError(
-          error?.message || "Failed to add group. Please try again.",
+          error?.message || t("toast.addGroupFailed"),
         );
-         toast.error(message);
+         toast.error(error?.message || t("toast.addGroupFailed"));
       } finally {
         setIsSavingName(false);
       }
@@ -1647,7 +1647,7 @@ async function handleDeleteOrdGuideGroup(order, group) {
 
     if (dialog.type === "rename-order") {
       if (!userId) {
-        setNameDialogError("Unable to identify the logged-in user.");
+        setNameDialogError(t("toast.userNotFound"));
         return;
       }
 
@@ -1675,7 +1675,7 @@ async function handleDeleteOrdGuideGroup(order, group) {
       } catch (error) {
         console.error("Modify Order Guide Error:", error);
         setNameDialogError(
-          error?.message || "Failed to rename order guide. Please try again.",
+          error?.message || t("toast.renameOrderFailed"),
         );
       } finally {
         setIsSavingName(false);
@@ -1686,7 +1686,7 @@ async function handleDeleteOrdGuideGroup(order, group) {
 
     if (dialog.type === "rename-group") {
       if (!userId) {
-        setNameDialogError("Unable to identify the logged-in user.");
+        setNameDialogError(t("toast.userNotFound"));
         return;
       }
 
@@ -1718,7 +1718,7 @@ async function handleDeleteOrdGuideGroup(order, group) {
       } catch (error) {
         console.error("Update Order Guide Group Error:", error);
         setNameDialogError(
-          error?.message || "Failed to rename group. Please try again.",
+          error?.message || t("toast.renameGroupFailed"),
         );
       } finally {
         setIsSavingName(false);
@@ -1843,10 +1843,10 @@ async function handleDeleteOrdGuideGroup(order, group) {
       dispatch(PutOrderGuideSequence({ custnmbr, orderGuideIds }))
         .unwrap()
         .then(() => {
-          toast.success("Order items updated");
+          toast.success(t("toast.sequenceSaved"));
         })
         .catch((err) => {
-          toast.error(err?.message || err || "Failed to save new order");
+         toast.error(err?.message || err || t("toast.sequenceFailed"));
         });
 
       return reordered;
@@ -1868,12 +1868,12 @@ async function handleDeleteOrdGuideGroup(order, group) {
     <>
       <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-card/55 p-2 shadow-sm lg:p-2.5">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-base font-semibold lg:text-lg">Order Guides</h2>
+           <h2 className="text-base font-semibold lg:text-lg">{t("title")}</h2>
 
           {canCreate ? (
             <Button size="sm" className="h-8" onClick={onCreate}>
               <Plus className="size-4" />
-              Create
+             {t("createAction")}
             </Button>
           ) : null}
         </div>
@@ -1973,8 +1973,8 @@ isDownloadingPar={downloadingParId === order.id}
                         </h3>
                       </div>
                       <p className="truncate text-xs text-muted-foreground">
-                        {countOrderProducts(activeOrder)} items -{" "}
-                        {formatUpdatedAt(activeOrder.updatedAt)}
+                        {t("itemsCount", { count: countOrderProducts(activeOrder) })} -{" "}
+                        {formatUpdatedAt(activeOrder.updatedAt, t)}
                       </p>
                     </div>
                   </div>
@@ -1991,20 +1991,20 @@ isDownloadingPar={downloadingParId === order.id}
       >
         <DialogContent className="sm:max-w-md" showCloseButton={!isSavingName}>
           <DialogHeader>
-            <DialogTitle>
+             <DialogTitle>
               {dialog?.type === "add-group"
-                ? "Add Group"
+                ? t("addGroup")
                 : dialog?.type === "rename-order"
-                  ? "Rename Order Guide"
-                  : "Rename Group"}
+                  ? t("renameOrderGuide")
+                  : t("renameGroup")}
             </DialogTitle>
             <DialogDescription>
-              Enter the name you want to use.
+              {t("nameDialogDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2 py-2">
-            <Label htmlFor="quickOrderDialogName">Name</Label>
+            <Label htmlFor="quickOrderDialogName">{t("name")}</Label>
             <Input
               id="quickOrderDialogName"
               value={draftName}
@@ -2043,8 +2043,9 @@ isDownloadingPar={downloadingParId === order.id}
           <DialogHeader>
             <DialogTitle>{t("editPar")}</DialogTitle>
             <DialogDescription>
-              This PAR value will be applied to every product in{" "}
-              {dialog?.group?.isAll ? "all groups" : dialog?.group?.name}.
+              {t("editParDescription", {
+                target: dialog?.group?.isAll ? t("allGroups") : dialog?.group?.name,
+              })}
             </DialogDescription>
           </DialogHeader>
 
@@ -2085,9 +2086,10 @@ isDownloadingPar={downloadingParId === order.id}
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t("editPar")}</DialogTitle>
-            <DialogDescription>
-              This PAR value will be applied to every product in{" "}
-              {dialog?.group?.isAll ? "all groups" : dialog?.group?.name}.
+          <DialogDescription>
+              {t("editParDescription", {
+                target: dialog?.group?.isAll ? t("allGroups") : dialog?.group?.name,
+              })}
             </DialogDescription>
           </DialogHeader>
 
@@ -2126,8 +2128,7 @@ isDownloadingPar={downloadingParId === order.id}
                 : t("deleteGroup")}
             </DialogTitle>
             <DialogDescription>
-              This action removes the selected item from your saved order
-              guides.
+               {t("deleteDescription")}
             </DialogDescription>
           </DialogHeader>
 
@@ -2140,7 +2141,7 @@ isDownloadingPar={downloadingParId === order.id}
             </Button> */}
                   <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
         {isDeleting && <Loader2 className="size-4 animate-spin" />}
-        {isDeleting ? "Deleting..." : t("delete")}
+        {isDeleting ? t("deleting") : t("delete")}
       </Button>
           </DialogFooter>
         </DialogContent>

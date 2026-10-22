@@ -7,7 +7,7 @@ import { AppProvider } from "@/app/context/app-context"
 import { StaticIntlProvider } from "@/components/static-intl-provider"
 import { StoreProvider } from "@/redux/StoreProvider"
 import { PortalLayout } from "@/components/portal-layout"
-// import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget"
+import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -44,7 +44,7 @@ export default function RootLayout({children}) {
                 disableTransitionOnChange
               >
                 <PortalLayout>{children}</PortalLayout>
-                {/* <ChatbotWidget /> */}
+                <ChatbotWidget />
                 <Toaster richColors position="top-center" />
               </ThemeProvider>
             </AppProvider>

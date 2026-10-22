@@ -3,15 +3,22 @@
     "language": "Idioma",
     "english": "Inglés",
     "spanish": "Español",
+    "theme": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema",
     "darkMode": "Modo oscuro",
     "toggleDarkMode": "Cambiar modo oscuro"
   },
   "nav": {
     "main": "Principal",
+    "customer": "Cliente",
     "overview": "Resumen",
     "orderGuide": "Guía de pedidos",
     "catalog": "Catálogo",
     "myOrders": "Mis pedidos",
+    "metrics": "Métricas",
+    "invoices": "Facturas",
     "messages": "Mensajes",
     "employees": "Empleados",
     "users": "Usuarios"
@@ -26,6 +33,19 @@
     "employees": "Empleados",
     "users": "Usuarios"
   },
+  "pageHeader": {
+  "overview": { "title": "Resumen", "description": "Consulta la actividad de la cuenta, los pedidos recientes y los accesos directos" },
+  "productDetails": { "title": "Detalles del producto", "description": "Revisa la información, el precio y la disponibilidad del producto" },
+  "catalog": { "title": "Catálogo", "description": "Explora productos, precios y disponibilidad" },
+  "orderGuide": { "title": "Guía de pedidos", "description": "Crea y administra listas de productos pedidos con frecuencia" },
+  "myOrders": { "title": "Mis pedidos", "description": "Revisa los pedidos actuales y anteriores" },
+  "invoiceDetails": { "title": "Detalles de la factura", "description": "Revisa los cargos, pagos y saldos de la factura" },
+  "invoices": { "title": "Facturas", "description": "Revisa los totales, pagos, saldos y estado de las facturas" },
+  "metrics": { "title": "Métricas", "description": "Revisa las tendencias de compra, la actividad de pedidos y los saldos de facturas" },
+  "messages": { "title": "Mensajes", "description": "Contacta con soporte y revisa las conversaciones" },
+  "employees": { "title": "Empleados", "description": "Consulta y administra los empleados de la tienda" },
+  "profile": { "title": "Perfil", "description": "Administra tu cuenta y tu información de contacto" }
+},
   "userMenu": {
     "myProfile": "Administrar cuenta",
     "logOut": "Cerrar sesión"
@@ -39,7 +59,13 @@
     "logOut": "Cerrar sesión",
     "openProfileMenu": "Abrir menú de perfil",
     "openCart": "Abrir carrito",
-    "cart": "Carrito"
+    "cart": "Carrito",
+    "aiQuickAction": "Acción rápida con IA",
+    "upload": "Subir",
+    "uploadFiles": "Subir archivos",
+    "openMessageOptions": "Abrir opciones de mensajes",
+    "search": "Buscar",
+    "clearChat": "Borrar chat"
   },
   "cart": {
     "title": "Tu carrito",
@@ -50,7 +76,40 @@
     "proceed": "Ir al pago",
     "remove": "Eliminar {name}",
     "decrease": "Disminuir {name}",
-    "increase": "Aumentar {name}"
+    "increase": "Aumentar {name}",
+    "cartOptions": "Opciones del carrito",
+    "showDescription": "Mostrar descripción",
+    "clearAll": "Vaciar todos los artículos",
+    "selectedCart": "Carrito seleccionado:",
+    "selectCart": "Seleccionar carrito",
+    "itemsLabel": "{count} artículos",
+    "newCart": "Nuevo carrito",
+    "newCartTitle": "Nuevo carrito",
+    "newCartDescription": "Asígnale un nombre, define la fecha de entrega y la visibilidad antes de crearlo.",
+    "cartName": "Nombre del carrito",
+    "cartNamePlaceholder": "p. ej. Preparación de línea",
+    "fulfillmentDate": "Fecha de entrega",
+    "visibility": "Visibilidad",
+    "public": "Público",
+    "publicHint": "Todos en la cuenta",
+    "private": "Privado",
+    "privateHint": "Solo tú puedes verlo",
+    "cancel": "Cancelar",
+    "createCart": "Crear carrito",
+    "loadingCart": "Cargando carrito...",
+    "itemNum": "N.º de artículo",
+    "orderDetails": "Detalles del pedido",
+    "deliveryDate": "Fecha de entrega",
+    "poNumber": "N.º de orden de compra",
+    "promoCode": "Código promocional",
+    "orderNotes": "Notas del pedido",
+    "deliveryDateHint": "Introduce tu fecha de entrega preferida.",
+    "poNumberHint": "Introduce tu número de orden de compra.",
+    "promoCodeHint": "Introduce tu código promocional.",
+    "poNumberPlaceholder": "Introduce el n.º de orden de compra",
+    "promoCodePlaceholder": "Introduce el código promocional",
+    "orderNotesPlaceholder": "Introduce las notas del pedido",
+    "processing": "Procesando..."
   },
   "dashboard": {
     "overview": {
@@ -274,7 +333,15 @@
     "removeProduct": "Eliminar {product} de {group}.",
     "updatePar": "Actualiza el valor PAR para {product}.",
     "enterPar": "Ingresa PAR",
-    "parValue": "Valor PAR"
+    "parValue": "Valor PAR",
+    "loading": "Cargando guías de pedidos...",
+"allGroup": "Todos",
+"toast": {
+  "userNotFound": "No se pudo identificar al usuario que inició sesión.",
+  "customerNotFound": "No se pudo identificar al cliente.",
+  "created": "La guía de pedidos \"{name}\" se creó correctamente",
+  "createFailed": "No se pudo crear la guía de pedidos"
+}
   },
   "catalog": {
     "productNotFound": "Producto no encontrado",
@@ -318,7 +385,23 @@
     "searchPlaceholder": "Buscar {label}...",
     "noMatches": "No se encontraron {label}",
     "packSize": "Tamaño del paquete: 1 {unit}",
-    "addedToCart": "Agregado al carrito"
+    "addedToCart": "Agregado al carrito",
+    "all": "Todos",
+"sortNameAsc": "Nombre A-Z",
+"sortPriceAsc": "Precio de menor a mayor",
+"sortPriceDesc": "Precio de mayor a menor",
+"productLayout": "Diseño de productos",
+"listLayout": "Vista de lista",
+"cardLayout": "Vista de tarjetas",
+"listening": "Escuchando...",
+"justASec": "Un momento...",
+"youSaid": "Dijiste: {text}",
+"loadingProducts": "Cargando productos...",
+"loadFailed": "No se pudieron cargar los productos desde la API.",
+"tryAgain": "Intentar de nuevo",
+"pageAria": "Página {page}",
+"voiceAdded": "Se agregó {quantity} × {name} al carrito.",
+"voiceFailed": "Falló la búsqueda por voz."
   },
   "auth": {
     "language": "Idioma",
@@ -348,7 +431,129 @@
     "changeNumber": "Cambiar número",
     "otpDigit": "Dígito OTP {index}",
     "verifyContinue": "Verificar y continuar",
-    "footerNote": "Inicio de sesión rápido, privado y protegido"
+    "footerNote": "Inicio de sesión rápido, privado y protegido",
+    "phone": "Número de teléfono",
+    "email": "Correo electrónico"
+  },
+  "uploadModal": {
+  "title": "Importar documento y agregar al carrito",
+  "dropTitle": "Haz clic para explorar o arrastra y suelta el archivo aquí",
+  "dropHint": "Admite imágenes (PNG/JPG), PDF, documentos Word, CSV o Excel (hasta 25 MB). El lector de datos extrae automáticamente los artículos para agregarlos a tu carrito.",
+  "selectedFiles": "Archivos seleccionados ({count})",
+  "clearAll": "Borrar todo",
+  "removeFile": "Quitar archivo",
+  "cancel": "Cancelar",
+  "reading": "Leyendo e importando...",
+  "importButton": "Importar y agregar al carrito ({count})",
+  "success": "¡Documento importado correctamente al carrito!",
+  "failed": "Error al importar el documento: {message}",
+  "failedDefault": "No se pudo importar el documento"
+},
+"quickActions": {
+  "ariaLabel": "Acciones rápidas",
+  "orderGuide": {
+    "title": "Guía de pedidos",
+    "description": "Pedidos paso a paso"
+  },
+  "catalog": {
+    "title": "Explorar catálogo",
+    "description": "Descubre todos los productos"
+  },
+  "recentOrders": {
+    "title": "Pedidos recientes",
+    "description": "Consulta tus pedidos anteriores"
+  },
+  "messages": {
+    "title": "Mensajes",
+    "description": "Contacta a tu equipo"
+  }
+},
+"recentInvoices": {
+  "title": "Facturas recientes",
+  "description": "Consulta y gestiona tus pedidos más recientes",
+  "viewAll": "Ver todas",
+  "columns": {
+    "invoice": "Factura",
+    "invoiceDate": "Fecha de factura",
+    "dueDate": "Fecha de vencimiento",
+    "items": "Artículos",
+    "total": "Total",
+    "status": "Estado",
+    "action": "Acción"
+  },
+  "products": "{count, plural, one {# producto} other {# productos}}",
+  "units": "{count, plural, one {# unidad} other {# unidades}}",
+  "invoiceButton": "Factura",
+  "viewInvoiceAria": "Ver factura {number}",
+  "loading": "Cargando facturas...",
+  "empty": "No se encontraron facturas.",
+  "error": "Algo salió mal.",
+  "status": {
+    "open": "Abierta",
+    "paid": "Pagada",
+    "closed": "Cerrada",
+    "overdue": "Vencida"
+  }
+},
+"quickOrderGuide": {
+  "title": "Guías de pedido rápido",
+  "description": "Selecciona guías para agregar sus productos",
+  "openGuidesAria": "Abrir guías de pedidos",
+  "selectGuideAria": "Seleccionar {name}",
+  "loading": "Cargando pedidos rápidos...",
+  "groups": "{count, plural, one {# grupo} other {# grupos}}",
+  "products": "{count, plural, one {# producto} other {# productos}}",
+  "added": "Agregada",
+  "emptyTitle": "Aún no hay guías de pedido",
+  "emptyDescription": "Crea una guía reutilizable para los productos que pides con regularidad.",
+  "selectAll": "Seleccionar todo",
+  "clearAll": "Borrar selección",
+  "addToCart": "Agregar al carrito",
+  "adding": "Agregando...",
+  "toast": {
+    "loadFailed": "No se pudieron cargar las guías de pedido rápido.",
+    "customerNotFound": "No se pudo identificar al cliente.",
+    "addedSkipped": "{added} agregados, {skipped} omitidos",
+    "itemsAdded": "{count} artículo(s) agregado(s) al carrito",
+    "addedToCart": "Agregado al carrito",
+    "addFailed": "No se pudo agregar al carrito"
+  }
+},
+"invoicesPage": {
+  "stats": {
+    "totalInvoices": "Total de facturas",
+    "totalAmount": "Monto total",
+    "paidAmount": "Monto pagado",
+    "dueAmount": "Monto pendiente"
+  },
+  "searchPlaceholder": "Buscar facturas...",
+  "searchAria": "Buscar facturas",
+  "clearSearchAria": "Borrar búsqueda",
+  "searchButton": "Buscar",
+  "title": "Facturas",
+  "description": "Revisa los totales, pagos, saldos y estado de las facturas.",
+  "columns": {
+    "invoice": "Factura",
+    "invoiceDate": "Fecha de factura",
+    "dueDate": "Fecha de vencimiento",
+    "items": "Artículos",
+    "total": "Total",
+    "paidAmount": "Monto pagado",
+    "balance": "Saldo",
+    "status": "Estado",
+    "action": "Acción"
+  },
+  "products": "{count, plural, one {# producto} other {# productos}}",
+  "units": "{count, plural, one {# unidad} other {# unidades}}",
+  "invoiceButton": "Factura",
+  "loading": "Cargando facturas...",
+  "empty": "No se encontraron facturas.",
+  "showing": "Mostrando {from}-{to} de {total} facturas",
+  "status": {
+    "open": "Abierta",
+    "paid": "Pagada",
+    "closed": "Cerrada",
+    "overdue": "Vencida"
   }
 }
-
+}

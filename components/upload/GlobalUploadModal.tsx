@@ -12,7 +12,7 @@ import {
   ShoppingCartIcon,
 } from "lucide-react"
 import { toast } from "sonner"
-
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -50,7 +50,7 @@ export function GlobalUploadModal({
   const [files, setFiles] = React.useState<FileItem[]>([])
   const [isUploading, setIsUploading] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
-
+const t = useTranslations("uploadModal")
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes"
     const k = 1024
@@ -126,16 +126,23 @@ export function GlobalUploadModal({
 
     setFiles((prev) => prev.map((f) => ({ ...f, status: "completed", progress: 100 })))
     await fetchCustomerCart(custnmbr)
-    toast.success("Document imported successfully into cart!")
+    // toast.success("Document imported successfully into cart!")
+    toast.success(t("success"))
+
 
     setFiles([])
     onOpenChange(false)
   } catch (error: unknown) {
     console.error("Import document API error:", error)
     setFiles((prev) => prev.map((f) => ({ ...f, status: "error" })))
+    // toast.error(
+    //   `Import Document Failed: ${error instanceof Error ? error.message : "Failed to import document"}`
+    // )
     toast.error(
-      `Import Document Failed: ${error instanceof Error ? error.message : "Failed to import document"}`
-    )
+  t("failed", {
+    message: error instanceof Error ? error.message : t("failedDefault"),
+  })
+)
   } finally {
     setIsUploading(false)
   }
@@ -157,7 +164,7 @@ export function GlobalUploadModal({
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
             <UploadCloudIcon className="size-6 text-primary" />
-            Import Document & Add to Cart
+            {t("title")}
           </DialogTitle>
         </DialogHeader>
 
@@ -187,24 +194,24 @@ export function GlobalUploadModal({
               <UploadCloudIcon className="size-7" />
             </div>
             <p className="text-base font-semibold text-foreground">
-              Click to browse or drag & drop document file here
+               {t("dropTitle")}
             </p>
             <p className="text-xs text-muted-foreground mt-1.5 max-w-md leading-relaxed">
-              Supports Image (PNG/JPG), PDF, Word Document, CSV or Excel files (up to 25MB). Data reader automatically extracts items to add to your cart.
-            </p>
+  {t("dropHint")}
+              </p>
           </div>
 
           {/* Selected File List */}
           {files.length > 0 && (
             <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
               <div className="flex items-center justify-between text-xs text-muted-foreground font-medium px-1">
-                <span>Selected Files ({files.length})</span>
+                <span>{t("selectedFiles", { count: files.length })}</span>
                 <button
                   type="button"
                   onClick={() => setFiles([])}
                   className="text-destructive hover:underline text-[11px]"
                 >
-                  Clear All
+               {t("clearAll")}
                 </button>
               </div>
 
@@ -266,7 +273,7 @@ export function GlobalUploadModal({
             onClick={() => onOpenChange(false)}
             disabled={isUploading}
           >
-            Cancel
+           {t("cancel")}
           </Button>
           <Button
             onClick={startUpload}
@@ -276,12 +283,12 @@ export function GlobalUploadModal({
             {isUploading ? (
               <>
                 <Loader2Icon className="size-4 animate-spin" />
-                Reading & Importing...
+               {t("reading")}
               </>
             ) : (
               <>
                 <ShoppingCartIcon className="size-4" />
-                Import & Add to Cart ({files.length})
+                {t("importButton", { count: files.length })}
               </>
             )}
           </Button>

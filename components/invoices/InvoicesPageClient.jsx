@@ -4,8 +4,8 @@ import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
-import axios from "axios"
-import { Search, X, ReceiptText, DollarSign, CircleCheck, Clock, Download, Loader2  } from "lucide-react"
+import { useLocale, useTranslations } from "next-intl"
+import { Search, X, ReceiptText, DollarSign, CircleCheck, Clock, Download, Loader2 } from "lucide-react"
 
 import { GetCustomerInvoiceItems, GetinvoicePDF } from "../../redux/slices/getSlice"
 import InvoicePagination from "@/components/invoices/InvoicePagination"
@@ -17,14 +17,10 @@ import { Input } from "@/components/ui/input"
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
 const rowOptions = [10, 20, 50, 100]
 
-const formatDate = (value) => {
-  const d = new Date(value)
-  return Number.isNaN(d.getTime())
-    ? "-"
-    : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d)
-}
-
 export default function InvoicesPageClient() {
+  const t = useTranslations("invoicesPage")
+  const locale = useLocale()
+
   const searchParams = useSearchParams()
   const query = (searchParams.get("query") ?? "").trim()
   const requestedPage = Number.parseInt(searchParams.get("page") ?? "", 10) || 1
@@ -33,17 +29,30 @@ export default function InvoicesPageClient() {
 
   const dispatch = useDispatch()
 
-  // CHANGE `s.get` to the key your reducer is registered under in the store
-  // const {
-  //   customerInvoicesdata,
-  //   customerInvoicesloading: loading,
-  //   customerInvoiceserror: error,
-  // } = useSelector((s) => s.get)
+  const customerInvoicesdata = useSelector((state) => state.getSlice.customerInvoicesdata)
+  const loading = useSelector((state) => state.getSlice.customerInvoicesloading)
+  const error = useSelector((state) => state.getSlice.customerInvoiceserror)
 
+  const [downloadingId, setDownloadingId] = useState(null)
 
-const customerInvoicesdata = useSelector((state) => state.getSlice.customerInvoicesdata)
-const loading = useSelector((state) => state.getSlice.customerInvoicesloading)
-const error = useSelector((state) => state.getSlice.customerInvoiceserror)
+  // Locale-aware date formatting
+  const formatDate = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(locale, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+    return (value) => {
+      const d = new Date(value)
+      return Number.isNaN(d.getTime()) ? "-" : formatter.format(d)
+    }
+  }, [locale])
+
+  // Translate API status if a key exists, otherwise show the raw value
+  const translateStatus = (status) => {
+    const key = `status.${status.toLowerCase()}`
+    return t.has(key) ? t(key) : status
+  }
 
   // Read localStorage only on the client
   const [custnmbr, setCustnmbr] = useState(null)
@@ -75,45 +84,55 @@ const error = useSelector((state) => state.getSlice.customerInvoiceserror)
           statusTone: status.toLowerCase() === "open" ? "blue" : "orange",
         }
       }),
-    [customerInvoicesdata],
+    [customerInvoicesdata, formatDate],
   )
 
-
+  // Search still matches the raw API status (e.g. "open"), not the translated label
   const normalizedQuery = query.toLowerCase()
-const filteredInvoices = allInvoices.filter(
-  (invoice) =>
-    !normalizedQuery ||
-    invoice.invoiceNumber.toLowerCase().includes(normalizedQuery) ||
-    invoice.status.toLowerCase().includes(normalizedQuery),
-)
-  const totals = filteredInvoices.reduce((sum, invoice) => ({
-    amount: sum.amount + invoice.total,
-    paid: sum.paid + invoice.paidAmount,
-    due: sum.due + invoice.balance,
-  }), { amount: 0, paid: 0, due: 0 })
+  const filteredInvoices = allInvoices.filter(
+    (invoice) =>
+      !normalizedQuery ||
+      invoice.invoiceNumber.toLowerCase().includes(normalizedQuery) ||
+      invoice.status.toLowerCase().includes(normalizedQuery) ||
+      translateStatus(invoice.status).toLowerCase().includes(normalizedQuery),
+  )
+
+  const totals = filteredInvoices.reduce(
+    (sum, invoice) => ({
+      amount: sum.amount + invoice.total,
+      paid: sum.paid + invoice.paidAmount,
+      due: sum.due + invoice.balance,
+    }),
+    { amount: 0, paid: 0, due: 0 },
+  )
+
   const stats = [
-    { label: "Total Invoices", value: filteredInvoices.length.toLocaleString("en-US"), icon: ReceiptText, color: "bg-blue-500/10 text-blue-600" },
-    { label: "Total Amount", value: money.format(totals.amount), icon: DollarSign, color: "bg-violet-500/10 text-violet-600" },
-    { label: "Paid Amount", value: money.format(totals.paid), icon: CircleCheck, color: "bg-emerald-500/10 text-emerald-600" },
-    { label: "Due Amount", value: money.format(totals.due), icon: Clock, color: "bg-amber-500/10 text-amber-600" },
+    { label: t("stats.totalInvoices"), value: filteredInvoices.length.toLocaleString(locale), icon: ReceiptText, color: "bg-blue-500/10 text-blue-600" },
+    { label: t("stats.totalAmount"), value: money.format(totals.amount), icon: DollarSign, color: "bg-violet-500/10 text-violet-600" },
+    { label: t("stats.paidAmount"), value: money.format(totals.paid), icon: CircleCheck, color: "bg-emerald-500/10 text-emerald-600" },
+    { label: t("stats.dueAmount"), value: money.format(totals.due), icon: Clock, color: "bg-amber-500/10 text-amber-600" },
   ]
+
   const totalPages = Math.max(1, Math.ceil(filteredInvoices.length / pageSize))
   const currentPage = Math.min(Math.max(requestedPage, 1), totalPages)
   const start = (currentPage - 1) * pageSize
   const invoices = filteredInvoices.slice(start, start + pageSize)
 
+  const handleDownloadPdf = (invoiceNumber) => {
+    setDownloadingId(invoiceNumber)
+    dispatch(GetinvoicePDF(invoiceNumber))
+      .unwrap()
+      .catch((err) => console.error("PDF download failed:", err))
+      .finally(() => setDownloadingId(null))
+  }
 
-const [downloadingId, setDownloadingId] = useState(null)
-
-const handleDownloadPdf = (invoiceNumber) => {
-  setDownloadingId(invoiceNumber)
-  dispatch(GetinvoicePDF(invoiceNumber))
-    .unwrap()
-    .catch((err) => console.error("PDF download failed:", err))
-    .finally(() => setDownloadingId(null))
-}
-
-
+  const emptyMessage = loading
+    ? t("loading")
+    : error
+      ? typeof error === "string"
+        ? error
+        : error?.message || String(error)
+      : t("empty")
 
   return (
     <main className="space-y-4 p-2 sm:space-y-5 sm:p-4">
@@ -130,6 +149,7 @@ const handleDownloadPdf = (invoiceNumber) => {
           </Card>
         ))}
       </div>
+
       <form className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -137,13 +157,13 @@ const handleDownloadPdf = (invoiceNumber) => {
             name="query"
             defaultValue={query}
             className="pl-9 pr-9"
-            placeholder="Search invoices..."
-            aria-label="Search invoices"
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchAria")}
           />
           {query ? (
             <Link
               href={`/invoices?rows=${pageSize}`}
-              aria-label="Clear search"
+              aria-label={t("clearSearchAria")}
               className="absolute right-3 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <X className="size-4" />
@@ -151,30 +171,28 @@ const handleDownloadPdf = (invoiceNumber) => {
           ) : null}
           <input type="hidden" name="rows" value={pageSize} />
         </div>
-        <Button type="submit">Search</Button>
+        <Button type="submit">{t("searchButton")}</Button>
       </form>
 
       <Card className="overflow-hidden py-0">
         <CardHeader className="border-b px-4 py-4 sm:px-6">
-          <CardTitle className="text-base">Invoices</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Review invoice totals, payments, balances, and status.
-          </p>
+          <CardTitle className="text-base">{t("title")}</CardTitle>
+          <p className="text-sm text-muted-foreground">{t("description")}</p>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1040px] text-left text-sm">
               <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th className="px-6 py-3 font-medium">Invoice</th>
-                  <th className="px-4 py-3 font-medium">Invoice date</th>
-                  <th className="px-4 py-3 font-medium">Due date</th>
-                  <th className="px-4 py-3 font-medium">Items</th>
-                  <th className="px-4 py-3 font-medium">Total</th>
-                  <th className="px-4 py-3 font-medium">Paid amount</th>
-                  <th className="px-4 py-3 font-medium">Balance</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Action</th>
+                  <th className="px-6 py-3 font-medium">{t("columns.invoice")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columns.invoiceDate")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columns.dueDate")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columns.items")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columns.total")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columns.paidAmount")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columns.balance")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columns.status")}</th>
+                  <th className="px-4 py-3 font-medium">{t("columns.action")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -189,16 +207,12 @@ const handleDownloadPdf = (invoiceNumber) => {
                           #{invoice.invoiceNumber}
                         </Link>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-4">
-                        {invoice.invoiceDateLabel}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4">
-                        {invoice.dueDateLabel}
-                      </td>
+                      <td className="whitespace-nowrap px-4 py-4">{invoice.invoiceDateLabel}</td>
+                      <td className="whitespace-nowrap px-4 py-4">{invoice.dueDateLabel}</td>
                       <td className="px-4 py-4">
-                        {invoice.itemCount} products
+                        {t("products", { count: invoice.itemCount })}
                         <p className="text-xs text-muted-foreground">
-                          {invoice.units} units
+                          {t("units", { count: invoice.units })}
                         </p>
                       </td>
                       <td className="whitespace-nowrap px-4 py-4 font-semibold">
@@ -219,31 +233,31 @@ const handleDownloadPdf = (invoiceNumber) => {
                               : "bg-sky-500/10 text-sky-600"
                           }
                         >
-                          {invoice.status}
+                          {translateStatus(invoice.status)}
                         </Badge>
                       </td>
                       <td className="px-4 py-4">
- <Button
-  variant="outline"
-  size="sm"
-  disabled={downloadingId === invoice.invoiceNumber}
-  onClick={() => handleDownloadPdf(invoice.invoiceNumber)}
->
-  {downloadingId === invoice.invoiceNumber ? (
-    <Loader2 className="size-4 animate-spin" />
-  ) : (
-    <Download className="size-4" />
-  )}
-  Invoice
-</Button>
-</td>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={downloadingId === invoice.invoiceNumber}
+                          onClick={() => handleDownloadPdf(invoice.invoiceNumber)}
+                        >
+                          {downloadingId === invoice.invoiceNumber ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Download className="size-4" />
+                          )}
+                          {t("invoiceButton")}
+                        </Button>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                     <td colSpan={9} className="px-6 py-12 text-center text-muted-foreground">
-    {loading ? "Loading invoices..." : error ? String(error) : "No invoices found."}
-  </td>
+                    <td colSpan={9} className="px-6 py-12 text-center text-muted-foreground">
+                      {emptyMessage}
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -252,9 +266,11 @@ const handleDownloadPdf = (invoiceNumber) => {
 
           <div className="@container flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3 text-sm text-muted-foreground sm:px-6">
             <span>
-              Showing {filteredInvoices.length === 0 ? 0 : start + 1}-
-              {Math.min(start + pageSize, filteredInvoices.length)} of{" "}
-              {filteredInvoices.length} invoices
+              {t("showing", {
+                from: filteredInvoices.length === 0 ? 0 : start + 1,
+                to: Math.min(start + pageSize, filteredInvoices.length),
+                total: filteredInvoices.length,
+              })}
             </span>
             <InvoicePagination
               currentPage={currentPage}

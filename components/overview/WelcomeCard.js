@@ -1,14 +1,17 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useMemo} from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-
+import { useDispatch, useSelector } from "react-redux"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { GetPromotionlist } from "../../redux/slices/getSlice"
 
-const slides = [
+
+// Fallback slides (used when API is loading / empty / errors)
+const fallbackSlides = [
   {
     eyebrow: "Weekly specials",
     title: "Save up to 20% on fresh produce",
@@ -19,39 +22,98 @@ const slides = [
     imageAlt: "A wooden crate filled with fresh vegetables",
     accent: "text-emerald-700",
   },
-  {
-    eyebrow: "Butcher specials",
-    title: "Save 15% on premium cuts",
-    description: "Quality beef, poultry, lamb and seafood for less.",
-    action: "Shop meat deals",
-    href: "/catalog",
-    image: "/overview/premium-meats-offer.png",
-    imageAlt: "Premium beef, poultry, lamb and salmon arranged on boards",
-    accent: "text-red-700",
-  },
-  {
-    eyebrow: "Bundle and save",
-    title: "Fresh produce and proteins, one great price",
-    description: "Build a better kitchen with our weekly fresh-food bundle.",
-    action: "Explore the bundle",
-    href: "/catalog",
-    image: "/overview/produce-meat-bundle.png",
-    imageAlt: "Fresh vegetables alongside premium meat and seafood",
-    accent: "text-emerald-700",
-  },
 ]
+// const slides = [
+//   {
+//     eyebrow: "Weekly specials",
+//     title: "Save up to 20% on fresh produce",
+//     description: "Quality products. Better prices. Every week.",
+//     action: "Browse deals",
+//     href: "/catalog",
+//     image: "/overview/fresh-produce-banner.png",
+//     imageAlt: "A wooden crate filled with fresh vegetables",
+//     accent: "text-emerald-700",
+//   },
+//   {
+//     eyebrow: "Butcher specials",
+//     title: "Save 15% on premium cuts",
+//     description: "Quality beef, poultry, lamb and seafood for less.",
+//     action: "Shop meat deals",
+//     href: "/catalog",
+//     image: "/overview/premium-meats-offer.png",
+//     imageAlt: "Premium beef, poultry, lamb and salmon arranged on boards",
+//     accent: "text-red-700",
+//   },
+//   {
+//     eyebrow: "Bundle and save",
+//     title: "Fresh produce and proteins, one great price",
+//     description: "Build a better kitchen with our weekly fresh-food bundle.",
+//     action: "Explore the bundle",
+//     href: "/catalog",
+//     image: "/overview/produce-meat-bundle.png",
+//     imageAlt: "Fresh vegetables alongside premium meat and seafood",
+//     accent: "text-emerald-700",
+//   },
+// ]
 
 export default function WelcomeCard() {
   const [activeSlide, setActiveSlide] = useState(0)
   const touchStartX = useRef(null)
+const dispatch = useDispatch()
 
   useEffect(() => {
+    dispatch(GetPromotionlist())
+  }, [dispatch])
+
+    const promotionData = useSelector((state) => state.getSlice.promotionData)
+  const promotionLoading = useSelector((state) => state.getSlice.promotionLoading)
+  const promotionError = useSelector((state) => state.getSlice.promotionError)
+  console.log("promotionData", promotionData,promotionLoading, promotionError)
+
+  // useEffect(() => {
+  //   const timeout = window.setTimeout(() => {
+  //     setActiveSlide((current) => (current + 1) % slides.length)
+  //   }, 3000)
+
+  //   return () => window.clearTimeout(timeout)
+  // }, [activeSlide])
+  // Map API response -> slide shape
+  const slides = useMemo(() => {
+    const list = Array.isArray(promotionData)
+      ? promotionData
+      : promotionData?.data ?? promotionData?.items ?? []
+
+    const mapped = list
+      .filter((p) => p?.bannerImageUrl)
+      .map((p, i) => ({
+        id: p.id ?? p.promotionId ?? i,
+        eyebrow: p.campaignName,
+        title: p.title,
+        description: p.description,
+        action: p.actionButtonText,
+        href: p.actionLink || "/catalog",
+        image: p.bannerImageUrl,
+        imageAlt: p.title || p.campaignName || "Promotion banner",
+        accent: "text-emerald-700",
+      }))
+
+    return mapped.length ? mapped : fallbackSlides
+  }, [promotionData])
+
+   // Keep index valid if slide count changes (e.g. data arrives)
+  useEffect(() => {
+    if (activeSlide >= slides.length) setActiveSlide(0)
+  }, [slides.length, activeSlide])
+
+  // Autoplay (only when more than one slide)
+  useEffect(() => {
+    if (slides.length < 2) return
     const timeout = window.setTimeout(() => {
       setActiveSlide((current) => (current + 1) % slides.length)
     }, 3000)
-
     return () => window.clearTimeout(timeout)
-  }, [activeSlide])
+  }, [activeSlide, slides.length])
+
 
   function showPreviousSlide() {
     setActiveSlide((current) => (current - 1 + slides.length) % slides.length)
@@ -96,7 +158,7 @@ export default function WelcomeCard() {
     >
       {slides.map((slide, index) => (
         <div
-          key={slide.title}
+          key={slide.id ?? index}
           className={cn(
             "absolute inset-0 transition-opacity duration-700",
             index === activeSlide
@@ -127,36 +189,42 @@ export default function WelcomeCard() {
             <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-slate-950 sm:text-3xl dark:text-white">
               {slide.title}
             </h1>
-            <p className="mt-2 max-w-md text-xs leading-relaxed text-slate-600 sm:text-sm dark:text-slate-300">
-              {slide.description}
-            </p>
-            <Button asChild size="sm" className="mt-3 w-fit">
-              <Link href={slide.href}>
-                {slide.action}
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
+            {slide.description && (
+              <p className="mt-2 max-w-md text-xs leading-relaxed text-slate-600 sm:text-sm dark:text-slate-300">
+                {slide.description}
+              </p>
+            )}
+            {slide.action && (
+              <Button asChild size="sm" className="mt-3 w-fit">
+                <Link href={slide.href}>
+                  {slide.action}
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       ))}
 
-      <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">
-        {slides.map((slide, index) => (
-          <button
-            key={slide.title}
-            type="button"
-            className={cn(
-              "h-1.5 rounded-full transition-all",
-              index === activeSlide
-                ? "w-5 bg-primary"
-                : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600",
-            )}
-            onClick={() => setActiveSlide(index)}
-            aria-label={`Show promotion ${index + 1}`}
-            aria-current={index === activeSlide ? "true" : undefined}
-          />
-        ))}
-      </div>
+      {slides.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">
+          {slides.map((slide, index) => (
+            <button
+              key={slide.id ?? index}
+              type="button"
+              className={cn(
+                "h-1.5 rounded-full transition-all",
+                index === activeSlide
+                  ? "w-5 bg-primary"
+                  : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600",
+              )}
+              onClick={() => setActiveSlide(index)}
+              aria-label={`Show promotion ${index + 1}`}
+              aria-current={index === activeSlide ? "true" : undefined}
+            />
+          ))}
+        </div>
+      )}
     </section>
   )
 }
