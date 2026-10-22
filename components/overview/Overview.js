@@ -1,3 +1,5 @@
+'use client'
+
 // import Link from "next/link"
 // import {
 //   BookOpen,
@@ -241,6 +243,8 @@ import WelcomeCard from "./WelcomeCard"
 import RecentInvoicesTable from "../overview/Recentinvoicestable"
 import RecommendedItems from "./RecommendedItems"
 import { cn } from "@/lib/utils"
+import { can, canAct } from "@/lib/permissions"
+import { useEffect, useState } from "react"
 
 // const quickActions = [
 //   {
@@ -347,9 +351,17 @@ function QuickActions() {
 }
 
 export default function Overview() {
+
+  const [role, setRole] = useState(null)
+
+useEffect(() => {
+  setRole(localStorage.getItem("roles"))
+}, [])
+
   return (
     <main className="grid gap-3 sm:gap-4">
-      <WelcomeCard />
+    {can(role, "promo.view") && <WelcomeCard />}
+      {/* <WelcomeCard /> */}
       <QuickActions />
       <RecommendedItems />
       <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-3">

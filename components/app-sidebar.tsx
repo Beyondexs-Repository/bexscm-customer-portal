@@ -70,6 +70,8 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
     icon: pageIcons[page.id] ?? <CircleIcon />,
   }))
 
+
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>

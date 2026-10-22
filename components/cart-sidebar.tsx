@@ -198,7 +198,7 @@ export function CartSidebar({
                 <ChevronDownIcon className="size-4 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 p-2">
+            <DropdownMenuContent align="end" collisionPadding={16} className="w-56 max-h-[320px] p-2">
               <DropdownMenuRadioGroup
                 value={selectedCartGroupID == null ? "" : String(selectedCartGroupID)}
                 onValueChange={(value) => {
