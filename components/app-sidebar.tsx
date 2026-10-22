@@ -66,7 +66,6 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const navMain = routeGroup.routes.map((page) => ({
     // title: page.title,
      title: navKeys[page.id] ? t(navKeys[page.id]) : page.title,
-    //  title: t(page.key),
     url: page.path,
     icon: pageIcons[page.id] ?? <CircleIcon />,
   }))
@@ -77,8 +76,8 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} label={routeGroup.label} />
-        {/* <NavMain items={navMain} label={t("customer")} /> */}
+        {/* <NavMain items={navMain} label={routeGroup.label} /> */}
+        <NavMain items={navMain} label={t("customer")} />
       </SidebarContent>
       <SidebarFooter>
         <LocationSwitcher />

@@ -69,6 +69,12 @@ const initialState = {
   GetinvoicePDFloading: false,
   GetinvoicePDFerror: null,
 
+  //GET_PROMOTION_LIST_for Overview Page slides
+promotionData: [],
+promotionLoading: false,
+promotionStatus: "idle",
+promotionError: null,
+
   error: null,
 }
 
@@ -490,6 +496,42 @@ export const GetinvoicePDF = createAsyncThunk(
     }
   }
 )
+
+
+//PROMOTION_LISTVIEW
+export const GetPromotionlist= createAsyncThunk(
+  "Sidebar/Promotion_list",
+  async (_, { rejectWithValue }) => {
+    try {
+      
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/promotions`
+ 
+       const response = await axios.get(URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+ 
+      const result = response.data
+ 
+      if (result?.success === false) {
+        return rejectWithValue(
+          result?.Msg || result?.message || "Failed to fetch promotions.",
+        )
+      }
+
+      // API returns { success: true, data: [...] }; also accept a bare array
+      return Array.isArray(result) ? result : result?.data ?? []
+    } catch (error) {
+      const data = error.response?.data
+      return rejectWithValue(
+        data?.Msg || data?.message || (typeof data === "string" ? data : null) || error.message,
+      )
+    }
+  },
+)
+
 // ============================================================
 // SLICE  (Crea pattern — createSlice with extraReducers builder)
 // ============================================================
@@ -695,6 +737,26 @@ const getSlice = createSlice({
         state.GetinvoicePDFloading = false
         state.GetinvoicePDFerror = action.payload || action.error.message
       })
+
+      //GET_PROMOTION_LIST_GET
+
+.addCase(GetPromotionlist.pending, (state) => {
+  state.promotionStatus = "loading"
+  state.promotionLoading = true
+  state.promotionError = null
+})
+.addCase(GetPromotionlist.fulfilled, (state, action) => {
+  state.promotionStatus = "succeeded"
+  state.promotionLoading = false
+ state.promotionData = Array.isArray(action.payload) ? action.payload : []
+ console.log("GetPromotionlist fulfilled:", state.promotionData)
+})
+.addCase(GetPromotionlist.rejected, (state, action) => {
+  state.promotionStatus = "failed"
+  state.promotionLoading = false
+  state.promotionError = action.payload || action.error.message
+  state.promotionData = []
+})
   },
 })
 

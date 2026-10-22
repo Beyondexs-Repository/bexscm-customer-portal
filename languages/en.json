@@ -33,20 +33,53 @@
     "employees": "Employees",
     "users": "Users"
   },
-"pageHeader": {
-  "overview": { "title": "Overview", "description": "View account activity, recent orders, and shortcuts" },
-  "productDetails": { "title": "Product Details", "description": "Review product information, pricing, and availability" },
-  "catalog": { "title": "Catalog", "description": "Browse products, pricing, and availability" },
-  "orderGuide": { "title": "Order Guide", "description": "Build and manage frequently ordered product lists" },
-  "myOrders": { "title": "My Orders", "description": "Review current and previous orders" },
-  "invoiceDetails": { "title": "Invoice Details", "description": "Review invoice charges, payments, and balances" },
-  "invoices": { "title": "Invoices", "description": "Review invoice totals, payments, balances, and status" },
-  "metrics": { "title": "Metrics", "description": "Review purchasing trends, order activity, and invoice balances" },
-  "messages": { "title": "Messages", "description": "Contact support and review conversations" },
-  "employees": { "title": "Employees", "description": "View and manage store employees" },
-  "profile": { "title": "Profile", "description": "Manage your account and contact information" }
-},
-  
+  "pageHeader": {
+    "overview": {
+      "title": "Overview",
+      "description": "View account activity, recent orders, and shortcuts"
+    },
+    "productDetails": {
+      "title": "Product Details",
+      "description": "Review product information, pricing, and availability"
+    },
+    "catalog": {
+      "title": "Catalog",
+      "description": "Browse products, pricing, and availability"
+    },
+    "orderGuide": {
+      "title": "Order Guide",
+      "description": "Build and manage frequently ordered product lists"
+    },
+    "myOrders": {
+      "title": "My Orders",
+      "description": "Review current and previous orders"
+    },
+    "invoiceDetails": {
+      "title": "Invoice Details",
+      "description": "Review invoice charges, payments, and balances"
+    },
+    "invoices": {
+      "title": "Invoices",
+      "description": "Review invoice totals, payments, balances, and status"
+    },
+    "metrics": {
+      "title": "Metrics",
+      "description": "Review purchasing trends, order activity, and invoice balances"
+    },
+    "messages": {
+      "title": "Messages",
+      "description": "Contact support and review conversations"
+    },
+    "employees": {
+      "title": "Employees",
+      "description": "View and manage store employees"
+    },
+    "profile": {
+      "title": "Profile",
+      "description": "Manage your account and contact information"
+    }
+  },
+
   "userMenu": {
     "myProfile": "Manage account",
     "logOut": "Log out"
@@ -334,7 +367,15 @@
     "removeProduct": "Remove {product} from {group}.",
     "updatePar": "Update the PAR value for {product}.",
     "enterPar": "Enter PAR",
-    "parValue": "PAR value"
+    "parValue": "PAR value",
+    "loading": "Loading order guides...",
+    "allGroup": "All",
+    "toast": {
+      "userNotFound": "Unable to identify the logged-in user.",
+      "customerNotFound": "Unable to identify the customer.",
+      "created": "Order guide \"{name}\" created successfully",
+      "createFailed": "Failed to create order guide"
+    }
   },
   "catalog": {
     "productNotFound": "Product not found",
@@ -378,7 +419,23 @@
     "searchPlaceholder": "Search {label}...",
     "noMatches": "No {label} found",
     "packSize": "Pack Size: 1 {unit}",
-    "addedToCart": "Added to Cart"
+    "addedToCart": "Added to Cart",
+    "all": "All",
+    "sortNameAsc": "Name A-Z",
+    "sortPriceAsc": "Price Low to High",
+    "sortPriceDesc": "Price High to Low",
+    "productLayout": "Product layout",
+    "listLayout": "List layout",
+    "cardLayout": "Card layout",
+    "listening": "Listening...",
+    "justASec": "Just a sec...",
+    "youSaid": "You said: {text}",
+    "loadingProducts": "Loading products...",
+    "loadFailed": "Unable to load products from the API.",
+    "tryAgain": "Try again",
+    "pageAria": "Page {page}",
+    "voiceAdded": "Added {quantity} × {name} to cart!",
+    "voiceFailed": "Voice search failed."
   },
   "auth": {
     "language": "Language",
@@ -411,5 +468,126 @@
     "footerNote": "Fast, private, and protected sign in",
     "phone": "Phone Number",
     "email": "Email ID"
+  },
+  "uploadModal": {
+    "title": "Import Document & Add to Cart",
+    "dropTitle": "Click to browse or drag & drop document file here",
+    "dropHint": "Supports Image (PNG/JPG), PDF, Word Document, CSV or Excel files (up to 25MB). Data reader automatically extracts items to add to your cart.",
+    "selectedFiles": "Selected Files ({count})",
+    "clearAll": "Clear All",
+    "removeFile": "Remove file",
+    "cancel": "Cancel",
+    "reading": "Reading & Importing...",
+    "importButton": "Import & Add to Cart ({count})",
+    "success": "Document imported successfully into cart!",
+    "failed": "Import Document Failed: {message}",
+    "failedDefault": "Failed to import document"
+  },
+  "quickActions": {
+    "ariaLabel": "Quick actions",
+    "orderGuide": {
+      "title": "Order Guide",
+      "description": "Step-by-step ordering"
+    },
+    "catalog": {
+      "title": "Browse Catalog",
+      "description": "Explore all products"
+    },
+    "recentOrders": {
+      "title": "Recent Orders",
+      "description": "View your past orders"
+    },
+    "messages": {
+      "title": "Messages",
+      "description": "Contact your team"
+    }
+  },
+  "recentInvoices": {
+    "title": "Recent Invoices",
+    "description": "View and manage your latest orders",
+    "viewAll": "View all",
+    "columns": {
+      "invoice": "Invoice",
+      "invoiceDate": "Invoice date",
+      "dueDate": "Due date",
+      "items": "Items",
+      "total": "Total",
+      "status": "Status",
+      "action": "Action"
+    },
+    "products": "{count, plural, one {# product} other {# products}}",
+    "units": "{count, plural, one {# unit} other {# units}}",
+    "invoiceButton": "Invoice",
+    "viewInvoiceAria": "View invoice {number}",
+    "loading": "Loading invoices...",
+    "empty": "No invoices found.",
+    "error": "Something went wrong.",
+    "status": {
+      "open": "Open",
+      "paid": "Paid",
+      "closed": "Closed",
+      "overdue": "Overdue"
+    }
+  },
+  "quickOrderGuide": {
+    "title": "Quick Order Guides",
+    "description": "Select guides to add their products",
+    "openGuidesAria": "Open order guides",
+    "selectGuideAria": "Select {name}",
+    "loading": "Loading quick orders...",
+    "groups": "{count, plural, one {# group} other {# groups}}",
+    "products": "{count, plural, one {# product} other {# products}}",
+    "added": "Added",
+    "emptyTitle": "No Order Guides Yet",
+    "emptyDescription": "Create a reusable guide for products you order regularly.",
+    "selectAll": "Select all",
+    "clearAll": "Clear all",
+    "addToCart": "Add to cart",
+    "adding": "Adding...",
+    "toast": {
+      "loadFailed": "Failed to load quick order guides.",
+      "customerNotFound": "Unable to identify the customer.",
+      "addedSkipped": "{added} added, {skipped} skipped",
+      "itemsAdded": "{count} item(s) added to cart",
+      "addedToCart": "Added to cart",
+      "addFailed": "Failed to add to cart"
+    }
+  },
+  "invoicesPage": {
+    "stats": {
+      "totalInvoices": "Total Invoices",
+      "totalAmount": "Total Amount",
+      "paidAmount": "Paid Amount",
+      "dueAmount": "Due Amount"
+    },
+    "searchPlaceholder": "Search invoices...",
+    "searchAria": "Search invoices",
+    "clearSearchAria": "Clear search",
+    "searchButton": "Search",
+    "title": "Invoices",
+    "description": "Review invoice totals, payments, balances, and status.",
+    "columns": {
+      "invoice": "Invoice",
+      "invoiceDate": "Invoice date",
+      "dueDate": "Due date",
+      "items": "Items",
+      "total": "Total",
+      "paidAmount": "Paid amount",
+      "balance": "Balance",
+      "status": "Status",
+      "action": "Action"
+    },
+    "products": "{count, plural, one {# product} other {# products}}",
+    "units": "{count, plural, one {# unit} other {# units}}",
+    "invoiceButton": "Invoice",
+    "loading": "Loading invoices...",
+    "empty": "No invoices found.",
+    "showing": "Showing {from}-{to} of {total} invoices",
+    "status": {
+      "open": "Open",
+      "paid": "Paid",
+      "closed": "Closed",
+      "overdue": "Overdue"
+    }
   }
 }
