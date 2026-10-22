@@ -1091,10 +1091,11 @@ function SiteHeader({
           </DropdownMenu>
         ) : (
           <>
+            <div className="relative hidden shrink-0 @min-[900px]/header:block">
             <button
               ref={calendarTriggerRef}
               type="button"
-              className="hidden shrink-0 rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring @min-[900px]/header:block"
+              className="rounded-md text-left outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() => setCalendarOpen((open) => !open)}
               aria-expanded={calendarOpen}
             >
@@ -1110,7 +1111,7 @@ function SiteHeader({
             {calendarOpen && (
               <div
                 ref={calendarRef}
-                className="absolute right-3 top-full z-40 mt-1 w-64 max-w-[calc(100%-1.5rem)] rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg"
+                className="absolute left-0 top-full z-40 mt-1 w-64 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg"
               >
                 <div className="mb-3 flex items-center justify-between">
                   <button
@@ -1180,6 +1181,7 @@ function SiteHeader({
                 </div>
               </div>
             )}
+            </div>
             <Separator orientation="vertical" className="hidden h-8 @min-[900px]/header:block" />
             <HeaderInfoItem
               icon={Clock3Icon}
