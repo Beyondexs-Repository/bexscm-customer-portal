@@ -14,9 +14,9 @@ import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar"
 import { useTranslations } from "next-intl"
 
 const themes = [
-  { value: "light", label: "Light", icon: SunIcon },
-  { value: "dark", label: "Dark", icon: MoonIcon },
-  { value: "system", label: "System", icon: MonitorIcon },
+  { value: "light", label: "Light", icon: SunIcon, color: "text-amber-600 dark:text-amber-400" },
+  { value: "dark", label: "Dark", icon: MoonIcon, color: "text-indigo-600 dark:text-indigo-400" },
+  { value: "system", label: "System", icon: MonitorIcon, color: "text-sky-600 dark:text-sky-400" },
 ]
 
 export function ModeToggle() {
@@ -38,10 +38,10 @@ export function ModeToggle() {
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex h-8 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&_svg]:size-4 [&_svg]:shrink-0"
+              className="flex h-7 w-full items-center gap-1.5 overflow-hidden rounded-md px-2 py-1 text-xs ring-sidebar-ring outline-hidden transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&_svg]:size-4 [&_svg]:shrink-0"
               aria-label="Theme"
             >
-              <CurrentIcon />
+              <CurrentIcon className={current.color} />
               <span className="truncate group-data-[collapsible=icon]:hidden">{t("theme")}</span>
               <span className="ml-auto truncate group-data-[collapsible=icon]:hidden">
                 {current.label}
@@ -60,7 +60,7 @@ export function ModeToggle() {
                   className="justify-between"
                 >
                   <span className="flex items-center gap-2">
-                    <Icon className="size-4" />
+                    <Icon className={`size-4 ${item.color}`} />
                     {item.label}
                   </span>
                   {currentTheme === item.value ? <CheckIcon className="size-4" /> : null}

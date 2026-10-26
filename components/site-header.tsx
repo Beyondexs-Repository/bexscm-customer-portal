@@ -1200,7 +1200,7 @@ async function handleCheckout() {
             >
               <Avatar className="size-8">
                 <AvatarImage src={profile.avatar} alt={profileName} />
-                <AvatarFallback className="text-xs font-semibold">
+                <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
                   {profileInitials}
                 </AvatarFallback>
               </Avatar>
@@ -1211,7 +1211,7 @@ async function handleCheckout() {
               <div className="flex items-center gap-3 px-3 py-2 text-left text-sm">
                 <Avatar className="size-9">
                   <AvatarImage src={profile.avatar} alt={profileName} />
-                  <AvatarFallback className="text-xs font-semibold">
+                  <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
                     {profileInitials}
                   </AvatarFallback>
                 </Avatar>

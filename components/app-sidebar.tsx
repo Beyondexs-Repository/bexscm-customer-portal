@@ -50,24 +50,24 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
    const t = useTranslations("nav");
   const routeGroup = routes.customer
   const pageIcons: Record<string, React.ReactNode> = {
-    overview: <RxDashboard />,
-    "order-guide": <Star />,
-    catalog: <BookOpenIcon />,
-    "my-orders": <LuNotepadText />,
-    invoices: <ReceiptTextIcon />,
-    messages: <MessageCircle />,
-    metrics: <ChartNoAxesCombined />,
-    employees: <Users />,
-    orders: <ClipboardListIcon />,
-    "roles-permissions": <ShieldCheckIcon />,
-    profile: <UserRoundIcon />,
-    promotions: <MegaphoneIcon />,
+    overview: <RxDashboard className="text-blue-600 dark:text-blue-400" />,
+    "order-guide": <Star className="text-yellow-600 dark:text-yellow-400" />,
+    catalog: <BookOpenIcon className="text-amber-600 dark:text-amber-400" />,
+    "my-orders": <LuNotepadText className="text-orange-600 dark:text-orange-400" />,
+    invoices: <ReceiptTextIcon className="text-teal-600 dark:text-teal-400" />,
+    messages: <MessageCircle className="text-sky-600 dark:text-sky-400" />,
+    metrics: <ChartNoAxesCombined className="text-violet-600 dark:text-violet-400" />,
+    employees: <Users className="text-emerald-600 dark:text-emerald-400" />,
+    orders: <ClipboardListIcon className="text-orange-600 dark:text-orange-400" />,
+    "roles-permissions": <ShieldCheckIcon className="text-violet-600 dark:text-violet-400" />,
+    profile: <UserRoundIcon className="text-cyan-600 dark:text-cyan-400" />,
+    promotions: <MegaphoneIcon className="text-rose-600 dark:text-rose-400" />,
   }
   const navMain = routeGroup.routes.map((page) => ({
     // title: page.title,
      title: navKeys[page.id] ? t(navKeys[page.id]) : page.title,
     url: page.path,
-    icon: pageIcons[page.id] ?? <CircleIcon />,
+    icon: pageIcons[page.id] ?? <CircleIcon className="text-slate-600 dark:text-slate-400" />,
   }))
 
 
@@ -84,8 +84,10 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <LocationSwitcher />
         <Separator className="my-1" />
-        <LocaleSwitcher />
-        <ModeToggle />
+        <div className="flex flex-col gap-0.5">
+          <LocaleSwitcher />
+          <ModeToggle />
+        </div>
         <Separator className="my-1" />
         <NavUser />
       </SidebarFooter>

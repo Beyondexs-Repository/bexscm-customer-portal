@@ -44,7 +44,7 @@ export default function ProfilePage() {
                 <div className="relative w-fit">
                   <Avatar className="size-24 ring-1 ring-border sm:size-28">
                     <AvatarImage src={profile.avatar} alt="Crate" />
-                    <AvatarFallback className="text-2xl font-semibold">
+                    <AvatarFallback className="bg-primary text-2xl font-semibold text-primary-foreground">
                       AC
                     </AvatarFallback>
                   </Avatar>
