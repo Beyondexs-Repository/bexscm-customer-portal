@@ -16,6 +16,7 @@ import {
   Phone,
   Store,
   Trash2,
+  Loader2, 
   User,
   X,
 } from "lucide-react"
@@ -23,12 +24,12 @@ import { useState, useMemo } from "react"
 import { useDispatch } from "react-redux"
 import OrderItemRatings, { buildRatingsFormData } from "./OrderItemRatings"
 import { myOrderitemsRating } from "../../redux/slices/postSlice"
+import { GetinvoicePDF } from "../../redux/slices/getSlice"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useCart } from "@/app/context/app-context"
 import { formatCurrency, statusStyles } from "./MyOrders"
-// import defaultimage from "/placeholder.png"
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
 import { resolveItemImageUrl } from "@/lib/api/itemsApi"
 export default function OrderDetails({ order, onBack, onClose, onReorderSuccess }) {
@@ -36,7 +37,7 @@ const dispatch = useDispatch()
 const [ratingsByOrder, setRatingsByOrder] = useState({})
    const { fetchCustomerCart, selectedCartGroupID  } = useCart()
   const imageurl = `https://crateapi.bexlgems.com/Images/Items`;
-
+const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false)
   console.log(order, "--find order in order details");
   const [reOrderModalOpen, setReOrderModalOpen] = useState(false);
   const [reOrderItems, setReOrderItems] = useState([]);
@@ -114,8 +115,28 @@ const reorderOrderApi = async (orderNumber, items, cartGroupId) => {
     throw error;
   }
 };
+const handleDownloadInvoice = async () => {
+  const invoiceNumber = String(order?.invoiceNumber ?? "").trim()
 
+  if (!invoiceNumber) {
+    toast.error("Invoice number is missing.")
+    return
+  }
 
+  try {
+    setIsDownloadingInvoice(true)
+    await dispatch(GetinvoicePDF(invoiceNumber)).unwrap()
+  } catch (error) {
+    console.error("PDF download failed:", error)
+    toast.error(
+      typeof error === "string"
+        ? error
+        : error?.Msg || error?.message || "Unable to download invoice."
+    )
+  } finally {
+    setIsDownloadingInvoice(false)
+  }
+}
 const getItemNumber = (item) =>
   String(item.itemNumber ?? item.sku ?? item.itemCode ?? "").trim()
 
@@ -463,13 +484,24 @@ const handleSubmitRatings = async (drafts) => {
               Reorder
             </Button>
 
-            <Button
-              variant="outline"
-              className="h-11 w-full text-primary"
-            >
-              <Download className="size-4" />
-              {t("downloadInvoice")}
-            </Button>
+          <Button
+  variant="outline"
+  className="h-11 w-full text-primary"
+  disabled={isDownloadingInvoice}
+  onClick={handleDownloadInvoice}
+>
+  {isDownloadingInvoice ? (
+    <>
+      <Loader2 className="size-4 animate-spin" />
+      Downloading
+    </>
+  ) : (
+    <>
+      <Download className="size-4" />
+      {t("downloadInvoice")}
+    </>
+  )}
+</Button>
           </div>
         </div>
       )}

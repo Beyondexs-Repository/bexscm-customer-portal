@@ -271,6 +271,15 @@ export function getOrderBucket(order) {
   return "past"
 }
 
+export function isDeliveredOrder(order) {
+  const s = String(order.status || "").toLowerCase()
+  return s.includes("delivered") || s.includes("completed")
+}
+
+export function isUpcomingOrder(order) {
+  return getOrderBucket(order) === "upcoming"
+}
+
 export default function MyOrders() {
   const t = useTranslations("myOrders")
   const canViewOrderDetails = true
@@ -341,8 +350,12 @@ function resizeDetails(width) {
     () =>
       orderList.filter((order) => {
         const matchesStatus =
-          statusFilter === "all" || getOrderBucket(order) === statusFilter
-
+          // statusFilter === "all" || getOrderBucket(order) === statusFilter
+  statusFilter === "all" ||
+  (statusFilter === "delivered"
+    ? isDeliveredOrder(order)
+    : getOrderBucket(order) === statusFilter)
+    
         const matchesType =
           typeFilter === "All Types" ||
           (typeFilter === "App/Web" && order.type === "App/Web") ||

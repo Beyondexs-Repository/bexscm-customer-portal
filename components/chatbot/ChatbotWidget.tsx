@@ -1,5 +1,6 @@
 "use client"
 import { getCustomerNumber } from "@/lib/customer"
+import { useRouter } from "next/navigation"
 
 import * as React from "react"
 import {
@@ -90,8 +91,8 @@ const INITIAL_MESSAGES: ChatMessage[] = [
 
 const QUICK_PROMPTS = [
   { label: "Upload File / Import", icon: UploadCloudIcon, text: "Upload document or file", isUpload: true },
-  { label: "Check Order Status", icon: PackageIcon, text: "How can I check my recent order status?", isUpload: false },
-  { label: "Browse Catalog", icon: ShoppingBagIcon, text: "Where can I find fresh seafood and meat products?", isUpload: false },
+  { label: "Check Order Status", icon: PackageIcon, text: "How can I check my recent order status?", isUpload: false, href: "/my-orders" },
+  { label: "Browse Catalog", icon: ShoppingBagIcon, text: "Where can I find fresh seafood and meat products?", isUpload: false,href: "/catalog" },
   { label: "View Invoices", icon: ReceiptIcon, text: "How do I review my pending invoices?", isUpload: false },
 ]
 
@@ -118,6 +119,7 @@ const formatFileSize = (bytes: number) => {
 }
 
 export function ChatbotWidget() {
+   const router = useRouter()
   const cartContext = (useCart() as unknown) as {
     importDocumentCartApi?: (params: { file: File; custnmbr?: string }) => Promise<unknown>
     fetchCustomerCart?: (custnmbr?: string) => Promise<unknown>
@@ -763,7 +765,12 @@ export function ChatbotWidget() {
                     onClick={() => {
                       if (prompt.isUpload) {
                         attachmentInputRef.current?.click()
-                      } else {
+                      }
+                      else if (prompt.href) {
+                        router.push(prompt.href)
+                        setIsOpen(false) 
+                      }
+                      else {
                         handleSendMessage(prompt.text)
                       }
                     }}

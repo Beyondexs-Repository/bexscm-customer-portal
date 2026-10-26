@@ -20,6 +20,7 @@ import { getProductGalleryImages } from "@/lib/catalog-products";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { QuantityInput } from "@/components/Catalog/QuantityInput";
 
 function formatPrice(price, unit) {
   return `$${Number(price).toFixed(2)} / ${unit}`;
@@ -76,6 +77,7 @@ export function ProductDetails({ productId, backHref }) {
     addItem,
     incrementItem,
     decrementItem,
+    setItemQuantity,
   } = useCart()
   const {
     quickOrders,
@@ -160,6 +162,14 @@ useEffect(() => {
   const cartItem = cartItems.find((item) => item.id === product?.id);
   const isInCart = Boolean(cartItem);
   const quantity = cartItem?.quantity ?? draftQuantity;
+  function handleQuantitySet(target) {
+    if (!isInCart) {
+      setDraftQuantity(target);
+      return;
+    }
+    setItemQuantity(product.id, target);
+  }
+
   const isInOrderGuide = quickOrders.some((order) =>
     order.groups.some((group) =>
       group.products.some((item) => item.id === product?.id),
@@ -293,9 +303,12 @@ if (!product) {
                 <span className="grid size-full place-items-center">-</span>
               </Button>
 
-              <div className="flex flex-1 items-center justify-center text-sm font-bold">
-                {quantity}
-              </div>
+              <QuantityInput
+                value={quantity}
+                label={`${product.name} quantity`}
+                onCommit={handleQuantitySet}
+                className="flex-1 bg-transparent text-sm font-bold"
+              />
 
               <Button
                 variant="ghost"

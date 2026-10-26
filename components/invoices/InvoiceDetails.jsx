@@ -150,7 +150,7 @@ export default function InvoiceDetails({ invoiceId }) {
   ) : (
     <FileDown className="size-4" />
   )}
-  {pdfLoading ? "Preparing..." : "Download"}
+  {pdfLoading ? "Downloading..." : "Download"}
 </Button>
           <Button size="sm" className="w-full">
             <Share2 className="size-4" />

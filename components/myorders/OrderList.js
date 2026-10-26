@@ -768,16 +768,45 @@ import {
 import PaginationCustom from "@/components/ui/pagination-custom"
 import { cn, formatDeliveryDate } from "@/lib/utils"
 
-import { formatCurrency, statusFilters, statusStyles, typeFilters } from "./MyOrders"
+import { formatCurrency, statusFilters, statusStyles, typeFilters, isDeliveredOrder, isUpcomingOrder } from "./MyOrders"
 
-function StatCard({ icon: Icon, value, label, tone }) {
+// function StatCard({ icon: Icon, value, label, tone }) {
+//   return (
+//     <div className="min-w-0 rounded-lg border bg-card p-2.5 shadow-sm sm:p-3">
+//       <div className="flex min-w-0 items-center gap-2">
+//         <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-full", tone)}>
+//           <Icon className="size-4" />
+//         </div>
+
+//         <div className="min-w-0">
+//           <p className="break-words text-base font-bold leading-none tracking-normal sm:text-lg">
+//             {value}
+//           </p>
+//           <p className="mt-1 text-[10px] font-semibold leading-tight text-muted-foreground sm:text-[11px]">
+//             {label}
+//           </p>
+//         </div>
+//       </div>
+//     </div>
+//   )
+// }
+function StatCard({ icon: Icon, value, label, tone, active, onClick }) {
+  const Wrapper = onClick ? "button" : "div"
   return (
-    <div className="min-w-0 rounded-lg border bg-card p-2.5 shadow-sm sm:p-3">
+    <Wrapper
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      aria-pressed={onClick ? !!active : undefined}
+      className={cn(
+        "min-w-0 rounded-lg border bg-card p-2.5 text-left shadow-sm sm:p-3",
+        onClick && "cursor-pointer transition hover:border-primary/60 hover:shadow-md",
+        active && "border-primary ring-2 ring-primary/30",
+      )}
+    >
       <div className="flex min-w-0 items-center gap-2">
         <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-full", tone)}>
           <Icon className="size-4" />
         </div>
-
         <div className="min-w-0">
           <p className="break-words text-base font-bold leading-none tracking-normal sm:text-lg">
             {value}
@@ -787,7 +816,7 @@ function StatCard({ icon: Icon, value, label, tone }) {
           </p>
         </div>
       </div>
-    </div>
+    </Wrapper>
   )
 }
 
@@ -931,15 +960,17 @@ export default function OrderList({
     return searchedOrders.slice(start, start + pageSize)
   }, [searchedOrders, validCurrentPage, pageSize])
 
-  const deliveredCount = orders.filter((order) => {
-    const s = String(order.status).toLowerCase()
-    return s.includes("delivered") || s.includes("completed")
-  }).length
+  const deliveredCount = orders.filter(isDeliveredOrder).length
+const upcomingCount = orders.filter(isUpcomingOrder).length
+  // const deliveredCount = orders.filter((order) => {
+  //   const s = String(order.status).toLowerCase()
+  //   return s.includes("delivered") || s.includes("completed")
+  // }).length
 
-  const upcomingCount = orders.filter((order) => {
-    const s = String(order.status).toLowerCase()
-    return s.includes("sent") || s.includes("created") || s.includes("pending") || s.includes("open")
-  }).length
+  // const upcomingCount = orders.filter((order) => {
+  //   const s = String(order.status).toLowerCase()
+  //   return s.includes("sent") || s.includes("created") || s.includes("pending") || s.includes("open")
+  // }).length
 
   const totalThisMonth = orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0)
 
@@ -969,9 +1000,23 @@ export default function OrderList({
     <div className="flex min-h-0 flex-col gap-4 pb-2 xl:h-[calc(100svh-6.5rem)] xl:pb-0">
       {/* Dashboard Count Stat Cards - Based on order list */}
       <section className="grid shrink-0 grid-cols-2 gap-3 min-[1420px]:grid-cols-4">
-        <StatCard icon={Truck} value={orders.length} label={t("totalOrders")} tone="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300" />
+        {/* <StatCard icon={Truck} value={orders.length} label={t("totalOrders")} tone="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300" />
         <StatCard icon={PackageCheck} value={deliveredCount} label={t("ordersDelivered")} tone="bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-300" />
-        <StatCard icon={CalendarClock} value={upcomingCount} label={t("upcomingOrders")} tone="bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-300" />
+        <StatCard icon={CalendarClock} value={upcomingCount} label={t("upcomingOrders")} tone="bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-300" /> */}
+        <StatCard icon={Truck} value={orders.length} label={t("totalOrders")}
+  tone="…"
+  active={statusFilter === "all"}
+  onClick={() => onStatusFilterChange("all")} />
+
+<StatCard icon={PackageCheck} value={deliveredCount} label={t("ordersDelivered")}
+  tone="…"
+  active={statusFilter === "delivered"}
+  onClick={() => onStatusFilterChange("delivered")} />
+
+<StatCard icon={CalendarClock} value={upcomingCount} label={t("upcomingOrders")}
+  tone="…"
+  active={statusFilter === "upcoming"}
+  onClick={() => onStatusFilterChange("upcoming")} />
         <StatCard icon={CircleDollarSign} value={formatCurrency(totalThisMonth)} label={t("totalSpend")} tone="bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300" />
       </section>
 

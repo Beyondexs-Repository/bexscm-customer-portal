@@ -180,6 +180,49 @@ export const PostReorder = createAsyncThunk(
 )
 
 
+// ── POST /cartimport/import-document (multipart: CustNmbr + File) ────────────
+export const PostCartImportDocument = createAsyncThunk(
+  "cart/PostCartImportDocument",
+  async ({ custnmbr, file }, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/cartimport/import-document`
+
+      const formData = new FormData()
+      formData.append("CustNmbr", custnmbr)
+      formData.append("File", file)
+
+      // Don't set Content-Type yourself: the browser adds the multipart boundary
+      const response = await axios.post(URL, formData, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      })
+
+      const result = response.data
+
+      if (result?.success === false) {
+        return rejectWithValue(
+          result?.Msg || result?.message || "Failed to import document.",
+        )
+      }
+
+      return {
+        message: result?.message || "Items added to cart.",
+        added: Array.isArray(result?.added) ? result.added : [],
+        skipped: Array.isArray(result?.skipped) ? result.skipped : [],
+      }
+    } catch (error) {
+      const data = error.response?.data
+      return rejectWithValue(
+        data?.Msg ||
+          data?.message ||
+          (typeof data === "string" ? data : null) ||
+          error.message,
+      )
+    }
+  },
+)
 
 //Catelog/ADD TO CART// POST===================================
 export const PostCartcatelog = createAsyncThunk(

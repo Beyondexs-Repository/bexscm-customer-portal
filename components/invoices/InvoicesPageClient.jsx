@@ -244,12 +244,17 @@ export default function InvoicesPageClient() {
                           onClick={() => handleDownloadPdf(invoice.invoiceNumber)}
                         >
                           {downloadingId === invoice.invoiceNumber ? (
-                            <Loader2 className="size-4 animate-spin" />
-                          ) : (
-                            <Download className="size-4" />
-                          )}
-                          {t("invoiceButton")}
-                        </Button>
+                         <>
+      <Loader2 className="size-4 animate-spin" />
+      Downloading
+    </>
+  ) : (
+    <>
+      <Download className="size-4" />
+      {t("invoiceButton")}
+    </>
+  )}
+</Button>
                       </td>
                     </tr>
                   ))
