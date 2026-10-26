@@ -47,6 +47,50 @@ export type NewCartPayload = {
 
 const MAX_NAME_LENGTH = 36
 
+function CartQuantityInput({
+  value,
+  label,
+  onCommit,
+}: {
+  value: number
+  label: string
+  onCommit: (next: number) => void
+}) {
+  const [draft, setDraft] = useState<string | null>(null)
+
+  function commit() {
+    if (draft === null) return
+    const parsed = parseInt(draft, 10)
+    setDraft(null)
+    if (!Number.isFinite(parsed)) return
+    const next = Math.min(9999, Math.max(1, parsed))
+    if (next !== value) onCommit(next)
+  }
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      autoComplete="off"
+      aria-label={label}
+      value={draft ?? String(value)}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => setDraft(e.target.value.replace(/\D/g, "").slice(0, 4))}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault()
+          e.currentTarget.blur()
+        } else if (e.key === "Escape") {
+          setDraft(null)
+          e.currentTarget.blur()
+        }
+      }}
+      className="h-full w-full min-w-0 bg-transparent px-0 text-center text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+    />
+  )
+}
 export function CartSidebar({
   open,
   onOpenChange,
@@ -73,6 +117,7 @@ export function CartSidebar({
   onSelectCartGroup,
   onCreate,
   isCreating = false,
+  onQuantityChange,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -119,6 +164,7 @@ export function CartSidebar({
   cartGroupsLoading?: boolean
   selectedCartGroupID?: number | string | null
   onSelectCartGroup?: (id: number | string) => void
+  onQuantityChange?: (id: string, quantity: number) => void
 }) {
   const isEmpty = items.length === 0
   const t = useTranslations("cart")
@@ -421,7 +467,7 @@ export function CartSidebar({
                           </div>
 
                           <div className="mt-3 flex items-center justify-between gap-3">
-                            <div className="grid h-8 grid-cols-3 overflow-hidden rounded-lg border bg-background">
+                            {/* <div className="grid h-8 grid-cols-3 overflow-hidden rounded-lg border bg-background">
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
@@ -443,7 +489,34 @@ export function CartSidebar({
                               >
                                 <PlusIcon />
                               </Button>
-                            </div>
+                            </div> */}
+                            <div className="grid h-8 grid-cols-[2rem_3.5rem_2rem] overflow-hidden rounded-lg border bg-background">
+  <Button
+    variant="ghost"
+    size="icon-sm"
+    aria-label={t("decrease", { name: item.name })}
+    className="h-full rounded-none"
+    onClick={() => onDecrement?.(item.id)}
+  >
+    <MinusIcon />
+  </Button>
+
+  <CartQuantityInput
+    value={item.quantity}
+    label={`${item.name} quantity`}
+    onCommit={(next) => onQuantityChange?.(item.id, next)}
+  />
+
+  <Button
+    variant="ghost"
+    size="icon-sm"
+    aria-label={t("increase", { name: item.name })}
+    className="h-full rounded-none"
+    onClick={() => onIncrement?.(item.id)}
+  >
+    <PlusIcon />
+  </Button>
+</div>
                             <p className="text-sm font-semibold">
                               ${(item.qtybsuom * item.quantity).toFixed(2)}
                             </p>

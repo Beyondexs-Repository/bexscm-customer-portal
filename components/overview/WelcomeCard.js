@@ -70,35 +70,38 @@ const dispatch = useDispatch()
   const promotionError = useSelector((state) => state.getSlice.promotionError)
   console.log("promotionData", promotionData,promotionLoading, promotionError)
 
-  // useEffect(() => {
-  //   const timeout = window.setTimeout(() => {
-  //     setActiveSlide((current) => (current + 1) % slides.length)
-  //   }, 3000)
+ const slides = useMemo(() => {
+  const list = Array.isArray(promotionData)
+    ? promotionData
+    : promotionData?.data ?? promotionData?.items ?? []
 
-  //   return () => window.clearTimeout(timeout)
-  // }, [activeSlide])
-  // Map API response -> slide shape
-  const slides = useMemo(() => {
-    const list = Array.isArray(promotionData)
-      ? promotionData
-      : promotionData?.data ?? promotionData?.items ?? []
+  const mapped = list
+    .filter((p) => p?.bannerImageUrl)
+    .map((p, i) => {
+      const title = p.title?.trim() || ""
+      const description = p.description?.trim() || ""
 
-    const mapped = list
-      .filter((p) => p?.bannerImageUrl)
-      .map((p, i) => ({
-        id: p.id ?? p.promotionId ?? i,
+      return {
+        id: p.promotionID ?? i,
         eyebrow: p.campaignName,
-        title: p.title,
-        description: p.description,
-        action: p.actionButtonText,
+        title,
+        description,
+        // true only when there is some text to show over the image
+        hasContent: Boolean(title || description),
+        // button only when the API says so and the text exists
+        action:
+          p.showActionButton && p.actionButtonText?.trim()
+            ? p.actionButtonText.trim()
+            : "",
         href: p.actionLink || "/catalog",
         image: p.bannerImageUrl,
-        imageAlt: p.title || p.campaignName || "Promotion banner",
+        imageAlt: title || p.campaignName || "Promotion banner",
         accent: "text-emerald-700",
-      }))
+      }
+    })
 
-    return mapped.length ? mapped : fallbackSlides
-  }, [promotionData])
+  return mapped.length ? mapped : fallbackSlides
+}, [promotionData])
 
    // Keep index valid if slide count changes (e.g. data arrives)
   useEffect(() => {
@@ -156,55 +159,64 @@ const dispatch = useDispatch()
         touchStartX.current = null
       }}
     >
-      {slides.map((slide, index) => (
-        <div
-          key={slide.id ?? index}
-          className={cn(
-            "absolute inset-0 transition-opacity duration-700",
-            index === activeSlide
-              ? "z-10 opacity-100"
-              : "pointer-events-none opacity-0",
-          )}
-          aria-hidden={index !== activeSlide}
-        >
-          <Image
-            src={slide.image}
-            alt={slide.imageAlt}
-            fill
-            priority={index === 0}
-            sizes="(max-width: 768px) 100vw, 85vw"
-            className="object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/5 dark:from-slate-950 dark:via-slate-950/90 dark:to-slate-950/10" />
+    {slides.map((slide, index) => (
+  <div
+    key={slide.id ?? index}
+    className={cn(
+      "absolute inset-0 transition-opacity duration-700",
+      index === activeSlide
+        ? "z-10 opacity-100"
+        : "pointer-events-none opacity-0",
+    )}
+    aria-hidden={index !== activeSlide}
+  >
+    {/* <Image
+      src={slide.image}
+      alt={slide.imageAlt}
+      fill
+      unoptimized
+      priority={index === 0}
+      sizes="(max-width: 768px) 100vw, 85vw"
+      className="object-cover object-center"
+    /> */}
+     <Image
+     src={slide.image}
+     alt={slide.imageAlt}
+     fill
+     priority={index === 0}
+     quality={90}
+     sizes="100vw"
+     className="object-cover object-center"
+   />
 
-          <div className="relative z-10 flex min-h-[16rem] max-w-[76%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[15rem] sm:max-w-[52%] sm:p-8">
-            <p
-              className={cn(
-                "text-[11px] font-bold uppercase tracking-[0.16em]",
-                slide.accent,
-              )}
-            >
-              {slide.eyebrow}
-            </p>
+    {slide.hasContent && (
+      <>
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/5 dark:from-slate-950 dark:via-slate-950/90 dark:to-slate-950/10" />
+
+        <div className="relative z-10 flex min-h-[16rem] max-w-[76%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[15rem] sm:max-w-[52%] sm:p-8">
+          {slide.title && (
             <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-slate-950 sm:text-3xl dark:text-white">
               {slide.title}
             </h1>
-            {slide.description && (
-              <p className="mt-2 max-w-md text-xs leading-relaxed text-slate-600 sm:text-sm dark:text-slate-300">
-                {slide.description}
-              </p>
-            )}
-            {slide.action && (
-              <Button asChild size="sm" className="mt-3 w-fit">
-                <Link href={slide.href}>
-                  {slide.action}
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-            )}
-          </div>
+          )}
+          {slide.description && (
+            <p className="mt-2 max-w-md text-xs leading-relaxed text-slate-600 sm:text-sm dark:text-slate-300">
+              {slide.description}
+            </p>
+          )}
+          {slide.action && (
+            <Button asChild size="sm" className="mt-3 w-fit">
+              <Link href={slide.href}>
+                {slide.action}
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          )}
         </div>
-      ))}
+      </>
+    )}
+  </div>
+))}
 
       {slides.length > 1 && (
         <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">

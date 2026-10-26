@@ -215,12 +215,17 @@ export default function RecentInvoicesTable() {
                       disabled={downloadingId === order.invoiceNumber}
                       onClick={() => handleDownloadPdf(order.invoiceNumber)}
                     >
-                      {downloadingId === order.invoiceNumber ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <Download className="size-4" />
-                      )}
-                    {t("invoiceButton")}
+                     {downloadingId === order.invoiceNumber ? (
+                         <>
+      <Loader2 className="size-4 animate-spin" />
+      Downloading
+    </>
+  ) : (
+    <>
+      <Download className="size-4" />
+      Download
+    </>
+  )}
                     </Button>
 </td>
                 </tr>

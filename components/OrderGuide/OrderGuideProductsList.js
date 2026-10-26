@@ -1766,7 +1766,7 @@ export function OrderGuideProductsList({
   const [isUpdatingQuickOrder, setIsUpdatingQuickOrder] = useState(false);
 const [isReordering, setIsReordering] = useState(false);
 const [isDeletingProduct, setIsDeletingProduct] = useState(false);
-  const { items, incrementItem, decrementItem, fetchCustomerCart, selectedCartGroupID } =
+  const { items, incrementItem, decrementItem, fetchCustomerCart } =
     useCart();
 
   const { quickOrders } = useQuickOrders();
@@ -2591,14 +2591,10 @@ async function handleDuplicate({ targetGroupId, newGroupName }) {
       toast.error("Unable to identify the customer.")
       return
     }
-    if (selectedCartGroupID == null) {
-  toast.error("Please select a cart first.");
-  return;
-}
 
     try {
       const result = await dispatch(
-        PostCart({ data: { custNmbr, orderGroupItemIds: ids, cartGroupId: selectedCartGroupID,} })
+        PostCart({ data: { custNmbr, orderGroupItemIds: ids } })
       ).unwrap()
 
       // Re-fetch from the server so the header badge and cart sidebar
@@ -2722,7 +2718,14 @@ async function handleDuplicate({ targetGroupId, newGroupName }) {
           <div className="flex w-full min-w-0 flex-wrap items-center gap-2 [&>a]:flex-1 [&>button]:flex-1 sm:w-auto sm:self-center sm:[&>a]:flex-none sm:[&>button]:flex-none">
             {canAddProducts ? (
               <Button asChild variant="outline" size="sm" className="h-8">
-                <Link href="/catalog">
+                {/* <Link href="/catalog"> */}
+                <Link
+  href={
+    selectedGroup.isAll
+      ? "/catalog"
+      : `/catalog?orderGuideId=${encodeURIComponent(selectedOrder.id)}&groupId=${encodeURIComponent(selectedGroup.id)}`
+  }
+>
                   <Plus className="size-4" />
                   Add Products
                 </Link>

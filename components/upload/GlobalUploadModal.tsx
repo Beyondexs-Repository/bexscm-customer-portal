@@ -34,7 +34,7 @@ interface FileItem {
 }
 
 interface UploadModalCart {
-  importDocumentCartApi: (params: { file: File; custnmbr?: string }) => Promise<unknown>
+  importDocumentToCart: (params: { file: File; custnmbr?: string }) => Promise<unknown>
   fetchCustomerCart: (custnmbr?: string) => Promise<unknown>
 }
 
@@ -45,7 +45,7 @@ export function GlobalUploadModal({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const { importDocumentCartApi, fetchCustomerCart } = (useCart() as unknown) as UploadModalCart
+  const { importDocumentToCart , fetchCustomerCart } = (useCart() as unknown) as UploadModalCart
   const [dragActive, setDragActive] = React.useState(false)
   const [files, setFiles] = React.useState<FileItem[]>([])
   const [isUploading, setIsUploading] = React.useState(false)
@@ -108,46 +108,44 @@ const t = useTranslations("uploadModal")
     setFiles((prev) => prev.filter((f) => f.id !== id))
   }
             const custnmbr = localStorage.getItem("custnmbr");
+const startUpload = async () => {
+  if (isUploading) return
 
- const startUpload = async () => {
-  if (files.length === 0 || isUploading) return
+  // skip files that already imported successfully (matters when retrying after a failure)
+  const queue = files.filter((f) => f.status !== "completed")
+  if (queue.length === 0) return
+
   setIsUploading(true)
+  setFiles((prev) =>
+    prev.map((f) =>
+      f.status === "completed" ? f : { ...f, status: "uploading", progress: 50 }
+    )
+  )
 
-  // read inside the handler (client-only), convert null -> undefined
-  const custnmbr = localStorage.getItem("custnmbr") ?? undefined
+  let failed = 0
+  for (const item of queue) {
+    // never throws: the context handles errors, toasts, and refetches the cart
+    const res = await importDocumentToCart(item.file)
 
-  setFiles((prev) => prev.map((f) => ({ ...f, status: "uploading", progress: 50 })))
+    setFiles((prev) =>
+      prev.map((f) =>
+        f.id !== item.id
+          ? f
+          : res?.success
+            ? { ...f, status: "completed", progress: 100 }
+            : { ...f, status: "error", progress: 0 }
+      )
+    )
+    if (!res?.success) failed += 1
+  }
 
-  try {
-    // upload every selected file
-    for (const item of files) {
-      await importDocumentCartApi({ file: item.file, custnmbr })
-    }
+  setIsUploading(false)
 
-    setFiles((prev) => prev.map((f) => ({ ...f, status: "completed", progress: 100 })))
-    await fetchCustomerCart(custnmbr)
-    // toast.success("Document imported successfully into cart!")
-    toast.success(t("success"))
-
-
+  if (failed === 0) {
     setFiles([])
     onOpenChange(false)
-  } catch (error: unknown) {
-    console.error("Import document API error:", error)
-    setFiles((prev) => prev.map((f) => ({ ...f, status: "error" })))
-    // toast.error(
-    //   `Import Document Failed: ${error instanceof Error ? error.message : "Failed to import document"}`
-    // )
-    toast.error(
-  t("failed", {
-    message: error instanceof Error ? error.message : t("failedDefault"),
-  })
-)
-  } finally {
-    setIsUploading(false)
   }
 }
-
   const getFileIcon = (ext: string) => {
     if (["png", "jpg", "jpeg", "webp", "gif"].includes(ext)) {
       return <ImageIcon className="size-4 text-primary" />

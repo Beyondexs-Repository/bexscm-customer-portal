@@ -797,6 +797,7 @@ interface UseCartReturn {
   isLoading: boolean
   incrementItem: (id: string) => void
   decrementItem: (id: string) => void
+  setItemQuantity: (id: string, quantity: number) => void
   removeItem: (id: string) => void
   clearCart: () => void
 
@@ -861,6 +862,7 @@ const description = headerKey ? tPage(`${headerKey}.description`) : ""
     isLoading: cartLoading = false,
     incrementItem,
     decrementItem,
+     setItemQuantity,  
     removeItem,
     clearCart,
     cartGroups = [],
@@ -1281,6 +1283,7 @@ async function handleCheckout() {
         isCheckingOut={isCheckingOut}
         onIncrement={incrementItem}
         onDecrement={decrementItem}
+        onQuantityChange={setItemQuantity}
         onRemove={removeItem}
         onCheckout={handleCheckout}
         deliveryDate={checkoutDeliveryDate}
