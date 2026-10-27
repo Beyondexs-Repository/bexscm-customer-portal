@@ -95,7 +95,7 @@ html[lang="ta"] {
 }
 
 :root {
-  --brand: #0076CA;
+  --brand:#0076CA;
   --brand-foreground: #ffffff;
   --brand-accent: color-mix(in oklch, var(--brand) 10%, white);
   --brand-ring: color-mix(in oklch, var(--brand) 65%, white);

@@ -41,7 +41,7 @@ export function FooterNav() {
   const pageIconColors = {
     overview: "text-blue-600 dark:text-blue-400",
     "order-guide": "text-yellow-600 dark:text-yellow-400",
-    catalog: "text-amber-600 dark:text-amber-400",
+    catalog: "text-indigo-600 dark:text-indigo-400",
     "my-orders": "text-orange-600 dark:text-orange-400",
     messages: "text-sky-600 dark:text-sky-400",
     orders: "text-orange-600 dark:text-orange-400",

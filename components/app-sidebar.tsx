@@ -52,7 +52,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const pageIcons: Record<string, React.ReactNode> = {
     overview: <RxDashboard className="text-blue-600 dark:text-blue-400" />,
     "order-guide": <Star className="text-yellow-600 dark:text-yellow-400" />,
-    catalog: <BookOpenIcon className="text-amber-600 dark:text-amber-400" />,
+    catalog: <BookOpenIcon className="text-indigo-600 dark:text-indigo-400" />,
     "my-orders": <LuNotepadText className="text-orange-600 dark:text-orange-400" />,
     invoices: <ReceiptTextIcon className="text-teal-600 dark:text-teal-400" />,
     messages: <MessageCircle className="text-sky-600 dark:text-sky-400" />,
