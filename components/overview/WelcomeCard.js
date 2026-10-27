@@ -76,7 +76,7 @@ const dispatch = useDispatch()
     : promotionData?.data ?? promotionData?.items ?? []
 
   const mapped = list
-    .filter((p) => p?.bannerImageUrl)
+    .filter((p) => p?.isActive && p?.bannerImageUrl)
     .map((p, i) => {
       const title = p.title?.trim() || ""
       const description = p.description?.trim() || ""
