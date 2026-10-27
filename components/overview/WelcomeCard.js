@@ -148,189 +148,189 @@ const dispatch = useDispatch()
     }
   }
 
-//   return (
-//     <section
-//       className="group relative min-h-[16rem] touch-pan-y overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[15rem]"
-//       aria-roledescription="carousel"
-//       aria-label="Featured promotions"
-//       onTouchStart={handleTouchStart}
-//       onTouchEnd={handleTouchEnd}
-//       onTouchCancel={() => {
-//         touchStartX.current = null
-//       }}
-//     >
-//     {slides.map((slide, index) => (
-//   <div
-//     key={slide.id ?? index}
-//     className={cn(
-//       "absolute inset-0 transition-opacity duration-700",
-//       index === activeSlide
-//         ? "z-10 opacity-100"
-//         : "pointer-events-none opacity-0",
-//     )}
-//     aria-hidden={index !== activeSlide}
-//   >
-//     {/* <Image
-//       src={slide.image}
-//       alt={slide.imageAlt}
-//       fill
-//       unoptimized
-//       priority={index === 0}
-//       sizes="(max-width: 768px) 100vw, 85vw"
-//       className="object-cover object-center"
-//     /> */}
-//      <Image
-//      src={slide.image}
-//      alt={slide.imageAlt}
-//      fill
-//      priority={index === 0}
-//      quality={90}
-//      sizes="100vw"
-//      className="object-cover object-center"
-//    />
-
-//     {slide.hasContent && (
-//       <>
-//         <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/5 dark:from-slate-950 dark:via-slate-950/90 dark:to-slate-950/10" />
-
-//         <div className="relative z-10 flex min-h-[16rem] max-w-[76%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[15rem] sm:max-w-[52%] sm:p-8">
-//           {slide.title && (
-//             <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-slate-950 sm:text-3xl dark:text-white">
-//               {slide.title}
-//             </h1>
-//           )}
-//           {slide.description && (
-//             <p className="mt-2 max-w-md text-xs leading-relaxed text-slate-600 sm:text-sm dark:text-slate-300">
-//               {slide.description}
-//             </p>
-//           )}
-//           {slide.action && (
-//             <Button asChild size="sm" className="mt-3 w-fit">
-//               <Link href={slide.href}>
-//                 {slide.action}
-//                 <ArrowRight className="size-4" />
-//               </Link>
-//             </Button>
-//           )}
-//         </div>
-//       </>
-//     )}
-//   </div>
-// ))}
-
-//       {slides.length > 1 && (
-//         <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">
-//           {slides.map((slide, index) => (
-//             <button
-//               key={slide.id ?? index}
-//               type="button"
-//               className={cn(
-//                 "h-1.5 rounded-full transition-all",
-//                 index === activeSlide
-//                   ? "w-5 bg-primary"
-//                   : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600",
-//               )}
-//               onClick={() => setActiveSlide(index)}
-//               aria-label={`Show promotion ${index + 1}`}
-//               aria-current={index === activeSlide ? "true" : undefined}
-//             />
-//           ))}
-//         </div>
-//       )}
-//     </section>
-//   )
-return (
-  <section
-    className="group relative min-h-[16rem] touch-pan-y overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[15rem]"
-    aria-roledescription="carousel"
-    aria-label="Featured promotions"
-    onTouchStart={handleTouchStart}
-    onTouchEnd={handleTouchEnd}
-    onTouchCancel={() => {
-      touchStartX.current = null
-    }}
-  >
+  return (
+    <section
+      className="group relative min-h-[16rem] touch-pan-y overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[15rem]"
+      aria-roledescription="carousel"
+      aria-label="Featured promotions"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={() => {
+        touchStartX.current = null
+      }}
+    >
     {slides.map((slide, index) => (
-      <div
-        key={slide.id ?? index}
-        className={cn(
-          "absolute inset-0 transition-opacity duration-700",
-          index === activeSlide
-            ? "z-10 opacity-100"
-            : "pointer-events-none opacity-0",
-        )}
-        aria-hidden={index !== activeSlide}
-      >
-        <Image
-          src={slide.image}
-          alt={slide.imageAlt}
-          fill
-          priority={index === 0}
-          quality={90}
-          sizes="100vw"
-          className="object-cover object-center"
-        />
-
-        {/* Image-only banner (title and description are null) -> dull gradient */}
-        {!slide.hasContent && (
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/5 dark:from-slate-950 dark:via-slate-950/90 dark:to-slate-950/10" />
-        )}
-
-        {/* Banner with title/description -> full-color image, no gradient */}
-        {slide.hasContent && (
-          <div className="relative z-10 flex min-h-[16rem] max-w-[76%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[15rem] sm:max-w-[52%] sm:p-8">
-            {/* {slide.title && (
-              <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-white drop-shadow-md sm:text-3xl">
-                {slide.title}
-              </h1>
-            )}
-            {slide.description && (
-              <p className="mt-2 max-w-md text-xs leading-relaxed text-white/90 drop-shadow-md sm:text-sm">
-                {slide.description}
-              </p>
-            )} */}
-            {slide.title && (
-  <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-black sm:text-3xl">
-    {slide.title}
-  </h1>
-)}
-{slide.description && (
-  <p className="mt-2 max-w-md text-xs leading-relaxed text-black sm:text-sm">
-    {slide.description}
-  </p>
-)}
-            {slide.action && (
-              <Button asChild size="sm" className="mt-3 w-fit">
-                <Link href={slide.href}>
-                  {slide.action}
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
-    ))}
-
-    {slides.length > 1 && (
-      <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">
-        {slides.map((slide, index) => (
-          <button
-            key={slide.id ?? index}
-            type="button"
-            className={cn(
-              "h-1.5 rounded-full transition-all",
-              index === activeSlide
-                ? "w-5 bg-primary"
-                : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600",
-            )}
-            onClick={() => setActiveSlide(index)}
-            aria-label={`Show promotion ${index + 1}`}
-            aria-current={index === activeSlide ? "true" : undefined}
-          />
-        ))}
-      </div>
+  <div
+    key={slide.id ?? index}
+    className={cn(
+      "absolute inset-0 transition-opacity duration-700",
+      index === activeSlide
+        ? "z-10 opacity-100"
+        : "pointer-events-none opacity-0",
     )}
-  </section>
-)
+    aria-hidden={index !== activeSlide}
+  >
+    {/* <Image
+      src={slide.image}
+      alt={slide.imageAlt}
+      fill
+      unoptimized
+      priority={index === 0}
+      sizes="(max-width: 768px) 100vw, 85vw"
+      className="object-cover object-center"
+    /> */}
+     <Image
+     src={slide.image}
+     alt={slide.imageAlt}
+     fill
+     priority={index === 0}
+     quality={90}
+     sizes="100vw"
+     className="object-cover object-center"
+   />
+
+    {slide.hasContent && (
+      <>
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/5 dark:from-slate-950 dark:via-slate-950/90 dark:to-slate-950/10" />
+
+        <div className="relative z-10 flex min-h-[16rem] max-w-[76%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[15rem] sm:max-w-[52%] sm:p-8">
+          {slide.title && (
+            <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-slate-950 sm:text-3xl dark:text-white">
+              {slide.title}
+            </h1>
+          )}
+          {slide.description && (
+            <p className="mt-2 max-w-md text-xs leading-relaxed text-slate-600 sm:text-sm dark:text-slate-300">
+              {slide.description}
+            </p>
+          )}
+          {slide.action && (
+            <Button asChild size="sm" className="mt-3 w-fit">
+              <Link href={slide.href}>
+                {slide.action}
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          )}
+        </div>
+      </>
+    )}
+  </div>
+))}
+
+      {slides.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">
+          {slides.map((slide, index) => (
+            <button
+              key={slide.id ?? index}
+              type="button"
+              className={cn(
+                "h-1.5 rounded-full transition-all",
+                index === activeSlide
+                  ? "w-5 bg-primary"
+                  : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600",
+              )}
+              onClick={() => setActiveSlide(index)}
+              aria-label={`Show promotion ${index + 1}`}
+              aria-current={index === activeSlide ? "true" : undefined}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+// return (
+//   <section
+//     className="group relative min-h-[16rem] touch-pan-y overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[15rem]"
+//     aria-roledescription="carousel"
+//     aria-label="Featured promotions"
+//     onTouchStart={handleTouchStart}
+//     onTouchEnd={handleTouchEnd}
+//     onTouchCancel={() => {
+//       touchStartX.current = null
+//     }}
+//   >
+//     {slides.map((slide, index) => (
+//       <div
+//         key={slide.id ?? index}
+//         className={cn(
+//           "absolute inset-0 transition-opacity duration-700",
+//           index === activeSlide
+//             ? "z-10 opacity-100"
+//             : "pointer-events-none opacity-0",
+//         )}
+//         aria-hidden={index !== activeSlide}
+//       >
+//         <Image
+//           src={slide.image}
+//           alt={slide.imageAlt}
+//           fill
+//           priority={index === 0}
+//           quality={90}
+//           sizes="100vw"
+//           className="object-cover object-center"
+//         />
+
+//         {/* Image-only banner (title and description are null) -> dull gradient */}
+//         {!slide.hasContent && (
+//           <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/5 dark:from-slate-950 dark:via-slate-950/90 dark:to-slate-950/10" />
+//         )}
+
+//         {/* Banner with title/description -> full-color image, no gradient */}
+//         {slide.hasContent && (
+//           <div className="relative z-10 flex min-h-[16rem] max-w-[76%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[15rem] sm:max-w-[52%] sm:p-8">
+//             {/* {slide.title && (
+//               <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-white drop-shadow-md sm:text-3xl">
+//                 {slide.title}
+//               </h1>
+//             )}
+//             {slide.description && (
+//               <p className="mt-2 max-w-md text-xs leading-relaxed text-white/90 drop-shadow-md sm:text-sm">
+//                 {slide.description}
+//               </p>
+//             )} */}
+//             {slide.title && (
+//   <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-black sm:text-3xl">
+//     {slide.title}
+//   </h1>
+// )}
+// {slide.description && (
+//   <p className="mt-2 max-w-md text-xs leading-relaxed text-black sm:text-sm">
+//     {slide.description}
+//   </p>
+// )}
+//             {slide.action && (
+//               <Button asChild size="sm" className="mt-3 w-fit">
+//                 <Link href={slide.href}>
+//                   {slide.action}
+//                   <ArrowRight className="size-4" />
+//                 </Link>
+//               </Button>
+//             )}
+//           </div>
+//         )}
+//       </div>
+//     ))}
+
+//     {slides.length > 1 && (
+//       <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">
+//         {slides.map((slide, index) => (
+//           <button
+//             key={slide.id ?? index}
+//             type="button"
+//             className={cn(
+//               "h-1.5 rounded-full transition-all",
+//               index === activeSlide
+//                 ? "w-5 bg-primary"
+//                 : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600",
+//             )}
+//             onClick={() => setActiveSlide(index)}
+//             aria-label={`Show promotion ${index + 1}`}
+//             aria-current={index === activeSlide ? "true" : undefined}
+//           />
+//         ))}
+//       </div>
+//     )}
+//   </section>
+// )
 }
