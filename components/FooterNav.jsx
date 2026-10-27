@@ -21,14 +21,14 @@ export function FooterNav() {
   const t = useTranslations("footerNav");
   const routeGroup = routes.customer;
   const navKeys = {
-  overview: "overview",
-  "order-guide": "orderGuide",
-  catalog: "catalog",
-  "my-orders": "myOrders",
-  messages: "messages",
-  employees: "employees",
-  users: "users",
-};
+    overview: "overview",
+    "order-guide": "orderGuide",
+    catalog: "catalog",
+    "my-orders": "myOrders",
+    messages: "messages",
+    employees: "employees",
+    users: "users",
+  };
   const pageIcons = {
     overview: LayoutDashboardIcon,
     "order-guide": StarIcon,
@@ -38,15 +38,23 @@ export function FooterNav() {
     orders: ClipboardListIcon,
     employees: UsersIcon,
   };
+  const pageIconColors = {
+    overview: "text-blue-600 dark:text-blue-400",
+    "order-guide": "text-yellow-600 dark:text-yellow-400",
+    catalog: "text-indigo-600 dark:text-indigo-400",
+    "my-orders": "text-orange-600 dark:text-orange-400",
+    messages: "text-sky-600 dark:text-sky-400",
+    orders: "text-orange-600 dark:text-orange-400",
+    employees: "text-emerald-600 dark:text-emerald-400",
+  };
   const footerNavItems = routeGroup.routes
     .filter((page) => page.footer)
     .map((page) => ({
-    // title: page.title,
-    title: navKeys[page.id] ? t(navKeys[page.id]) : page.title,
-     title: t(page.key),
-    url: page.path,
-    icon: pageIcons[page.id] ?? CircleIcon,
-  }));
+      title: navKeys[page.id] ? t(navKeys[page.id]) : page.title,
+      url: page.path,
+      icon: pageIcons[page.id] ?? CircleIcon,
+      iconColor: pageIconColors[page.id] ?? "text-slate-600 dark:text-slate-400",
+    }));
 
   return (
     <nav
@@ -68,7 +76,7 @@ export function FooterNav() {
 
           return (
             <Link
-              key={item.title}
+              key={item.url}
               href={item.url}
               aria-current={isActive ? "page" : undefined}
               className={cn(
@@ -76,7 +84,10 @@ export function FooterNav() {
                 isActive && "bg-primary/10 text-primary",
               )}
             >
-              <Icon className="size-5 shrink-0" aria-hidden="true" />
+              <Icon
+                className={cn("size-5 shrink-0", item.iconColor)}
+                aria-hidden="true"
+              />
               <span className="max-w-full text-center text-pretty line-clamp-2 leading-tight">
                 {item.title}
               </span>

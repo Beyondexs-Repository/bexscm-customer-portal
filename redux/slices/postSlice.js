@@ -108,6 +108,9 @@ export const PutCartQuantity = createAsyncThunk(
 // ── CART_SIDEBAR_Proceed_to_checkout_POST ──
 export const proceedtoCheckoutPOST = createAsyncThunk(
   "cartsidebar/Post_proceedtocheckout",
+  /**
+   * @param {{ custNmbr: string, deliveryDate: string, cutOffTime: string, notes: string, discountCode: string, poNumber: string }} payload
+   */
   async (
     { custNmbr, deliveryDate, cutOffTime, notes, discountCode, poNumber },
     { rejectWithValue }

@@ -315,8 +315,8 @@ function QuickActions() {
   const t = useTranslations("quickActions")
 
   return (
-    <section aria-label={t("ariaLabel")}>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
+    <section aria-label={t("ariaLabel")} className="@container min-w-0">
+      <div className="grid grid-cols-1 gap-2 @min-[22rem]:grid-cols-2 @min-[64rem]:grid-cols-4">
         {quickActions.map((action) => {
           const Icon = action.icon
 
@@ -335,7 +335,7 @@ function QuickActions() {
                 <Icon className="size-4 sm:size-5" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-xs font-semibold sm:text-sm">
+                <p className="break-words text-xs font-semibold sm:text-sm">
                   {t(`${action.key}.title`)}
                 </p>
                 <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">

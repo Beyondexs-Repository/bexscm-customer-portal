@@ -111,7 +111,7 @@ const [displayRole, setDisplayRole] = useState("Role not assigned")
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton size="lg">
-              <Avatar className="h-8 w-8 rounded-lg"><AvatarFallback className="rounded-lg">AC</AvatarFallback></Avatar>
+              <Avatar className="h-8 w-8 rounded-lg"><AvatarFallback className="rounded-lg bg-primary text-primary-foreground">AC</AvatarFallback></Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">Bex SCM</span>
                 <span className="truncate text-xs text-muted-foreground">{displayRole}</span>
@@ -123,11 +123,11 @@ const [displayRole, setDisplayRole] = useState("Role not assigned")
             <DropdownMenuLabel>Bex SCM</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem asChild><Link href="/profile"><BadgeCheckIcon />My Profile</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link href="/profile"><BadgeCheckIcon className="text-cyan-600 dark:text-cyan-400" />My Profile</Link></DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
-              <LogOutIcon />
+              <LogOutIcon className="text-rose-600 dark:text-rose-400" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
