@@ -78,8 +78,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        {/* <NavMain items={navMain} label={routeGroup.label} /> */}
-        <NavMain items={navMain} label={t("customer")} />
+        <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
         <LocationSwitcher />

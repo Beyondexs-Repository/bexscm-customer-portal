@@ -20,7 +20,7 @@ import { getProductGalleryImages } from "@/lib/catalog-products";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { QuantityInput } from "@/components/Catalog/QuantityInput";
+import { QuantityInput } from "@/components/Catalog/Quantityinput";
 
 function formatPrice(price, unit) {
   return `$${Number(price).toFixed(2)} / ${unit}`;

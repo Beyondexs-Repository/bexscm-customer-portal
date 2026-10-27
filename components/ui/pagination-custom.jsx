@@ -66,7 +66,7 @@ export default function PaginationCustom({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 border-t pt-3 pb-1 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-3 border-t py-3 sm:flex-row sm:items-center sm:justify-between",
         className
       )}
     >
@@ -77,7 +77,7 @@ export default function PaginationCustom({
           type="button"
           disabled={currentPage <= 1}
           onClick={() => onPageChange && onPageChange(currentPage - 1)}
-          className="inline-flex size-8 items-center justify-center rounded-md border border-input bg-card text-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
+          className="inline-flex size-9 items-center justify-center rounded-md border border-input bg-card text-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
           aria-label="Previous page"
         >
           <ChevronLeft className="size-4 text-muted-foreground" />
@@ -89,7 +89,7 @@ export default function PaginationCustom({
             return (
               <span
                 key={`ellipsis-${idx}`}
-                className="inline-flex size-8 items-center justify-center rounded-md border border-input bg-card text-xs text-muted-foreground select-none"
+                className="inline-flex size-9 items-center justify-center rounded-md border border-input bg-card text-xs text-muted-foreground select-none"
               >
                 ...
               </span>
@@ -104,7 +104,7 @@ export default function PaginationCustom({
               type="button"
               onClick={() => onPageChange && onPageChange(Number(page))}
               className={cn(
-                "inline-flex h-8 min-w-[32px] px-2.5 items-center justify-center rounded-md text-xs font-semibold shadow-xs transition-colors",
+                "inline-flex h-9 min-w-9 px-2.5 items-center justify-center rounded-md text-xs font-semibold shadow-xs transition-colors",
                 isCurrent
                   ? "bg-primary text-primary-foreground border border-primary"
                   : "border border-input bg-card text-foreground hover:bg-accent hover:text-accent-foreground"
@@ -120,7 +120,7 @@ export default function PaginationCustom({
           type="button"
           disabled={currentPage >= totalPages}
           onClick={() => onPageChange && onPageChange(currentPage + 1)}
-          className="inline-flex size-8 items-center justify-center rounded-md border border-input bg-card text-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
+          className="inline-flex size-9 items-center justify-center rounded-md border border-input bg-card text-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
           aria-label="Next page"
         >
           <ChevronRight className="size-4 text-muted-foreground" />
@@ -143,7 +143,7 @@ export default function PaginationCustom({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="inline-flex h-8 items-center gap-2 rounded-md border border-input bg-card px-2.5 text-xs font-semibold text-foreground shadow-xs hover:bg-accent focus:outline-none focus:ring-1 focus:ring-ring"
+                className="inline-flex h-9 items-center gap-2 rounded-md border border-input bg-card px-2.5 text-xs font-semibold text-foreground shadow-xs hover:bg-accent focus:outline-none focus:ring-1 focus:ring-ring"
               >
                 <span>{pageSize}</span>
                 <ChevronDown className="size-3.5 text-muted-foreground" />

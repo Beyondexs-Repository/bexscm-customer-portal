@@ -36,13 +36,13 @@ export default function InvoicePagination({
   }
 
   return (
-    <nav aria-label="Pagination" className="flex w-full min-w-0 flex-wrap items-center gap-3 @min-[700px]:w-auto">
+    <nav aria-label="Pagination" className="flex w-full min-w-0 flex-wrap items-center gap-2 @min-[700px]:w-auto">
       <label className="flex basis-full items-center justify-between gap-2 whitespace-nowrap @min-[420px]:basis-auto">
         Rows per page
         <select
           value={pageSize}
           onChange={(event) => changePage(1, Number(event.target.value))}
-          className="h-8 rounded-lg border border-border bg-background px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:border-input dark:bg-input/30 dark:[color-scheme:dark] [&_option]:bg-popover [&_option]:text-popover-foreground"
+          className="h-9 rounded-md border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:border-input dark:bg-input/30 dark:[color-scheme:dark] [&_option]:bg-popover [&_option]:text-popover-foreground"
         >
           {rowOptions.map((rows) => (
             <option key={rows} value={rows}>
@@ -51,14 +51,14 @@ export default function InvoicePagination({
           ))}
         </select>
       </label>
-      <div className="ml-auto flex items-center gap-2">
-        <span className="whitespace-nowrap px-2" aria-live="polite">
+      <div className="ml-auto flex items-center gap-1.5">
+        <span className="whitespace-nowrap px-1" aria-live="polite">
           Page {currentPage} of {totalPages}
         </span>
         <Button
           type="button"
           variant="outline"
-          size="icon"
+          size="icon-lg"
           disabled={currentPage <= 1}
           onClick={() => changePage(currentPage - 1)}
           aria-label="Previous page"
@@ -69,7 +69,7 @@ export default function InvoicePagination({
         <Button
           type="button"
           variant="outline"
-          size="icon"
+          size="icon-lg"
           disabled={currentPage >= totalPages}
           onClick={() => changePage(currentPage + 1)}
           aria-label="Next page"

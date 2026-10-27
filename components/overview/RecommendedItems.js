@@ -40,7 +40,7 @@ export default function RecommendedItems() {
         role="region"
         aria-label="Recommended products"
         tabIndex={0}
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 focus-visible:outline-2 focus-visible:outline-primary md:grid md:grid-cols-3 md:overflow-visible md:pb-0 xl:grid-cols-6"
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 focus-visible:outline-2 focus-visible:outline-primary md:grid md:grid-cols-3 md:overflow-visible md:pb-0 xl:grid-cols-5 xl:[&>:nth-child(n+6)]:hidden"
       >
         {isLoading ? Array.from({ length: 6 }, (_, index) => (
           <div key={index} aria-hidden="true" className="flex w-[80%] max-w-64 min-w-0 shrink-0 snap-start flex-col overflow-hidden rounded-lg border bg-background md:w-auto md:max-w-none">

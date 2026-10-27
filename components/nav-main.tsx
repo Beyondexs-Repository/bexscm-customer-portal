@@ -27,7 +27,7 @@ export function NavMain({
       url: string
     }[]
   }[]
-  label: string
+  label?: string
 }) {
   const pathname = usePathname()
   const { isMobile, setOpenMobile } = useSidebar()
@@ -47,7 +47,7 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarMenu className="gap-1">
         {items.map((item) => {
           const isActive =

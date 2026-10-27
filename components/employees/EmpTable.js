@@ -111,7 +111,7 @@ export default function EmpTable({ employees = [], onEdit, onDelete }) {
               </tbody>
             </table>
           </div>
-          <div className="@container flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3 text-sm text-muted-foreground sm:px-6">
+          <div className="@container flex flex-wrap items-center justify-between gap-2 border-t px-4 py-3 text-xs text-muted-foreground">
             <span>
               Showing {filteredEmployees.length === 0 ? 0 : start + 1}-
               {Math.min(start + pageSize, filteredEmployees.length)} of{" "}

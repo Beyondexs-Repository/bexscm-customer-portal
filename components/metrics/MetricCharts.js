@@ -1,70 +1,120 @@
 import { useId } from "react"
+import { money } from "./metrics-data"
 
-const currency = (value) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value)
+export function TrendChart({ labels, values, previous, label }) {
+  const gradient = useId()
+  const ceiling = Math.ceil(Math.max(...values, ...(previous || []), 1) / 4) * 4
+  const line = values.map((value, index) => `${index ? "L" : "M"} ${64 + index * 500 / Math.max(values.length - 1, 1)} ${200 - value / ceiling * 160}`).join(" ")
+  const comparison = previous?.map((value, index) => `${index ? "L" : "M"} ${64 + index * 500 / Math.max(previous.length - 1, 1)} ${200 - value / ceiling * 160}`).join(" ")
 
-export function SpendingGraph({ labels, amounts }) {
-  const gradientId = useId()
-  const ceiling = Math.ceil(Math.max(...amounts, 1) / 4) * 4
-  const points = amounts.map((amount, index) => ({ x: 65 + index * 510 / (amounts.length - 1), y: 205 - amount / ceiling * 170 }))
-  const line = points.map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`).join(" ")
   return (
-    <div className="mt-4">
-      <svg viewBox="0 0 610 250" role="img" aria-label={`Spending graph. ${labels.map((label, index) => `${label}: ${currency(amounts[index])}`).join("; ")}`} className="w-full">
-        <defs><linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--primary)" stopOpacity="0.25" /><stop offset="100%" stopColor="var(--primary)" stopOpacity="0.02" /></linearGradient></defs>
-        {[0, 1, 2, 3, 4].map((step) => {
-          const y = 205 - step * 42.5
-          return <g key={step}><line x1="65" x2="575" y1={y} y2={y} stroke="currentColor" strokeOpacity="0.1" strokeDasharray="4 4" /><text x="55" y={y + 4} textAnchor="end" className="fill-muted-foreground text-[11px]">{currency(ceiling * step / 4)}</text></g>
-        })}
-        <path d={`${line} L 575 205 L 65 205 Z`} fill={`url(#${gradientId})`} />
+    <div>
+      <svg viewBox="0 0 600 245" role="img" aria-label={label} className="h-48 w-full sm:h-52">
+        <defs><linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1"><stop stopColor="var(--primary)" stopOpacity="0.2" /><stop offset="100%" stopColor="var(--primary)" stopOpacity="0" /></linearGradient></defs>
+        {[0, 1, 2, 3, 4].map((step) => (
+          <g key={step}>
+            <line x1="64" x2="564" y1={200 - step * 40} y2={200 - step * 40} stroke="currentColor" strokeOpacity="0.1" strokeDasharray="4 4" />
+            <text x="54" y={204 - step * 40} textAnchor="end" className="fill-muted-foreground text-[11px]">{money.format(ceiling * step / 4)}</text>
+          </g>
+        ))}
+        <path d={`${line} L 564 200 L 64 200 Z`} fill={`url(#${gradient})`} />
+        {comparison && <path d={comparison} fill="none" stroke="currentColor" strokeOpacity="0.35" strokeDasharray="5 5" strokeWidth="2" />}
         <path d={line} fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinejoin="round" />
-        {points.map((point, index) => <g key={labels[index]}><circle cx={point.x} cy={point.y} r="4" fill="var(--card)" stroke="var(--primary)" strokeWidth="2"><title>{labels[index]}: {currency(amounts[index])}</title></circle><text x={point.x} y="235" textAnchor="middle" className="fill-muted-foreground text-[10px]">{labels[index]}</text></g>)}
+        {values.map((value, index) => (
+          <g key={labels[index]}>
+            <circle cx={64 + index * 500 / Math.max(values.length - 1, 1)} cy={200 - value / ceiling * 160} r="4" fill="var(--card)" stroke="var(--primary)" strokeWidth="2"><title>{labels[index]}: {money.format(value)}</title></circle>
+            <text x={64 + index * 500 / Math.max(values.length - 1, 1)} y="230" textAnchor="middle" className="fill-muted-foreground text-[11px]">{labels[index]}</text>
+          </g>
+        ))}
       </svg>
-      <details className="text-xs text-muted-foreground"><summary className="w-fit cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary">View chart values</summary><ul className="mt-2 grid grid-cols-2 gap-2">{labels.map((label, index) => <li key={label}>{label}: {currency(amounts[index])}</li>)}</ul></details>
+      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+        <span className="flex items-center gap-2"><span className="h-0.5 w-5 bg-primary" />Selected period</span>
+        {previous && <span className="flex items-center gap-2"><span className="w-5 border-t-2 border-dashed border-muted-foreground/50" />Previous period, aligned by interval</span>}
+      </div>
+      <ul className="sr-only">{labels.map((name, index) => <li key={name}>{name}: {money.format(values[index])}{previous && ` · Previous: ${money.format(previous[index])}`}</li>)}</ul>
     </div>
-  )
-}
-
-export function CategoryPie({ categories }) {
-  const slices = categories.map((category, index) => {
-    const start = categories.slice(0, index).reduce((sum, item) => sum + item.share, 0) / 100 * Math.PI * 2 - Math.PI / 2
-    const end = start + category.share / 100 * Math.PI * 2
-    const point = (angle) => `${100 + 87 * Math.cos(angle)} ${100 + 87 * Math.sin(angle)}`
-    return { ...category, path: `M 100 100 L ${point(start)} A 87 87 0 ${category.share > 50 ? 1 : 0} 1 ${point(end)} Z` }
-  })
-  return (
-    <svg viewBox="0 0 200 200" role="img" aria-label={`Category spending. ${categories.map((item) => `${item.name}: ${item.share}%`).join("; ")}`} className="mx-auto mb-4 size-44">
-      {slices.map((slice) => <path key={slice.name} d={slice.path} fill={slice.color} stroke="var(--card)" strokeWidth="2"><title>{slice.name}: {currency(slice.amount)} ({slice.share}%)</title></path>)}
-    </svg>
   )
 }
 
 export function OrderBars({ labels, orders }) {
   const max = Math.max(...orders, 1)
-  return <ul aria-label="Order counts over time" className="flex gap-2 pt-7 sm:gap-5">{labels.map((label, index) => <li key={label} className="min-w-0 flex-1 text-center"><div className="flex h-28 items-end justify-center border-b"><div className="relative w-full max-w-12 rounded-t-md bg-violet-500/80" style={{ height: `${orders[index] / max * 100}%` }}><span className="absolute inset-x-0 -top-6 text-xs font-semibold">{orders[index]}</span></div></div><p className="mt-3 text-[10px] text-muted-foreground">{label}</p></li>)}</ul>
-}
-
-export function ProductBars({ products }) {
-  const max = Math.max(...products.map((product) => product.orders), 1)
-  const colors = ["bg-primary", "bg-emerald-500", "bg-violet-500", "bg-amber-500", "bg-sky-400"]
-
   return (
-    <ul aria-label="Most frequently ordered products" className="space-y-6">
-      {products.map((product, index) => (
-        <li key={product.name}>
-          <div className="mb-2 flex items-center justify-between gap-3 text-xs">
-            <span className="font-medium">{product.name}</span>
-            <span className="shrink-0 tabular-nums text-muted-foreground">{product.orders} {product.orders === 1 ? "order" : "orders"}</span>
+    <ul aria-label="Orders placed by interval" className="flex gap-3 pt-8 sm:gap-6">
+      {labels.map((label, index) => (
+        <li key={label} className="min-w-0 flex-1 text-center">
+          <div className="flex h-44 items-end justify-center border-b">
+            <div className="relative w-full max-w-12 rounded-t-md bg-primary/85" style={{ height: `${orders[index] / max * 100}%` }}>
+              <span className="absolute inset-x-0 -top-6 text-xs font-semibold">{orders[index]}</span>
+            </div>
           </div>
-          <div aria-hidden="true" className="h-4 overflow-hidden rounded-full bg-muted/60">
-            <div className={`h-full rounded-full ${colors[index % colors.length]}`} style={{ width: `${product.orders / max * 100}%` }} />
-          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">{label}</p>
         </li>
       ))}
     </ul>
   )
 }
 
-export function PaymentDonut({ spend, balance }) {
-  const paidPercent = (spend - balance) / spend * 100
-  return <div className="flex items-center gap-5"><div className="relative size-28 shrink-0"><svg viewBox="0 0 120 120" role="img" aria-label={`${paidPercent.toFixed(1)}% paid; ${currency(balance)} outstanding`} className="size-full -rotate-90"><circle cx="60" cy="60" r="48" fill="none" stroke="#f59e0b" strokeWidth="12" /><circle cx="60" cy="60" r="48" fill="none" stroke="#10b981" strokeWidth="12" pathLength="100" strokeDasharray={`${paidPercent} 100`} /></svg><span className="absolute inset-0 flex flex-col items-center justify-center text-xl font-semibold">{Math.round(paidPercent)}%<span className="text-[10px] font-normal text-muted-foreground">Paid</span></span></div><div className="space-y-3 text-xs"><p><span aria-hidden="true" className="mr-2 inline-block size-2 rounded-full bg-emerald-500" />Paid <strong>{currency(spend - balance)}</strong></p><p><span aria-hidden="true" className="mr-2 inline-block size-2 rounded-full bg-amber-500" />Unpaid <strong>{currency(balance)}</strong></p></div></div>
+export function CategoryPie({ categories, total }) {
+  return (
+    <div className="flex flex-col items-center gap-5 sm:flex-row">
+      <svg viewBox="0 0 200 200" role="img" aria-label="Share of invoiced purchases by category" className="size-40 shrink-0">
+        {categories.map((category, index) => {
+          const start = categories.slice(0, index).reduce((sum, item) => sum + item.share, 0) / 100 * Math.PI * 2 - Math.PI / 2
+          const end = start + category.share / 100 * Math.PI * 2
+          const path = `M 100 100 L ${100 + 88 * Math.cos(start)} ${100 + 88 * Math.sin(start)} A 88 88 0 ${category.share > 50 ? 1 : 0} 1 ${100 + 88 * Math.cos(end)} ${100 + 88 * Math.sin(end)} Z`
+          return <path key={category.name} d={path} fill={category.color} stroke="var(--card)" strokeWidth="3"><title>{category.name}: {category.share}%</title></path>
+        })}
+      </svg>
+      <ul className="w-full space-y-4 text-xs">
+        {categories.map((category) => <li key={category.name} className="flex items-center gap-2"><span className="size-2.5 shrink-0 rounded-full" style={{ background: category.color }} /><span className="flex-1">{category.name}</span><span className="font-medium tabular-nums">{money.format(total * category.share / 100)}</span><span className="w-8 text-right text-muted-foreground">{category.share}%</span></li>)}
+      </ul>
+    </div>
+  )
+}
+
+export function HorizontalBars({ items, currency = false }) {
+  const max = Math.max(...items.map((item) => item.value), 1)
+  return (
+    <ul className="space-y-4">
+      {items.map((item) => (
+        <li key={item.name}>
+          <div className="mb-2 flex justify-between gap-3 text-xs"><span>{item.name}</span><span className="shrink-0 font-semibold tabular-nums">{currency ? money.format(item.value) : `${item.value} orders`}</span></div>
+          <div className="h-2.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full" style={{ width: `${item.value / max * 100}%`, background: item.color || "var(--primary)" }} /></div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export function PaymentDonut({ total, paid }) {
+  const percent = total ? paid / total * 100 : 0
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-6 py-2">
+      <div className="relative size-40 shrink-0">
+        <svg viewBox="0 0 120 120" role="img" aria-label={`${percent.toFixed(1)}% of invoiced amount paid`} className="size-full -rotate-90">
+          <circle cx="60" cy="60" r="48" fill="none" stroke="#f59e0b" strokeWidth="12" />
+          <circle cx="60" cy="60" r="48" fill="none" stroke="#10b981" strokeWidth="12" pathLength="100" strokeDasharray={`${percent} 100`} />
+        </svg>
+        <span className="absolute inset-0 flex flex-col items-center justify-center text-3xl font-semibold">{Math.round(percent)}%<span className="mt-1 text-xs font-normal text-muted-foreground">Paid</span></span>
+      </div>
+      <dl className="space-y-4 text-xs">
+        <div><dt className="flex items-center gap-2 text-muted-foreground"><span className="size-2 rounded-full bg-emerald-500" />Paid</dt><dd className="mt-1 text-lg font-semibold">{money.format(paid)}</dd></div>
+        <div><dt className="flex items-center gap-2 text-muted-foreground"><span className="size-2 rounded-full bg-amber-500" />Outstanding</dt><dd className="mt-1 text-lg font-semibold">{money.format(total - paid)}</dd></div>
+      </dl>
+    </div>
+  )
+}
+
+export function StatusChart({ statuses }) {
+  const total = statuses.reduce((sum, item) => sum + item.value, 0)
+  return (
+    <div>
+      <div aria-hidden="true" className="mb-6 flex h-9 overflow-hidden rounded-lg">
+        {statuses.map((item) => <div key={item.name} style={{ width: `${total ? item.value / total * 100 : 0}%`, background: item.color }} />)}
+      </div>
+      <ul className="grid grid-cols-2 gap-5 text-xs">
+        {statuses.map((item) => <li key={item.name}><p className="flex items-center gap-2 text-muted-foreground"><span className="size-2 rounded-full" style={{ background: item.color }} />{item.name}</p><p className="mt-2 text-xl font-semibold">{item.value}<span className="ml-2 text-xs font-normal text-muted-foreground">{total ? Math.round(item.value / total * 100) : 0}%</span></p></li>)}
+      </ul>
+    </div>
+  )
 }

@@ -172,7 +172,7 @@ export default function RecentInvoicesTable() {
                       aria-label={`View invoice ${order.invoiceNumber}`}
                       className="absolute inset-0 z-10"
                     />
-                    <span className="font-semibold text-foreground">
+                    <span className="font-semibold text-foreground text-xs">
                       #{order.invoiceNumber}
                     </span>
                   </td>
@@ -188,7 +188,7 @@ export default function RecentInvoicesTable() {
                       {t("units", { count: order.units })}
                     </p>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 font-semibold">
+                  <td className="whitespace-nowrap px-4 py-2 font-semibold text-xs">
                     {formatCurrency(order.total)}
                   </td>
                   {/* <td className="whitespace-nowrap px-4 py-2 font-semibold">
