@@ -74,6 +74,37 @@ promotionData: [],
 promotionLoading: false,
 promotionStatus: "idle",
 promotionError: null,
+//Userslist_GET_INITIALSTATE
+userslistData: [],
+userslistLoading: false,
+userslistStatus: "idle",
+userslistError: null,
+
+//USERS_LISTVIEW_BY_ID_EDIT_USER
+edituserData: null,        // { user, assignments }
+edituserLoading: false,
+edituserStatus: "idle",
+edituserError: null,
+
+//GET_TERRITORY_LIST
+territoryData: [],
+territoryLoading: false,
+territoryStatus: "idle",
+//GET_AREA_LIST
+areaData: [],
+areaLoading: false,
+areaStatus: "idle",
+areaError: null,
+//GET_LOCATION_LIST
+locationData: [],
+locationLoading: false,
+locationStatus: "idle",
+locationError: null,
+//GET_DEPT_LIST
+deptData: [],
+deptLoading: false,
+deptStatus: "idle",
+deptError: null,
 
   error: null,
 }
@@ -532,6 +563,357 @@ export const GetPromotionlist= createAsyncThunk(
   },
 )
 
+/*******************EMPLOYEE SCREEN GET API FUNCTIONS START***************************/
+
+//USERS_LISTVIEW_BY_ID
+export const Getuserslist = createAsyncThunk(
+  "Users/Users_list__GET",
+  async (custNmbrArg, { rejectWithValue }) => {
+    try {
+      const custnmbr = custNmbrArg || localStorage.getItem("custnmbr")
+
+      if (!custnmbr || custnmbr === "undefined") {
+        return rejectWithValue("Customer number missing. Please log in again.")
+      }
+ 
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/users/customer/${custnmbr}`
+
+      const response = await axios.get(URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+ 
+      const result = response.data
+ 
+      if (result?.success === false) {
+        throw new Error(result?.Msg || result?.message || "Failed to fetch orders.")
+      }
+ 
+      // The customer portal receives a bare array; also accept { data: [...] }
+      return Array.isArray(result) ? result : result?.data ?? []
+    } catch (error) {
+      return rejectWithValue(error.response ? error.response.data : error.message)
+    }
+  }
+)
+
+//TERRITORY_LIST
+export const GetTerritorylist = createAsyncThunk(
+  "Territory/Territory_list_GET",
+  async (custNmbrArg, { rejectWithValue }) => {
+    try {
+      const custnmbr = custNmbrArg || localStorage.getItem("custnmbr")
+
+      if (!custnmbr || custnmbr === "undefined") {
+        return rejectWithValue("Customer number missing. Please log in again.")
+      }
+
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/territory?custNmbr=${custnmbr}`
+
+      const response = await axios.get(URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      })
+
+      const result = response.data
+
+      if (result?.success === false) {
+        return rejectWithValue(
+          result?.Msg || result?.message || "Failed to fetch territories.",
+        )
+      }
+
+      return Array.isArray(result) ? result : result?.data ?? []
+    } catch (error) {
+      const data = error.response?.data
+      return rejectWithValue(
+        data?.Msg || data?.message || (typeof data === "string" ? data : null) || error.message,
+      )
+    }
+  },
+)
+
+// //AREA_LIST
+// export const GetAreaList = createAsyncThunk(
+//   "Area/Area_list_GET",
+//   async (territoryID, { rejectWithValue }) => {
+//     if (!territoryID?.length) return []
+
+//     try {
+//      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/area?territoryId=${territoryID}`
+//      const response = await axios.get(URL, {
+//         headers: {
+//           Accept: "application/json",
+//           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+//         },
+//       })
+
+//       const result = response.data
+
+//       if (result?.success === false) {
+//         return rejectWithValue(
+//           result?.Msg || result?.message || "Failed to fetch areas.",
+//         )
+//       }
+
+//       return Array.isArray(result) ? result : result?.data ?? []
+//     } catch (error) {
+//       const data = error.response?.data
+//       return rejectWithValue(
+//         data?.Msg || data?.message || (typeof data === "string" ? data : null) || error.message,
+//       )
+//     }
+//   },
+// )
+
+// //LOCATION_LIST
+// export const GetLocationList = createAsyncThunk(
+//   "Location/Location_list_GET",
+//   async (areaId, { rejectWithValue }) => {
+//     if (!areaId?.length) return []
+
+//     try {
+//      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/location?areaId=${areaId}`
+//      const response = await axios.get(URL, {
+//         headers: {
+//           Accept: "application/json",
+//           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+//         },
+//       })
+
+//       const result = response.data
+
+//       if (result?.success === false) {
+//         return rejectWithValue(
+//           result?.Msg || result?.message || "Failed to fetch locations.",
+//         )
+//       }
+
+//       return Array.isArray(result) ? result : result?.data ?? []
+//     } catch (error) {
+//       const data = error.response?.data
+//       return rejectWithValue(
+//         data?.Msg || data?.message || (typeof data === "string" ? data : null) || error.message,
+//       )
+//     }
+//   },
+// )
+// //DEPT_LIST
+// export const GetdeptList = createAsyncThunk(
+//   "Department/Department_list_GET",
+//   async (locationId, { rejectWithValue }) => {
+//     if (!locationId?.length) return []
+
+//     try {
+//      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/department?locationId=${locationId}`
+//      const response = await axios.get(URL, {
+//         headers: {
+//           Accept: "application/json",
+//           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+//         },
+//       })
+
+//       const result = response.data
+
+//       if (result?.success === false) {
+//         return rejectWithValue(
+//           result?.Msg || result?.message || "Failed to fetch locations.",
+//         )
+//       }
+
+//       return Array.isArray(result) ? result : result?.data ?? []
+//     } catch (error) {
+//       const data = error.response?.data
+//       return rejectWithValue(
+//         data?.Msg || data?.message || (typeof data === "string" ? data : null) || error.message,
+//       )
+//     }
+//   },
+// )
+
+export const GetAreaList = createAsyncThunk(
+  "Area/Area_list_GET",
+  async (territoryIds, { rejectWithValue }) => {
+    if (!territoryIds?.length) return [];
+
+    try {
+      const headers = {
+        Accept: "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      };
+
+      // one request per territory ID (the API rejects comma-separated lists)
+      const responses = await Promise.all(
+        [...new Set(territoryIds)].map((id) =>
+          axios.get(
+            `${process.env.NEXT_PUBLIC_NRL_API_URL}/area?territoryId=${id}`,
+            { headers },
+          ),
+        ),
+      );
+
+      return responses.flatMap(({ data }) => {
+        if (data?.success === false) {
+          throw new Error(data?.Msg || data?.message || "Failed to fetch areas.");
+        }
+        return Array.isArray(data) ? data : data?.data ?? [];
+      });
+    } catch (error) {
+      const data = error.response?.data;
+      return rejectWithValue(
+        data?.Msg ||
+          data?.message ||
+          (typeof data === "string" ? data : null) ||
+          error.message,
+      );
+    }
+  },
+);
+
+export const GetLocationList = createAsyncThunk(
+  "Location/Location_list_GET",
+  async (areaIds, { rejectWithValue }) => {
+    if (!areaIds?.length) return [];
+
+    try {
+      const headers = {
+        Accept: "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      };
+
+      // one request per area ID
+      const responses = await Promise.all(
+        [...new Set(areaIds)].map((id) =>
+          axios.get(
+            `${process.env.NEXT_PUBLIC_NRL_API_URL}/location?areaId=${id}`,
+            { headers },
+          ),
+        ),
+      );
+
+      return responses.flatMap(({ data }) => {
+        if (data?.success === false) {
+          throw new Error(data?.Msg || data?.message || "Failed to fetch locations.");
+        }
+        return Array.isArray(data) ? data : data?.data ?? [];
+      });
+    } catch (error) {
+      const data = error.response?.data;
+      return rejectWithValue(
+        data?.Msg ||
+          data?.message ||
+          (typeof data === "string" ? data : null) ||
+          error.message,
+      );
+    }
+  },
+);
+
+export const GetdeptList = createAsyncThunk(
+  "Department/Department_list_GET",
+  async (locationIds, { rejectWithValue }) => {
+    if (!locationIds?.length) return [];
+
+    try {
+      const headers = {
+        Accept: "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      };
+
+      // one request per location (store) ID
+      const responses = await Promise.all(
+        [...new Set(locationIds)].map((id) =>
+          axios.get(
+            `${process.env.NEXT_PUBLIC_NRL_API_URL}/department?locationId=${id}`,
+            { headers },
+          ),
+        ),
+      );
+
+      return responses.flatMap(({ data }) => {
+        if (data?.success === false) {
+          throw new Error(data?.Msg || data?.message || "Failed to fetch departments.");
+        }
+        return Array.isArray(data) ? data : data?.data ?? [];
+      });
+    } catch (error) {
+      const data = error.response?.data;
+      return rejectWithValue(
+        data?.Msg ||
+          data?.message ||
+          (typeof data === "string" ? data : null) ||
+          error.message,
+      );
+    }
+  },
+);
+
+
+//USERS_LISTVIEW_BY_ID_EDIT_USER
+export const EdituserGet = createAsyncThunk(
+  "Users/User_by_id_GET",
+  async (userId, { rejectWithValue }) => {
+    try {
+
+      
+        if (userId === undefined || userId === null || userId === "") {
+      return rejectWithValue("User id is missing.")
+    }
+
+ 
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/users/${userId}`
+
+      const response = await axios.get(URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+ 
+      const result = response.data
+ 
+           if (result?.success === false) {
+        return rejectWithValue(
+          result?.Msg || result?.message || "Failed to fetch user.",
+        )
+      }
+
+      // keep BOTH the user and its assignments
+      return {
+        user: result?.data ?? null,
+        assignments: {
+          territoryIds: result?.assignments?.territoryIds ?? [],
+          areaIds: result?.assignments?.areaIds ?? [],
+          locationIds: result?.assignments?.locationIds ?? [],
+          departmentIds: result?.assignments?.departmentIds ?? [],
+        },
+      }
+    } catch (error) {
+      const data = error.response?.data
+      return rejectWithValue(
+        data?.Msg ||
+          data?.message ||
+          (typeof data === "string" ? data : null) ||
+          error.message,
+      )
+    }
+  },
+)
+
+/*******************EMPLOYEE SCREEN GET API FUNCTIONS END***************************/
+
+
+
+
+
+
+
+
+
 // ============================================================
 // SLICE  (Crea pattern — createSlice with extraReducers builder)
 // ============================================================
@@ -548,6 +930,26 @@ const getSlice = createSlice({
       state.orderGuideGroupsData = []
       state.orderGuideGroupsStatus = "idle"
     },
+
+  clearAreaList: (state) => {
+    state.areaData = []
+    state.areaLoading = false
+    state.areaStatus = "idle"
+    state.areaError = null
+  },
+  clearLocationList: (state) => {
+    state.locationData = []
+    state.locationLoading = false
+    state.locationStatus = "idle"
+    state.locationError = null
+  },
+  clearDepartmentList: (state) => {
+    state.deptData = []
+    state.deptLoading = false
+    state.deptStatus = "idle"
+    state.deptError = null
+  },
+
   },
   extraReducers(builder) {
     builder
@@ -705,7 +1107,6 @@ const getSlice = createSlice({
 
 
       // ── Invoice / GetInvoicedetails_GET addcase ──────────────────────────────────────────
-      // ── Invoice details ────────────────────────────────────────────────────
       .addCase(GetInvoicedetails.pending, (state) => {
         state.GetInvoicedetailsStatus = "loading"
         state.GetInvoicedetailsloading = true
@@ -757,10 +1158,134 @@ const getSlice = createSlice({
   state.promotionError = action.payload || action.error.message
   state.promotionData = []
 })
+
+/*******************EMPLOYEE SCREEN GET API FUNCTIONS START***************************/
+
+//Userslist_GET_ADDCASE
+.addCase(Getuserslist.pending, (state) => {
+  state.userslistStatus = "loading"
+  state.userslistLoading = true
+  state.userslistError = null
+})
+.addCase(Getuserslist.fulfilled, (state, action) => {
+  state.userslistStatus = "succeeded"
+  state.userslistLoading = false
+  state.userslistData = action.payload
+})
+.addCase(Getuserslist.rejected, (state, action) => {
+  state.userslistStatus = "failed"
+  state.userslistLoading = false
+  state.userslistError = action.payload || action.error.message
+  state.userslistData = []
+})
+
+
+//GET_USER_BY_ID
+.addCase(EdituserGet.pending, (state) => {
+  state.edituserStatus = "loading"
+  state.edituserLoading = true
+  state.edituserError = null
+})
+.addCase(EdituserGet.fulfilled, (state, action) => {
+  state.edituserStatus = "succeeded"
+  state.edituserLoading = false
+  state.edituserData = action.payload
+})
+.addCase(EdituserGet.rejected, (state, action) => {
+  state.edituserStatus = "failed"
+  state.edituserLoading = false
+  state.edituserError = action.payload || action.error.message
+  state.edituserData = null
+})
+
+//GET_TERRITORY_LIST_GET
+.addCase(GetTerritorylist.pending, (state) => {
+  state.territoryStatus = "loading"
+  state.territoryLoading = true
+  state.territoryError = null
+})
+.addCase(GetTerritorylist.fulfilled, (state, action) => {
+  state.territoryStatus = "succeeded"
+  state.territoryLoading = false
+  state.territoryData = Array.isArray(action.payload) ? action.payload : []
+})
+.addCase(GetTerritorylist.rejected, (state, action) => {
+  state.territoryStatus = "failed"
+  state.territoryLoading = false
+  state.territoryError = action.payload || action.error.message
+  state.territoryData = []
+})
+
+
+//GET_AREA_LIST_GET
+.addCase(GetAreaList.pending, (state) => {
+  state.areaStatus = "loading"
+  state.areaLoading = true
+  state.areaError = null
+})
+.addCase(GetAreaList.fulfilled, (state, action) => {
+  state.areaStatus = "succeeded"
+  state.areaLoading = false
+  state.areaData = Array.isArray(action.payload) ? action.payload : []
+})
+.addCase(GetAreaList.rejected, (state, action) => {
+  state.areaStatus = "failed"
+  state.areaLoading = false
+  state.areaError = action.payload || action.error.message
+  state.areaData = []
+})
+
+//GET_LOCATION_LIST
+.addCase(GetLocationList.pending, (state) => {
+  state.locationStatus = "loading"
+  state.locationLoading = true
+  state.locationError = null
+})
+.addCase(GetLocationList.fulfilled, (state, action) => {
+  state.locationStatus = "succeeded"
+  state.locationLoading = false
+  state.locationData = Array.isArray(action.payload) ? action.payload : []
+})
+.addCase(GetLocationList.rejected, (state, action) => {
+  state.locationStatus = "failed"
+  state.locationLoading = false
+  state.locationError = action.payload || action.error.message
+  state.locationData = []
+})
+//GET_DEPT_LIST
+.addCase(GetdeptList.pending, (state) => {
+  state.deptStatus = "loading"
+  state.deptLoading = true
+  state.deptError = null
+})
+.addCase(GetdeptList.fulfilled, (state, action) => {
+  state.deptStatus = "succeeded"
+  state.deptLoading = false
+  state.deptData = Array.isArray(action.payload) ? action.payload : []
+})
+.addCase(GetdeptList.rejected, (state, action) => {
+  state.deptStatus = "failed"
+  state.deptLoading = false
+  state.deptError = action.payload || action.error.message
+  state.deptData = []
+})
+
+/*******************EMPLOYEE SCREEN GET API FUNCTIONS END***************************/
+
+
+
+
   },
 })
 
-export const { resetGetSlice, clearOrderGroupItems, clearOrderGuideGroups } = getSlice.actions
+export const {
+  resetGetSlice,
+  clearOrderGroupItems,
+  clearOrderGuideGroups,
+  clearAreaList,
+  clearLocationList,
+  clearDepartmentList,
+} = getSlice.actions
 
 
 
