@@ -66,7 +66,6 @@ import { BadgeCheckIcon, ChevronsUpDownIcon, LogOutIcon } from "lucide-react"
  
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { clearSession } from "@/lib/auth"
-// import { useEmployeeAccess } from "@/components/employees/employee-access"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,18 +84,16 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/c
     E: "Employee",
   };
 export function NavUser() {
-  // const { role } = useEmployeeAccess();
-  // console.log(role, "--find a static role");
-    //  const roleCode = localStorage.getItem("roles");
-  // const displayRole = role || roleMap[roleCode ?? ""] || "Role not assigned";
 
 
 const [displayRole, setDisplayRole] = useState("Role not assigned")
+const [name, setName] = useState('Bex SCM')
 
   const { isMobile } = useSidebar()
   const router = useRouter()
    useEffect(() => {
     const roleCode = (localStorage.getItem("roles") ?? "").trim().toUpperCase()
+    const name =  setName(localStorage.getItem("name"))
     console.log("roles from localStorage:", roleCode)
     setDisplayRole(roleMap[roleCode] || "Role not assigned")
   }, [])
@@ -104,6 +101,16 @@ const [displayRole, setDisplayRole] = useState("Role not assigned")
     clearSession()
     router.replace("/login")
   }
+
+  const initials =
+    name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'U'
  
   return (
     <SidebarMenu>
@@ -111,9 +118,9 @@ const [displayRole, setDisplayRole] = useState("Role not assigned")
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton size="lg">
-              <Avatar className="h-8 w-8 rounded-lg"><AvatarFallback className="rounded-lg bg-primary text-primary-foreground">AC</AvatarFallback></Avatar>
+              <Avatar className="h-8 w-8 rounded-lg"><AvatarFallback className="rounded-lg bg-primary text-primary-foreground">{initials}</AvatarFallback></Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">Bex SCM</span>
+                <span className="truncate font-medium">{name}</span>
                 <span className="truncate text-xs text-muted-foreground">{displayRole}</span>
               </div>
               <ChevronsUpDownIcon className="ml-auto size-4" />

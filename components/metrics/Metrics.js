@@ -38,13 +38,13 @@ export default function Metrics() {
   ]
 
   return (
-    <main className="mx-auto grid w-full max-w-[1600px] gap-4 p-2 sm:gap-5 sm:p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
+    <main className="mx-auto grid w-full min-w-0 max-w-[1600px] gap-4 p-2 sm:gap-5 sm:p-4">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <div className="min-w-0">
           <h1 className="text-base font-semibold">Purchasing summary</h1>
           <p className="mt-1 text-xs text-muted-foreground">Your purchasing activity and account balances at a glance.</p>
         </div>
-        <select id="metrics-period" aria-label="Date range" value={period} onChange={(event) => setPeriod(event.target.value)} className="h-9 w-32 shrink-0 rounded-lg border border-primary/30 bg-card pl-3 text-xs font-medium text-foreground focus-visible:outline-2 focus-visible:outline-ring sm:w-40">
+        <select id="metrics-period" aria-label="Date range" value={period} onChange={(event) => setPeriod(event.target.value)} className="block h-9 w-36 rounded-lg border border-primary/30 bg-card pl-3 text-xs font-medium text-foreground focus-visible:outline-2 focus-visible:outline-ring sm:w-40">
           {Object.entries(periods).map(([key, item]) => <option key={key} value={key}>{item.label}</option>)}
         </select>
       </div>
