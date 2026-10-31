@@ -50,6 +50,7 @@ const navKeys: Record<string, string> = {
 const routePermissions: Record<string, string> = {
   employees: "employee.view",
   users: "employee.view",
+  
 };
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
    const t = useTranslations("nav");

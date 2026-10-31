@@ -2855,6 +2855,8 @@ export function OrderGuideProductsList({
             <div className="ml-auto flex items-center gap-1.5 lg:flex-wrap lg:gap-2">
               {canEdit && (
                 <div className="hidden flex-wrap gap-2 lg:flex">
+                  {can(role, "orderGuide.groupMove") && (
+                    <>
                   {!isAllView && (
                     <>
                       <Button variant="outline" size="sm"
@@ -2871,10 +2873,14 @@ export function OrderGuideProductsList({
                       </Button>
                     </>
                   )}
+                  </>
+                )}
                   {/* <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("top")}><ArrowUpToLine />Move to Top</Button>
                 <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => reorderProducts("bottom")}><ArrowDownToLine />Move to Bottom</Button> */}
                   <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => { setDuplicate(false); setNewGroupName(null); setProductToMove(selectedProducts); }}><Folder />Change Group</Button>
+                   {can(role, "orderGuide.groupMove") && (
                   <Button variant="outline" size="sm" disabled={!selectedCount} onClick={() => { setDuplicate(true); setNewGroupName(null); setProductToMove(selectedProducts); }}><Copy />Duplicate</Button>
+                   )}
                 </div>
               )}
               {canPlaceOrder && (
@@ -2889,6 +2895,7 @@ export function OrderGuideProductsList({
 
                 ><ShoppingCart /><span className="lg:hidden">{allSelectedInCart ? "Added" : "Add to Cart"}</span><span className="hidden lg:inline">{allSelectedInCart ? "Added" : selectedCount ? `Add ${selectedCount} to Cart` : "Add to Cart"}</span></Button>
               )}
+
               {canEdit && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

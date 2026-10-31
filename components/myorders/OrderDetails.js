@@ -16,11 +16,11 @@ import {
   Phone,
   Store,
   Trash2,
-  Loader2, 
+  Loader2,
   User,
   X,
 } from "lucide-react"
-import { useState, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useDispatch } from "react-redux"
 import OrderItemRatings, { buildRatingsFormData } from "./OrderItemRatings"
 import { myOrderitemsRating } from "../../redux/slices/postSlice"
@@ -32,12 +32,15 @@ import { useCart } from "@/app/context/app-context"
 import { formatCurrency, statusStyles } from "./MyOrders"
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
 import { resolveItemImageUrl } from "@/lib/api/itemsApi"
+import { can, canAct, getManageableRoles } from "@/lib/permissions"
+
+
 export default function OrderDetails({ order, onBack, onClose, onReorderSuccess }) {
-const dispatch = useDispatch()
-const [ratingsByOrder, setRatingsByOrder] = useState({})
-   const { fetchCustomerCart, selectedCartGroupID  } = useCart()
+  const dispatch = useDispatch()
+  const [ratingsByOrder, setRatingsByOrder] = useState({})
+  const { fetchCustomerCart, selectedCartGroupID } = useCart()
   const imageurl = `https://crateapi.bexlgems.com/Images/Items`;
-const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false)
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false)
   console.log(order, "--find order in order details");
   const [reOrderModalOpen, setReOrderModalOpen] = useState(false);
   const [reOrderItems, setReOrderItems] = useState([]);
@@ -48,185 +51,190 @@ const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false)
   const t = useTranslations("myOrders")
   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
-const reorderOrderApi = async (orderNumber, items, cartGroupId) => {
-  try {
-    const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orders/reorder/${orderNumber}`;
+  const [role, setRole] = useState(null)
+  useEffect(() => {
+    setRole(localStorage.getItem("roles"))
+  }, [])
 
-    console.log("Reorder API URL:", url);
-
-    const requestBody = {
-       cartGroupID: cartGroupId,
-      items: items.map((item) => ({
-        itemNumber: String(item.itemNumber),
-        quantity: Number(item.quantity),
-      })),
-    };
-
-    console.log("Reorder Request Body:", requestBody);
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log("Reorder HTTP Status:", response.status);
-    console.log("Reorder HTTP OK:", response.ok);
-
-    const responseText = await response.text();
-
-    console.log("Reorder Raw Response:", responseText);
-
-    let result = null;
-
+  const reorderOrderApi = async (orderNumber, items, cartGroupId) => {
     try {
-      result = responseText ? JSON.parse(responseText) : null;
-    } catch (error) {
-      console.warn("Reorder response is not JSON:", responseText);
-    }
+      const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/orders/reorder/${orderNumber}`;
 
-    console.log("Reorder Parsed Response:", result);
+      console.log("Reorder API URL:", url);
 
-    if (!response.ok) {
-      throw new Error(
-        result?.Msg ||
+      const requestBody = {
+        cartGroupID: cartGroupId,
+        items: items.map((item) => ({
+          itemNumber: String(item.itemNumber),
+          quantity: Number(item.quantity),
+        })),
+      };
+
+      console.log("Reorder Request Body:", requestBody);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("Reorder HTTP Status:", response.status);
+      console.log("Reorder HTTP OK:", response.ok);
+
+      const responseText = await response.text();
+
+      console.log("Reorder Raw Response:", responseText);
+
+      let result = null;
+
+      try {
+        result = responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        console.warn("Reorder response is not JSON:", responseText);
+      }
+
+      console.log("Reorder Parsed Response:", result);
+
+      if (!response.ok) {
+        throw new Error(
+          result?.Msg ||
           result?.message ||
           result?.error ||
           `Unable to reorder. HTTP ${response.status}`,
-      );
-    }
+        );
+      }
 
-    if (!result?.success) {
-      throw new Error(
-        result?.Msg ||
+      if (!result?.success) {
+        throw new Error(
+          result?.Msg ||
           result?.message ||
           result?.error ||
           "Failed to reorder.",
-      );
+        );
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Reorder API Error:", error);
+      throw error;
+    }
+  };
+  const handleDownloadInvoice = async () => {
+    const invoiceNumber = String(order?.invoiceNumber ?? "").trim()
+
+    if (!invoiceNumber) {
+      toast.error("Invoice number is missing.")
+      return
     }
 
-    return result;
-  } catch (error) {
-    console.error("Reorder API Error:", error);
-    throw error;
-  }
-};
-const handleDownloadInvoice = async () => {
-  const invoiceNumber = String(order?.invoiceNumber ?? "").trim()
-
-  if (!invoiceNumber) {
-    toast.error("Invoice number is missing.")
-    return
-  }
-
-  try {
-    setIsDownloadingInvoice(true)
-    await dispatch(GetinvoicePDF(invoiceNumber)).unwrap()
-  } catch (error) {
-    console.error("PDF download failed:", error)
-    toast.error(
-      typeof error === "string"
-        ? error
-        : error?.Msg || error?.message || "Unable to download invoice."
-    )
-  } finally {
-    setIsDownloadingInvoice(false)
-  }
-}
-const getItemNumber = (item) =>
-  String(item.itemNumber ?? item.sku ?? item.itemCode ?? "").trim()
-
-const handleReorder = async () => {
-  console.log("handleReorder clicked", reOrderItems)
-
-  if (!order?.orderNumber) {
-    toast.error("Order number is missing.")
-    return
-  }
-
-  const requestItems = reOrderItems.map((item) => ({
-    itemNumber: getItemNumber(item),
-    quantity: Number(item.quantity) || 0,
-  }))
-
-  if (!requestItems.length) {
-    toast.error("Please select at least one item.")
-    return
-  }
-
-  // Stop before calling the API if any item number is missing
-  const invalid = requestItems.filter((i) => !i.itemNumber || i.quantity < 1)
-  if (invalid.length) {
-    console.error("Invalid reorder items:", invalid, "source items:", reOrderItems)
-    toast.error("Some items have no item number, so they can't be reordered.")
-    return
-  }
-  if (!selectedCartGroupID ) {
-    toast.error("No cart selected. Please select a cart and try again.")
-    return
-  }
-  try {
-    setIsReOrdering(true)
-    const result = await reorderOrderApi(order.orderNumber, requestItems, selectedCartGroupID )
-
-    if (result?.success) {
-      toast.success("Items added to cart successfully.")
-      setReOrderModalOpen(false)
-      setReOrderItems([])
-      onReorderSuccess?.()
-      fetchCustomerCart(localStorage.getItem("custnmbr"))
+    try {
+      setIsDownloadingInvoice(true)
+      await dispatch(GetinvoicePDF(invoiceNumber)).unwrap()
+    } catch (error) {
+      console.error("PDF download failed:", error)
+      toast.error(
+        typeof error === "string"
+          ? error
+          : error?.Msg || error?.message || "Unable to download invoice."
+      )
+    } finally {
+      setIsDownloadingInvoice(false)
     }
-  } catch (error) {
-    console.error("Reorder failed:", error)
-    toast.error(error?.message || "Unable to add the reordered items to cart.")
-  } finally {
-    setIsReOrdering(false)
   }
-}
+  const getItemNumber = (item) =>
+    String(item.itemNumber ?? item.sku ?? item.itemCode ?? "").trim()
 
-const serverRatings = useMemo(() => {
-  const map = {}
-  order.items.forEach((item) => {
-    if (!item.isRated) return
-    map[item.id] = {
-      rating: item.isPositive ? "up" : "down",
-      review: item.review || "",
-      image: item.reviewImageUrl || "",
-      locked: true,
+  const handleReorder = async () => {
+    console.log("handleReorder clicked", reOrderItems)
+
+    if (!order?.orderNumber) {
+      toast.error("Order number is missing.")
+      return
     }
-  })
-  return map
-}, [order.items])
 
-const ratings = { ...serverRatings, ...(ratingsByOrder[order.id] || {}) }
+    const requestItems = reOrderItems.map((item) => ({
+      itemNumber: getItemNumber(item),
+      quantity: Number(item.quantity) || 0,
+    }))
 
-const handleSubmitRatings = async (drafts) => {
-  const { formData, count } = buildRatingsFormData(order.items, drafts, ratings)
-  if (!count) {
-    toast.error("Please like or dislike at least one item.")
-    return false                       // keeps the dialog open
+    if (!requestItems.length) {
+      toast.error("Please select at least one item.")
+      return
+    }
+
+    // Stop before calling the API if any item number is missing
+    const invalid = requestItems.filter((i) => !i.itemNumber || i.quantity < 1)
+    if (invalid.length) {
+      console.error("Invalid reorder items:", invalid, "source items:", reOrderItems)
+      toast.error("Some items have no item number, so they can't be reordered.")
+      return
+    }
+    if (!selectedCartGroupID) {
+      toast.error("No cart selected. Please select a cart and try again.")
+      return
+    }
+    try {
+      setIsReOrdering(true)
+      const result = await reorderOrderApi(order.orderNumber, requestItems, selectedCartGroupID)
+
+      if (result?.success) {
+        toast.success("Items added to cart successfully.")
+        setReOrderModalOpen(false)
+        setReOrderItems([])
+        onReorderSuccess?.()
+        fetchCustomerCart(localStorage.getItem("custnmbr"))
+      }
+    } catch (error) {
+      console.error("Reorder failed:", error)
+      toast.error(error?.message || "Unable to add the reordered items to cart.")
+    } finally {
+      setIsReOrdering(false)
+    }
   }
-  try {
-    await dispatch(myOrderitemsRating(formData)).unwrap()
-    toast.success("Thanks for your feedback.")
 
-    const locked = {}
-    Object.entries(drafts).forEach(([id, fb]) => {
-      if (fb?.rating) locked[id] = { ...fb, locked: true }
+  const serverRatings = useMemo(() => {
+    const map = {}
+    order.items.forEach((item) => {
+      if (!item.isRated) return
+      map[item.id] = {
+        rating: item.isPositive ? "up" : "down",
+        review: item.review || "",
+        image: item.reviewImageUrl || "",
+        locked: true,
+      }
     })
-    setRatingsByOrder((cur) => ({ ...cur, [order.id]: { ...(cur[order.id] || {}), ...locked } }))
-    return true
-  } catch (error) {
-    toast.error(
-      typeof error === "string" ? error : error?.Msg || error?.message || "Unable to submit ratings."
-    )
-    return false
+    return map
+  }, [order.items])
+
+  const ratings = { ...serverRatings, ...(ratingsByOrder[order.id] || {}) }
+
+  const handleSubmitRatings = async (drafts) => {
+    const { formData, count } = buildRatingsFormData(order.items, drafts, ratings)
+    if (!count) {
+      toast.error("Please like or dislike at least one item.")
+      return false                       // keeps the dialog open
+    }
+    try {
+      await dispatch(myOrderitemsRating(formData)).unwrap()
+      toast.success("Thanks for your feedback.")
+
+      const locked = {}
+      Object.entries(drafts).forEach(([id, fb]) => {
+        if (fb?.rating) locked[id] = { ...fb, locked: true }
+      })
+      setRatingsByOrder((cur) => ({ ...cur, [order.id]: { ...(cur[order.id] || {}), ...locked } }))
+      return true
+    } catch (error) {
+      toast.error(
+        typeof error === "string" ? error : error?.Msg || error?.message || "Unable to submit ratings."
+      )
+      return false
+    }
   }
-}
 
   return (
     <section className="flex h-full min-h-0 flex-col rounded-lg border bg-card shadow-sm">
@@ -371,47 +379,47 @@ const handleSubmitRatings = async (drafts) => {
         </div>
         <OrderItemRatings key={order.id} open={ratingOrderId === order.id} onOpenChange={(open) => setRatingOrderId(open ? order.id : null)} items={order.items}
           ratings={ratings}
-  onSubmit={handleSubmitRatings}
+          onSubmit={handleSubmitRatings}
         />
 
         <div className="mt-3 divide-y rounded-lg border">
-           {order.items.map((item) => {
-    const resolvedImg = resolveItemImageUrl(item.image) || item.image
-    const image = resolvedImg || getCategoryPlaceholderImage(item.category)
+          {order.items.map((item) => {
+            const resolvedImg = resolveItemImageUrl(item.image) || item.image
+            const image = resolvedImg || getCategoryPlaceholderImage(item.category)
 
-    return (
-      <div key={item.id} className="flex gap-3 p-3">
-        <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
-          <img
-            src={image}
-            alt={item.name}
-            className="size-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src = getCategoryPlaceholderImage(item.category)
-            }}
-          />
-        </div>
+            return (
+              <div key={item.id} className="flex gap-3 p-3">
+                <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
+                  <img
+                    src={image}
+                    alt={item.name}
+                    className="size-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = getCategoryPlaceholderImage(item.category)
+                    }}
+                  />
+                </div>
 
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold">{item.name}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {t("brand")} {item.brand}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {t("packSize")} {item.packSize}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {t("itemNumber")} {item.itemNumber}
-          </p>
-        </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold">{item.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {t("brand")} {item.brand}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {t("packSize")} {item.packSize}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {t("itemNumber")} {item.itemNumber}
+                  </p>
+                </div>
 
-        <div className="max-w-20 shrink-0 text-right sm:max-w-none">
-          <p className="text-xs font-bold leading-snug">{t("units", { count: item.quantity })}</p>
-          <p className="mt-1 text-xs leading-snug">{formatCurrency(item.price)}</p>
-        </div>
-      </div>
-    )
-  })}
+                <div className="max-w-20 shrink-0 text-right sm:max-w-none">
+                  <p className="text-xs font-bold leading-snug">{t("units", { count: item.quantity })}</p>
+                  <p className="mt-1 text-xs leading-snug">{formatCurrency(item.price)}</p>
+                </div>
+              </div>
+            )
+          })}
           {/* {order.items.map((item) => (
             <div key={item.id} className="flex gap-3 p-3">
               <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
@@ -484,24 +492,24 @@ const handleSubmitRatings = async (drafts) => {
               Reorder
             </Button>
 
-          <Button
-  variant="outline"
-  className="h-11 w-full text-primary"
-  disabled={isDownloadingInvoice}
-  onClick={handleDownloadInvoice}
->
-  {isDownloadingInvoice ? (
-    <>
-      <Loader2 className="size-4 animate-spin" />
-      Downloading
-    </>
-  ) : (
-    <>
-      <Download className="size-4" />
-      {t("downloadInvoice")}
-    </>
-  )}
-</Button>
+            <Button
+              variant="outline"
+              className="h-11 w-full text-primary"
+              disabled={isDownloadingInvoice}
+              onClick={handleDownloadInvoice}
+            >
+              {isDownloadingInvoice ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Downloading
+                </>
+              ) : (
+                <>
+                  <Download className="size-4" />
+                  {t("downloadInvoice")}
+                </>
+              )}
+            </Button>
           </div>
         </div>
       )}
@@ -540,35 +548,37 @@ const handleSubmitRatings = async (drafts) => {
               <div className="mt-0 divide-y rounded-lg border">
                 {reOrderItems.map((item) => {
                   const quantity = Number(item.quantity) || 1
-                   const unitPrice = Number(item.unitPrice) || 0
-                const itemTotal = quantity * unitPrice
+                  const unitPrice = Number(item.unitPrice) || 0
+                  const itemTotal = quantity * unitPrice
                   // const price = Number(item.price) || 0
                   // const itemTotal = quantity * price
- const resolvedImg = resolveItemImageUrl(item.image) || item.image
-  const image = resolvedImg || getCategoryPlaceholderImage(item.category)
+                  const resolvedImg = resolveItemImageUrl(item.image) || item.image
+                  const image = resolvedImg || getCategoryPlaceholderImage(item.category)
                   return (
                     <div
                       key={item.id}
                       className="relative flex gap-3 p-3"
                     >
                       {/* Delete Button - Top Right */}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        className="absolute right-2 top-2"
-                        onClick={() => {
-                          setReOrderItems((currentItems) =>
-                            currentItems.filter(
-                              (currentItem) =>
-                                currentItem.id !== item.id
+                      {can(role, "orderGuide.groupMove") && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className="absolute right-2 top-2"
+                          onClick={() => {
+                            setReOrderItems((currentItems) =>
+                              currentItems.filter(
+                                (currentItem) =>
+                                  currentItem.id !== item.id
+                              )
                             )
-                          )
-                        }}
-                        aria-label="Delete product"
-                      >
-                        <Trash2 className="size-4 text-destructive" />
-                      </Button>
+                          }}
+                          aria-label="Delete product"
+                        >
+                          <Trash2 className="size-4 text-destructive" />
+                        </Button>
+                      )}
 
                       {/* Product Image */}
                       <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
@@ -580,14 +590,14 @@ const handleSubmitRatings = async (drafts) => {
                             e.currentTarget.style.display = "none"
                           }}
                         /> */}
- <img
-          src={image}
-          alt={item.name}
-          className="size-full object-cover"
-          onError={(e) => {
-            e.currentTarget.src = getCategoryPlaceholderImage(item.category)
-          }}
-        />
+                        <img
+                          src={image}
+                          alt={item.name}
+                          className="size-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = getCategoryPlaceholderImage(item.category)
+                          }}
+                        />
                       </div>
 
                       {/* Product Details */}
@@ -605,7 +615,7 @@ const handleSubmitRatings = async (drafts) => {
                         </p>
 
                         <p className="truncate text-xs text-muted-foreground">
-                           {t("itemNumber")} {item.itemNumber}
+                          {t("itemNumber")} {item.itemNumber}
                         </p>
 
                         {/* Quantity Selector */}
@@ -677,11 +687,11 @@ const handleSubmitRatings = async (drafts) => {
                 })}
               </div>
 
-              
+
             </div>
 
-                <div className="flex flex-col gap-2 border-t p-4 pb-0">
-                {/* Order Summary */}
+            <div className="flex flex-col gap-2 border-t p-4 pb-0">
+              {/* Order Summary */}
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between gap-3">
                   <span className="font-semibold">
@@ -715,23 +725,23 @@ const handleSubmitRatings = async (drafts) => {
                   </span>
                 </div>
               </div>
-            {/* Modal Footer */}
-            <div className="flex justify-end gap-2 border-t p-4">
-               <Button
-    variant="outline"
-    onClick={() => setReOrderModalOpen(false)}
-    disabled={isReOrdering}
-  >
-    Cancel
-  </Button>
+              {/* Modal Footer */}
+              <div className="flex justify-end gap-2 border-t p-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setReOrderModalOpen(false)}
+                  disabled={isReOrdering}
+                >
+                  Cancel
+                </Button>
 
-  <Button
-    onClick={handleReorder}
-    disabled={isReOrdering || reOrderItems.length === 0}
-  >
-    {isReOrdering ? "Adding..." : "Add to Cart"}
-  </Button>
-              {/* <Button
+                <Button
+                  onClick={handleReorder}
+                  disabled={isReOrdering || reOrderItems.length === 0}
+                >
+                  {isReOrdering ? "Adding..." : "Add to Cart"}
+                </Button>
+                {/* <Button
                 variant="outline"
                 onClick={() => setReOrderModalOpen(false)}
               >
@@ -745,7 +755,7 @@ const handleSubmitRatings = async (drafts) => {
               >
                 Add to Cart
               </Button> */}
-            </div>
+              </div>
             </div>
           </div>
         </div>,

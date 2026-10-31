@@ -9,7 +9,7 @@
       { "id": "my-orders", "title": "My Orders", "path": "/my-orders", "footer": true },
       { "id": "metrics", "title": "Metrics", "path": "/metrics" },
       { "id": "invoices", "title": "Invoices", "path": "/invoices" },
-      { "id": "messages", "title": "Messages", "path": "/messages", "footer": true },
+      { "id": "messages", "title": "Messagess", "path": "/messages", "footer": true },
       { "id": "employees", "title": "Employees", "path": "/employees" }
     ]
   }
