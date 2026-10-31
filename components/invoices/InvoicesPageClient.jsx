@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { can, canAct, getManageableRoles } from "@/lib/permissions"
+
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
 const rowOptions = [10, 20, 50, 100]
@@ -118,6 +120,12 @@ export default function InvoicesPageClient() {
   const start = (currentPage - 1) * pageSize
   const invoices = filteredInvoices.slice(start, start + pageSize)
 
+   const [role, setRole] = useState(null)
+    useEffect(() => {
+      setRole(localStorage.getItem("roles"))
+    }, [])
+  
+
   const handleDownloadPdf = (invoiceNumber) => {
     setDownloadingId(invoiceNumber)
     dispatch(GetinvoicePDF(invoiceNumber))
@@ -174,118 +182,121 @@ export default function InvoicesPageClient() {
         <Button type="submit">{t("searchButton")}</Button>
       </form>
 
-      <Card className="overflow-hidden py-0">
-        <CardHeader className="border-b px-4 py-4 sm:px-6">
-          <CardTitle className="text-base">{t("title")}</CardTitle>
-          <p className="text-sm text-muted-foreground">{t("description")}</p>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1040px] text-left text-sm">
-              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="px-6 py-3 font-medium">{t("columns.invoice")}</th>
-                  <th className="px-4 py-3 font-medium">{t("columns.invoiceDate")}</th>
-                  <th className="px-4 py-3 font-medium">{t("columns.dueDate")}</th>
-                  <th className="px-4 py-3 font-medium">{t("columns.items")}</th>
-                  <th className="px-4 py-3 font-medium">{t("columns.total")}</th>
-                  <th className="px-4 py-3 font-medium">{t("columns.paidAmount")}</th>
-                  <th className="px-4 py-3 font-medium">{t("columns.balance")}</th>
-                  <th className="px-4 py-3 font-medium">{t("columns.status")}</th>
-                  <th className="px-4 py-3 font-medium">{t("columns.action")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {invoices.length > 0 ? (
-                  invoices.map((invoice) => (
-                    <tr key={invoice.id} className="hover:bg-muted/30">
-                      <td className="px-6 py-4">
-                        <Link
-                          href={`/invoices/details/?id=${encodeURIComponent(invoice.invoiceNumber)}`}
-                          className="font-semibold hover:text-primary"
-                        >
-                          #{invoice.invoiceNumber}
-                        </Link>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4">{invoice.invoiceDateLabel}</td>
-                      <td className="whitespace-nowrap px-4 py-4">{invoice.dueDateLabel}</td>
-                      <td className="px-4 py-4">
-                        {t("products", { count: invoice.itemCount })}
-                        <p className="text-xs text-muted-foreground">
-                          {t("units", { count: invoice.units })}
-                        </p>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4 font-semibold">
-                        {money.format(invoice.total)}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4">
-                        {money.format(invoice.paidAmount)}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4 font-semibold">
-                        {money.format(invoice.balance)}
-                      </td>
-                      <td className="px-4 py-4">
-                        <Badge
-                          variant="secondary"
-                          className={
-                            invoice.statusTone === "orange"
-                              ? "bg-amber-500/10 text-amber-600"
-                              : "bg-sky-500/10 text-sky-600"
-                          }
-                        >
-                          {translateStatus(invoice.status)}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={downloadingId === invoice.invoiceNumber}
-                          onClick={() => handleDownloadPdf(invoice.invoiceNumber)}
-                        >
-                          {downloadingId === invoice.invoiceNumber ? (
-                         <>
-      <Loader2 className="size-4 animate-spin" />
-      Downloading
-    </>
-  ) : (
-    <>
-      <Download className="size-4" />
-      {t("invoiceButton")}
-    </>
-  )}
-</Button>
+
+      {can(role, "invoice.list") && (
+        <Card className="overflow-hidden py-0">
+          <CardHeader className="border-b px-4 py-4 sm:px-6">
+            <CardTitle className="text-base">{t("title")}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t("description")}</p>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1040px] text-left text-sm">
+                <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="px-6 py-3 font-medium">{t("columns.invoice")}</th>
+                    <th className="px-4 py-3 font-medium">{t("columns.invoiceDate")}</th>
+                    <th className="px-4 py-3 font-medium">{t("columns.dueDate")}</th>
+                    <th className="px-4 py-3 font-medium">{t("columns.items")}</th>
+                    <th className="px-4 py-3 font-medium">{t("columns.total")}</th>
+                    <th className="px-4 py-3 font-medium">{t("columns.paidAmount")}</th>
+                    <th className="px-4 py-3 font-medium">{t("columns.balance")}</th>
+                    <th className="px-4 py-3 font-medium">{t("columns.status")}</th>
+                    <th className="px-4 py-3 font-medium">{t("columns.action")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {invoices.length > 0 ? (
+                    invoices.map((invoice) => (
+                      <tr key={invoice.id} className="hover:bg-muted/30">
+                        <td className="px-6 py-4">
+                          <Link
+                            href={`/invoices/details/?id=${encodeURIComponent(invoice.invoiceNumber)}`}
+                            className="font-semibold hover:text-primary"
+                          >
+                            #{invoice.invoiceNumber}
+                          </Link>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4">{invoice.invoiceDateLabel}</td>
+                        <td className="whitespace-nowrap px-4 py-4">{invoice.dueDateLabel}</td>
+                        <td className="px-4 py-4">
+                          {t("products", { count: invoice.itemCount })}
+                          <p className="text-xs text-muted-foreground">
+                            {t("units", { count: invoice.units })}
+                          </p>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 font-semibold">
+                          {money.format(invoice.total)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4">
+                          {money.format(invoice.paidAmount)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 font-semibold">
+                          {money.format(invoice.balance)}
+                        </td>
+                        <td className="px-4 py-4">
+                          <Badge
+                            variant="secondary"
+                            className={
+                              invoice.statusTone === "orange"
+                                ? "bg-amber-500/10 text-amber-600"
+                                : "bg-sky-500/10 text-sky-600"
+                            }
+                          >
+                            {translateStatus(invoice.status)}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={downloadingId === invoice.invoiceNumber}
+                            onClick={() => handleDownloadPdf(invoice.invoiceNumber)}
+                          >
+                            {downloadingId === invoice.invoiceNumber ? (
+                              <>
+                                <Loader2 className="size-4 animate-spin" />
+                                Downloading
+                              </>
+                            ) : (
+                              <>
+                                <Download className="size-4" />
+                                {t("invoiceButton")}
+                              </>
+                            )}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={9} className="px-6 py-12 text-center text-muted-foreground">
+                        {emptyMessage}
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={9} className="px-6 py-12 text-center text-muted-foreground">
-                      {emptyMessage}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-          <div className="@container flex flex-wrap items-center justify-between gap-2 border-t px-4 py-3 text-xs text-muted-foreground">
-            <span>
-              {t("showing", {
-                from: filteredInvoices.length === 0 ? 0 : start + 1,
-                to: Math.min(start + pageSize, filteredInvoices.length),
-                total: filteredInvoices.length,
-              })}
-            </span>
-            <InvoicePagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              query={query}
-            />
-          </div>
-        </CardContent>
-      </Card>
+            <div className="@container flex flex-wrap items-center justify-between gap-2 border-t px-4 py-3 text-xs text-muted-foreground">
+              <span>
+                {t("showing", {
+                  from: filteredInvoices.length === 0 ? 0 : start + 1,
+                  to: Math.min(start + pageSize, filteredInvoices.length),
+                  total: filteredInvoices.length,
+                })}
+              </span>
+              <InvoicePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                query={query}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </main>
   )
 }

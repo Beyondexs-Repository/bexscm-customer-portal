@@ -827,6 +827,123 @@ export const myOrderitemsRating = createAsyncThunk(
   }
 )
 
+/*******************EMPLOYEE SCREEN POST API FUNCTIONS START***************************/
+
+// ── POST / CREATE USERS ─────────────────────────────────────────
+export const Postusers = createAsyncThunk(
+  "userslist/post",
+  async ({ data }, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/users`;
+
+      const response = await axios.post(URL, data, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+
+      if (response.data?.success === false) {
+        return rejectWithValue(
+          response.data?.Msg ||
+            response.data?.message ||
+            "Failed to create user."
+        );
+      }
+
+      return response.data;
+    } catch (error) {
+      const d = error.response?.data;
+
+      return rejectWithValue(
+        d?.Msg ||
+          d?.message ||
+          (typeof d === "string" ? d : null) ||
+          error.message ||
+          "Failed to create user."
+      );
+    }
+  }
+);
+
+// ── PUT / UPDATE USERS ──────────────────────────────────────────
+export const Updateusers = createAsyncThunk(
+  "userslist/update",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/users/${id}`;
+
+      const response = await axios.put(URL, data, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+
+      if (response.data?.success === false) {
+        return rejectWithValue(
+          response.data?.Msg ||
+            response.data?.message ||
+            "Failed to update user."
+        );
+      }
+
+      return response.data;
+    } catch (error) {
+      const d = error.response?.data;
+
+      return rejectWithValue(
+        d?.Msg ||
+          d?.message ||
+          (typeof d === "string" ? d : null) ||
+          error.message ||
+          "Failed to update user."
+      );
+    }
+  }
+);
+
+
+// ── DELETE / USERS ──────────────────────────────────────────────
+
+export const Deleteusers = createAsyncThunk(
+  "userslist/delete",
+  async (id, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/users/${id}`;
+
+      const response = await axios.delete(URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+
+      if (response.data?.success === false) {
+        return rejectWithValue(
+          response.data?.Msg ||
+            response.data?.message ||
+            "Failed to delete user."
+        );
+      }
+
+      return { id, ...response.data };
+    } catch (error) {
+      const d = error.response?.data;
+
+      return rejectWithValue(
+        d?.Msg ||
+          d?.message ||
+          d?.error ||
+          (typeof d === "string" ? d : null) ||
+          error.message ||
+          "Failed to delete user."
+      );
+    }
+  }
+);
+/*******************EMPLOYEE SCREEN POST API FUNCTIONS END***************************/
+
 
 
 // ============================================================

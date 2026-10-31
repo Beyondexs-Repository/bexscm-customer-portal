@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 
 export function getPageNumbers(currentPage, totalPages, delta = 1) {
   if (totalPages <= 1) return [1]
@@ -165,6 +166,83 @@ export default function PaginationCustom({
             </DropdownMenuContent>
           </DropdownMenu>
           <span>{perPageLabel}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const PAGE_SIZES = [10, 20, 50, 100]
+
+export function PaginationCustomUsers({
+  currentPage,
+  totalPages,
+  pageSize,
+  totalItems,
+  onPageChange,
+  onPageSizeChange,
+  itemLabel = "items",
+  className,
+}) {
+  const from = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1
+  const to = Math.min(currentPage * pageSize, totalItems)
+  const sizes = PAGE_SIZES.includes(pageSize) ? PAGE_SIZES : [...PAGE_SIZES, pageSize].sort((a, b) => a - b)
+
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground",
+        className,
+      )}
+    >
+      <p aria-live="polite">
+        Showing {from}–{to} of {totalItems} {itemLabel}
+      </p>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="flex items-center gap-2">
+          <span>Rows per page</span>
+          <span className="relative">
+            <select
+              value={pageSize}
+              onChange={(event) => onPageSizeChange(Number(event.target.value))}
+              className="h-9 appearance-none rounded-md border bg-background pl-3 pr-8 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {sizes.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2" />
+          </span>
+        </label>
+
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label="Previous page"
+            disabled={currentPage <= 1}
+            onClick={() => onPageChange(currentPage - 1)}
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label="Next page"
+            disabled={currentPage >= totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+          >
+            <ChevronRight className="size-4" />
+          </Button>
         </div>
       </div>
     </div>
