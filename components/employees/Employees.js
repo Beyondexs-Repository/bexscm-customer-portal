@@ -3442,6 +3442,7 @@ import {
 } from "@/lib/permissions";
 
 import { PaginationCustomUsers } from "@/components/ui/pagination-custom";
+import { AssignmentAutocomplete } from "@/lib/AssignmentAutocomplete";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -3461,7 +3462,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuCheckboxItem,
   DropdownMenuGroup,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
@@ -3518,6 +3518,17 @@ const payloadKeyLabel = {
   locationIds: "store",
   departmentIds: "department",
 };
+
+// Which assignment field is MULTI-select for each role being created / edited.
+// Every other field is single-select. Store is always single-select (null for S).
+const multiFieldByRole = {
+  T: "territory",
+  A: "area",
+  S: null,
+  D: "department",
+  E: "department",
+};
+const isMultiField = (roleCode, key) => multiFieldByRole[roleCode] === key;
 
 // TODO: replace with the logged-in user's id
 const CREATED_BY = 18;
@@ -3671,85 +3682,6 @@ function AssignmentList({ value, label, icon: Icon }) {
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-// sheet: multi-select dropdown for territory / area / store / department
-function AssignmentSelect({
-  fieldKey,
-  title,
-  options,
-  selected,
-  loading,
-  parentTitle, // set when the parent field is still empty (disables this dropdown)
-  onChange,
-}) {
-  const disabled = Boolean(parentTitle);
-
-  return (
-    <div className="min-w-0 space-y-1.5 text-sm">
-      <span id={`user-${fieldKey}-label`}>{title}</span>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={disabled}
-            aria-labelledby={`user-${fieldKey}-label user-${fieldKey}-value`}
-            className="h-9 w-full justify-between gap-2 px-2 text-xs font-normal"
-          >
-            <span
-              id={`user-${fieldKey}-value`}
-              className="min-w-0 truncate"
-              title={selected.join(", ")}
-            >
-              {selected.length
-                ? selected.join(", ")
-                : loading
-                  ? `Loading ${title.toLowerCase()}...`
-                  : disabled
-                    ? `Select ${parentTitle.toLowerCase()} first`
-                    : `Select ${title.toLowerCase()}`}
-            </span>
-            <span className="flex shrink-0 items-center gap-2">
-              {selected.length > 1 && (
-                <span className="rounded bg-primary/10 px-1.5 text-primary">
-                  {selected.length}
-                </span>
-              )}
-              <ChevronDown className="size-4" />
-            </span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)]"
-        >
-          {options.length === 0 && (
-            <DropdownMenuItem disabled className="text-xs">
-              {loading ? "Loading..." : "No options available"}
-            </DropdownMenuItem>
-          )}
-          {options.map((value) => (
-            <DropdownMenuCheckboxItem
-              key={value}
-              checked={selected.includes(value)}
-              onSelect={(event) => event.preventDefault()}
-              onCheckedChange={(checked) =>
-                onChange(
-                  checked
-                    ? [...new Set([...selected, value])]
-                    : selected.filter((item) => item !== value),
-                )
-              }
-              className="text-xs"
-            >
-              {value}
-            </DropdownMenuCheckboxItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
     </div>
   );
 }
@@ -4128,7 +4060,8 @@ export default function Employees() {
       const idSet = new Set(ids.map(String));
       const found = (list ?? []).filter((item) => idSet.has(String(getId(item))));
       if (!found.length) break; // parent not applied / list not loaded yet
-      patch[field] = uniq(found.map(getLabel));
+      const labels = uniq(found.map(getLabel));
+      patch[field] = isMultiField(editing.roles, field) ? labels : labels.slice(0, 1);
       delete remaining[idKey];
     }
 
@@ -4143,6 +4076,7 @@ export default function Employees() {
   }, [
     pendingAssign,
     editing?.hydrated,
+    editing?.roles,
     territoryData,
     territoryLoading,
     areaData,
@@ -5013,12 +4947,22 @@ export default function Employees() {
                     value={editing.role}
                     onChange={(event) => {
                       setSaveError("");
-                      setEditing((current) => ({
-                        ...current,
-                        role: event.target.value,
-                        roles: roleCodeByName[event.target.value],
-                        reportsTo: "",
-                      }));
+                      const nextRole = event.target.value;
+                      setEditing((current) => {
+                        const next = {
+                          ...current,
+                          role: nextRole,
+                          roles: roleCodeByName[nextRole],
+                          reportsTo: "",
+                        };
+                        // fields that are single-select for the new role keep only the first value
+                        for (const f of ["territory", "area", "store", "department"]) {
+                          if (!isMultiField(roleCodeByName[nextRole], f)) {
+                            next[f] = assignmentValues(current[f]).slice(0, 1);
+                          }
+                        }
+                        return next;
+                      });
                     }}
                     className={fieldClass}
                   >
@@ -5043,8 +4987,9 @@ export default function Employees() {
                   const parent = sheetAssignmentFields[index - 1];
                   const parentEmpty = parent && !assignmentValues(editing[parent[0]]).length;
                   return (
-                    <AssignmentSelect
+                    <AssignmentAutocomplete
                       key={key}
+                      multiple={isMultiField(sheetRoleCode, key)}
                       fieldKey={key}
                       title={title}
                       options={optionLists[key] ?? []}
