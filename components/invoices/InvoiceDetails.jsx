@@ -1,18 +1,19 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
 import { ArrowLeft, FileDown, Share2, Loader2 } from "lucide-react"
 
-import { GetInvoicedetails,  GetinvoicePDF} from "../../redux/slices/getSlice"
+import { GetInvoicedetails, GetinvoicePDF } from "../../redux/slices/getSlice"
 import InvoicePagination from "@/components/invoices/InvoicePagination"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
 import { resolveItemImageUrl } from "@/lib/api/itemsApi"
+import { can, canAct, getManageableRoles } from "@/lib/permissions"
 
 
 const money = new Intl.NumberFormat("en-US", {
@@ -27,10 +28,10 @@ const date = (value) => {
   return Number.isNaN(d.getTime())
     ? "-"
     : new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }).format(d)
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(d)
 }
 
 // API returns image as "" or just a filename like "500002.png".
@@ -61,6 +62,11 @@ export default function InvoiceDetails({ invoiceId }) {
   const requestedPageSize = Number.parseInt(searchParams.get("rows") ?? "", 10) || 5
   const pageSize = rowOptions.includes(requestedPageSize) ? requestedPageSize : 5
 
+    const [role, setRole] = useState(null)
+      useEffect(() => {
+        setRole(localStorage.getItem("roles"))
+      }, [])
+
   useEffect(() => {
     if (invoiceId) dispatch(GetInvoicedetails(invoiceId))
   }, [invoiceId, dispatch])
@@ -82,30 +88,30 @@ export default function InvoiceDetails({ invoiceId }) {
     </Button>
   )
 
- if (!invoice) {
-  const message = loading
-    ? "Loading invoice..."
-    : typeof error === "string"
-      ? error
-      : error?.message || "Invoice not found."
+  if (!invoice) {
+    const message = loading
+      ? "Loading invoice..."
+      : typeof error === "string"
+        ? error
+        : error?.message || "Invoice not found."
 
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground"
-    >
-      {loading ? (
-        <>
-          <Loader2 className="size-6 animate-spin text-primary" />
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="size-6 animate-spin text-primary" />
+            <p className="text-xs font-medium">{message}</p>
+          </>
+        ) : (
           <p className="text-xs font-medium">{message}</p>
-        </>
-      ) : (
-        <p className="text-xs font-medium">{message}</p>
-      )}
-    </div>
-  )
-}
+        )}
+      </div>
+    )
+  }
 
   const total = Number(invoice.total) || 0
   const balance = Number(invoice.balance) || 0
@@ -118,10 +124,10 @@ export default function InvoiceDetails({ invoiceId }) {
   const products = lines.slice(start, start + pageSize)
 
   const handleDownloadPdf = () => {
-  dispatch(GetinvoicePDF(invoiceId))
-    .unwrap()
-    .catch((err) => console.error("PDF download failed:", err))
-}
+    dispatch(GetinvoicePDF(invoiceId))
+      .unwrap()
+      .catch((err) => console.error("PDF download failed:", err))
+  }
 
 
   return (
@@ -143,19 +149,21 @@ export default function InvoiceDetails({ invoiceId }) {
 
         <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:min-w-80">
           <Button variant="outline" size="sm" className="w-full"
-          onClick={handleDownloadPdf}
-          disabled={pdfLoading}>
+            onClick={handleDownloadPdf}
+            disabled={pdfLoading}>
             {pdfLoading ? (
-    <Loader2 className="size-4 animate-spin" />
-  ) : (
-    <FileDown className="size-4" />
-  )}
-  {pdfLoading ? "Downloading..." : "Download"}
-</Button>
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <FileDown className="size-4" />
+            )}
+            {pdfLoading ? "Downloading..." : "Download"}
+          </Button> 
+          {can(role, "invoice.share") && (
           <Button size="sm" className="w-full">
             <Share2 className="size-4" />
             Share
           </Button>
+          )}
         </div>
       </div>
 
