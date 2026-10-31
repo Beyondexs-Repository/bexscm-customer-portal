@@ -32,6 +32,7 @@ import { RxDashboard } from "react-icons/rx";
 import { LuNotepadText } from "react-icons/lu";
 import routes from "@/data/routes.json";
 import { LocationSwitcher } from "./location-switcher";
+import { can } from "@/lib/permissions";
 
 
 const navKeys: Record<string, string> = {
@@ -46,9 +47,19 @@ const navKeys: Record<string, string> = {
   users: "users",
 };
 
+const routePermissions: Record<string, string> = {
+  employees: "employee.view",
+  users: "employee.view",
+};
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
    const t = useTranslations("nav");
   const routeGroup = routes.customer
+    const [role, setRole] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    const code = (localStorage.getItem("roles") ?? "").trim().toUpperCase();
+    setRole(code || null);
+  }, []);
+
   const pageIcons: Record<string, React.ReactNode> = {
     overview: <RxDashboard className="text-blue-600 dark:text-blue-400" />,
     "order-guide": <Star className="text-yellow-600 dark:text-yellow-400" />,
@@ -63,14 +74,24 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
     profile: <UserRoundIcon className="text-cyan-600 dark:text-cyan-400" />,
     promotions: <MegaphoneIcon className="text-rose-600 dark:text-rose-400" />,
   }
-  const navMain = routeGroup.routes.map((page) => ({
-    // title: page.title,
-     title: navKeys[page.id] ? t(navKeys[page.id]) : page.title,
-    url: page.path,
-    icon: pageIcons[page.id] ?? <CircleIcon className="text-slate-600 dark:text-slate-400" />,
-  }))
+  // const navMain = routeGroup.routes.map((page) => ({
+ 
+  //    title: navKeys[page.id] ? t(navKeys[page.id]) : page.title,
+  //   url: page.path,
+  //   icon: pageIcons[page.id] ?? <CircleIcon className="text-slate-600 dark:text-slate-400" />,
+  // }))
 
-
+  const navMain = routeGroup.routes
+    // hide menus the logged-in role has no permission for
+    .filter((page) => {
+      const permissionKey = routePermissions[page.id];
+      return !permissionKey || can(role, permissionKey);
+    })
+    .map((page) => ({
+      title: navKeys[page.id] ? t(navKeys[page.id]) : page.title,
+      url: page.path,
+      icon: pageIcons[page.id] ?? <CircleIcon className="text-slate-600 dark:text-slate-400" />,
+    }));
 
   return (
     <Sidebar collapsible="icon" {...props}>
