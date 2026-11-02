@@ -11,7 +11,6 @@ import {
   UploadCloudIcon,
   ShoppingCartIcon,
 } from "lucide-react"
-import { toast } from "sonner"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
@@ -34,8 +33,7 @@ interface FileItem {
 }
 
 interface UploadModalCart {
-  importDocumentToCart: (params: { file: File; custnmbr?: string }) => Promise<unknown>
-  fetchCustomerCart: (custnmbr?: string) => Promise<unknown>
+  importDocumentToCart: (file: File) => Promise<{ success: boolean }>
 }
 
 export function GlobalUploadModal({
@@ -45,7 +43,7 @@ export function GlobalUploadModal({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const { importDocumentToCart , fetchCustomerCart } = (useCart() as unknown) as UploadModalCart
+  const { importDocumentToCart } = useCart() as unknown as UploadModalCart
   const [dragActive, setDragActive] = React.useState(false)
   const [files, setFiles] = React.useState<FileItem[]>([])
   const [isUploading, setIsUploading] = React.useState(false)
@@ -107,7 +105,6 @@ const t = useTranslations("uploadModal")
   const removeFile = (id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id))
   }
-            const custnmbr = localStorage.getItem("custnmbr");
 const startUpload = async () => {
   if (isUploading) return
 
