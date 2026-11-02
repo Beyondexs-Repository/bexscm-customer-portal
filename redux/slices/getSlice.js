@@ -806,7 +806,7 @@ export const GetAreaList = createAsyncThunk(
       const responses = await Promise.all(
         parentIds.map((id) =>
           axios.get(
-            `${process.env.NEXT_PUBLIC_NRL_API_URL}/area?territoryId=${id}`,
+            `${process.env.NEXT_PUBLIC_NRL_API_URL}/area?territoryIds=${encodeURIComponent(id)}`,
             { headers },
           ),
         ),
@@ -836,8 +836,12 @@ export const GetAreaList = createAsyncThunk(
 
 export const GetLocationList = createAsyncThunk(
   "Location/Location_list_GET",
-  async (areaIds, { rejectWithValue }) => {
-    if (!areaIds?.length) return [];
+  async (selection, { rejectWithValue }) => {
+    const areaIds = Array.isArray(selection) ? selection : selection?.areaIds ?? [];
+    const territoryIds = Array.isArray(selection) ? [] : selection?.territoryIds ?? [];
+    const parentKey = areaIds.length ? "areaIds" : "territoryIds";
+    const parentIds = [...new Set(areaIds.length ? areaIds : territoryIds)];
+    if (!parentIds.length) return [];
 
     try {
       const headers = {
@@ -845,12 +849,11 @@ export const GetLocationList = createAsyncThunk(
         Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
       };
 
-      // one request per area ID
-      const parentIds = [...new Set(areaIds)];
+      // Support both the Area cascade and direct Territory selection.
       const responses = await Promise.all(
         parentIds.map((id) =>
           axios.get(
-            `${process.env.NEXT_PUBLIC_NRL_API_URL}/location?areaId=${id}`,
+            `${process.env.NEXT_PUBLIC_NRL_API_URL}/location?${parentKey}=${encodeURIComponent(id)}`,
             { headers },
           ),
         ),
@@ -863,7 +866,9 @@ export const GetLocationList = createAsyncThunk(
         const records = Array.isArray(data) ? data : data?.data ?? [];
         return records.map((location) => ({
           ...location,
-          areaID: location.areaID ?? location.areaId ?? parentIds[index],
+          ...(parentKey === "areaIds"
+            ? { areaID: location.areaID ?? location.areaId ?? parentIds[index] }
+            : { territoryID: location.territoryID ?? location.territoryId ?? parentIds[index] }),
         }));
       });
     } catch (error) {
