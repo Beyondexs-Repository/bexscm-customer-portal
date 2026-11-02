@@ -280,7 +280,7 @@ export function OrderGuide() {
       {/* Loader */}
       {isLoading && (
         <>
-        <div className="flex min-h-[calc(100svh-13rem)] items-center justify-center">
+        <div className="flex h-full items-center justify-center">
             <div
             role="status"
             aria-live="polite"

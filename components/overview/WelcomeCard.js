@@ -113,7 +113,7 @@ const dispatch = useDispatch()
     if (slides.length < 2) return
     const timeout = window.setTimeout(() => {
       setActiveSlide((current) => (current + 1) % slides.length)
-    }, 3000)
+    }, 5000)
     return () => window.clearTimeout(timeout)
   }, [activeSlide, slides.length])
 
@@ -150,7 +150,7 @@ const dispatch = useDispatch()
 
   return (
     <section
-      className="group relative min-h-[16rem] touch-pan-y overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[15rem]"
+      className="group relative min-h-[18rem] touch-pan-y overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[20rem]"
       aria-roledescription="carousel"
       aria-label="Featured promotions"
       onTouchStart={handleTouchStart}
@@ -191,21 +191,21 @@ const dispatch = useDispatch()
 
     {slide.hasContent && (
       <>
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/5 dark:from-slate-950 dark:via-slate-950/90 dark:to-slate-950/10" />
+        <div className="absolute inset-y-0 left-0 w-[40%] bg-gradient-to-r from-white via-white/95 to-transparent dark:from-slate-950 dark:via-slate-950/90 dark:to-transparent" />
 
-        <div className="relative z-10 flex min-h-[16rem] max-w-[76%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[15rem] sm:max-w-[52%] sm:p-8">
+        <div className="relative z-10 flex min-h-[18rem] w-[40%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[20rem] sm:p-8">
           {slide.title && (
-            <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-slate-950 sm:text-3xl dark:text-white">
+            <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl dark:text-white">
               {slide.title}
             </h1>
           )}
           {slide.description && (
-            <p className="mt-2 max-w-md text-xs leading-relaxed text-slate-600 sm:text-sm dark:text-slate-300">
+            <p className="mt-1 text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-300">
               {slide.description}
             </p>
           )}
           {slide.action && (
-            <Button asChild size="sm" className="mt-3 w-fit">
+            <Button asChild size="sm" className="mt-6 min-h-9 w-fit py-2">
               <Link href={slide.href}>
                 {slide.action}
                 <ArrowRight className="size-4" />
