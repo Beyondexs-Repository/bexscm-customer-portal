@@ -3515,6 +3515,14 @@ const payloadKeysByRole = {
   E: ["territoryIds", "areaIds", "locationIds", "departmentIds"],
 };
 
+const optionalAreaRoleCodes = ["S", "D", "E"];
+
+function requiredAssignmentKeys(roleCode) {
+  return (payloadKeysByRole[roleCode] ?? []).filter(
+    (key) => key !== "areaIds" || !optionalAreaRoleCodes.includes(roleCode),
+  );
+}
+
 // label used in toast messages
 const roleLabelByCode = {
   O: "Owner",
@@ -3617,8 +3625,6 @@ function normalizeUser(u) {
 const areaLabel = (a) => [a.city, a.state].filter(Boolean).join(", ") || a.areaName || a.name || "";
 const territoryId = (t) => t.territoryID ?? t.territoryId;
 const areaId = (a) => a.areaID ?? a.areaId;
-const areaTerritoryId = (a) => a.territoryID ?? a.territoryId;
-const hasParentId = (ids, id) => id != null && [...ids].some((parentId) => String(parentId) === String(id));
 const locationLabel = (l) => l.locationName ?? l.storeName ?? l.locationCode ?? l.name ?? "";
 const deptLabel = (d) => d.departmentName ?? d.deptName ?? d.departmentCode ?? d.name ?? "";
 const locationId = (l) => l.locationID ?? l.locationId;
@@ -3654,6 +3660,7 @@ const initials = (name) =>
 function AssignmentSelect({
   fieldKey,
   title,
+  optional = false,
   options,
   selected,
   loading,
@@ -3667,7 +3674,10 @@ function AssignmentSelect({
 
   return (
     <div className="min-w-0 space-y-1.5 text-sm">
-      <label htmlFor={`user-${fieldKey}`}>{title}</label>
+      <label htmlFor={`user-${fieldKey}`}>
+        {title}
+        {optional && <span className="text-muted-foreground"> (optional)</span>}
+      </label>
       <Combobox
         multiple
         // hide stale options while the new list is loading
@@ -3688,15 +3698,13 @@ function AssignmentSelect({
             </ComboboxValue>
             <ComboboxChipsInput
               id={`user-${fieldKey}`}
-              aria-describedby={error || disabled ? descriptionId : undefined}
+              aria-describedby={error ? descriptionId : undefined}
               aria-invalid={Boolean(error)}
               aria-busy={loading}
               disabled={disabled}
-              placeholder={disabled
-                ? `Select ${parentTitle.toLowerCase()} first`
-                : loading
-                  ? `Loading ${title.toLowerCase()}...`
-                  : `Search ${title.toLowerCase()}...`}
+              placeholder={loading
+                ? `Loading ${title.toLowerCase()}...`
+                : `Search ${title.toLowerCase()}...`}
             />
           </ComboboxChips>
           <div className="absolute right-1 top-1.5 flex items-center">
@@ -3722,9 +3730,9 @@ function AssignmentSelect({
           </ComboboxList>
         </ComboboxContent>
       </Combobox>
-      {(error || disabled) && (
-        <p id={descriptionId} className={`text-[10px] ${error ? "text-destructive" : "text-muted-foreground"}`} aria-live="polite">
-          {error || `Select ${parentTitle.toLowerCase()} first`}
+      {error && (
+        <p id={descriptionId} className="text-[10px] text-destructive" aria-live="polite">
+          {error}
         </p>
       )}
     </div>
@@ -3986,7 +3994,7 @@ export default function Employees() {
     department: useSelector((state) => state.getSlice.deptError),
   };
 
-  // ── 5.4 Label -> ID resolution (each level limited to its selected parent) ──
+  // Resolve selections against the lists used by the assignment pickers.
   function resolveAssignmentIds(state) {
     const territoryNames = assignmentValues(state.territory);
     const territoryIds = uniq(
@@ -3998,9 +4006,7 @@ export default function Employees() {
     const areaLabels = assignmentValues(state.area);
     const areaIds = uniq(
       (areaData ?? [])
-        .filter(
-          (a) => areaLabels.includes(areaLabel(a)) && hasParentId(territoryIds, areaTerritoryId(a)),
-        )
+        .filter((a) => areaLabels.includes(areaLabel(a)))
         .map(areaId),
     );
 
@@ -4026,19 +4032,22 @@ export default function Employees() {
   }
 
   // keep only selections whose parent is still selected: territory > area > store > department
-  function pruneAssignments(state) {
+  function pruneAssignments(state, changedField) {
     const territoryIds = new Set(
       (territoryData ?? [])
         .filter((t) => assignmentValues(state.territory).includes(t.territoryName))
         .map(territoryId),
     );
-    const areaValues = (territoryIds.size ? assignmentValues(state.area) : []).filter((label) => {
-      const matches = (areaData ?? []).filter((a) => areaLabel(a) === label);
-      return !matches.length || matches.some((a) => hasParentId(territoryIds, areaTerritoryId(a)));
-    });
+    // Keep clicked options even if the API's territory metadata differs.
+    // A territory change explicitly resets its dependent assignments instead.
+    const areaValues = territoryIds.size && changedField !== "territory"
+      ? assignmentValues(state.area)
+      : [];
 
-    // store / department: only clear them when their parent level is empty
-    const storeValues = areaValues.length ? assignmentValues(state.store) : [];
+    const areaOptional = optionalAreaRoleCodes.includes(roleCodeByName[state.role]);
+    const hasStoreParent = areaValues.length || (areaOptional && territoryIds.size);
+    const resetStore = changedField === "territory" || (areaOptional && changedField === "area");
+    const storeValues = hasStoreParent && !resetStore ? assignmentValues(state.store) : [];
     const departmentValues = storeValues.length ? assignmentValues(state.department) : [];
 
     return { ...state, area: areaValues, store: storeValues, department: departmentValues };
@@ -4071,8 +4080,12 @@ export default function Employees() {
   };
   const scopeIds = resolveAssignmentIds(scope);
   const territoryIdsKey = scopeIds.territoryIds.join(",");
-  const areaIdsKey = scopeIds.areaIds.join(",");
   const locationIdsKey = scopeIds.locationIds.join(",");
+  const storesFromTerritory = Boolean(
+    editing && optionalAreaRoleCodes.includes(roleCodeByName[editing.role]) && !scopeIds.areaIds.length,
+  );
+  const storeParentIds = storesFromTerritory ? scopeIds.territoryIds : scopeIds.areaIds;
+  const storeRequestKey = `${storesFromTerritory ? "territory" : "area"}:${storeParentIds.join(",")}`;
 
   // territory -> areas (one request per territory ID)
   useEffect(() => {
@@ -4092,23 +4105,24 @@ export default function Employees() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, territoryIdsKey]);
 
-  // areas -> stores (one request per area ID, only areas of the selected territories)
+  // Optional Area: load stores directly from Territory until an Area is selected.
   useEffect(() => {
-    if (!scopeIds.areaIds.length) {
+    if (!storeParentIds.length) {
       dispatch(clearLocationList());
       setFetch("store", false);
       return;
     }
     let cancelled = false;
     setFetch("store", true);
-    Promise.resolve(dispatch(GetLocationList(scopeIds.areaIds))).finally(() => {
+    const request = storesFromTerritory ? { territoryIds: storeParentIds } : storeParentIds;
+    Promise.resolve(dispatch(GetLocationList(request))).finally(() => {
       if (!cancelled) setFetch("store", false);
     });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, areaIdsKey]);
+  }, [dispatch, storeRequestKey]);
 
   // stores -> departments (one request per store ID)
   useEffect(() => {
@@ -4231,6 +4245,7 @@ export default function Employees() {
 
   // Assignment levels: Owner 0, Territory 1, Area 2, Store 3, Dept/Employee 4.
   const sheetRoleCode = roleCodeByName[editing?.role] ?? "O";
+  const sheetAreaOptional = optionalAreaRoleCodes.includes(sheetRoleCode);
   const sheetAssignmentFields = assignmentFields.slice(
     0,
     (payloadKeysByRole[sheetRoleCode] ?? []).length,
@@ -4539,7 +4554,7 @@ export default function Employees() {
 
     // build the role-specific payload and validate required assignments
     const payload = buildUserPayload({ form, state: editing, roleCode, isEdit });
-    const missing = (payloadKeysByRole[roleCode] ?? []).find((key) => !payload[key]?.length);
+    const missing = requiredAssignmentKeys(roleCode).find((key) => !payload[key]?.length);
     if (missing) {
       setSaveError(`Select at least one ${payloadKeyLabel[missing]}.`);
       return;
@@ -5112,13 +5127,16 @@ export default function Employees() {
 
                 {/* territory > area > store > department */}
                 {sheetAssignmentFields.map(([key, title], index) => {
-                  const parent = sheetAssignmentFields[index - 1];
+                  const parent = key === "store" && sheetAreaOptional
+                    ? assignmentFields[0]
+                    : sheetAssignmentFields[index - 1];
                   const parentEmpty = parent && !assignmentValues(editing[parent[0]]).length;
                   return (
                     <AssignmentSelect
                       key={key}
                       fieldKey={key}
                       title={title}
+                      optional={key === "area" && sheetAreaOptional}
                       options={optionLists[key] ?? []}
                       error={errorByKey[key]}
                       selected={assignmentValues(editing[key])}
@@ -5126,7 +5144,7 @@ export default function Employees() {
                       parentTitle={parentEmpty ? parent[1] : null}
                       onChange={(next) =>
                         setEditing((current) =>
-                          current ? pruneAssignments({ ...current, [key]: next }) : current,
+                          current ? pruneAssignments({ ...current, [key]: next }, key) : current,
                         )
                       }
                     />

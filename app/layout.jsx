@@ -44,7 +44,7 @@ export default function RootLayout({children}) {
                 disableTransitionOnChange
               >
                 <PortalLayout>{children}</PortalLayout>
-                <ChatbotWidget />
+                {/* <ChatbotWidget /> */}
                 <Toaster richColors position="top-center" />
               </ThemeProvider>
             </AppProvider>
