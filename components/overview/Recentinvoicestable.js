@@ -9,6 +9,7 @@ import { GetCustomerInvoiceItems, GetinvoicePDF } from "../../redux/slices/getSl
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { can, canAct, getManageableRoles } from "@/lib/permissions"
 
 const RECENT_LIMIT = 5
 
@@ -37,14 +38,14 @@ const formatDate = (value) => {
   return Number.isNaN(d.getTime())
     ? "-"
     : new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }).format(d)
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(d)
 }
 
 export default function RecentInvoicesTable() {
-    const t = useTranslations("recentInvoices")
+  const t = useTranslations("recentInvoices")
   const locale = useLocale()
   const dispatch = useDispatch()
 
@@ -101,9 +102,9 @@ export default function RecentInvoicesTable() {
         : error?.message || t("error")
       : t("empty")
 
-      
-       const [downloadingId, setDownloadingId] = useState(null)
- 
+
+  const [downloadingId, setDownloadingId] = useState(null)
+
   const handleDownloadPdf = (invoiceNumber) => {
     setDownloadingId(invoiceNumber)
     dispatch(GetinvoicePDF(invoiceNumber))
@@ -112,33 +113,39 @@ export default function RecentInvoicesTable() {
       .finally(() => setDownloadingId(null))
   }
 
+  const [role, setRole] = useState(null)
+  useEffect(() => {
+    setRole(localStorage.getItem("roles"))
+  }, [])
+
   return (
-    <section className="h-full overflow-hidden rounded-xl border bg-card shadow-sm">
-      <div className="flex flex-col gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <PackageCheck className="size-5" />
+    role !== null && can(role, "dashboard.recentInvoices") ? (
+      <section className="h-full overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div className="flex flex-col gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <PackageCheck className="size-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold sm:text-lg">{t("title")}</h2>
+              <p className="text-xs text-muted-foreground">
+                {t("description")}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-base font-bold sm:text-lg">{t("title")}</h2>
-            <p className="text-xs text-muted-foreground">
-              {t("description")}
-            </p>
-          </div>
+
+          <Button asChild variant="outline" size="sm">
+            <Link href="/invoices">
+              {t("viewAll")}
+              <ChevronRight className="size-4" />
+            </Link>
+          </Button>
         </div>
 
-        <Button asChild variant="outline" size="sm">
-          <Link href="/invoices">
-           {t("viewAll")}
-            <ChevronRight className="size-4" />
-          </Link>
-        </Button>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="bg-muted/50 text-[11px] uppercase tracking-wide text-muted-foreground">
-            {/* <tr>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="bg-muted/50 text-[11px] uppercase tracking-wide text-muted-foreground">
+              {/* <tr>
               <th className="px-4 py-3 font-semibold">Invoice</th>
               <th className="px-4 py-3 font-semibold">Invoice date</th>
               <th className="px-4 py-3 font-semibold">Due date</th>
@@ -148,101 +155,102 @@ export default function RecentInvoicesTable() {
               <th className="px-4 py-3 font-semibold">Balance</th> */}
               {/* <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Action</th>
-            </tr> */} 
-             <tr>
-              <th className="px-4 py-3 font-semibold">{t("columns.invoice")}</th>
-              <th className="px-4 py-3 font-semibold">{t("columns.invoiceDate")}</th>
-              <th className="px-4 py-3 font-semibold">{t("columns.dueDate")}</th>
-              <th className="px-4 py-3 font-semibold">{t("columns.items")}</th>
-              <th className="px-4 py-3 font-semibold">{t("columns.total")}</th>
-              <th className="px-4 py-3 font-semibold">{t("columns.status")}</th>
-              <th className="px-4 py-3 font-semibold">{t("columns.action")}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {recentOrders.length > 0 ? (
-              recentOrders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="relative cursor-pointer transition-colors hover:bg-muted/40"
-                >
-                  <td className="px-4 py-2">
-                    <Link
-                      href={`/invoices/details/?id=${encodeURIComponent(order.invoiceNumber)}`}
-                      aria-label={`View invoice ${order.invoiceNumber}`}
-                      className="absolute inset-0 z-10"
-                    />
-                    <span className="font-semibold text-foreground text-xs">
-                      #{order.invoiceNumber}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs">
-                    {order.invoiceDateLabel}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs">
-                    {order.dueDateLabel}
-                  </td>
-                  <td className="px-4 py-2 text-xs">
-                   {t("products", { count: order.itemCount })}
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {t("units", { count: order.units })}
-                    </p>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 font-semibold text-xs">
-                    {formatCurrency(order.total)}
-                  </td>
-                  {/* <td className="whitespace-nowrap px-4 py-2 font-semibold">
+            </tr> */}
+              <tr>
+                <th className="px-4 py-3 font-semibold">{t("columns.invoice")}</th>
+                <th className="px-4 py-3 font-semibold">{t("columns.invoiceDate")}</th>
+                <th className="px-4 py-3 font-semibold">{t("columns.dueDate")}</th>
+                <th className="px-4 py-3 font-semibold">{t("columns.items")}</th>
+                <th className="px-4 py-3 font-semibold">{t("columns.total")}</th>
+                <th className="px-4 py-3 font-semibold">{t("columns.status")}</th>
+                <th className="px-4 py-3 font-semibold">{t("columns.action")}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {recentOrders.length > 0 ? (
+                recentOrders.map((order) => (
+                  <tr
+                    key={order.id}
+                    className="relative cursor-pointer transition-colors hover:bg-muted/40"
+                  >
+                    <td className="px-4 py-2">
+                      <Link
+                        href={`/invoices/details/?id=${encodeURIComponent(order.invoiceNumber)}`}
+                        aria-label={`View invoice ${order.invoiceNumber}`}
+                        className="absolute inset-0 z-10"
+                      />
+                      <span className="font-semibold text-foreground text-xs">
+                        #{order.invoiceNumber}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2 text-xs">
+                      {order.invoiceDateLabel}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2 text-xs">
+                      {order.dueDateLabel}
+                    </td>
+                    <td className="px-4 py-2 text-xs">
+                      {t("products", { count: order.itemCount })}
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {t("units", { count: order.units })}
+                      </p>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2 font-semibold text-xs">
+                      {formatCurrency(order.total)}
+                    </td>
+                    {/* <td className="whitespace-nowrap px-4 py-2 font-semibold">
                     {formatCurrency(order.paidAmount)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 font-semibold">
                     {formatCurrency(order.balance)}
                   </td> */}
-                  <td className="px-4 py-2">
-                    <Badge
-                      className={cn(
-                        "whitespace-nowrap px-2 text-[10px] ring-1",
-                        statusStyles[order.statusTone],
-                      )}
-                    >
-                    {translateStatus(order.status)}
-                    </Badge>
+                    <td className="px-4 py-2">
+                      <Badge
+                        className={cn(
+                          "whitespace-nowrap px-2 text-[10px] ring-1",
+                          statusStyles[order.statusTone],
+                        )}
+                      >
+                        {translateStatus(order.status)}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="relative z-20"
+                        disabled={downloadingId === order.invoiceNumber}
+                        onClick={() => handleDownloadPdf(order.invoiceNumber)}
+                      >
+                        {downloadingId === order.invoiceNumber ? (
+                          <>
+                            <Loader2 className="size-4 animate-spin" />
+                            Downloading
+                          </>
+                        ) : (
+                          <>
+                            <Download className="size-4" />
+                            Download
+                          </>
+                        )}
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="px-4 py-12 text-center text-muted-foreground"
+                  >
+                    {emptyMessage}
                   </td>
-                   <td className="px-4 py-4">
- <Button
-                      variant="outline"
-                      size="sm"
-                      className="relative z-20"
-                      disabled={downloadingId === order.invoiceNumber}
-                      onClick={() => handleDownloadPdf(order.invoiceNumber)}
-                    >
-                     {downloadingId === order.invoiceNumber ? (
-                         <>
-      <Loader2 className="size-4 animate-spin" />
-      Downloading
-    </>
-  ) : (
-    <>
-      <Download className="size-4" />
-      Download
-    </>
-  )}
-                    </Button>
-</td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={8}
-                  className="px-4 py-12 text-center text-muted-foreground"
-                >
-                  {emptyMessage}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </section>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    ) : null
   )
 }
