@@ -23,6 +23,7 @@ export function TeamSwitcher() {
         </div>
         <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
           <span className="truncate font-medium">Bex SCM</span>
+          <span className="font-normal text-[green] text-xs">Customer Portal</span>
         </div>
         </div>
       </SidebarMenuItem>

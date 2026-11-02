@@ -746,9 +746,11 @@ export const GetAreaList = createAsyncThunk(
         Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
       };
 
+      // Retain each request's parent when the filtered API omits it in records.
+      const parentIds = [...new Set(territoryIds)];
       // one request per territory ID (the API rejects comma-separated lists)
       const responses = await Promise.all(
-        [...new Set(territoryIds)].map((id) =>
+        parentIds.map((id) =>
           axios.get(
             `${process.env.NEXT_PUBLIC_NRL_API_URL}/area?territoryId=${id}`,
             { headers },
@@ -756,11 +758,15 @@ export const GetAreaList = createAsyncThunk(
         ),
       );
 
-      return responses.flatMap(({ data }) => {
+      return responses.flatMap(({ data }, index) => {
         if (data?.success === false) {
           throw new Error(data?.Msg || data?.message || "Failed to fetch areas.");
         }
-        return Array.isArray(data) ? data : data?.data ?? [];
+        const records = Array.isArray(data) ? data : data?.data ?? [];
+        return records.map((area) => ({
+          ...area,
+          territoryID: area.territoryID ?? area.territoryId ?? parentIds[index],
+        }));
       });
     } catch (error) {
       const data = error.response?.data;
@@ -786,8 +792,9 @@ export const GetLocationList = createAsyncThunk(
       };
 
       // one request per area ID
+      const parentIds = [...new Set(areaIds)];
       const responses = await Promise.all(
-        [...new Set(areaIds)].map((id) =>
+        parentIds.map((id) =>
           axios.get(
             `${process.env.NEXT_PUBLIC_NRL_API_URL}/location?areaId=${id}`,
             { headers },
@@ -795,11 +802,15 @@ export const GetLocationList = createAsyncThunk(
         ),
       );
 
-      return responses.flatMap(({ data }) => {
+      return responses.flatMap(({ data }, index) => {
         if (data?.success === false) {
           throw new Error(data?.Msg || data?.message || "Failed to fetch locations.");
         }
-        return Array.isArray(data) ? data : data?.data ?? [];
+        const records = Array.isArray(data) ? data : data?.data ?? [];
+        return records.map((location) => ({
+          ...location,
+          areaID: location.areaID ?? location.areaId ?? parentIds[index],
+        }));
       });
     } catch (error) {
       const data = error.response?.data;
@@ -825,8 +836,9 @@ export const GetdeptList = createAsyncThunk(
       };
 
       // one request per location (store) ID
+      const parentIds = [...new Set(locationIds)];
       const responses = await Promise.all(
-        [...new Set(locationIds)].map((id) =>
+        parentIds.map((id) =>
           axios.get(
             `${process.env.NEXT_PUBLIC_NRL_API_URL}/department?locationId=${id}`,
             { headers },
@@ -834,11 +846,15 @@ export const GetdeptList = createAsyncThunk(
         ),
       );
 
-      return responses.flatMap(({ data }) => {
+      return responses.flatMap(({ data }, index) => {
         if (data?.success === false) {
           throw new Error(data?.Msg || data?.message || "Failed to fetch departments.");
         }
-        return Array.isArray(data) ? data : data?.data ?? [];
+        const records = Array.isArray(data) ? data : data?.data ?? [];
+        return records.map((department) => ({
+          ...department,
+          locationID: department.locationID ?? department.locationId ?? parentIds[index],
+        }));
       });
     } catch (error) {
       const data = error.response?.data;

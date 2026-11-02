@@ -360,8 +360,8 @@ useEffect(() => {
 
   return (
     <main className="grid gap-3 sm:gap-4">
-    {can(role, "promo.view") && <WelcomeCard />}
-      {/* <WelcomeCard /> */}
+    {/* {can(role, "promo.view") && <WelcomeCard />} */}
+      <WelcomeCard />
       <QuickActions />
       <RecommendedItems />
       <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-3">

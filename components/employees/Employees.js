@@ -149,7 +149,6 @@
 //   EdituserGet,
 // } from "../../redux/slices/getSlice";
 // import { Postusers, Updateusers, Deleteusers } from "../../redux/slices/postSlice";
-// import { assignmentFields, assignmentValues } from "@/lib/user-assignments";
 // import { can, canAct, getManageableRoles, getVisibleRoles } from "@/lib/permissions";
 // import { PaginationCustomUsers } from "@/components/ui/pagination-custom";
 // import { Badge } from "@/components/ui/badge";
@@ -1774,7 +1773,6 @@
 //   EdituserGet,
 // } from "../../redux/slices/getSlice";
 // import { Postusers, Updateusers, Deleteusers } from "../../redux/slices/postSlice";
-// import { assignmentFields, assignmentValues } from "@/lib/user-assignments";
 // import { can, canAct, getManageableRoles, getVisibleRoles } from "@/lib/permissions";
 // import { PaginationCustomUsers } from "@/components/ui/pagination-custom";
 // import { Badge } from "@/components/ui/badge";
@@ -3433,7 +3431,6 @@ import {
   EdituserGet,
 } from "../../redux/slices/getSlice";
 import { Postusers, Updateusers, Deleteusers } from "../../redux/slices/postSlice";
-import { assignmentFields, assignmentValues } from "@/lib/user-assignments";
 import {
   can,
   getVisibleRoles,
@@ -3442,10 +3439,17 @@ import {
 } from "@/lib/permissions";
 
 import { PaginationCustomUsers } from "@/components/ui/pagination-custom";
+
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import {
+  Combobox, ComboboxValue, ComboboxChips, ComboboxChip,
+  ComboboxChipsInput, ComboboxTrigger, ComboboxClear,
+  ComboboxContent, ComboboxList, ComboboxItem, ComboboxEmpty,
+  useComboboxAnchor,
+} from "@/components/ui/combobox";
 import {
   Dialog,
   DialogContent,
@@ -3461,7 +3465,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuCheckboxItem,
   DropdownMenuGroup,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
@@ -3478,6 +3481,13 @@ import {
 // ─────────────────────────────────────────────────────────────
 // 2. CONSTANTS
 // ─────────────────────────────────────────────────────────────
+
+const assignmentFields = [
+  ["territory", "Territory"],
+  ["area", "Area"],
+  ["store", "Store"],
+  ["department", "Department"],
+];
 
 // `code` is the value the API sends in the `roles` field
 const roles = [
@@ -3555,6 +3565,10 @@ const avatarColors = [
 // 3. HELPERS (pure functions, no React)
 // ─────────────────────────────────────────────────────────────
 
+function assignmentValues(value) {
+  return Array.isArray(value) ? value : value ? [value] : [];
+}
+
 // API user -> shape used by this screen
 function normalizeUser(u) {
   const rawId = u.userId ?? u.userID ?? u.userid ?? u.id;
@@ -3582,7 +3596,11 @@ function normalizeUser(u) {
 }
 
 // label / id accessors for the API lists (adjust field names here if your API differs)
-const areaLabel = (a) => [a.city, a.state].filter(Boolean).join(", ");
+const areaLabel = (a) => [a.city, a.state].filter(Boolean).join(", ") || a.areaName || a.name || "";
+const territoryId = (t) => t.territoryID ?? t.territoryId;
+const areaId = (a) => a.areaID ?? a.areaId;
+const areaTerritoryId = (a) => a.territoryID ?? a.territoryId;
+const hasParentId = (ids, id) => id != null && [...ids].some((parentId) => String(parentId) === String(id));
 const locationLabel = (l) => l.locationName ?? l.storeName ?? l.locationCode ?? l.name ?? "";
 const deptLabel = (d) => d.departmentName ?? d.deptName ?? d.departmentCode ?? d.name ?? "";
 const locationId = (l) => l.locationID ?? l.locationId;
@@ -3615,6 +3633,78 @@ const initials = (name) =>
 // ─────────────────────────────────────────────────────────────
 // 4. SMALL COMPONENTS
 // ─────────────────────────────────────────────────────────────
+
+// sheet: dropdown for territory / area / store / department
+function AssignmentSelect({
+  fieldKey,
+  title,
+  options,
+  selected,
+  loading,
+  error,
+  parentTitle,
+  onChange,
+}) {
+  const anchor = useComboboxAnchor();
+  const disabled = Boolean(parentTitle);
+  const descriptionId = `user-${fieldKey}-description`;
+
+  return (
+    <div className="min-w-0 space-y-1.5 text-sm">
+      <label htmlFor={`user-${fieldKey}`}>{title}</label>
+      <Combobox
+        multiple
+        items={options}
+        value={selected}
+        disabled={disabled}
+        onValueChange={onChange}
+        filter={(value, query) => value.toLowerCase().includes(query.toLowerCase())}
+      >
+        <div className="relative" ref={anchor}>
+          <ComboboxChips className="pr-14">
+            <ComboboxValue>
+              {selected.map((value) => (
+                <ComboboxChip key={value}>
+                  {value}
+                </ComboboxChip>
+              ))}
+            </ComboboxValue>
+            <ComboboxChipsInput
+              id={`user-${fieldKey}`}
+              aria-describedby={error || disabled ? descriptionId : undefined}
+              aria-invalid={Boolean(error)}
+              disabled={disabled}
+              placeholder={disabled
+                ? `Select ${parentTitle.toLowerCase()} first`
+                : loading
+                  ? `Loading ${title.toLowerCase()}...`
+                  : `Search ${title.toLowerCase()}...`}
+            />
+          </ComboboxChips>
+          <div className="absolute right-1 top-1.5 flex items-center">
+            <ComboboxTrigger aria-label={`Show ${title.toLowerCase()} options`} disabled={disabled} />
+            <ComboboxClear aria-label={`Clear all ${title.toLowerCase()}`} disabled={disabled} />
+          </div>
+        </div>
+        <ComboboxContent anchor={anchor} inline>
+          <ComboboxEmpty>{loading ? "Loading..." : "No options found."}</ComboboxEmpty>
+          <ComboboxList>
+            {(value) => (
+              <ComboboxItem key={value} value={value}>
+                <span className="min-w-0 flex-1 break-words">{value}</span>
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+      {(error || disabled) && (
+        <p id={descriptionId} className={`text-[10px] ${error ? "text-destructive" : "text-muted-foreground"}`} aria-live="polite">
+          {error || `Select ${parentTitle.toLowerCase()} first`}
+        </p>
+      )}
+    </div>
+  );
+}
 
 // table cell: first two values + "+N" popover
 function AssignmentList({ value, label, icon: Icon }) {
@@ -3671,85 +3761,6 @@ function AssignmentList({ value, label, icon: Icon }) {
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-// sheet: multi-select dropdown for territory / area / store / department
-function AssignmentSelect({
-  fieldKey,
-  title,
-  options,
-  selected,
-  loading,
-  parentTitle, // set when the parent field is still empty (disables this dropdown)
-  onChange,
-}) {
-  const disabled = Boolean(parentTitle);
-
-  return (
-    <div className="min-w-0 space-y-1.5 text-sm">
-      <span id={`user-${fieldKey}-label`}>{title}</span>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={disabled}
-            aria-labelledby={`user-${fieldKey}-label user-${fieldKey}-value`}
-            className="h-9 w-full justify-between gap-2 px-2 text-xs font-normal"
-          >
-            <span
-              id={`user-${fieldKey}-value`}
-              className="min-w-0 truncate"
-              title={selected.join(", ")}
-            >
-              {selected.length
-                ? selected.join(", ")
-                : loading
-                  ? `Loading ${title.toLowerCase()}...`
-                  : disabled
-                    ? `Select ${parentTitle.toLowerCase()} first`
-                    : `Select ${title.toLowerCase()}`}
-            </span>
-            <span className="flex shrink-0 items-center gap-2">
-              {selected.length > 1 && (
-                <span className="rounded bg-primary/10 px-1.5 text-primary">
-                  {selected.length}
-                </span>
-              )}
-              <ChevronDown className="size-4" />
-            </span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)]"
-        >
-          {options.length === 0 && (
-            <DropdownMenuItem disabled className="text-xs">
-              {loading ? "Loading..." : "No options available"}
-            </DropdownMenuItem>
-          )}
-          {options.map((value) => (
-            <DropdownMenuCheckboxItem
-              key={value}
-              checked={selected.includes(value)}
-              onSelect={(event) => event.preventDefault()}
-              onCheckedChange={(checked) =>
-                onChange(
-                  checked
-                    ? [...new Set([...selected, value])]
-                    : selected.filter((item) => item !== value),
-                )
-              }
-              className="text-xs"
-            >
-              {value}
-            </DropdownMenuCheckboxItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
     </div>
   );
 }
@@ -3928,6 +3939,12 @@ export default function Employees() {
     store: locationLoading,
     department: deptLoading,
   };
+  const errorByKey = {
+    territory: useSelector((state) => state.getSlice.territoryError),
+    area: useSelector((state) => state.getSlice.areaError),
+    store: useSelector((state) => state.getSlice.locationError),
+    department: useSelector((state) => state.getSlice.deptError),
+  };
 
   // ── 5.4 Label -> ID resolution (each level limited to its selected parent) ──
   function resolveAssignmentIds(state) {
@@ -3935,16 +3952,16 @@ export default function Employees() {
     const territoryIds = uniq(
       (territoryData ?? [])
         .filter((t) => territoryNames.includes(t.territoryName))
-        .map((t) => t.territoryID),
+        .map(territoryId),
     );
 
     const areaLabels = assignmentValues(state.area);
     const areaIds = uniq(
       (areaData ?? [])
         .filter(
-          (a) => areaLabels.includes(areaLabel(a)) && territoryIds.includes(a.territoryID),
+          (a) => areaLabels.includes(areaLabel(a)) && hasParentId(territoryIds, areaTerritoryId(a)),
         )
-        .map((a) => a.areaID),
+        .map(areaId),
     );
 
     const storeLabels = assignmentValues(state.store);
@@ -3953,7 +3970,7 @@ export default function Employees() {
         .filter(
           (l) =>
             storeLabels.includes(locationLabel(l)) &&
-            (locationAreaId(l) == null || areaIds.includes(locationAreaId(l))),
+            (locationAreaId(l) == null || hasParentId(areaIds, locationAreaId(l))),
         )
         .map(locationId),
     );
@@ -3964,7 +3981,7 @@ export default function Employees() {
         .filter(
           (d) =>
             deptLabels.includes(deptLabel(d)) &&
-            (deptLocationId(d) == null || locationIds.includes(deptLocationId(d))),
+            (deptLocationId(d) == null || hasParentId(locationIds, deptLocationId(d))),
         )
         .map(departmentId),
     );
@@ -3977,23 +3994,23 @@ export default function Employees() {
     const territoryIds = new Set(
       (territoryData ?? [])
         .filter((t) => assignmentValues(state.territory).includes(t.territoryName))
-        .map((t) => t.territoryID),
+        .map(territoryId),
     );
-    const areaValues = assignmentValues(state.area).filter((label) => {
+    const areaValues = (territoryIds.size ? assignmentValues(state.area) : []).filter((label) => {
       const matches = (areaData ?? []).filter((a) => areaLabel(a) === label);
-      return !matches.length || matches.some((a) => territoryIds.has(a.territoryID));
+      return !matches.length || matches.some((a) => hasParentId(territoryIds, areaTerritoryId(a)));
     });
 
     const areaIds = new Set(
       (areaData ?? [])
         .filter((a) => areaValues.includes(areaLabel(a)))
-        .map((a) => a.areaID),
+        .map(areaId),
     );
-    const storeValues = assignmentValues(state.store).filter((label) => {
+    const storeValues = (areaValues.length ? assignmentValues(state.store) : []).filter((label) => {
       const matches = (locationData ?? []).filter((l) => locationLabel(l) === label);
       return (
         !matches.length ||
-        matches.some((l) => locationAreaId(l) == null || areaIds.has(locationAreaId(l)))
+        matches.some((l) => locationAreaId(l) == null || hasParentId(areaIds, locationAreaId(l)))
       );
     });
 
@@ -4002,11 +4019,11 @@ export default function Employees() {
         .filter((l) => storeValues.includes(locationLabel(l)))
         .map(locationId),
     );
-    const departmentValues = assignmentValues(state.department).filter((label) => {
+    const departmentValues = (storeValues.length ? assignmentValues(state.department) : []).filter((label) => {
       const matches = (deptData ?? []).filter((d) => deptLabel(d) === label);
       return (
         !matches.length ||
-        matches.some((d) => deptLocationId(d) == null || locationIds.has(deptLocationId(d)))
+        matches.some((d) => deptLocationId(d) == null || hasParentId(locationIds, deptLocationId(d)))
       );
     });
 
@@ -4108,8 +4125,8 @@ export default function Employees() {
     if (!pendingAssign || !editing?.hydrated) return;
 
     const levels = [
-      ["territory", "territoryIds", territoryData, territoryLoading, (t) => t.territoryID, (t) => t.territoryName],
-      ["area", "areaIds", areaData, areaLoading, (a) => a.areaID, areaLabel],
+      ["territory", "territoryIds", territoryData, territoryLoading, territoryId, (t) => t.territoryName],
+      ["area", "areaIds", areaData, areaLoading, areaId, areaLabel],
       ["store", "locationIds", locationData, locationLoading, locationId, locationLabel],
       ["department", "departmentIds", deptData, deptLoading, departmentId, deptLabel],
     ];
@@ -4128,7 +4145,8 @@ export default function Employees() {
       const idSet = new Set(ids.map(String));
       const found = (list ?? []).filter((item) => idSet.has(String(getId(item))));
       if (!found.length) break; // parent not applied / list not loaded yet
-      patch[field] = uniq(found.map(getLabel));
+      const labels = uniq(found.map(getLabel));
+      patch[field] = labels;
       delete remaining[idKey];
     }
 
@@ -4143,6 +4161,7 @@ export default function Employees() {
   }, [
     pendingAssign,
     editing?.hydrated,
+    editing?.roles,
     territoryData,
     territoryLoading,
     areaData,
@@ -5013,12 +5032,16 @@ export default function Employees() {
                     value={editing.role}
                     onChange={(event) => {
                       setSaveError("");
-                      setEditing((current) => ({
-                        ...current,
-                        role: event.target.value,
-                        roles: roleCodeByName[event.target.value],
-                        reportsTo: "",
-                      }));
+                      const nextRole = event.target.value;
+                      setEditing((current) => {
+                        const next = {
+                          ...current,
+                          role: nextRole,
+                          roles: roleCodeByName[nextRole],
+                          reportsTo: "",
+                        };
+                        return next;
+                      });
                     }}
                     className={fieldClass}
                   >
@@ -5048,6 +5071,7 @@ export default function Employees() {
                       fieldKey={key}
                       title={title}
                       options={optionLists[key] ?? []}
+                      error={errorByKey[key]}
                       selected={assignmentValues(editing[key])}
                       loading={Boolean(loadingByKey[key])}
                       parentTitle={parentEmpty ? parent[1] : null}

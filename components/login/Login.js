@@ -323,6 +323,9 @@ async function handleSendOtp(event) {
       if (value == null) localStorage.removeItem(key);
       else localStorage.setItem(key, value);
     }
+	  localStorage.setItem("name", user.fullName);
+localStorage.setItem("emailID", user.emailID);
+	 localStorage.setItem("countryCode", user.countryCode);
 localStorage.setItem("mobileNumber", String(user.mobileNumber ?? rawDigits));
     setStep("otp");
     setMessage(
