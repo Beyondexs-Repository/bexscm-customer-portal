@@ -3390,8 +3390,11 @@
 // }
 
 
-//********************************* TO CONFIGURE THE ADMIN PORTAL USERS SCREEN DESIGN SECTION ***************************//
+
+
 "use client";
+
+// ********************** TO CONFIGURE THE ADMIN PORTAL USERS SCREEN DESIGN SECTION **********************
 
 // ─────────────────────────────────────────────────────────────
 // 1. IMPORTS
@@ -3604,8 +3607,6 @@ const hasParentId = (ids, id) => id != null && [...ids].some((parentId) => Strin
 const locationLabel = (l) => l.locationName ?? l.storeName ?? l.locationCode ?? l.name ?? "";
 const deptLabel = (d) => d.departmentName ?? d.deptName ?? d.departmentCode ?? d.name ?? "";
 const locationId = (l) => l.locationID ?? l.locationId;
-const locationAreaId = (l) => l.areaID ?? l.areaId;
-const deptLocationId = (d) => d.locationID ?? d.locationId;
 const departmentId = (d) => d.departmentID ?? d.departmentId ?? d.deptID ?? d.deptId;
 
 // unique, non-empty labels of the active items
@@ -3654,14 +3655,15 @@ function AssignmentSelect({
       <label htmlFor={`user-${fieldKey}`}>{title}</label>
       <Combobox
         multiple
-        items={options}
+        // hide stale options while the new list is loading
+        items={loading ? [] : options}
         value={selected}
         disabled={disabled}
         onValueChange={onChange}
         filter={(value, query) => value.toLowerCase().includes(query.toLowerCase())}
       >
         <div className="relative" ref={anchor}>
-          <ComboboxChips className="pr-14">
+          <ComboboxChips className={loading ? "pr-20" : "pr-14"}>
             <ComboboxValue>
               {selected.map((value) => (
                 <ComboboxChip key={value}>
@@ -3673,6 +3675,7 @@ function AssignmentSelect({
               id={`user-${fieldKey}`}
               aria-describedby={error || disabled ? descriptionId : undefined}
               aria-invalid={Boolean(error)}
+              aria-busy={loading}
               disabled={disabled}
               placeholder={disabled
                 ? `Select ${parentTitle.toLowerCase()} first`
@@ -3682,6 +3685,13 @@ function AssignmentSelect({
             />
           </ComboboxChips>
           <div className="absolute right-1 top-1.5 flex items-center">
+            {loading && (
+              <Loader2
+                role="status"
+                aria-label={`Loading ${title.toLowerCase()}`}
+                className="mr-1 size-4 animate-spin text-muted-foreground"
+              />
+            )}
             <ComboboxTrigger aria-label={`Show ${title.toLowerCase()} options`} disabled={disabled} />
             <ComboboxClear aria-label={`Clear all ${title.toLowerCase()}`} disabled={disabled} />
           </div>
@@ -3883,6 +3893,13 @@ export default function Employees() {
   // IDs from GET /users/:id still waiting to be turned into labels
   const [pendingAssign, setPendingAssign] = useState(null);
 
+  // local "request in flight" flags for the cascading lists.
+  // They flip on immediately (same render pass as the parent selection),
+  // so the spinner shows before the Redux slice reports `loading`.
+  const [fetching, setFetching] = useState({ area: false, store: false, department: false });
+  const setFetch = (key, value) =>
+    setFetching((current) => (current[key] === value ? current : { ...current, [key]: value }));
+
   const isLoading = userslistStatus === "idle" || userslistLoading;
 
   // ── 5.2b Permission-based tabs + actions ────────────────────
@@ -3907,9 +3924,16 @@ export default function Employees() {
 
   // does the selected tab have any row actions at all?
   const activeTabCode = roleCodeByName[roleName];
+  // Hide the Action column ONLY when an Area Manager ("A") is logged in AND the
+  // active tab is the Area Manager tab. Every other case is permission-driven:
+  // the column shows whenever the logged-in role may edit / deactivate the tab's role
+  // (so an Area Manager still gets Actions on the Department / Employees tabs).
+  const isAreaManagerLogin = String(role ?? "").trim().toUpperCase() === "A";
+  const hideActionsForActiveTab = isAreaManagerLogin && activeTabCode === "A";
   const showActions =
-    canActOnRole(role, "employee.edit", activeTabCode) ||
-    canActOnRole(role, "employee.deactivate", activeTabCode);
+    !hideActionsForActiveTab &&
+    (canActOnRole(role, "employee.edit", activeTabCode) ||
+      canActOnRole(role, "employee.deactivate", activeTabCode));
 
   // If the selected tab isn't allowed (default is "Owner"), jump to the first allowed one
   useEffect(() => {
@@ -3933,11 +3957,12 @@ export default function Employees() {
     store: storeOptions,
     department: deptOptions,
   };
+  // Redux loading flag OR local in-flight flag
   const loadingByKey = {
-    territory: territoryLoading,
-    area: areaLoading,
-    store: locationLoading,
-    department: deptLoading,
+    territory: Boolean(territoryLoading),
+    area: Boolean(areaLoading) || fetching.area,
+    store: Boolean(locationLoading) || fetching.store,
+    department: Boolean(deptLoading) || fetching.department,
   };
   const errorByKey = {
     territory: useSelector((state) => state.getSlice.territoryError),
@@ -3965,24 +3990,20 @@ export default function Employees() {
     );
 
     const storeLabels = assignmentValues(state.store);
+    // The store / department lists are already fetched only for the selected
+    // parents, so match by label. (The API's areaID / locationID on each row
+    // does not always equal the requested parent ID, which made every store
+    // fail the old parent check and silently drop the selection.)
     const locationIds = uniq(
       (locationData ?? [])
-        .filter(
-          (l) =>
-            storeLabels.includes(locationLabel(l)) &&
-            (locationAreaId(l) == null || hasParentId(areaIds, locationAreaId(l))),
-        )
+        .filter((l) => storeLabels.includes(locationLabel(l)))
         .map(locationId),
     );
 
     const deptLabels = assignmentValues(state.department);
     const departmentIds = uniq(
       (deptData ?? [])
-        .filter(
-          (d) =>
-            deptLabels.includes(deptLabel(d)) &&
-            (deptLocationId(d) == null || hasParentId(locationIds, deptLocationId(d))),
-        )
+        .filter((d) => deptLabels.includes(deptLabel(d)))
         .map(departmentId),
     );
 
@@ -4001,31 +4022,9 @@ export default function Employees() {
       return !matches.length || matches.some((a) => hasParentId(territoryIds, areaTerritoryId(a)));
     });
 
-    const areaIds = new Set(
-      (areaData ?? [])
-        .filter((a) => areaValues.includes(areaLabel(a)))
-        .map(areaId),
-    );
-    const storeValues = (areaValues.length ? assignmentValues(state.store) : []).filter((label) => {
-      const matches = (locationData ?? []).filter((l) => locationLabel(l) === label);
-      return (
-        !matches.length ||
-        matches.some((l) => locationAreaId(l) == null || hasParentId(areaIds, locationAreaId(l)))
-      );
-    });
-
-    const locationIds = new Set(
-      (locationData ?? [])
-        .filter((l) => storeValues.includes(locationLabel(l)))
-        .map(locationId),
-    );
-    const departmentValues = (storeValues.length ? assignmentValues(state.department) : []).filter((label) => {
-      const matches = (deptData ?? []).filter((d) => deptLabel(d) === label);
-      return (
-        !matches.length ||
-        matches.some((d) => deptLocationId(d) == null || hasParentId(locationIds, deptLocationId(d)))
-      );
-    });
+    // store / department: only clear them when their parent level is empty
+    const storeValues = areaValues.length ? assignmentValues(state.store) : [];
+    const departmentValues = storeValues.length ? assignmentValues(state.department) : [];
 
     return { ...state, area: areaValues, store: storeValues, department: departmentValues };
   }
@@ -4062,22 +4061,55 @@ export default function Employees() {
 
   // territory -> areas (one request per territory ID)
   useEffect(() => {
-    if (scopeIds.territoryIds.length) dispatch(GetAreaList(scopeIds.territoryIds));
-    else dispatch(clearAreaList());
+    if (!scopeIds.territoryIds.length) {
+      dispatch(clearAreaList());
+      setFetch("area", false);
+      return;
+    }
+    let cancelled = false;
+    setFetch("area", true); // spinner on immediately
+    Promise.resolve(dispatch(GetAreaList(scopeIds.territoryIds))).finally(() => {
+      if (!cancelled) setFetch("area", false);
+    });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, territoryIdsKey]);
 
   // areas -> stores (one request per area ID, only areas of the selected territories)
   useEffect(() => {
-    if (scopeIds.areaIds.length) dispatch(GetLocationList(scopeIds.areaIds));
-    else dispatch(clearLocationList());
+    if (!scopeIds.areaIds.length) {
+      dispatch(clearLocationList());
+      setFetch("store", false);
+      return;
+    }
+    let cancelled = false;
+    setFetch("store", true);
+    Promise.resolve(dispatch(GetLocationList(scopeIds.areaIds))).finally(() => {
+      if (!cancelled) setFetch("store", false);
+    });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, areaIdsKey]);
 
   // stores -> departments (one request per store ID)
   useEffect(() => {
-    if (scopeIds.locationIds.length) dispatch(GetdeptList(scopeIds.locationIds));
-    else dispatch(clearDepartmentList());
+    if (!scopeIds.locationIds.length) {
+      dispatch(clearDepartmentList());
+      setFetch("department", false);
+      return;
+    }
+    let cancelled = false;
+    setFetch("department", true);
+    Promise.resolve(dispatch(GetdeptList(scopeIds.locationIds))).finally(() => {
+      if (!cancelled) setFetch("department", false);
+    });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, locationIdsKey]);
 
@@ -4125,10 +4157,10 @@ export default function Employees() {
     if (!pendingAssign || !editing?.hydrated) return;
 
     const levels = [
-      ["territory", "territoryIds", territoryData, territoryLoading, territoryId, (t) => t.territoryName],
-      ["area", "areaIds", areaData, areaLoading, areaId, areaLabel],
-      ["store", "locationIds", locationData, locationLoading, locationId, locationLabel],
-      ["department", "departmentIds", deptData, deptLoading, departmentId, deptLabel],
+      ["territory", "territoryIds", territoryData, loadingByKey.territory, territoryId, (t) => t.territoryName],
+      ["area", "areaIds", areaData, loadingByKey.area, areaId, areaLabel],
+      ["store", "locationIds", locationData, loadingByKey.store, locationId, locationLabel],
+      ["department", "departmentIds", deptData, loadingByKey.department, departmentId, deptLabel],
     ];
 
     const patch = {};
@@ -4158,6 +4190,7 @@ export default function Employees() {
       setEditing((cur) => (cur ? { ...cur, ...patch } : cur));
     }
     setPendingAssign(Object.keys(remaining).length ? remaining : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     pendingAssign,
     editing?.hydrated,
@@ -4170,6 +4203,7 @@ export default function Employees() {
     locationLoading,
     deptData,
     deptLoading,
+    fetching,
   ]);
 
   // ── 5.6 Derived data ────────────────────────────────────────

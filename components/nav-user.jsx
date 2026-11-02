@@ -79,6 +79,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/c
    const roleMap = {
     O: "Owner",
     D: "Department Manager",
+    A: "Area Manager",
     T: "Territory Manager",
     S: "Store Manager",
     E: "Employee",
