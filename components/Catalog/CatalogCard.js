@@ -286,12 +286,12 @@ const t = useTranslations("catalog");
             {product.category}
           </p>
           <div className="grid gap-0.5 text-[0.62rem] font-medium text-muted-foreground lg:text-[0.7rem]">
-            <span className="truncate">{t("packSize", { unit: product.unit })}</span>
+            <span className="truncate">{t("packSize", { unit: product.packSize  })}</span>
           </div>
         </div>
 
         <p className="text-sm font-bold lg:text-base">
-          {`${Number(product.price).toFixed(2)} / ${product.unit}`}
+          {`$${Number(product.price).toFixed(2)} `}
         </p>
 
         <div className="grid gap-1.5 grid-cols-[3.8rem_1fr] lg:grid-cols-[4.25rem_1fr]">

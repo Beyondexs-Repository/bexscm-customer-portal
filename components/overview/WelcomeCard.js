@@ -1,29 +1,17 @@
-"use client"
+// "use client"
 
-import { useEffect, useRef, useState, useMemo} from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { ArrowRight } from "lucide-react"
-import { useDispatch, useSelector } from "react-redux"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { GetPromotionlist } from "../../redux/slices/getSlice"
+// import { useEffect, useRef, useState, useMemo} from "react"
+// import Image from "next/image"
+// import Link from "next/link"
+// import { ArrowRight } from "lucide-react"
+// import { useDispatch, useSelector } from "react-redux"
+// import { Button } from "@/components/ui/button"
+// import { cn } from "@/lib/utils"
+// import { GetPromotionlist } from "../../redux/slices/getSlice"
 
 
-// Fallback slides (used when API is loading / empty / errors)
-const fallbackSlides = [
-  {
-    eyebrow: "Weekly specials",
-    title: "Save up to 20% on fresh produce",
-    description: "Quality products. Better prices. Every week.",
-    action: "Browse deals",
-    href: "/catalog",
-    image: "/overview/fresh-produce-banner.png",
-    imageAlt: "A wooden crate filled with fresh vegetables",
-    accent: "text-emerald-700",
-  },
-]
-// const slides = [
+// // Fallback slides (used when API is loading / empty / errors)
+// const fallbackSlides = [
 //   {
 //     eyebrow: "Weekly specials",
 //     title: "Save up to 20% on fresh produce",
@@ -34,76 +22,386 @@ const fallbackSlides = [
 //     imageAlt: "A wooden crate filled with fresh vegetables",
 //     accent: "text-emerald-700",
 //   },
-//   {
-//     eyebrow: "Butcher specials",
-//     title: "Save 15% on premium cuts",
-//     description: "Quality beef, poultry, lamb and seafood for less.",
-//     action: "Shop meat deals",
-//     href: "/catalog",
-//     image: "/overview/premium-meats-offer.png",
-//     imageAlt: "Premium beef, poultry, lamb and salmon arranged on boards",
-//     accent: "text-red-700",
-//   },
-//   {
-//     eyebrow: "Bundle and save",
-//     title: "Fresh produce and proteins, one great price",
-//     description: "Build a better kitchen with our weekly fresh-food bundle.",
-//     action: "Explore the bundle",
-//     href: "/catalog",
-//     image: "/overview/produce-meat-bundle.png",
-//     imageAlt: "Fresh vegetables alongside premium meat and seafood",
-//     accent: "text-emerald-700",
-//   },
 // ]
+// // const slides = [
+// //   {
+// //     eyebrow: "Weekly specials",
+// //     title: "Save up to 20% on fresh produce",
+// //     description: "Quality products. Better prices. Every week.",
+// //     action: "Browse deals",
+// //     href: "/catalog",
+// //     image: "/overview/fresh-produce-banner.png",
+// //     imageAlt: "A wooden crate filled with fresh vegetables",
+// //     accent: "text-emerald-700",
+// //   },
+// //   {
+// //     eyebrow: "Butcher specials",
+// //     title: "Save 15% on premium cuts",
+// //     description: "Quality beef, poultry, lamb and seafood for less.",
+// //     action: "Shop meat deals",
+// //     href: "/catalog",
+// //     image: "/overview/premium-meats-offer.png",
+// //     imageAlt: "Premium beef, poultry, lamb and salmon arranged on boards",
+// //     accent: "text-red-700",
+// //   },
+// //   {
+// //     eyebrow: "Bundle and save",
+// //     title: "Fresh produce and proteins, one great price",
+// //     description: "Build a better kitchen with our weekly fresh-food bundle.",
+// //     action: "Explore the bundle",
+// //     href: "/catalog",
+// //     image: "/overview/produce-meat-bundle.png",
+// //     imageAlt: "Fresh vegetables alongside premium meat and seafood",
+// //     accent: "text-emerald-700",
+// //   },
+// // ]
+
+// export default function WelcomeCard() {
+//   const [activeSlide, setActiveSlide] = useState(0)
+//   const touchStartX = useRef(null)
+// const dispatch = useDispatch()
+
+//   useEffect(() => {
+//     dispatch(GetPromotionlist())
+//   }, [dispatch])
+
+//     const promotionData = useSelector((state) => state.getSlice.promotionData)
+//   const promotionLoading = useSelector((state) => state.getSlice.promotionLoading)
+//   const promotionError = useSelector((state) => state.getSlice.promotionError)
+//   console.log("promotionData", promotionData,promotionLoading, promotionError)
+
+//  const slides = useMemo(() => {
+//   const list = Array.isArray(promotionData)
+//     ? promotionData
+//     : promotionData?.data ?? promotionData?.items ?? []
+
+//   const mapped = list
+//     .filter((p) => p?.isActive && p?.bannerImageUrl)
+//     .map((p, i) => {
+//       const title = p.title?.trim() || ""
+//       const description = p.description?.trim() || ""
+
+//       return {
+//         id: p.promotionID ?? i,
+//         eyebrow: p.campaignName,
+//         title,
+//         description,
+//         // true only when there is some text to show over the image
+//         hasContent: Boolean(title || description),
+//         // button only when the API says so and the text exists
+//         action:
+//           p.showActionButton && p.actionButtonText?.trim()
+//             ? p.actionButtonText.trim()
+//             : "",
+//         href: p.actionLink || "/catalog",
+//         image: p.bannerImageUrl,
+//         imageAlt: title || p.campaignName || "Promotion banner",
+//         accent: "text-emerald-700",
+//       }
+//     })
+
+//   return mapped.length ? mapped : fallbackSlides
+// }, [promotionData])
+
+//    // Keep index valid if slide count changes (e.g. data arrives)
+//   useEffect(() => {
+//     if (activeSlide >= slides.length) setActiveSlide(0)
+//   }, [slides.length, activeSlide])
+
+//   // Autoplay (only when more than one slide)
+//   useEffect(() => {
+//     if (slides.length < 2) return
+//     const timeout = window.setTimeout(() => {
+//       setActiveSlide((current) => (current + 1) % slides.length)
+//     }, 5000)
+//     return () => window.clearTimeout(timeout)
+//   }, [activeSlide, slides.length])
+
+
+//   function showPreviousSlide() {
+//     setActiveSlide((current) => (current - 1 + slides.length) % slides.length)
+//   }
+
+//   function showNextSlide() {
+//     setActiveSlide((current) => (current + 1) % slides.length)
+//   }
+
+//   function handleTouchStart(event) {
+//     touchStartX.current = event.touches[0]?.clientX ?? null
+//   }
+
+//   function handleTouchEnd(event) {
+//     if (touchStartX.current === null) return
+
+//     const touchEndX = event.changedTouches[0]?.clientX
+//     const swipeDistance =
+//       typeof touchEndX === "number" ? touchEndX - touchStartX.current : 0
+
+//     touchStartX.current = null
+
+//     if (Math.abs(swipeDistance) < 40) return
+
+//     if (swipeDistance < 0) {
+//       showNextSlide()
+//     } else {
+//       showPreviousSlide()
+//     }
+//   }
+
+//   return (
+//     <section
+//       className="group relative min-h-[18rem] touch-pan-y overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[20rem]"
+//       aria-roledescription="carousel"
+//       aria-label="Featured promotions"
+//       onTouchStart={handleTouchStart}
+//       onTouchEnd={handleTouchEnd}
+//       onTouchCancel={() => {
+//         touchStartX.current = null
+//       }}
+//     >
+//     {slides.map((slide, index) => (
+//   <div
+//     key={slide.id ?? index}
+//     className={cn(
+//       "absolute inset-0 transition-opacity duration-700",
+//       index === activeSlide
+//         ? "z-10 opacity-100"
+//         : "pointer-events-none opacity-0",
+//     )}
+//     aria-hidden={index !== activeSlide}
+//   >
+//     {/* <Image
+//       src={slide.image}
+//       alt={slide.imageAlt}
+//       fill
+//       unoptimized
+//       priority={index === 0}
+//       sizes="(max-width: 768px) 100vw, 85vw"
+//       className="object-cover object-center"
+//     /> */}
+//      <Image
+//      src={slide.image}
+//      alt={slide.imageAlt}
+//      fill
+//      priority={index === 0}
+//      quality={90}
+//      sizes="100vw"
+//      className="object-cover object-center"
+//    />
+
+//     {slide.hasContent && (
+//       <>
+//         <div className="absolute inset-y-0 left-0 w-[40%] bg-gradient-to-r from-white via-white/95 to-transparent dark:from-slate-950 dark:via-slate-950/90 dark:to-transparent" />
+
+//         <div className="relative z-10 flex min-h-[18rem] w-[40%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[20rem] sm:p-8">
+//           {slide.title && (
+//             <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl dark:text-white">
+//               {slide.title}
+//             </h1>
+//           )}
+//           {slide.description && (
+//             <p className="mt-1 text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-300">
+//               {slide.description}
+//             </p>
+//           )}
+//           {slide.action && (
+//             <Button asChild size="sm" className="mt-6 min-h-9 w-fit py-2">
+//               <Link href={slide.href}>
+//                 {slide.action}
+//                 <ArrowRight className="size-4" />
+//               </Link>
+//             </Button>
+//           )}
+//         </div>
+//       </>
+//     )}
+//   </div>
+// ))}
+
+//       {slides.length > 1 && (
+//         <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">
+//           {slides.map((slide, index) => (
+//             <button
+//               key={slide.id ?? index}
+//               type="button"
+//               className={cn(
+//                 "h-1.5 rounded-full transition-all",
+//                 index === activeSlide
+//                   ? "w-5 bg-primary"
+//                   : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600",
+//               )}
+//               onClick={() => setActiveSlide(index)}
+//               aria-label={`Show promotion ${index + 1}`}
+//               aria-current={index === activeSlide ? "true" : undefined}
+//             />
+//           ))}
+//         </div>
+//       )}
+//     </section>
+//   )
+// // return (
+// //   <section
+// //     className="group relative min-h-[16rem] touch-pan-y overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[15rem]"
+// //     aria-roledescription="carousel"
+// //     aria-label="Featured promotions"
+// //     onTouchStart={handleTouchStart}
+// //     onTouchEnd={handleTouchEnd}
+// //     onTouchCancel={() => {
+// //       touchStartX.current = null
+// //     }}
+// //   >
+// //     {slides.map((slide, index) => (
+// //       <div
+// //         key={slide.id ?? index}
+// //         className={cn(
+// //           "absolute inset-0 transition-opacity duration-700",
+// //           index === activeSlide
+// //             ? "z-10 opacity-100"
+// //             : "pointer-events-none opacity-0",
+// //         )}
+// //         aria-hidden={index !== activeSlide}
+// //       >
+// //         <Image
+// //           src={slide.image}
+// //           alt={slide.imageAlt}
+// //           fill
+// //           priority={index === 0}
+// //           quality={90}
+// //           sizes="100vw"
+// //           className="object-cover object-center"
+// //         />
+
+// //         {/* Image-only banner (title and description are null) -> dull gradient */}
+// //         {!slide.hasContent && (
+// //           <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/5 dark:from-slate-950 dark:via-slate-950/90 dark:to-slate-950/10" />
+// //         )}
+
+// //         {/* Banner with title/description -> full-color image, no gradient */}
+// //         {slide.hasContent && (
+// //           <div className="relative z-10 flex min-h-[16rem] max-w-[76%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[15rem] sm:max-w-[52%] sm:p-8">
+// //             {/* {slide.title && (
+// //               <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-white drop-shadow-md sm:text-3xl">
+// //                 {slide.title}
+// //               </h1>
+// //             )}
+// //             {slide.description && (
+// //               <p className="mt-2 max-w-md text-xs leading-relaxed text-white/90 drop-shadow-md sm:text-sm">
+// //                 {slide.description}
+// //               </p>
+// //             )} */}
+// //             {slide.title && (
+// //   <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-black sm:text-3xl">
+// //     {slide.title}
+// //   </h1>
+// // )}
+// // {slide.description && (
+// //   <p className="mt-2 max-w-md text-xs leading-relaxed text-black sm:text-sm">
+// //     {slide.description}
+// //   </p>
+// // )}
+// //             {slide.action && (
+// //               <Button asChild size="sm" className="mt-3 w-fit">
+// //                 <Link href={slide.href}>
+// //                   {slide.action}
+// //                   <ArrowRight className="size-4" />
+// //                 </Link>
+// //               </Button>
+// //             )}
+// //           </div>
+// //         )}
+// //       </div>
+// //     ))}
+
+// //     {slides.length > 1 && (
+// //       <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">
+// //         {slides.map((slide, index) => (
+// //           <button
+// //             key={slide.id ?? index}
+// //             type="button"
+// //             className={cn(
+// //               "h-1.5 rounded-full transition-all",
+// //               index === activeSlide
+// //                 ? "w-5 bg-primary"
+// //                 : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600",
+// //             )}
+// //             onClick={() => setActiveSlide(index)}
+// //             aria-label={`Show promotion ${index + 1}`}
+// //             aria-current={index === activeSlide ? "true" : undefined}
+// //           />
+// //         ))}
+// //       </div>
+// //     )}
+// //   </section>
+// // )
+// }
+
+"use client"
+
+import { useEffect, useRef, useState, useMemo } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { ArrowRight } from "lucide-react"
+import { useSelector } from "react-redux"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+
+// Fallback slides (used while loading / when the API returns nothing or fails)
+const fallbackSlides = [
+  {
+    id: "fallback",
+    eyebrow: "Weekly specials",
+    title: "Save up to 20% on fresh produce",
+    description: "Quality products. Better prices. Every week.",
+    hasContent: true,
+    action: "Browse deals",
+    href: "/catalog",
+    image: "/overview/fresh-produce-banner.png",
+    imageAlt: "A wooden crate filled with fresh vegetables",
+    accent: "text-emerald-700",
+  },
+]
 
 export default function WelcomeCard() {
   const [activeSlide, setActiveSlide] = useState(0)
   const touchStartX = useRef(null)
-const dispatch = useDispatch()
 
-  useEffect(() => {
-    dispatch(GetPromotionlist())
-  }, [dispatch])
+  // Data is loaded once by <Overview /> via GetOverviewlist
+  const promotions = useSelector(
+    (state) => state.getSlice.overviewData?.promotions,
+  )
 
-    const promotionData = useSelector((state) => state.getSlice.promotionData)
-  const promotionLoading = useSelector((state) => state.getSlice.promotionLoading)
-  const promotionError = useSelector((state) => state.getSlice.promotionError)
-  console.log("promotionData", promotionData,promotionLoading, promotionError)
+  const slides = useMemo(() => {
+    const list = Array.isArray(promotions) ? promotions : []
 
- const slides = useMemo(() => {
-  const list = Array.isArray(promotionData)
-    ? promotionData
-    : promotionData?.data ?? promotionData?.items ?? []
+    const mapped = list
+      .filter((p) => p?.isActive && p?.bannerImageUrl)
+      .map((p, i) => {
+        const title = p.title?.trim() || ""
+        const description = p.description?.trim() || ""
 
-  const mapped = list
-    .filter((p) => p?.isActive && p?.bannerImageUrl)
-    .map((p, i) => {
-      const title = p.title?.trim() || ""
-      const description = p.description?.trim() || ""
+        return {
+          id: p.promotionID ?? i,
+          eyebrow: p.campaignName,
+          title,
+          description,
+          // true only when there is some text to show over the image
+          hasContent: Boolean(title || description),
+          // button only when the API says so and the text exists
+          action:
+            p.showActionButton && p.actionButtonText?.trim()
+              ? p.actionButtonText.trim()
+              : "",
+          href: p.actionLink || "/catalog",
+          image: p.bannerImageUrl,
+          imageAlt: title || p.campaignName || "Promotion banner",
+          accent: "text-emerald-700",
+        }
+      })
 
-      return {
-        id: p.promotionID ?? i,
-        eyebrow: p.campaignName,
-        title,
-        description,
-        // true only when there is some text to show over the image
-        hasContent: Boolean(title || description),
-        // button only when the API says so and the text exists
-        action:
-          p.showActionButton && p.actionButtonText?.trim()
-            ? p.actionButtonText.trim()
-            : "",
-        href: p.actionLink || "/catalog",
-        image: p.bannerImageUrl,
-        imageAlt: title || p.campaignName || "Promotion banner",
-        accent: "text-emerald-700",
-      }
-    })
+    return mapped.length ? mapped : fallbackSlides
+  }, [promotions])
 
-  return mapped.length ? mapped : fallbackSlides
-}, [promotionData])
-
-   // Keep index valid if slide count changes (e.g. data arrives)
+  // Keep index valid if slide count changes (e.g. data arrives)
   useEffect(() => {
     if (activeSlide >= slides.length) setActiveSlide(0)
   }, [slides.length, activeSlide])
@@ -116,7 +414,6 @@ const dispatch = useDispatch()
     }, 5000)
     return () => window.clearTimeout(timeout)
   }, [activeSlide, slides.length])
-
 
   function showPreviousSlide() {
     setActiveSlide((current) => (current - 1 + slides.length) % slides.length)
@@ -159,64 +456,55 @@ const dispatch = useDispatch()
         touchStartX.current = null
       }}
     >
-    {slides.map((slide, index) => (
-  <div
-    key={slide.id ?? index}
-    className={cn(
-      "absolute inset-0 transition-opacity duration-700",
-      index === activeSlide
-        ? "z-10 opacity-100"
-        : "pointer-events-none opacity-0",
-    )}
-    aria-hidden={index !== activeSlide}
-  >
-    {/* <Image
-      src={slide.image}
-      alt={slide.imageAlt}
-      fill
-      unoptimized
-      priority={index === 0}
-      sizes="(max-width: 768px) 100vw, 85vw"
-      className="object-cover object-center"
-    /> */}
-     <Image
-     src={slide.image}
-     alt={slide.imageAlt}
-     fill
-     priority={index === 0}
-     quality={90}
-     sizes="100vw"
-     className="object-cover object-center"
-   />
-
-    {slide.hasContent && (
-      <>
-        <div className="absolute inset-y-0 left-0 w-[40%] bg-gradient-to-r from-white via-white/95 to-transparent dark:from-slate-950 dark:via-slate-950/90 dark:to-transparent" />
-
-        <div className="relative z-10 flex min-h-[18rem] w-[40%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[20rem] sm:p-8">
-          {slide.title && (
-            <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl dark:text-white">
-              {slide.title}
-            </h1>
+      {slides.map((slide, index) => (
+        <div
+          key={slide.id ?? index}
+          className={cn(
+            "absolute inset-0 transition-opacity duration-700",
+            index === activeSlide
+              ? "z-10 opacity-100"
+              : "pointer-events-none opacity-0",
           )}
-          {slide.description && (
-            <p className="mt-1 text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-300">
-              {slide.description}
-            </p>
-          )}
-          {slide.action && (
-            <Button asChild size="sm" className="mt-6 min-h-9 w-fit py-2">
-              <Link href={slide.href}>
-                {slide.action}
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
+          aria-hidden={index !== activeSlide}
+        >
+          <Image
+            src={slide.image}
+            alt={slide.imageAlt}
+            fill
+            priority={index === 0}
+            quality={90}
+            sizes="100vw"
+            className="object-cover object-center"
+          />
+
+          {slide.hasContent && (
+            <>
+              <div className="absolute inset-y-0 left-0 w-[40%] bg-gradient-to-r from-white via-white/95 to-transparent dark:from-slate-950 dark:via-slate-950/90 dark:to-transparent" />
+
+              <div className="relative z-10 flex min-h-[18rem] w-[40%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[20rem] sm:p-8">
+                {slide.title && (
+                  <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl dark:text-white">
+                    {slide.title}
+                  </h1>
+                )}
+                {slide.description && (
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-300">
+                    {slide.description}
+                  </p>
+                )}
+                {slide.action && (
+                  <Button asChild size="sm" className="mt-6 min-h-9 w-fit py-2">
+                    <Link href={slide.href}>
+                      {slide.action}
+                      <ArrowRight className="size-4" />
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </>
           )}
         </div>
-      </>
-    )}
-  </div>
-))}
+      ))}
 
       {slides.length > 1 && (
         <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">
@@ -239,98 +527,4 @@ const dispatch = useDispatch()
       )}
     </section>
   )
-// return (
-//   <section
-//     className="group relative min-h-[16rem] touch-pan-y overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[15rem]"
-//     aria-roledescription="carousel"
-//     aria-label="Featured promotions"
-//     onTouchStart={handleTouchStart}
-//     onTouchEnd={handleTouchEnd}
-//     onTouchCancel={() => {
-//       touchStartX.current = null
-//     }}
-//   >
-//     {slides.map((slide, index) => (
-//       <div
-//         key={slide.id ?? index}
-//         className={cn(
-//           "absolute inset-0 transition-opacity duration-700",
-//           index === activeSlide
-//             ? "z-10 opacity-100"
-//             : "pointer-events-none opacity-0",
-//         )}
-//         aria-hidden={index !== activeSlide}
-//       >
-//         <Image
-//           src={slide.image}
-//           alt={slide.imageAlt}
-//           fill
-//           priority={index === 0}
-//           quality={90}
-//           sizes="100vw"
-//           className="object-cover object-center"
-//         />
-
-//         {/* Image-only banner (title and description are null) -> dull gradient */}
-//         {!slide.hasContent && (
-//           <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/5 dark:from-slate-950 dark:via-slate-950/90 dark:to-slate-950/10" />
-//         )}
-
-//         {/* Banner with title/description -> full-color image, no gradient */}
-//         {slide.hasContent && (
-//           <div className="relative z-10 flex min-h-[16rem] max-w-[76%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[15rem] sm:max-w-[52%] sm:p-8">
-//             {/* {slide.title && (
-//               <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-white drop-shadow-md sm:text-3xl">
-//                 {slide.title}
-//               </h1>
-//             )}
-//             {slide.description && (
-//               <p className="mt-2 max-w-md text-xs leading-relaxed text-white/90 drop-shadow-md sm:text-sm">
-//                 {slide.description}
-//               </p>
-//             )} */}
-//             {slide.title && (
-//   <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-black sm:text-3xl">
-//     {slide.title}
-//   </h1>
-// )}
-// {slide.description && (
-//   <p className="mt-2 max-w-md text-xs leading-relaxed text-black sm:text-sm">
-//     {slide.description}
-//   </p>
-// )}
-//             {slide.action && (
-//               <Button asChild size="sm" className="mt-3 w-fit">
-//                 <Link href={slide.href}>
-//                   {slide.action}
-//                   <ArrowRight className="size-4" />
-//                 </Link>
-//               </Button>
-//             )}
-//           </div>
-//         )}
-//       </div>
-//     ))}
-
-//     {slides.length > 1 && (
-//       <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 shadow-sm backdrop-blur dark:bg-slate-950/75">
-//         {slides.map((slide, index) => (
-//           <button
-//             key={slide.id ?? index}
-//             type="button"
-//             className={cn(
-//               "h-1.5 rounded-full transition-all",
-//               index === activeSlide
-//                 ? "w-5 bg-primary"
-//                 : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600",
-//             )}
-//             onClick={() => setActiveSlide(index)}
-//             aria-label={`Show promotion ${index + 1}`}
-//             aria-current={index === activeSlide ? "true" : undefined}
-//           />
-//         ))}
-//       </div>
-//     )}
-//   </section>
-// )
 }

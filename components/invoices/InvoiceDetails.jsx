@@ -137,7 +137,7 @@ export default function InvoiceDetails({ invoiceId }) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold">Invoice #{invoiceId}</h1>
+            <h1 className="text-2xl font-bold">Invoice No: {invoiceId}</h1>
             <Badge className="bg-sky-500/10 text-sky-600" variant="secondary">
               {statusLabel}
             </Badge>

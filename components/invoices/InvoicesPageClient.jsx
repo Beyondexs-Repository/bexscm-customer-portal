@@ -214,7 +214,7 @@ export default function InvoicesPageClient() {
                             href={`/invoices/details/?id=${encodeURIComponent(invoice.invoiceNumber)}`}
                             className="font-semibold hover:text-primary"
                           >
-                            #{invoice.invoiceNumber}
+                            {invoice.invoiceNumber}
                           </Link>
                         </td>
                         <td className="whitespace-nowrap px-4 py-4">{invoice.invoiceDateLabel}</td>

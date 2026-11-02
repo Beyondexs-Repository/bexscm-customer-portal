@@ -37,6 +37,24 @@ import { can, canAct, getManageableRoles } from "@/lib/permissions"
 
 export default function OrderDetails({ order, onBack, onClose, onReorderSuccess }) {
   const dispatch = useDispatch()
+
+function formatDisplayDate(value) {
+  if (!value) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value)
+
+  const datePart = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
+  const timePart = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  })
+  return `${datePart} at ${timePart}`
+}
   const [ratingsByOrder, setRatingsByOrder] = useState({})
   const { fetchCustomerCart, selectedCartGroupID } = useCart()
   const imageurl = `https://crateapi.bexlgems.com/Images/Items`;
@@ -251,7 +269,7 @@ export default function OrderDetails({ order, onBack, onClose, onReorderSuccess 
           </div>
 
           <h2 className="mt-3 text-lg font-bold leading-tight sm:text-xl">
-            {t("deliveryOn", { deliveryDate: order.deliveryDate })}
+             {t("deliveryOn", { deliveryDate: formatDisplayDate(order.deliveryDate) })}
           </h2>
         </div>
 
@@ -402,9 +420,10 @@ export default function OrderDetails({ order, onBack, onClose, onReorderSuccess 
 
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold">{item.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  {item.brand !== "" && (
+                    <p className="truncate text-xs text-muted-foreground">
                     {t("brand")} {item.brand}
-                  </p>
+                  </p>)}
                   <p className="truncate text-xs text-muted-foreground">
                     {t("packSize")} {item.packSize}
                   </p>

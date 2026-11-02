@@ -1319,9 +1319,10 @@ import { askVoiceAi } from "@/components/ai/voiceOpenAiClient";
 
 
 const pageSizeOptions = [10, 20, 40, 60];
-const sortOptions = ["Name A-Z", "Price Low to High", "Price High to Low"];
+const sortOptions = ["Name A-Z","Name Z-A", "Price Low to High", "Price High to Low"];
 const sortLabelKeys = {
   "Name A-Z": "sortNameAsc",
+  "Name Z-A": "sortNameDesc",
   "Price Low to High": "sortPriceAsc",
   "Price High to Low": "sortPriceDesc",
 };
@@ -2008,13 +2009,14 @@ const rawItems = useMemo(() => {
       const brand = (item.ppc_Brand || item.brand || item.itmshnam)?.trim() || "";
       const name = (item.ItemName || item.itemName || item.ITEMDESC || item.itemdesc)?.trim() || "";
       const unit = (item.UOMSCHDL || item.uomschdl)?.trim() || "unit";
+      const packSize = (item.ppc_PackSize || item.ppc_packSize || item.packSize)?.trim() || "";
       const price = Number(item.QTYBSUOM ?? item.qtybsuom ?? item.avgWeight) || 0;
       const rawImage = item.image ?? item.Image ?? item.IMAGE;
       const resolvedImg = resolveItemImageUrl(rawImage);
       const image = resolvedImg || getCategoryPlaceholderImage(categoryName);
 
       products.push({
-      id, brand, name, sku: id, unit, price,
+      id, brand, name, sku: id, unit, packSize, price,
   category: categoryName,
   subcategory: subcategoryName,
   image,
@@ -2137,13 +2139,15 @@ const rawItems = useMemo(() => {
       );
     }
 
-    if (sortBy === "Price Low to High") {
-      filtered.sort((a, b) => a.price - b.price);
-    } else if (sortBy === "Price High to Low") {
-      filtered.sort((a, b) => b.price - a.price);
-    } else {
-      filtered.sort((a, b) => a.name.localeCompare(b.name));
-    }
+   if (sortBy === "Price Low to High") {
+  filtered.sort((a, b) => a.price - b.price);
+} else if (sortBy === "Price High to Low") {
+  filtered.sort((a, b) => b.price - a.price);
+} else if (sortBy === "Name Z-A") {
+  filtered.sort((a, b) => b.name.localeCompare(a.name));
+} else {
+  filtered.sort((a, b) => a.name.localeCompare(b.name));
+}
 
     return filtered;
   }, [

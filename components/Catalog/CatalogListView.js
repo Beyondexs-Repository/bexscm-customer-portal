@@ -210,7 +210,7 @@ export function CatalogListView({ products, selectedIds, onSelect, getCartState,
                     {product.category}
                   </td>
                   <td className="hidden whitespace-nowrap px-3 py-3 text-muted-foreground lg:table-cell">
-                    {t("packSize", { unit: product.unit })}
+                    {t("packSize", { unit: product.packSize  })}
                   </td>
                   <td className="hidden px-3 py-3 font-semibold lg:table-cell">
                     ${product.price.toFixed(2)}

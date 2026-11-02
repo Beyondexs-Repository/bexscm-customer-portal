@@ -105,6 +105,14 @@ deptData: [],
 deptLoading: false,
 deptStatus: "idle",
 deptError: null,
+//overview_dashboard
+overviewData: {
+    promotions: [],
+    recommendedItems: [],
+    recentInvoices: [],
+  },
+  overviewStatus: "idle",   // "idle" | "loading" | "succeeded" | "failed"
+  overviewError: null,
 
   error: null,
 }
@@ -558,6 +566,52 @@ export const GetPromotionlist= createAsyncThunk(
       const data = error.response?.data
       return rejectWithValue(
         data?.Msg || data?.message || (typeof data === "string" ? data : null) || error.message,
+      )
+    }
+  },
+)
+
+//OVERVIEW_DASHBOARD
+export const GetOverviewlist = createAsyncThunk(
+  "overview/fetchHome",
+  async (custNmbrArg, { rejectWithValue }) => {
+    try {
+      // guard against being passed a click event
+      const argValue = typeof custNmbrArg === "string" ? custNmbrArg : null
+      const custnmbr = argValue || localStorage.getItem("custnmbr")
+
+      if (!custnmbr) return rejectWithValue("Customer number not found.")
+
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/home/${encodeURIComponent(custnmbr)}?take=6&invoiceTake=5`
+
+      const response = await axios.get(URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      })
+
+      const result = response.data
+
+      if (result?.success === false) {
+        return rejectWithValue(
+          result?.Msg || result?.message || "Failed to fetch overview data.",
+        )
+      }
+
+      const data = result?.data ?? {}
+      return {
+        promotions: data.promotions ?? [],
+        recommendedItems: data.recommendedItems ?? [],
+        recentInvoices: data.recentInvoices ?? [],
+      }
+    } catch (error) {
+      const data = error.response?.data
+      return rejectWithValue(
+        data?.Msg ||
+          data?.message ||
+          (typeof data === "string" ? data : null) ||
+          error.message,
       )
     }
   },
@@ -1285,6 +1339,22 @@ const getSlice = createSlice({
   state.deptError = action.payload || action.error.message
   state.deptData = []
 })
+//overview_dshboard
+ .addCase(GetOverviewlist.pending, (state) => {
+      state.overviewStatus = "loading"
+      state.overviewLoading = true
+      state.overviewError = null
+    })
+    .addCase(GetOverviewlist.fulfilled, (state, action) => {
+      state.overviewStatus = "succeeded"
+      state.overviewLoading = false
+      state.overviewData = action.payload
+    })
+    .addCase(GetOverviewlist.rejected, (state, action) => {
+      state.overviewStatus = "failed"
+      state.overviewLoading = false
+      state.overviewError = action.payload || action.error?.message || "Something went wrong."
+    })
 
 /*******************EMPLOYEE SCREEN GET API FUNCTIONS END***************************/
 

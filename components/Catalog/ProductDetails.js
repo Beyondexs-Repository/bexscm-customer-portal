@@ -131,6 +131,7 @@ useEffect(() => {
           const brand = (item.ppc_Brand || item.brand || item.itmshnam)?.trim() || "";
           const name = (item.ItemName || item.itemName || item.ITEMDESC || item.itemdesc)?.trim() || "";
           const unit = (item.UOMSCHDL || item.uomschdl)?.trim() || "unit";
+          const packSize = (item.ppc_PackSize || item.ppc_packSize || item.packSize)?.trim() || unit;
           const price = Number(item.QTYBSUOM ?? item.qtybsuom ?? item.avgWeight) || 0;
           const rawImage = item.image ?? item.Image ?? item.IMAGE;
           const resolvedImg = resolveItemImageUrl(rawImage);
@@ -277,7 +278,7 @@ if (!product) {
 
             <div className="grid grid-cols-[120px_1fr] gap-3">
               <span className="font-semibold">{t("packSize")}</span>
-              <span>1 {product.unit}</span>
+              <span>{product.packSize}</span>
             </div>
 
             <div className="grid grid-cols-[120px_1fr] gap-3">

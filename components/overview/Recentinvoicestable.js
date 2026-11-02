@@ -180,7 +180,7 @@ export default function RecentInvoicesTable() {
                         className="absolute inset-0 z-10"
                       />
                       <span className="font-semibold text-foreground text-xs">
-                        #{order.invoiceNumber}
+                        {order.invoiceNumber}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2 text-xs">
