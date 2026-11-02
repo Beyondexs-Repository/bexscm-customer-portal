@@ -3572,6 +3572,20 @@ function assignmentValues(value) {
   return Array.isArray(value) ? value : value ? [value] : [];
 }
 
+// API gives one name string per level (e.g. areaName: "University Place, WA");
+// accept an array too. Do NOT split on commas: area names contain them.
+function apiLabels(...candidates) {
+  for (const value of candidates) {
+    if (Array.isArray(value)) {
+      const list = value.map((v) => String(v ?? "").trim()).filter(Boolean);
+      if (list.length) return [...new Set(list)];
+    } else if (value != null && String(value).trim()) {
+      return [String(value).trim()];
+    }
+  }
+  return [];
+}
+
 // API user -> shape used by this screen
 function normalizeUser(u) {
   const rawId = u.userId ?? u.userID ?? u.userid ?? u.id;
@@ -3591,10 +3605,11 @@ function normalizeUser(u) {
     status: u.isActive ? "Active" : "Inactive",
     reportsTo: "",
     avatar: "",
-    territory: [],
-    area: [],
-    store: [],
-    department: [],
+    // table columns: Territory / Area / Store / Department
+    territory: apiLabels(u.territoryName, u.territoryNames, u.territories),
+    area: apiLabels(u.areaName, u.areaNames, u.areas),
+    store: apiLabels(u.locationName, u.locationNames, u.storeName, u.stores),
+    department: apiLabels(u.departmentName, u.departmentNames, u.deptName, u.departments),
   };
 }
 
