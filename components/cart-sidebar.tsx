@@ -27,8 +27,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
-import { resolveItemImageUrl } from "@/lib/api/itemsApi"
+import ProductImage from "@/components/product-image"
 import {
   Dialog,
   DialogContent,
@@ -424,8 +423,6 @@ export function CartSidebar({
             ) : (
               <div className="space-y-3">
                 {items.map((item) => {
-                  const resolvedImg = resolveItemImageUrl(item.image) || item.image
-                  const image = resolvedImg || getCategoryPlaceholderImage(item.category)
 
                   return (
                     <article
@@ -434,10 +431,8 @@ export function CartSidebar({
                     >
                       <div className="flex items-start gap-3">
                         <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={image}
-                            alt={item.name}
+                          <ProductImage
+                            item={item}
                             className="size-full object-cover"
                           />
                         </div>

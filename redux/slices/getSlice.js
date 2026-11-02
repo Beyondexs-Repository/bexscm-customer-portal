@@ -235,6 +235,10 @@ export const GetItems = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.response ? error.response.data : error.message)
     }
+  },
+  {
+    // Multiple product images can request catalog metadata on the same render.
+    condition: (_, { getState }) => getState().getSlice.itemsStatus !== "loading",
   }
 )
 

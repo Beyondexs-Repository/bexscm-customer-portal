@@ -11,8 +11,7 @@ import InvoicePagination from "@/components/invoices/InvoicePagination"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
-import { resolveItemImageUrl } from "@/lib/api/itemsApi"
+import ProductImage from "@/components/product-image"
 import { can, canAct, getManageableRoles } from "@/lib/permissions"
 
 
@@ -34,17 +33,6 @@ const date = (value) => {
     }).format(d)
 }
 
-// API returns image as "" or just a filename like "500002.png".
-
-const placeholderImage = getCategoryPlaceholderImage("Product")
-
-// "" / null  -> default placeholder
-// "500002.png" -> resolved image URL (same logic as cart-sidebar)
-const resolveImage = (image) => {
-  const file = clean(image)
-  if (!file) return placeholderImage
-  return resolveItemImageUrl(file) || file
-}
 const rowOptions = [5, 10, 20, 50, 100]
 
 export default function InvoiceDetails({ invoiceId }) {
@@ -205,11 +193,10 @@ export default function InvoiceDetails({ invoiceId }) {
                       <tr key={`${product.itemNumber}-${start + index}`}>
                         <td className="px-4 py-3">
                           <div className="flex min-w-0 items-center gap-3">
-                            <div
-                              role="img"
-                              aria-label={clean(product.itemDescription)}
-                              className="size-11 shrink-0 rounded-md border bg-cover bg-center"
-                              style={{ backgroundImage: `url("${resolveImage(product.image)}")` }}
+                            <ProductImage
+                              item={product}
+                              alt={clean(product.itemDescription)}
+                              className="size-11 shrink-0 rounded-md border object-cover"
                             />
                             <div className="min-w-0">
                               <p className="truncate font-semibold">

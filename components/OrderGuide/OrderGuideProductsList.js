@@ -1093,8 +1093,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useCart, useQuickOrders } from "@/app/context/app-context";
-import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
-import { resolveItemImageUrl } from "@/lib/api/itemsApi";
+import ItemProductImage from "@/components/product-image";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { can, canAct, getManageableRoles } from "@/lib/permissions"
@@ -1418,18 +1417,6 @@ const updateParPUT = async ({ orderGroupItemID, parValue, modifyBY }) => {
 
 
 function ProductImage({ product, listLayout }) {
-  const resolvedImg = resolveItemImageUrl(product.image) || product.image;
-  const categoryFallback = getCategoryPlaceholderImage(product.category);
-  const initialImage = resolvedImg || categoryFallback;
-
-  const [imgSrc, setImgSrc] = useState(initialImage);
-  const [prevInitial, setPrevInitial] = useState(initialImage);
-
-  if (prevInitial !== initialImage) {
-    setPrevInitial(initialImage);
-    setImgSrc(initialImage);
-  }
-
   return (
     <div
       className={cn(
@@ -1442,16 +1429,9 @@ function ProductImage({ product, listLayout }) {
       <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(135deg,var(--muted),var(--background))] text-primary/70">
         <Package2 className="size-8 sm:size-10" />
       </div>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={imgSrc}
-        alt={product.name}
+      <ItemProductImage
+        item={product}
         className="absolute inset-0 size-full object-cover"
-        onError={() => {
-          if (imgSrc !== categoryFallback) {
-            setImgSrc(categoryFallback);
-          }
-        }}
       />
     </div>
   );

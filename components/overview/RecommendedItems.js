@@ -187,9 +187,7 @@
 // }
 "use client"
 import { useSelector } from "react-redux"
-import { resolveItemImageUrl } from "@/lib/api/itemsApi"
-import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
-import Image from "next/image"
+import ProductImage from "@/components/product-image"
 import { ChevronRight, ShoppingCart, Star } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -213,9 +211,7 @@ export default function RecommendedItems() {
     category: item.subtitle,
     price: item.price,
     unit: item.unit,
-    image:
-      resolveItemImageUrl(item.image) ||
-      getCategoryPlaceholderImage(item.subtitle),
+    image: item.image,
   }))
 
   return (
@@ -264,7 +260,7 @@ export default function RecommendedItems() {
           </div>
         )) : products.map((product) => (
           <article key={product.id} className="flex w-[80%] max-w-64 min-w-0 shrink-0 snap-start flex-col overflow-hidden rounded-lg border bg-background md:w-auto md:max-w-none">
-            <Image src={product.image} alt={product.name} width={256} height={128} className="h-32 w-full object-cover" />
+            <ProductImage item={product} width={256} height={128} className="h-32 w-full object-cover" />
             <div className="flex flex-1 flex-col gap-1 p-3">
               <h3 className="text-sm font-semibold">{product.name}</h3>
               <p className="text-xs text-muted-foreground">{product.category}</p>

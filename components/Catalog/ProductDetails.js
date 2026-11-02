@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { QuantityInput } from "@/components/Catalog/Quantityinput";
+import ProductImage from "@/components/product-image";
 
 function formatPrice(price, unit) {
   return `$${Number(price).toFixed(2)} / ${unit}`;
@@ -47,9 +48,11 @@ function ProductGallery({ product, images }) {
               )}
               onClick={() => setSelectedImage(image)}
             >
-              <span
-                className="absolute inset-0 bg-contain bg-center bg-no-repeat"
-                style={{ backgroundImage: `url(${image})` }}
+              <ProductImage
+                item={product}
+                src={image}
+                alt={`${product.name} image ${index + 1}`}
+                className="absolute inset-0 size-full object-contain"
               />
             </button>
           );
@@ -57,11 +60,10 @@ function ProductGallery({ product, images }) {
       </div>
 
       <div className="order-1 grid min-h-[320px] place-items-center rounded-lg md:order-2 lg:min-h-[520px]">
-        <div
-          role="img"
-          aria-label={product.name}
-          className="h-full min-h-[300px] w-full bg-contain bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${selectedImage})` }}
+        <ProductImage
+          item={product}
+          src={selectedImage}
+          className="h-full min-h-[300px] w-full object-contain"
         />
       </div>
     </div>

@@ -30,8 +30,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useCart } from "@/app/context/app-context"
 import { formatCurrency, statusStyles } from "./MyOrders"
-import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images"
-import { resolveItemImageUrl } from "@/lib/api/itemsApi"
+import ProductImage from "@/components/product-image"
 import { can, canAct, getManageableRoles } from "@/lib/permissions"
 
 
@@ -57,7 +56,6 @@ function formatDisplayDate(value) {
 }
   const [ratingsByOrder, setRatingsByOrder] = useState({})
   const { fetchCustomerCart, selectedCartGroupID } = useCart()
-  const imageurl = `https://crateapi.bexlgems.com/Images/Items`;
   const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false)
   console.log(order, "--find order in order details");
   const [reOrderModalOpen, setReOrderModalOpen] = useState(false);
@@ -402,19 +400,12 @@ function formatDisplayDate(value) {
 
         <div className="mt-3 divide-y rounded-lg border">
           {order.items.map((item) => {
-            const resolvedImg = resolveItemImageUrl(item.image) || item.image
-            const image = resolvedImg || getCategoryPlaceholderImage(item.category)
-
             return (
               <div key={item.id} className="flex gap-3 p-3">
                 <div className="relative size-14 shrink-0 overflow-hidden rounded-md border bg-muted">
-                  <img
-                    src={image}
-                    alt={item.name}
+                  <ProductImage
+                    item={item}
                     className="size-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = getCategoryPlaceholderImage(item.category)
-                    }}
                   />
                 </div>
 
@@ -571,8 +562,6 @@ function formatDisplayDate(value) {
                   const itemTotal = quantity * unitPrice
                   // const price = Number(item.price) || 0
                   // const itemTotal = quantity * price
-                  const resolvedImg = resolveItemImageUrl(item.image) || item.image
-                  const image = resolvedImg || getCategoryPlaceholderImage(item.category)
                   return (
                     <div
                       key={item.id}
@@ -609,13 +598,9 @@ function formatDisplayDate(value) {
                             e.currentTarget.style.display = "none"
                           }}
                         /> */}
-                        <img
-                          src={image}
-                          alt={item.name}
+                        <ProductImage
+                          item={item}
                           className="size-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = getCategoryPlaceholderImage(item.category)
-                          }}
                         />
                       </div>
 
