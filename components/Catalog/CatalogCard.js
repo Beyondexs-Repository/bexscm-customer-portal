@@ -181,8 +181,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Loader2, Package2, ShoppingCart, Star } from "lucide-react";
 import { useQuickOrders } from "@/app/context/app-context";
-import { resolveItemImageUrl } from "@/lib/api/itemsApi";
-import { getCategoryPlaceholderImage } from "@/lib/category-placeholder-images";
+import ItemProductImage from "@/components/product-image";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { QuantityInput } from "../Catalog/Quantityinput";
@@ -190,33 +189,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { OrderGuidePickerDialog, isProductInGroup } from "./OrderGuidePickerDialog";
 
 export function ProductImage({ product, compact = false }) {
-  const resolvedImg = resolveItemImageUrl(product.image) || product.image;
-  const categoryFallback = getCategoryPlaceholderImage(product.category);
-  const initialImage = resolvedImg || categoryFallback;
-
-  const [imgSrc, setImgSrc] = useState(initialImage);
-  const [prevInitial, setPrevInitial] = useState(initialImage);
-
-  if (prevInitial !== initialImage) {
-    setPrevInitial(initialImage);
-    setImgSrc(initialImage);
-  }
-
   return (
     <div className={compact ? "relative size-14 shrink-0 overflow-hidden rounded-md bg-muted" : "relative aspect-[1.25] overflow-hidden bg-muted sm:aspect-[1.35] xl:aspect-[1.45]"}>
       <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(135deg,var(--muted),var(--background))] text-primary/70">
         <Package2 className="size-8 sm:size-10" />
       </div>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={imgSrc}
-        alt={product.name}
+      <ItemProductImage
+        item={product}
         className="absolute inset-0 size-full object-cover"
-        onError={() => {
-          if (imgSrc !== categoryFallback) {
-            setImgSrc(categoryFallback);
-          }
-        }}
       />
     </div>
   );
