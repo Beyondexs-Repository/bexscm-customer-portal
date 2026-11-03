@@ -105,6 +105,13 @@ deptData: [],
 deptLoading: false,
 deptStatus: "idle",
 deptError: null,
+
+//USER_STORES
+userStoresData: [],
+userStoresLoading: false,
+userStoresStatus: "idle",
+userStoresError: null,
+
 //overview_dashboard
 overviewData: {
     promotions: [],
@@ -116,6 +123,8 @@ overviewData: {
 
   error: null,
 }
+
+
 
 // ============================================================
 // ASYNC THUNKS — GET
@@ -980,7 +989,66 @@ export const EdituserGet = createAsyncThunk(
 )
 
 /*******************EMPLOYEE SCREEN GET API FUNCTIONS END***************************/
+//DOWNTOWN STORE
+//STORES THE LOGGED-IN USER CAN ACCESS
+//STORES THE LOGGED-IN USER CAN ACCESS
+export const GetUserStores = createAsyncThunk(
+  "Location/User_stores_GET",
+  async (_, { rejectWithValue }) => {
+    try {
+      const assignments = JSON.parse(localStorage.getItem("assignments") || "{}")
+      const areaIds = [...new Set(assignments.areaIds ?? [])]
+      const territoryIds = [...new Set(assignments.territoryIds ?? [])]
+      const locationIds = new Set((assignments.locationIds ?? []).map(Number))
 
+      // Owner / Area manager: fetch by areas. Territory manager (no areas): fetch by territories.
+      const parentKey = areaIds.length ? "areaIds" : "territoryIds"
+      const parentIds = areaIds.length ? areaIds : territoryIds
+      if (!parentIds.length) return []
+
+      const headers = {
+        Accept: "application/json",
+        Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      }
+      const stores = new Map() // keyed by locationID, so no duplicates
+
+      // 10 requests at a time
+      for (let i = 0; i < parentIds.length; i += 10) {
+        const responses = await Promise.all(
+          parentIds
+            .slice(i, i + 10)
+            .map((id) =>
+              axios.get(
+                `${process.env.NEXT_PUBLIC_NRL_API_URL}/location?${parentKey}=${encodeURIComponent(id)}`,
+                { headers },
+              ),
+            ),
+        )
+        for (const { data } of responses) {
+          if (data?.success === false) {
+            throw new Error(data?.Msg || data?.message || "Failed to fetch locations.")
+          }
+          const list = Array.isArray(data) ? data : data?.data ?? []
+          for (const store of list) {
+            if (store.isActive === false) continue
+            // locationIds given -> only those stores; empty -> every store in the user's areas/territories
+            if (locationIds.size && !locationIds.has(Number(store.locationID))) continue
+            stores.set(store.locationID, store)
+          }
+        }
+      }
+
+      return [...stores.values()].sort((a, b) =>
+        String(a.storeName ?? "").localeCompare(String(b.storeName ?? "")),
+      )
+    } catch (error) {
+      const data = error.response?.data
+      return rejectWithValue(
+        data?.Msg || data?.message || (typeof data === "string" ? data : null) || error.message,
+      )
+    }
+  },
+)
 
 
 
@@ -1232,6 +1300,25 @@ const getSlice = createSlice({
   state.promotionLoading = false
   state.promotionError = action.payload || action.error.message
   state.promotionData = []
+})
+
+
+//USER_STORES
+.addCase(GetUserStores.pending, (state) => {
+  state.userStoresStatus = "loading"
+  state.userStoresLoading = true
+  state.userStoresError = null
+})
+.addCase(GetUserStores.fulfilled, (state, action) => {
+  state.userStoresStatus = "succeeded"
+  state.userStoresLoading = false
+  state.userStoresData = Array.isArray(action.payload) ? action.payload : []
+})
+.addCase(GetUserStores.rejected, (state, action) => {
+  state.userStoresStatus = "failed"
+  state.userStoresLoading = false
+  state.userStoresError = action.payload || action.error.message
+  state.userStoresData = []
 })
 
 /*******************EMPLOYEE SCREEN GET API FUNCTIONS START***************************/

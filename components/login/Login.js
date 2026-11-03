@@ -1,6 +1,7 @@
 "use client";
 import { useDispatch } from "react-redux";
 import { PostLogin } from "../../redux/slices/postSlice"; 
+import { resetGetSlice } from "../../redux/slices/getSlice";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -312,13 +313,19 @@ async function handleSendOtp(event) {
     }
 
     const user = result?.data;
+	const storedata = result?.assignments;
     const customerNumber = normalizeCustomerNumber(user?.custnmbr);
     if (!customerNumber) {
       throw new Error("The login API did not return a customer number. Please contact support.");
     }
 
     localStorage.setItem("custnmbr", customerNumber);
-    for (const key of ["loggedInUser", "roles"]) {
+	// territoryIds, areaIds, locationIds, departmentIds this user may access
+localStorage.setItem("assignments", JSON.stringify(result?.assignments ?? {}));
+localStorage.removeItem("selectedLocation");
+dispatch(resetGetSlice());
+
+for (const key of ["loggedInUser", "roles"]) {
       const value = user[key === "loggedInUser" ? "userId" : key];
       if (value == null) localStorage.removeItem(key);
       else localStorage.setItem(key, value);
