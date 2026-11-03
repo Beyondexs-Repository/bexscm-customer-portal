@@ -819,7 +819,7 @@ export const GetAreaList = createAsyncThunk(
       const responses = await Promise.all(
         parentIds.map((id) =>
           axios.get(
-            `${process.env.NEXT_PUBLIC_NRL_API_URL}/area?territoryIds=${encodeURIComponent(id)}`,
+            `${process.env.NEXT_PUBLIC_NRL_API_URL}/area?territoryIds=${encodeURIComponent(id)}&custNmbr=${localStorage.getItem("custnmbr")}`,
             { headers },
           ),
         ),

@@ -845,7 +845,8 @@ export const Postusers = createAsyncThunk(
 
       if (response.data?.success === false) {
         return rejectWithValue(
-          response.data?.Msg ||
+          response.data?.error ||      // <-- added
+            response.data?.Msg ||
             response.data?.message ||
             "Failed to create user."
         );
@@ -856,7 +857,8 @@ export const Postusers = createAsyncThunk(
       const d = error.response?.data;
 
       return rejectWithValue(
-        d?.Msg ||
+        d?.error ||                    // <-- added
+          d?.Msg ||
           d?.message ||
           (typeof d === "string" ? d : null) ||
           error.message ||

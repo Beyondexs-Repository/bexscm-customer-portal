@@ -323,6 +323,7 @@ async function handleSendOtp(event) {
 	// territoryIds, areaIds, locationIds, departmentIds this user may access
 localStorage.setItem("assignments", JSON.stringify(result?.assignments ?? {}));
 localStorage.removeItem("selectedLocation");
+localStorage.removeItem("userStoresCache");
 dispatch(resetGetSlice());
 
 for (const key of ["loggedInUser", "roles"]) {
