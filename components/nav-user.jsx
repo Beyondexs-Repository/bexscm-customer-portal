@@ -94,7 +94,7 @@ const [name, setName] = useState('Bex SCM')
   const router = useRouter()
    useEffect(() => {
     const roleCode = (localStorage.getItem("roles") ?? "").trim().toUpperCase()
-    const name =  setName(localStorage.getItem("name"))
+    setName(localStorage.getItem("name")?.trim() || "Bex SCM")
     console.log("roles from localStorage:", roleCode)
     setDisplayRole(roleMap[roleCode] || "Role not assigned")
   }, [])

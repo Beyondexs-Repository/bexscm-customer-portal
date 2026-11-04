@@ -1069,6 +1069,9 @@ import {
   Search,
   ShoppingBasket,
   ShoppingCart,
+  StickyNote,
+  Bookmark,
+  Info,
   Trash2,
   Loader2,
 } from "lucide-react";
@@ -1491,6 +1494,11 @@ function SavedProductCard({
   const parValue = product.par;
   const listLayout = layout === "list";
   const canDrag = canEdit && listLayout && !isAllView;   // add this
+  const [activeDialog, setActiveDialog] = useState(null);
+  const [savedNote, setSavedNote] = useState({ text: "", preserve: false });
+  const [noteDraft, setNoteDraft] = useState("");
+  const [preserveNoteDraft, setPreserveNoteDraft] = useState(false);
+  const [isEssential, setIsEssential] = useState(false);
   const { setNodeRef, setActivatorNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: product.id,
     // disabled: !canEdit || !listLayout,
@@ -1734,8 +1742,130 @@ function SavedProductCard({
           </p>
         </div>
 
-        {orderControls}
+        {canPlaceOrder && (
+          <div className="min-w-0 space-y-4">
+            {orderControls}
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 bg-transparent p-0 text-xs font-normal text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Note for ${product.name}`}
+                aria-haspopup="dialog"
+                onClick={() => {
+                  setNoteDraft(savedNote.text);
+                  setPreserveNoteDraft(savedNote.preserve);
+                  setActiveDialog("note");
+                }}
+              >
+                <StickyNote className={cn("size-3.5", savedNote.text && "fill-primary text-primary")} />
+                Note
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 bg-transparent p-0 text-xs font-normal text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Mark ${product.name} as essential`}
+                aria-haspopup="dialog"
+                aria-pressed={isEssential}
+                onClick={() => setActiveDialog("essential")}
+              >
+                <Bookmark className={cn("size-3.5", isEssential && "fill-primary text-primary")} />
+                Essential
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+      <Dialog open={activeDialog === "note"} onOpenChange={(open) => !open && setActiveDialog(null)}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
+          <DialogHeader className="pr-5">
+            <DialogTitle>Note</DialogTitle>
+            <DialogDescription>This note is for internal reference only.</DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setSavedNote({ text: noteDraft, preserve: preserveNoteDraft });
+              setActiveDialog(null);
+            }}
+          >
+            <div className="space-y-1.5 mb-2">
+              <textarea
+                aria-label={`Note for ${product.name}`}
+                aria-describedby={`note-count-${product.id}`}
+                value={noteDraft}
+                onChange={(event) => setNoteDraft(event.target.value)}
+                maxLength={1000}
+                placeholder="Add a note for this item..."
+                className="min-h-28 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <label className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-[10px] sm:gap-2 sm:text-sm">
+                <input
+                  type="checkbox"
+                  checked={preserveNoteDraft}
+                  onChange={(event) => setPreserveNoteDraft(event.target.checked)}
+                  className="size-4 shrink-0 accent-primary"
+                />
+                Preserve note after order placement
+              </label>
+              <p id={`note-count-${product.id}`} className="shrink-0 whitespace-nowrap text-right text-[10px] tabular-nums text-muted-foreground sm:text-xs">
+                {noteDraft.length}/1000
+              </p>
+            </div>
+            <DialogFooter className="grid grid-cols-2 sm:flex">
+              {savedNote.text ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => {
+                    setSavedNote({ text: "", preserve: false });
+                    setNoteDraft("");
+                    setPreserveNoteDraft(false);
+                    setActiveDialog(null);
+                  }}
+                >
+                  Remove Note
+                </Button>
+              ) : (
+                <Button type="button" variant="outline" onClick={() => setActiveDialog(null)}>
+                  Cancel
+                </Button>
+              )}
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={activeDialog === "essential"} onOpenChange={(open) => !open && setActiveDialog(null)}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
+          <div className="grid size-10 place-items-center rounded-full bg-primary/10">
+            <Info className="size-5 text-primary" aria-hidden="true" />
+          </div>
+          <DialogHeader>
+            <DialogTitle>Essential item</DialogTitle>
+            <DialogDescription className="leading-relaxed">
+              We&apos;ll alert you if this item is not in your order at the time of order placement for each fulfillment date.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="grid grid-cols-2 sm:flex">
+            <Button type="button" variant="outline" onClick={() => setActiveDialog(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant={isEssential ? "destructive" : "default"}
+              onClick={() => {
+                setIsEssential((current) => !current);
+                setActiveDialog(null);
+              }}
+            >
+              {isEssential ? "Remove" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </article>
   );
 }
