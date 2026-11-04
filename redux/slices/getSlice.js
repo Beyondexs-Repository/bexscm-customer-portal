@@ -120,6 +120,14 @@ overviewData: {
   },
   overviewStatus: "idle",   // "idle" | "loading" | "succeeded" | "failed"
   overviewError: null,
+//Reports To_GET
+reportsToStatus: "idle",
+reportsToLoading: false,
+reportsToError: null,
+reportsToData: null,
+
+
+
 
   error: null,
 }
@@ -992,6 +1000,42 @@ export const EdituserGet = createAsyncThunk(
   },
 )
 
+
+
+//Reports To_GET
+export const ReportsToGet = createAsyncThunk(
+  "Users/ReportsTo_GET",
+  async (custNmbrArg, { rejectWithValue }) => {
+    try {
+      const custnmbr = custNmbrArg || localStorage.getItem("custnmbr")   // ← fallback
+      if (!custnmbr || custnmbr === "undefined") {
+        return rejectWithValue("Customer number is missing.")
+      }
+
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/users/reporting-managers/${encodeURIComponent(custnmbr)}`
+
+      const response = await axios.get(URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      })
+
+      const result = response.data
+      if (result?.success === false) {
+        return rejectWithValue(result?.error || result?.Msg || result?.message || "Failed to fetch reporting managers.")
+      }
+
+      return result?.data?.groups ?? []          // ← just the groups array
+    } catch (error) {
+      const data = error.response?.data
+      return rejectWithValue(
+        data?.error || data?.Msg || data?.message ||
+          (typeof data === "string" ? data : null) || error.message,
+      )
+    }
+  },
+)
 /*******************EMPLOYEE SCREEN GET API FUNCTIONS END***************************/
 //DOWNTOWN STORE
 //STORES THE LOGGED-IN USER CAN ACCESS
@@ -1451,6 +1495,24 @@ const getSlice = createSlice({
       state.overviewLoading = false
       state.overviewError = action.payload || action.error?.message || "Something went wrong."
     })
+
+//GET_REPORTSTO_LIST
+.addCase(ReportsToGet.pending, (state) => {
+  state.reportsToStatus = "loading"
+  state.reportsToLoading = true
+  state.reportsToError = null
+})
+.addCase(ReportsToGet.fulfilled, (state, action) => {
+  state.reportsToStatus = "succeeded"
+  state.reportsToLoading = false
+  state.reportsToData = action.payload
+})
+.addCase(ReportsToGet.rejected, (state, action) => {
+  state.reportsToStatus = "failed"
+  state.reportsToLoading = false
+  state.reportsToError = action.payload || action.error.message
+  state.reportsToData = null
+})
 
 /*******************EMPLOYEE SCREEN GET API FUNCTIONS END***************************/
 

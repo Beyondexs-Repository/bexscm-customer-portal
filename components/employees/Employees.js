@@ -5218,6 +5218,7 @@ import {
   clearLocationList,
   clearDepartmentList,
   EdituserGet,
+  ReportsToGet,
 } from "../../redux/slices/getSlice";
 import { Postusers, Updateusers, Deleteusers } from "../../redux/slices/postSlice";
 import {
@@ -5290,6 +5291,12 @@ const roles = [
 
 const roleNameByCode = Object.fromEntries(roles.map((r) => [r.code, r.name]));
 const roleCodeByName = Object.fromEntries(roles.map((r) => [r.name, r.code]));
+
+// position of a role code in the hierarchy (Owner = 0 ... Employees = 5)
+const roleIndex = (code) => roles.findIndex((r) => r.code === code);
+
+// field name the POST / PUT /users API expects for the selected "Reports to" manager
+const REPORTS_TO_FIELD = "reportsTo";
 
 // which ID arrays each role sends in the POST /users payload
 const payloadKeysByRole = {
@@ -5605,7 +5612,7 @@ function AssignmentList({ value, label, icon: Icon }) {
   );
 }
 
-// sheet: "Reports to" dropdown grouped by higher roles
+// sheet: "Reports to" dropdown grouped by higher roles (single select)
 function ReportsToSelect({ role, groups, selectedUser, onChange }) {
   const hasUsers = groups.some((group) => group.users.length);
 
@@ -5701,6 +5708,9 @@ export default function Employees() {
   const edituserData = useSelector((state) => state.getSlice.edituserData);
   const edituserStatus = useSelector((state) => state.getSlice.edituserStatus);
   const edituserError = useSelector((state) => state.getSlice.edituserError);
+
+  // reporting managers: [{ role, label, managers: [{ userId, name }] }]
+  const reportsToData = useSelector((state) => state.getSlice.reportsToData);
 
   // ── 5.2 Local state ─────────────────────────────────────────
   const [users, setUsers] = useState([]);
@@ -5860,10 +5870,11 @@ export default function Employees() {
 
   // ── 5.5 Effects ─────────────────────────────────────────────
 
-  // load users + territories on mount
+  // load users + territories + reporting managers on mount
   useEffect(() => {
     dispatch(Getuserslist());
     dispatch(GetTerritorylist());
+    dispatch(ReportsToGet());
   }, [dispatch]);
 
   // copy the API list into local state (so edit / activate still work on screen)
@@ -6064,12 +6075,15 @@ export default function Employees() {
     (r) => sheetAllowedCodes.includes(r.code) || r.name === editing?.role,
   );
 
-  // sheet: "Reports to" candidates (higher roles only)
-  const reportingGroups = roles
-    .slice(0, Math.max(0, roles.findIndex((r) => r.name === editing?.role)))
-    .map((r) => ({
-      ...r,
-      users: users.filter((user) => user.role === r.name && user.id !== editing?.id),
+  // sheet: "Reports to" options come from the API, limited to roles ABOVE the one being created
+  const reportingGroups = (Array.isArray(reportsToData) ? reportsToData : [])
+    .filter((g) => roleIndex(g.role) < roleIndex(sheetRoleCode))
+    .map((g) => ({
+      name: g.role,
+      shortName: g.label,
+      users: (g.managers ?? [])
+        .filter((m) => String(m.userId) !== String(editing?.userId)) // can't report to yourself
+        .map((m) => ({ id: String(m.userId), name: m.name })),
     }));
   const reportingUsers = reportingGroups.flatMap((group) => group.users);
   const reportsTo = reportingUsers.find((user) => user.id === editing?.reportsTo);
@@ -6318,6 +6332,7 @@ export default function Employees() {
       setUsers((current) => current.filter((user) => user.id !== target.id));
       setDeleting(null);
       dispatch(Getuserslist()); // refresh the table
+      dispatch(ReportsToGet()); // removed manager disappears from "Reports to"
       toast.success(result?.message || "User deleted successfully.");
     } catch (error) {
       const message =
@@ -6369,6 +6384,9 @@ export default function Employees() {
       payload[key] = ids[key];
     }
 
+    // selected "Reports to" manager (null when none is selected)
+    payload[REPORTS_TO_FIELD] = state.reportsTo ? Number(state.reportsTo) : null;
+
     if (isEdit) payload.modifiedBY = MODIFIED_BY;
     else payload.createdBY = CREATED_BY;
     return payload;
@@ -6410,6 +6428,7 @@ export default function Employees() {
         await dispatch(Postusers({ data: payload })).unwrap();
       }
       dispatch(Getuserslist()); // refresh the table
+      dispatch(ReportsToGet()); // new / changed managers show up in "Reports to"
       // only switch tab if the saved role's tab is visible to this user
       if (visibleRoles.some((r) => r.name === selectedRole)) selectRole(selectedRole);
       closeSheet();
@@ -6945,7 +6964,7 @@ export default function Employees() {
                   </select>
                 </label>
 
-                {/* reports to */}
+                {/* reports to (options come from the ReportsToGet API) */}
                 <ReportsToSelect
                   role={editing.role}
                   groups={reportingGroups}
