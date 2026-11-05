@@ -874,7 +874,7 @@ export const GetLocationList = createAsyncThunk(
       const responses = await Promise.all(
         parentIds.map((id) =>
           axios.get(
-            `${process.env.NEXT_PUBLIC_NRL_API_URL}/location?${parentKey}=${encodeURIComponent(id)}`,
+            `${process.env.NEXT_PUBLIC_NRL_API_URL}/location?${parentKey}=${encodeURIComponent(id)}&custNmbr=${localStorage.getItem("custnmbr")}`,
             { headers },
           ),
         ),
@@ -1067,7 +1067,7 @@ export const GetUserStores = createAsyncThunk(
             .slice(i, i + 10)
             .map((id) =>
               axios.get(
-                `${process.env.NEXT_PUBLIC_NRL_API_URL}/location?${parentKey}=${encodeURIComponent(id)}`,
+                `${process.env.NEXT_PUBLIC_NRL_API_URL}/location?${parentKey}=${encodeURIComponent(id)}&custNmbr=${localStorage.getItem("custnmbr")}`,
                 { headers },
               ),
             ),

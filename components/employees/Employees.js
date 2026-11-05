@@ -5768,6 +5768,10 @@ export default function Employees() {
 
   // does the selected tab have any row actions at all?
   const activeTabCode = roleCodeByName[roleName];
+
+  // Hide the "Add User" button on the Owner tab (no one can be added as Owner here)
+  const showAddUser = canCreate && activeTabCode !== "O";
+
   // Hide the Action column ONLY when an Area Manager ("A") is logged in AND the
   // active tab is the Area Manager tab. Every other case is permission-driven.
   const isAreaManagerLogin = String(role ?? "").trim().toUpperCase() === "A";
@@ -6210,7 +6214,8 @@ export default function Employees() {
   }
 
   function openAddSheet() {
-    if (!canCreate) return;
+    // guard: no create permission, or the Owner tab (Add User is hidden there)
+    if (!canCreate || activeTabCode === "O") return;
     setSaveError("");
     setPendingAssign(null);
 
@@ -6580,7 +6585,7 @@ export default function Employees() {
         </label>
         <div
           className="grid min-w-0 grid-cols-2 gap-2 @[720px]/roles:grid-cols-[repeat(var(--filter-count),minmax(0,1fr))] @[1200px]/roles:grid-cols-[repeat(var(--filter-count),minmax(0,9rem))] @[1200px]/roles:justify-end"
-          style={{ "--filter-count": filters.length + (canCreate ? 1 : 0) }}
+          style={{ "--filter-count": filters.length + (showAddUser ? 1 : 0) }}
         >
           {filters.map(([title, value, setter, options, disabled], index) => (
             <label
@@ -6603,7 +6608,7 @@ export default function Employees() {
               </select>
             </label>
           ))}
-          {canCreate && (
+          {showAddUser && (
             <Button
               className="h-9 w-full min-w-0 gap-2 whitespace-nowrap px-3 text-xs"
               onClick={openAddSheet}
