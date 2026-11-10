@@ -159,6 +159,8 @@ function mapOrderGroupItemToProduct(item) {
       (item.parValue ?? item.par) == null
         ? null
         : String(item.parValue ?? item.par),
+    notes: item.notes ?? "",
+    essentialItems: Boolean(item.essentialItems),
   };
 }
 

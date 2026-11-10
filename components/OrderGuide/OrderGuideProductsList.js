@@ -1045,7 +1045,7 @@
 //changed by Radhika 23/09/2026 --12:02 PM =================================================================================>
 "use client";
 import { useDispatch } from "react-redux";
-import { PutItemSequence, PostCart, DeleteOrderGroupItem, PutOrderGuideQuikorders } from "../../redux/slices/postSlice";
+import { PutItemSequence, PostCart, DeleteOrderGroupItem, PutOrderGuideQuikorders, Essentialupdate, Notesupdate } from "../../redux/slices/postSlice";
 import { useEffect, useState } from "react";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
@@ -1482,6 +1482,8 @@ function SavedProductCard({
   onDecrement,
   onChangeGroup,
   onEditPar,
+  onToggleEssential,
+  onUpdateNote,
   onRequestDelete,
   canEdit,
   canPlaceOrder,
@@ -1495,10 +1497,19 @@ function SavedProductCard({
   const listLayout = layout === "list";
   const canDrag = canEdit && listLayout && !isAllView;   // add this
   const [activeDialog, setActiveDialog] = useState(null);
-  const [savedNote, setSavedNote] = useState({ text: "", preserve: false });
+  // const [savedNote, setSavedNote] = useState({ text: "", preserve: false });
+const [preserveNote, setPreserveNote] = useState(false); // local only, see note below
+const [isSavingNote, setIsSavingNote] = useState(false);
+const savedNote = { text: product.notes ?? "", preserve: preserveNote };
+
   const [noteDraft, setNoteDraft] = useState("");
   const [preserveNoteDraft, setPreserveNoteDraft] = useState(false);
-  const [isEssential, setIsEssential] = useState(false);
+
+
+// const [isEssential, setIsEssential] = useState(false);
+const isEssential = Boolean(product.essentialItems);
+const [isSavingEssential, setIsSavingEssential] = useState(false);
+ 
   const { setNodeRef, setActivatorNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: product.id,
     // disabled: !canEdit || !listLayout,
@@ -1783,11 +1794,17 @@ function SavedProductCard({
           </DialogHeader>
           <form
             className="space-y-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              setSavedNote({ text: noteDraft, preserve: preserveNoteDraft });
-              setActiveDialog(null);
-            }}
+           onSubmit={async (event) => {
+  event.preventDefault();
+  if (isSavingNote) return;
+  setIsSavingNote(true);
+  const ok = await onUpdateNote?.(product, noteDraft.trim());
+  setIsSavingNote(false);
+  if (ok) {
+    setPreserveNote(preserveNoteDraft);
+    setActiveDialog(null);
+  }
+}}
           >
             <div className="space-y-1.5 mb-2">
               <textarea
@@ -1815,25 +1832,33 @@ function SavedProductCard({
               </p>
             </div>
             <DialogFooter className="grid grid-cols-2 sm:flex">
-              {savedNote.text ? (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => {
-                    setSavedNote({ text: "", preserve: false });
-                    setNoteDraft("");
-                    setPreserveNoteDraft(false);
-                    setActiveDialog(null);
-                  }}
-                >
-                  Remove Note
-                </Button>
-              ) : (
-                <Button type="button" variant="outline" onClick={() => setActiveDialog(null)}>
-                  Cancel
-                </Button>
-              )}
-              <Button type="submit">Save</Button>
+             {savedNote.text ? (
+  <Button
+    type="button"
+    variant="destructive"
+    disabled={isSavingNote}
+    onClick={async () => {
+      setIsSavingNote(true);
+      const ok = await onUpdateNote?.(product, "");
+      setIsSavingNote(false);
+      if (ok) {
+        setNoteDraft("");
+        setPreserveNoteDraft(false);
+        setPreserveNote(false);
+        setActiveDialog(null);
+      }
+    }}
+  >
+    Remove Note
+  </Button>
+) : (
+  <Button type="button" variant="outline" onClick={() => setActiveDialog(null)}>
+    Cancel
+  </Button>
+)}
+<Button type="submit" disabled={isSavingNote}>
+  {isSavingNote ? "Saving..." : "Save"}
+</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -1853,7 +1878,7 @@ function SavedProductCard({
             <Button type="button" variant="outline" onClick={() => setActiveDialog(null)}>
               Cancel
             </Button>
-            <Button
+            {/* <Button
               type="button"
               variant={isEssential ? "destructive" : "default"}
               onClick={() => {
@@ -1862,7 +1887,20 @@ function SavedProductCard({
               }}
             >
               {isEssential ? "Remove" : "Save"}
-            </Button>
+            </Button> */}
+            <Button
+  type="button"
+  variant={isEssential ? "destructive" : "default"}
+  disabled={isSavingEssential}
+  onClick={async () => {
+    setIsSavingEssential(true);
+    const ok = await onToggleEssential?.(product, !isEssential);
+    setIsSavingEssential(false);
+    if (ok) setActiveDialog(null);
+  }}
+>
+  {isEssential ? "Remove" : "Save"}
+</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -2792,6 +2830,59 @@ export function OrderGuideProductsList({
     setProductToEditPar(null);
     setParDraft("");
   }
+
+  async function toggleEssential(product, nextValue) {
+    if (!userId) {
+      toast.error("Unable to identify the logged-in user.");
+      return false;
+    }
+
+    try {
+      await dispatch(
+        Essentialupdate({
+          orderGroupItemID: Number(product.orderGroupItemID),
+          essentialItems: nextValue,
+          modifyBY: Number.isNaN(Number(userId)) ? userId : Number(userId),
+        }),
+      ).unwrap();
+
+      // API succeeded -> update the UI
+      updateProductInGroup(product.id, { essentialItems: nextValue });
+      toast.success(nextValue ? "Marked as essential." : "Removed from essentials.");
+      return true;
+    } catch (error) {
+      console.error("Update essential failed:", error);
+      toast.error(error?.message || error?.Msg || "Failed to update essential item.");
+      return false;
+    }
+  }
+
+    async function updateNote(product, notes) {
+    if (!userId) {
+      toast.error("Unable to identify the logged-in user.");
+      return false;
+    }
+
+    try {
+      await dispatch(
+        Notesupdate({
+          orderGroupItemID: Number(product.orderGroupItemID),
+          notes,
+          modifyBY: Number.isNaN(Number(userId)) ? userId : Number(userId),
+        }),
+      ).unwrap();
+
+      // API succeeded -> update the UI
+      updateProductInGroup(product.id, { notes });
+      toast.success(notes ? "Note saved." : "Note removed.");
+      return true;
+    } catch (error) {
+      console.error("Update note failed:", error);
+      toast.error(error?.message || error?.Msg || "Failed to update note.");
+      return false;
+    }
+  }
+
   if (!selectedOrder || !selectedGroup) {
     return (
       <section className="grid h-full min-h-[420px] place-items-center rounded-lg border bg-card">
@@ -3099,6 +3190,8 @@ export function OrderGuideProductsList({
                         onDecrement={() => decrementItem(getCartProductId(product))}
                         onChangeGroup={(product) => { setDuplicate(false); setNewGroupName(null); setProductToMove([product]); }}
                         onEditPar={openEditParDialog}
+                        onToggleEssential={toggleEssential}
+                        onUpdateNote={updateNote}
                         onRequestDelete={setProductToDelete}
                         canEdit={canEdit}
                         canPlaceOrder={canPlaceOrder}

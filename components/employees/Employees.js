@@ -5711,7 +5711,7 @@ export default function Employees() {
 
   // reporting managers: [{ role, label, managers: [{ userId, name }] }]
   const reportsToData = useSelector((state) => state.getSlice.reportsToData);
-
+console.log("reportsToData", reportsToData);
   // ── 5.2 Local state ─────────────────────────────────────────
   const [users, setUsers] = useState([]);
 
@@ -5770,12 +5770,29 @@ export default function Employees() {
   const activeTabCode = roleCodeByName[roleName];
 
   // Hide the "Add User" button on the Owner tab (no one can be added as Owner here)
-  const showAddUser = canCreate && activeTabCode !== "O";
+  // const showAddUser = canCreate && activeTabCode !== "O";
+    // Hide "Add User" when the logged-in role is the same as the active tab's role:
+  //   Owner login      -> hidden only on the Owner tab
+  //   Territory login  -> hidden only on the Territory Manager tab
+  //   Area login       -> hidden only on the Area Manager tab
+  //   (same for S / D / E). Every other tab shows the button.
+  const loggedInRoleCode = String(role ?? "").trim().toUpperCase();
+  const showAddUser = canCreate && loggedInRoleCode !== activeTabCode;
 
   // Hide the Action column ONLY when an Area Manager ("A") is logged in AND the
   // active tab is the Area Manager tab. Every other case is permission-driven.
-  const isAreaManagerLogin = String(role ?? "").trim().toUpperCase() === "A";
-  const hideActionsForActiveTab = isAreaManagerLogin && activeTabCode === "A";
+
+  // const isAreaManagerLogin = String(role ?? "").trim().toUpperCase() === "A";
+  // const hideActionsForActiveTab = isAreaManagerLogin && activeTabCode === "A";
+  // const showActions =
+  //   !hideActionsForActiveTab &&
+  //   (canActOnRole(role, "employee.edit", activeTabCode) ||
+  //     canActOnRole(role, "employee.deactivate", activeTabCode));
+
+    // Hide the Action column when the logged-in role is the same as the active tab's role
+  // (Owner on Owner tab, Territory on Territory tab, Area on Area tab, Store on Store tab, ...).
+  // On every other tab it stays permission-driven.
+  const hideActionsForActiveTab = loggedInRoleCode === activeTabCode;
   const showActions =
     !hideActionsForActiveTab &&
     (canActOnRole(role, "employee.edit", activeTabCode) ||
@@ -5987,6 +6004,7 @@ export default function Employees() {
               roles: code,
               role: roleNameByCode[code] ?? cur.role,
               status: u.isActive ? "Active" : "Inactive",
+              reportsTo: u.reportTo != null ? String(u.reportTo) : "",
               hydrated: true,
             }
           : cur,
@@ -6215,7 +6233,8 @@ export default function Employees() {
 
   function openAddSheet() {
     // guard: no create permission, or the Owner tab (Add User is hidden there)
-    if (!canCreate || activeTabCode === "O") return;
+    // if (!canCreate || activeTabCode === "O") return;
+    if (!canCreate || loggedInRoleCode === activeTabCode) return;
     setSaveError("");
     setPendingAssign(null);
 
@@ -6262,6 +6281,7 @@ export default function Employees() {
               roles: code,
               role: roleNameByCode[code] ?? cur.role,
               status: u?.isActive ? "Active" : "Inactive",
+              reportsTo: u?.reportTo != null ? String(u.reportTo) : "",
               hydrated: true,
             }
           : cur,

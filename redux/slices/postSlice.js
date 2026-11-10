@@ -714,31 +714,68 @@ export const PostDuplicateItems = createAsyncThunk(
   }
 )
 
-// ── PUT /ordergroupitems/par/{orderGroupItemID}  (single PAR) ────────────────
-export const PutUpdatePar = createAsyncThunk(
-  "orderGuide/PutUpdatePar",
-  async ({ orderGroupItemID, parValue, modifyBY }, { rejectWithValue }) => {
+// ── \OrderGuide_Essential_upadate ────────────────
+
+export const Essentialupdate = createAsyncThunk(
+  "orderGuide/essentialupdate",
+  async ({ orderGroupItemID, essentialItems, modifyBY }, { rejectWithValue }) => {
     try {
-      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/par/${orderGroupItemID}`
-      console.log("PutUpdatePar URL:", URL)
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/UpdateEssentialItems`;
 
       const response = await axios.put(
         URL,
-        { parValue, modifyBY },
+        { orderGroupItemID, essentialItems, modifyBY }, // orderGroupItemID was missing
         {
           headers: {
             Accept: "application/json",
+            "Content-Type": "application/json",
             Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
           },
         }
-      )
+      );
 
-      return response.data
+      if (response.data?.success === false) {
+        return rejectWithValue(response.data);
+      }
+
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.response ? error.response.data : error.message)
+      return rejectWithValue(error.response ? error.response.data : { message: error.message });
     }
   }
-)
+);
+
+// ── \OrderGuide_Notes_upadate ────────────────
+
+export const Notesupdate = createAsyncThunk(
+  "orderGuide/notesupdate",
+  async ({ orderGroupItemID, notes, modifyBY }, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/UpdateItemNotes`;
+
+      const response = await axios.put(
+        URL,
+        { orderGroupItemID, notes, modifyBY }, // orderGroupItemID was missing
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+          },
+        }
+      );
+
+      if (response.data?.success === false) {
+        return rejectWithValue(response.data);
+      }
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response ? error.response.data : { message: error.message });
+    }
+  }
+);
+
 
 // ── PUT /ordergroupitems/par/bulk  (bulk PAR update) ─────────────────────────
 export const PutBulkPar = createAsyncThunk(
@@ -800,6 +837,31 @@ export const PutItemSequence = createAsyncThunk(
   }
 )
 
+// ── PUT /ordergroupitems/par/{orderGroupItemID}  (single PAR) ────────────────
+export const PutUpdatePar = createAsyncThunk(
+  "orderGuide/PutUpdatePar",
+  async ({ orderGroupItemID, parValue, modifyBY }, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/ordergroupitems/par/${orderGroupItemID}`
+      console.log("PutUpdatePar URL:", URL)
+
+      const response = await axios.put(
+        URL,
+        { parValue, modifyBY },
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+          },
+        }
+      )
+
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response ? error.response.data : error.message)
+    }
+  }
+)
 
 //-POST ITEMS RATINGS IN MY ORDER SCREEN-------------------------------------------------->
 export const myOrderitemsRating = createAsyncThunk(
