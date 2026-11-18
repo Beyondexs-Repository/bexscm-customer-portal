@@ -126,7 +126,30 @@ reportsToLoading: false,
 reportsToError: null,
 reportsToData: null,
 
+//MESSAGES_GET
+messageslistData: [],
+messageslistLoading: false,
+messageslistStatus: "idle",
+messageslistError: null,
 
+//***********METRICES DASHBOARD********************************/
+// Summary GET
+summaryData: null,
+summaryLoading: false,
+summaryStatus: "idle",
+summaryError: null,
+
+// Products GET
+productsData: null,
+productsLoading: false,
+productsStatus: "idle",
+productsError: null,
+
+//Payments GET
+paymentsData: null,
+paymentsLoading: false,
+paymentsStatus: "idle",
+paymentsError: null,
 
 
   error: null,
@@ -1098,8 +1121,282 @@ export const GetUserStores = createAsyncThunk(
   },
 )
 
+//****************MESSAGES SCREEN GET */
+export const GetMessageslist = createAsyncThunk(
+  "Messages/GET",
+  async (custNmbrArg, { rejectWithValue }) => {
+    try {
+      const custnmbr = custNmbrArg || localStorage.getItem("custnmbr")
 
+      if (!custnmbr || custnmbr === "undefined") {
+        return rejectWithValue("Customer number missing. Please log in again.")
+      }
+ 
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/customerchat/customer/${custnmbr}`
 
+      const response = await axios.get(URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+ 
+      const result = response.data
+ 
+      if (result?.success === false) {
+        throw new Error(result?.Msg || result?.message || "Failed to fetch messages.")
+      }
+ 
+      // The customer portal receives a bare array; also accept { data: [...] }
+      return Array.isArray(result) ? result : result?.data ?? []
+    } catch (error) {
+      return rejectWithValue(error.response ? error.response.data : error.message)
+    }
+  }
+)
+
+//************METRICES DASHBOARD/SUMMARY *****************************/
+// export const GetSummarylist = createAsyncThunk(
+//   "Metrices/GET_Summary",
+//   async (custNmbrArg,period, { rejectWithValue }) => {
+//     try {
+//       const custnmbr = custNmbrArg || localStorage.getItem("custnmbr")
+
+//       if (!custnmbr || custnmbr === "undefined") {
+//         return rejectWithValue("Customer number missing. Please log in again.")
+//       }
+ 
+//       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/metrics/${custnmbr}/summary?period=${period}`
+
+//       const response = await axios.get(URL, {
+//         headers: {
+//           Accept: "application/json",
+//           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+//         },
+//       });
+ 
+//       const result = response.data
+ 
+//       if (result?.success === false) {
+//         throw new Error(result?.Msg || result?.message || "Failed to fetch getsummary.")
+//       }
+ 
+//       // The customer portal receives a bare array; also accept { data: [...] }
+//       return Array.isArray(result) ? result : result?.data ?? []
+//     } catch (error) {
+//       return rejectWithValue(error.response ? error.response.data : error.message)
+//     }
+//   }
+// )
+export const GetSummarylist = createAsyncThunk(
+  "Metrices/GET_Summary",
+  // Usage: dispatch(GetSummarylist({ period: "30d" }))
+  async (arg, { rejectWithValue }) => {
+    try {
+      const { custnmbr: custArg, period = "30d" } =
+        typeof arg === "object" && arg !== null ? arg : { custnmbr: arg }
+
+      const custnmbr = custArg || localStorage.getItem("custnmbr")
+
+      if (!custnmbr || custnmbr === "undefined") {
+        return rejectWithValue("Customer number missing. Please log in again.")
+      }
+
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/metrics/${custnmbr}/summary`
+
+      const response = await axios.get(URL, {
+        params: { period },
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      })
+
+      const result = response.data
+
+      if (result?.success === false) {
+        return rejectWithValue(
+          result?.error || result?.Msg || result?.message || "Failed to fetch summary."
+        )
+      }
+
+      // The whole data object: { period, kpis, purchases, intervals, spendByCategory, topProducts, orderStatus }
+      return result?.data ?? null
+    } catch (error) {
+      const d = error.response?.data
+      return rejectWithValue(
+        d?.error ||
+          d?.Msg ||
+          d?.message ||
+          (typeof d === "string" ? d : null) ||
+          error.message ||
+          "Failed to fetch summary."
+      )
+    }
+  }
+)
+
+// export const GetProductslist = createAsyncThunk(
+//   "Metrices/GET_Products",
+//   async (custNmbrArg, period, { rejectWithValue }) => {
+//     try {
+//       const custnmbr = custNmbrArg || localStorage.getItem("custnmbr")
+
+//       if (!custnmbr || custnmbr === "undefined") {
+//         return rejectWithValue("Customer number missing. Please log in again.")
+//       }
+ 
+//       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/metrics/${custnmbr}/products?period=${period}`
+
+//       const response = await axios.get(URL, {
+//         headers: {
+//           Accept: "application/json",
+//           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+//         },
+//       });
+ 
+//       const result = response.data
+ 
+//       if (result?.success === false) {
+//         throw new Error(result?.Msg || result?.message || "Failed to fetch getproducts.")
+//       }
+ 
+//       // The customer portal receives a bare array; also accept { data: [...] }
+//       return Array.isArray(result) ? result : result?.data ?? []
+//     } catch (error) {
+//       return rejectWithValue(error.response ? error.response.data : error.message)
+//     }
+//   }
+// )
+//********************METRICS / GET_PRODUCTS************************************ */
+export const GetProductslist = createAsyncThunk(
+  "Metrices/GET_Products",
+  // Usage: dispatch(GetProductslist({ period: "30d" }))
+  async (arg, { rejectWithValue }) => {
+    try {
+      const { custnmbr: custArg, period = "30d" } =
+        typeof arg === "object" && arg !== null ? arg : { custnmbr: arg }
+
+      const custnmbr = custArg || localStorage.getItem("custnmbr")
+
+      if (!custnmbr || custnmbr === "undefined") {
+        return rejectWithValue("Customer number missing. Please log in again.")
+      }
+
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/metrics/${custnmbr}/products`
+
+      const response = await axios.get(URL, {
+        params: { period },
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      })
+
+      const result = response.data
+
+      if (result?.success === false) {
+        return rejectWithValue(
+          result?.error || result?.Msg || result?.message || "Failed to fetch products."
+        )
+      }
+
+      // Return the whole data object: { items, total, page, pageSize }
+      return result?.data ?? { items: [], total: 0, page: 1, pageSize: 20 }
+    } catch (error) {
+      const d = error.response?.data
+      return rejectWithValue(
+        d?.error ||
+          d?.Msg ||
+          d?.message ||
+          (typeof d === "string" ? d : null) ||
+          error.message ||
+          "Failed to fetch products."
+      )
+    }
+  }
+)
+
+// export const GetPaymentslist = createAsyncThunk(
+//   "Metrices/GET_Payments",
+//   async (custNmbrArg,{ rejectWithValue }) => {
+//     try {
+//       const custnmbr = custNmbrArg || localStorage.getItem("custnmbr")
+
+//       if (!custnmbr || custnmbr === "undefined") {
+//         return rejectWithValue("Customer number missing. Please log in again.")
+//       }
+ 
+//       const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/metrics/${custnmbr}/payments?attentionTake=5`
+
+//       const response = await axios.get(URL, {
+//         headers: {
+//           Accept: "application/json",
+//           Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+//         },
+//       });
+ 
+//       const result = response.data
+ 
+//       if (result?.success === false) {
+//         throw new Error(result?.Msg || result?.message || "Failed to fetch getpayments.")
+//       }
+ 
+//       // The customer portal receives a bare array; also accept { data: [...] }
+//       return Array.isArray(result) ? result : result?.data ?? []
+//     } catch (error) {
+//       return rejectWithValue(error.response ? error.response.data : error.message)
+//     }
+//   }
+// )
+//********************METRICS / GET_PAYMENTS************************************ */
+export const GetPaymentslist = createAsyncThunk(
+  "Metrices/GET_Payments",
+  // Usage: dispatch(GetPaymentslist({ attentionTake: 5 }))
+  async (arg, { rejectWithValue }) => {
+    try {
+      const { custnmbr: custArg, attentionTake = 5 } =
+        typeof arg === "object" && arg !== null ? arg : { custnmbr: arg }
+
+      const custnmbr = custArg || localStorage.getItem("custnmbr")
+
+      if (!custnmbr || custnmbr === "undefined") {
+        return rejectWithValue("Customer number missing. Please log in again.")
+      }
+
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/metrics/${custnmbr}/payments`
+
+      const response = await axios.get(URL, {
+        params: { attentionTake },
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      })
+
+      const result = response.data
+
+      if (result?.success === false) {
+        return rejectWithValue(
+          result?.error || result?.Msg || result?.message || "Failed to fetch payments."
+        )
+      }
+
+      // { asOf, paymentStatus, aging, attention } as one object
+      return result?.data ?? null
+    } catch (error) {
+      const d = error.response?.data
+      return rejectWithValue(
+        d?.error ||
+          d?.Msg ||
+          d?.message ||
+          (typeof d === "string" ? d : null) ||
+          error.message ||
+          "Failed to fetch payments."
+      )
+    }
+  }
+)
 
 
 
@@ -1369,6 +1666,24 @@ const getSlice = createSlice({
   state.userStoresData = []
 })
 
+//************MESSAGES_GET_ADDCASE****************/
+.addCase(GetMessageslist.pending, (state) => {
+  state.messageslistStatus = "loading"
+  state.messageslistLoading = true
+  state.messageslistError = null
+})
+.addCase(GetMessageslist.fulfilled, (state, action) => {
+  state.messageslistStatus = "succeeded"
+  state.messageslistLoading = false
+  state.messageslistData = action.payload
+})
+.addCase(GetMessageslist.rejected, (state, action) => {
+  state.messageslistStatus = "failed"
+  state.messageslistLoading = false
+  state.messageslistError = action.payload || action.error.message
+  state.messageslistData = []
+})
+
 /*******************EMPLOYEE SCREEN GET API FUNCTIONS START***************************/
 
 //Userslist_GET_ADDCASE
@@ -1516,8 +1831,60 @@ const getSlice = createSlice({
 
 /*******************EMPLOYEE SCREEN GET API FUNCTIONS END***************************/
 
+//************METRICES DASHBOARD/SUMMARY *****************************/
+.addCase(GetSummarylist.pending, (state) => {
+  state.summaryStatus = "loading"
+  state.summaryLoading = true
+  state.summaryError = null
+})
+.addCase(GetSummarylist.fulfilled, (state, action) => {
+  state.summaryStatus = "succeeded"
+  state.summaryLoading = false
+  state.summaryData = action.payload // object: { period, kpis, purchases, intervals, ... }
+})
+.addCase(GetSummarylist.rejected, (state, action) => {
+  state.summaryStatus = "failed"
+  state.summaryLoading = false
+  state.summaryError = action.payload || action.error.message
+  state.summaryData = null // was [], which is the wrong type for an object
+})
 
+// Products GET
+.addCase(GetProductslist.pending, (state) => {
+  state.productsStatus = "loading"
+  state.productsLoading = true
+  state.productsError = null
+})
+.addCase(GetProductslist.fulfilled, (state, action) => {
+  state.productsStatus = "succeeded"
+  state.productsLoading = false
+  state.productsData = action.payload
+})
+.addCase(GetProductslist.rejected, (state, action) => {
+  state.productsStatus = "failed"
+  state.productsLoading = false
+  state.productsError = action.payload || action.error.message
+  state.productsData = null
+})
 
+//Payments GET
+
+.addCase(GetPaymentslist.pending, (state) => {
+  state.paymentsStatus = "loading"
+  state.paymentsLoading = true
+  state.paymentsError = null
+})
+.addCase(GetPaymentslist.fulfilled, (state, action) => {
+  state.paymentsStatus = "succeeded"
+  state.paymentsLoading = false
+  state.paymentsData = action.payload
+})
+.addCase(GetPaymentslist.rejected, (state, action) => {
+  state.paymentsStatus = "failed"
+  state.paymentsLoading = false
+  state.paymentsError = action.payload || action.error.message
+  state.paymentsData = null
+})
 
   },
 })
@@ -1529,6 +1896,9 @@ export const {
   clearAreaList,
   clearLocationList,
   clearDepartmentList,
+  clearSummaryList,
+  clearProductsList,
+  clearPaymentsList,
 } = getSlice.actions
 
 

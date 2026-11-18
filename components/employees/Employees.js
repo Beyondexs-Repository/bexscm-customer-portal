@@ -5177,7 +5177,7 @@
 // }
 
 
-//handle singe and multiple store assignment for a user
+//handle single and multiple store assignment for a user
 "use client";
 
 // ********************** TO CONFIGURE THE ADMIN PORTAL USERS SCREEN DESIGN SECTION **********************

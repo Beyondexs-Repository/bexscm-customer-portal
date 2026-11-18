@@ -1,8 +1,1324 @@
-"use client"
+// "use client"
+
+// import { useEffect, useRef, useState } from "react"
+// import Link from "next/link"
+// import { useTranslations } from "next-intl"
+// import {
+//   Camera,
+//   CheckCheck,
+//   ChevronUp,
+//   CircleX,
+//   Clock3,
+//   FileText,
+//   Loader2,
+//   Maximize2,
+//   Paperclip,
+//   Search,
+//   Send,
+//   X,
+// } from "lucide-react"
+
+// import { Badge } from "@/components/ui/badge"
+// import { Button } from "@/components/ui/button"
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogDescription,
+//   DialogFooter,
+//   DialogHeader,
+//   DialogTitle,
+// } from "@/components/ui/dialog"
+// import { useDispatch } from "react-redux"
+// import { PostMessages } from "../../redux/slices/postSlice"
+
+
+// const fallbackAvatar = "https://api.dicebear.com/9.x/adventurer/svg?seed=Crate"
+
+// function formatTime(value) {
+//   if (!value) return ""
+
+//   return new Intl.DateTimeFormat(undefined, {
+//     hour: "numeric",
+//     minute: "2-digit",
+//   }).format(new Date(value))
+// }
+
+// function formatDate(value) {
+//   if (!value) return ""
+
+//   const date = new Date(value)
+//   const today = new Date()
+
+//   if (date.toDateString() === today.toDateString()) return "Today"
+
+//   return new Intl.DateTimeFormat(undefined, {
+//     month: "short",
+//     day: "numeric",
+//   }).format(date)
+// }
+
+// function getAvatar(user) {
+//   return user?.avatar || fallbackAvatar
+// }
+
+// function formatRole(roleKey) {
+//   return String(roleKey ?? "")
+//     .replaceAll("-", " ")
+//     .replace(/\b\w/g, (letter) => letter.toUpperCase())
+// }
+
+// const previewUser = {
+//   id: 1,
+//   name: "Crate Inc",
+//   roleKey: "store-manager",
+//   avatar: "",
+// }
+
+// const previewMessages = [
+//   {
+//     id: 1,
+//     senderName: "Crate Support",
+//     senderRoleKey: "sales-manager",
+//     senderAccountStatus: "active",
+//     senderAvatar: "",
+//     type: "received",
+//     text: "Good morning! Your produce order is packed and ready.",
+//     status: "sent",
+//     createdAt: "2026-06-30T09:12:00.000Z",
+//     attachments: [],
+//   },
+//   {
+//     id: 2,
+//     senderName: "Crate Inc",
+//     senderRoleKey: "store-manager",
+//     senderAccountStatus: "active",
+//     senderAvatar: "",
+//     type: "sent",
+//     text: "Wonderful, thank you. Is the delivery window still 2–4 PM?",
+//     status: "sent",
+//     createdAt: "2026-06-30T09:14:00.000Z",
+//     attachments: [],
+//   },
+//   {
+//     id: 3,
+//     senderName: "Crate Support",
+//     senderRoleKey: "sales-manager",
+//     senderAccountStatus: "active",
+//     senderAvatar: "",
+//     type: "received",
+//     text: "Yes, your driver will arrive between 2:00 and 4:00 PM.",
+//     status: "sent",
+//     createdAt: "2026-06-30T09:15:00.000Z",
+//     attachments: [],
+//   },
+// ]
+
+// function MessageStatus({ status }) {
+//   if (status === "failed") {
+//     return (
+//       <span className="inline-flex items-center text-destructive" title="Failed">
+//         <CircleX className="h-3.5 w-3.5" />
+//       </span>
+//     )
+//   }
+
+//   if (status === "sending") {
+//     return (
+//       <span className="inline-flex items-center" title="Sending">
+//         <Clock3 className="h-3.5 w-3.5" />
+//       </span>
+//     )
+//   }
+
+//   return (
+//     <span className="inline-flex items-center" title="Sent">
+//       <CheckCheck className="h-3.5 w-3.5" />
+//     </span>
+//   )
+// }
+
+// export default function Messages({ fullscreen = false }) {
+//   const t = useTranslations("messages")
+//   const [open, setOpen] = useState(fullscreen)
+//   const [message, setMessage] = useState("")
+//   const [messages, setMessages] = useState(previewMessages)
+//   const [selectedFiles, setSelectedFiles] = useState([])
+//   const [searchOpen, setSearchOpen] = useState(false)
+//   const [searchQuery, setSearchQuery] = useState("")
+//   const [clearDialogOpen, setClearDialogOpen] = useState(false)
+//   const messageAreaRef = useRef(null)
+//   const messageInputRef = useRef(null)
+//   const searchInputRef = useRef(null)
+//   const attachmentInputRef = useRef(null)
+//   const cameraInputRef = useRef(null)
+
+//   const custnmbr = localStorage.getItem("custnmbr")   
+// const UserID = localStorage.getItem("UserID")   
+//   useEffect(() => {
+//     function handleSearch() {
+//       setSearchOpen(true)
+//       requestAnimationFrame(() => searchInputRef.current?.focus())
+//     }
+
+//     function handleClear() {
+//       setClearDialogOpen(true)
+//     }
+
+//     window.addEventListener("aloha-messages-search", handleSearch)
+//     window.addEventListener("aloha-messages-clear", handleClear)
+
+//     return () => {
+//       window.removeEventListener("aloha-messages-search", handleSearch)
+//       window.removeEventListener("aloha-messages-clear", handleClear)
+//     }
+//   }, [])
+
+//   useEffect(() => {
+//     if (!messageAreaRef.current) return
+
+//     messageAreaRef.current.scrollTop = messageAreaRef.current.scrollHeight
+//   }, [messages, open])
+
+//   useEffect(() => {
+//     if (!messageInputRef.current) return
+
+//     const input = messageInputRef.current
+//     input.style.height = "auto"
+//     input.style.height = `${Math.min(input.scrollHeight, 72)}px`
+//     input.style.overflowY = input.scrollHeight > 72 ? "auto" : "hidden"
+//   }, [message])
+
+//   function confirmClearChat() {
+//     setMessages([])
+//     setSearchQuery("")
+//     setSearchOpen(false)
+//     setClearDialogOpen(false)
+//   }
+
+//   function handleSend() {
+//     const text = message.trim()
+
+//     if (!text && selectedFiles.length === 0) return
+
+//     setMessages((currentMessages) => [...currentMessages, {
+//       id: Date.now(),
+//       senderId: previewUser.id,
+//       senderName: previewUser.name,
+//       senderRoleKey: previewUser.roleKey,
+//       senderAccountStatus: "active",
+//       senderAvatar: previewUser.avatar,
+//       type: "sent",
+//       text,
+//       status: "sent",
+//       createdAt: new Date().toISOString(),
+//       attachments: [],
+//     }])
+//     setMessage("")
+//     setSelectedFiles([])
+//     if (attachmentInputRef.current) attachmentInputRef.current.value = ""
+//     if (cameraInputRef.current) cameraInputRef.current.value = ""
+//   }
+
+//   function handleSelectedFiles(event) {
+//     setSelectedFiles((files) => [...files, ...Array.from(event.target.files ?? [])])
+//   }
+
+//   function removeSelectedFile(index) {
+//     setSelectedFiles((files) => files.filter((_, fileIndex) => fileIndex !== index))
+//   }
+
+//   const chatBoxClass = fullscreen
+//     ? "flex h-full min-h-0 flex-col overflow-hidden bg-background "
+//     : "fixed bottom-0 right-6 z-50 flex h-[620px] w-[430px] flex-col overflow-hidden rounded-t-xl border bg-background shadow-2xl"
+//   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
+//   const visibleMessages = normalizedSearchQuery
+//     ? messages.filter((item) => {
+//         const text = item.text ?? ""
+//         const attachmentText = (item.attachments ?? [])
+//           .map((attachment) => attachment.fileName)
+//           .join(" ")
+
+//         return `${text} ${attachmentText}`
+//           .toLowerCase()
+//           .includes(normalizedSearchQuery)
+//       })
+//     : messages
+//   const currentUser = previewUser
+//   const loading = false
+//   const loadingOlder = false
+//   const error = ""
+//   const clearError = ""
+//   const isClearing = false
+
+//   return (
+//     <>
+//       <Dialog
+//         open={clearDialogOpen}
+//         onOpenChange={(nextOpen) => {
+//           if (!isClearing) {
+//             setClearDialogOpen(nextOpen)
+//           }
+//         }}
+//       >
+//         <DialogContent showCloseButton={!isClearing}>
+//           <DialogHeader>
+//             <DialogTitle>Clear all chats?</DialogTitle>
+//             <DialogDescription>
+//               This permanently deletes every message for all users from the
+//               database. This action cannot be undone.
+//             </DialogDescription>
+//           </DialogHeader>
+
+//           {clearError ? (
+//             <div
+//               role="alert"
+//               className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm font-medium text-destructive"
+//             >
+//               {clearError}
+//             </div>
+//           ) : null}
+
+//           <DialogFooter>
+//             <Button
+//               type="button"
+//               variant="outline"
+//               disabled={isClearing}
+//               onClick={() => setClearDialogOpen(false)}
+//             >
+//               Cancel
+//             </Button>
+//             <Button
+//               type="button"
+//               variant="destructive"
+//               disabled={isClearing}
+//               onClick={confirmClearChat}
+//             >
+//               {isClearing ? (
+//                 <Loader2 className="animate-spin" />
+//               ) : null}
+//               {isClearing ? "Clearing..." : "Confirm"}
+//             </Button>
+//           </DialogFooter>
+//         </DialogContent>
+//       </Dialog>
+
+//       {open ? (
+//         <div className={chatBoxClass}>
+//           {!fullscreen && (
+//             <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-3">
+//               <div className="flex min-w-0 items-center gap-3">
+//                 <img
+//                   src={getAvatar(currentUser)}
+//                   alt={t("customer")}
+//                   className="h-9 w-9 rounded-full object-cover"
+//                 />
+//                 <div className="min-w-0">
+//                   <h3 className="truncate font-semibold">{t("newMessage")}</h3>
+//                 </div>
+//               </div>
+
+//               <div className="flex items-center gap-2">
+//                 <Link href="/messages">
+//                   <button
+//                     type="button"
+//                     className="rounded-md p-1 hover:bg-muted"
+//                     aria-label={t("openMessagesPage")}
+//                   >
+//                     <Maximize2 className="h-4 w-4" />
+//                   </button>
+//                 </Link>
+
+//                 <button
+//                   type="button"
+//                   onClick={() => setOpen(false)}
+//                   className="rounded-md p-1 hover:bg-muted"
+//                   aria-label={t("closeChat")}
+//                 >
+//                   <X className="h-5 w-5" />
+//                 </button>
+//               </div>
+//             </div>
+//           )}
+
+//           <div
+//             ref={messageAreaRef}
+//             className="min-h-0 flex-1 overflow-y-auto px-2 py-3 sm:px-5 sm:py-4"
+//           >
+//             {searchOpen && (
+//               <div className="sticky top-0 z-10 -mx-2 mb-3 border-b bg-background/95 px-2 pb-3 backdrop-blur sm:-mx-5 sm:px-5">
+//                 <div className="flex min-h-10 items-center gap-2 rounded-full border bg-muted/35 px-3">
+//                   <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+//                   <input
+//                     ref={searchInputRef}
+//                     value={searchQuery}
+//                     onChange={(event) => setSearchQuery(event.target.value)}
+//                     placeholder="Search messages"
+//                     className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+//                   />
+//                   <button
+//                     type="button"
+//                     className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+//                     aria-label="Close search"
+//                     onClick={() => {
+//                       setSearchOpen(false)
+//                       setSearchQuery("")
+//                     }}
+//                   >
+//                     <X className="h-4 w-4" />
+//                   </button>
+//                 </div>
+//               </div>
+//             )}
+//             {loading ? (
+//               <div className="flex h-full items-center justify-center text-muted-foreground">
+//                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+//                 Loading messages
+//               </div>
+//             ) : visibleMessages.length === 0 ? (
+//               <div className="flex h-full items-center justify-center px-8 text-center text-sm text-muted-foreground">
+//                 {normalizedSearchQuery
+//                   ? "No messages found."
+//                   : "Start a team conversation between store managers and employees."}
+//               </div>
+//             ) : (
+//               <div className="flex min-h-full flex-col">
+//                 {loadingOlder && (
+//                   <div className="flex justify-center pb-3 text-muted-foreground">
+//                     <Loader2 className="h-4 w-4 animate-spin" />
+//                   </div>
+//                 )}
+
+//                 <div className="mt-auto flex items-center gap-2 pb-4 sm:gap-3 sm:pb-5">
+//                   <div className="h-px flex-1 bg-border" />
+//                   <span className="text-xs font-semibold text-muted-foreground">
+//                     {formatDate(visibleMessages[visibleMessages.length - 1]?.createdAt)}
+//                   </span>
+//                   <div className="h-px flex-1 bg-border" />
+//                 </div>
+
+//                 <div className="space-y-4 sm:space-y-5">
+//                   {visibleMessages.map((item) => (
+//                     <div
+//                       key={item.id}
+//                       className={`flex min-w-0 gap-2 sm:gap-3 ${
+//                         item.type === "sent" ? "justify-end" : "items-start"
+//                       }`}
+//                     >
+//                       {item.type === "received" && (
+//                         <img
+//                           src={item.senderAvatar || fallbackAvatar}
+//                           alt={item.senderName || t("customer")}
+//                           className="h-8 w-8 shrink-0 rounded-full object-cover sm:h-10 sm:w-10"
+//                         />
+//                       )}
+
+//                       <div
+//                         className={`min-w-0 max-w-[82%] sm:max-w-[520px] ${
+//                           item.type === "sent"
+//                             ? "rounded-2xl bg-primary px-3 py-2 text-primary-foreground sm:px-4"
+//                             : "rounded-2xl bg-muted px-3 py-2 sm:px-4"
+//                         }`}
+//                       >
+//                         {item.type !== "sent" && (
+//                           <div className="mb-1 flex min-w-0 items-baseline gap-2 leading-5 justify-between">
+//                             <span className="truncate text-sm font-semibold text-foreground">
+//                               {item.senderName || t("customer")}
+//                             </span>
+//                             {item.senderAccountStatus === "removed" ? (
+//                               <Badge
+//                                 variant="destructive"
+//                                 className="shrink-0 text-[10px]"
+//                               >
+//                                 Removed
+//                               </Badge>
+//                             ) : item.senderAccountStatus === "inactive" ? (
+//                               <Badge
+//                                 variant="outline"
+//                                 className="shrink-0 text-[10px] text-muted-foreground"
+//                               >
+//                                 Inactive
+//                               </Badge>
+//                             ) : item.senderRoleKey ? (
+//                               <span className="shrink-0 text-[11px] font-normal text-muted-foreground">
+//                                 ~ {formatRole(item.senderRoleKey)}
+//                               </span>
+//                             ) : null}
+//                           </div>
+//                         )}
+
+//                         {item.text && (
+//                           <p className="whitespace-pre-line break-words text-sm leading-relaxed">
+//                             {item.text}
+//                           </p>
+//                         )}
+
+//                         {item.attachments?.length > 0 && (
+//                           <div className="mt-2 space-y-2">
+//                             {item.attachments.map((attachment) => {
+//                               const isImage = attachment.mimeType?.startsWith("image/")
+
+//                               return (
+//                                 <a
+//                                   key={attachment.id}
+//                                   href={attachment.url}
+//                                   target="_blank"
+//                                   rel="noreferrer"
+//                                   className={`block overflow-hidden rounded-lg border ${
+//                                     item.type === "sent"
+//                                       ? "border-primary-foreground/20 bg-primary-foreground/10"
+//                                       : "border-border bg-background"
+//                                   }`}
+//                                 >
+//                                   {isImage ? (
+//                                     <img
+//                                       src={attachment.url}
+//                                       alt={attachment.fileName}
+//                                       className="max-h-56 w-full object-cover"
+//                                     />
+//                                   ) : (
+//                                     <span className="flex items-center gap-2 px-3 py-2 text-xs">
+//                                       <FileText className="h-4 w-4 shrink-0" />
+//                                       <span className="truncate">
+//                                         {attachment.fileName}
+//                                       </span>
+//                                     </span>
+//                                   )}
+//                                 </a>
+//                               )
+//                             })}
+//                           </div>
+//                         )}
+
+//                         <div
+//                           className={`mt-1 flex items-center justify-end gap-2 text-[11px] ${
+//                             item.type === "sent"
+//                               ? "text-primary-foreground/70"
+//                               : "text-muted-foreground"
+//                           }`}
+//                         >
+//                           <span>
+//                             {formatDate(item.createdAt)} - {formatTime(item.createdAt)}
+//                           </span>
+//                           {item.type === "sent" && (
+//                             <MessageStatus status={item.status} />
+//                           )}
+//                         </div>
+//                       </div>
+//                     </div>
+//                   ))}
+//                 </div>
+//               </div>
+//             )}
+//           </div>
+
+//           <div className="shrink-0 border-t bg-background px-1.5 py-1.5 sm:px-3 sm:py-2">
+//             {error && (
+//               <div className="px-2 pb-2 text-xs font-medium text-destructive">
+//                 {error}
+//               </div>
+//             )}
+
+//             {selectedFiles.length > 0 && (
+//               <div className="flex gap-2 overflow-x-auto px-2 pb-2">
+//                 {selectedFiles.map((file, index) => (
+//                   <button
+//                     key={`${file.name}-${file.lastModified}-${index}`}
+//                     type="button"
+//                     onClick={() => removeSelectedFile(index)}
+//                     className="flex max-w-[180px] shrink-0 items-center gap-2 rounded-full border bg-muted/60 px-3 py-1.5 text-xs"
+//                     title="Remove file"
+//                   >
+//                     <Paperclip className="h-3.5 w-3.5 shrink-0" />
+//                     <span className="truncate">{file.name}</span>
+//                     <X className="h-3.5 w-3.5 shrink-0" />
+//                   </button>
+//                 ))}
+//               </div>
+//             )}
+
+//             <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+//               <div className="flex min-h-11 min-w-0 flex-1 items-center gap-1 rounded-full border bg-muted/35 px-1.5 py-1.5 focus-within:ring-2 focus-within:ring-primary/30 sm:px-2">
+//                 <button
+//                   type="button"
+//                   className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:size-8"
+//                   aria-label={t("attachFile")}
+//                   onClick={() => attachmentInputRef.current?.click()}
+//                 >
+//                   <Paperclip className="h-4 w-4 sm:h-5 sm:w-5" />
+//                 </button>
+//                 <input
+//                   ref={attachmentInputRef}
+//                   type="file"
+//                   className="hidden"
+//                   accept="image/jpeg,image/png,image/webp,application/pdf"
+//                   multiple
+//                   onChange={handleSelectedFiles}
+//                 />
+
+//                 <textarea
+//                   ref={messageInputRef}
+//                   value={message}
+//                   onChange={(e) => setMessage(e.target.value)}
+//                   onKeyDown={(e) => {
+//                     if (e.key === "Enter" && !e.shiftKey) {
+//                       e.preventDefault()
+//                       handleSend()
+//                     }
+//                   }}
+//                   placeholder={t("writeMessage")}
+//                   rows={1}
+//                   className="no-scrollbar min-h-8 min-w-0 flex-1 resize-none bg-transparent px-1 py-1.5 text-sm leading-5 outline-none placeholder:text-muted-foreground [overflow-wrap:anywhere]"
+//                 />
+
+//                 <button
+//                   type="button"
+//                   className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:size-8"
+//                   aria-label={t("openCamera")}
+//                   onClick={() => cameraInputRef.current?.click()}
+//                 >
+//                   <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
+//                 </button>
+//                 <input
+//                   ref={cameraInputRef}
+//                   type="file"
+//                   accept="image/*"
+//                   capture="environment"
+//                   className="hidden"
+//                   onChange={handleSelectedFiles}
+//                 />
+//               </div>
+
+//               <button
+//                 type="button"
+//                 onClick={handleSend}
+//                 className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60 sm:size-11"
+//                 disabled={!message.trim() && selectedFiles.length === 0}
+//                 aria-label={t("sendMessage")}
+//               >
+//                 <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       ) : (
+//         !fullscreen && (
+//           <button
+//             type="button"
+//             onClick={() => setOpen(true)}
+//             className="fixed bottom-0 right-6 z-50 flex w-[280px] items-center justify-between rounded-t-xl border bg-background px-4 py-2 shadow-lg"
+//           >
+//             <div className="flex w-full items-center justify-between gap-2">
+//               <div className="flex min-w-0 items-center gap-3">
+//                 <img
+//                   src={getAvatar(currentUser)}
+//                   alt={t("avatar")}
+//                   className="h-8 w-8 rounded-full object-cover"
+//                 />
+//                 <span className="truncate font-semibold">{t("newMessage")}</span>
+//               </div>
+
+//               <ChevronUp className="h-5 w-5 shrink-0" />
+//             </div>
+//           </button>
+//         )
+//       )}
+//     </>
+//   )
+// }
+
+//post only=======================================>
+
+// "use client"
+
+// import { useEffect, useRef, useState } from "react"
+// import Link from "next/link"
+// import { useTranslations } from "next-intl"
+// import { useDispatch } from "react-redux"
+// import {
+//   Camera,
+//   CheckCheck,
+//   ChevronUp,
+//   CircleX,
+//   Clock3,
+//   FileText,
+//   Loader2,
+//   Maximize2,
+//   Paperclip,
+//   Search,
+//   Send,
+//   X,
+// } from "lucide-react"
+
+// import { Badge } from "@/components/ui/badge"
+// import { Button } from "@/components/ui/button"
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogDescription,
+//   DialogFooter,
+//   DialogHeader,
+//   DialogTitle,
+// } from "@/components/ui/dialog"
+// // Adjust this path to wherever your postSlice lives
+// import { PostMessages } from "../../redux/slices/postSlice"
+
+// const fallbackAvatar = "https://api.dicebear.com/9.x/adventurer/svg?seed=Crate"
+
+// function formatTime(value) {
+//   if (!value) return ""
+
+//   return new Intl.DateTimeFormat(undefined, {
+//     hour: "numeric",
+//     minute: "2-digit",
+//   }).format(new Date(value))
+// }
+
+// function formatDate(value) {
+//   if (!value) return ""
+
+//   const date = new Date(value)
+//   const today = new Date()
+
+//   if (date.toDateString() === today.toDateString()) return "Today"
+
+//   return new Intl.DateTimeFormat(undefined, {
+//     month: "short",
+//     day: "numeric",
+//   }).format(date)
+// }
+
+// function getAvatar(user) {
+//   return user?.avatar || fallbackAvatar
+// }
+
+// function formatRole(roleKey) {
+//   return String(roleKey ?? "")
+//     .replaceAll("-", " ")
+//     .replace(/\b\w/g, (letter) => letter.toUpperCase())
+// }
+
+// const previewUser = {
+//   id: 1,
+//   name: "Crate Inc",
+//   roleKey: "store-manager",
+//   avatar: "",
+// }
+
+// const previewMessages = [
+//   {
+//     id: 1,
+//     senderName: "Crate Support",
+//     senderRoleKey: "sales-manager",
+//     senderAccountStatus: "active",
+//     senderAvatar: "",
+//     type: "received",
+//     text: "Good morning! Your produce order is packed and ready.",
+//     status: "sent",
+//     createdAt: "2026-06-30T09:12:00.000Z",
+//     attachments: [],
+//   },
+//   {
+//     id: 2,
+//     senderName: "Crate Inc",
+//     senderRoleKey: "store-manager",
+//     senderAccountStatus: "active",
+//     senderAvatar: "",
+//     type: "sent",
+//     text: "Wonderful, thank you. Is the delivery window still 2–4 PM?",
+//     status: "sent",
+//     createdAt: "2026-06-30T09:14:00.000Z",
+//     attachments: [],
+//   },
+//   {
+//     id: 3,
+//     senderName: "Crate Support",
+//     senderRoleKey: "sales-manager",
+//     senderAccountStatus: "active",
+//     senderAvatar: "",
+//     type: "received",
+//     text: "Yes, your driver will arrive between 2:00 and 4:00 PM.",
+//     status: "sent",
+//     createdAt: "2026-06-30T09:15:00.000Z",
+//     attachments: [],
+//   },
+// ]
+
+// function MessageStatus({ status }) {
+//   if (status === "failed") {
+//     return (
+//       <span className="inline-flex items-center text-destructive" title="Failed">
+//         <CircleX className="h-3.5 w-3.5" />
+//       </span>
+//     )
+//   }
+
+//   if (status === "sending") {
+//     return (
+//       <span className="inline-flex items-center" title="Sending">
+//         <Clock3 className="h-3.5 w-3.5" />
+//       </span>
+//     )
+//   }
+
+//   return (
+//     <span className="inline-flex items-center" title="Sent">
+//       <CheckCheck className="h-3.5 w-3.5" />
+//     </span>
+//   )
+// }
+
+// export default function Messages({ fullscreen = false }) {
+//   const t = useTranslations("messages")
+//   const dispatch = useDispatch()
+//   const [open, setOpen] = useState(fullscreen)
+//   const [message, setMessage] = useState("")
+//   const [messages, setMessages] = useState(previewMessages)
+//   const [selectedFiles, setSelectedFiles] = useState([])
+//   const [searchOpen, setSearchOpen] = useState(false)
+//   const [searchQuery, setSearchQuery] = useState("")
+//   const [clearDialogOpen, setClearDialogOpen] = useState(false)
+//   const [error, setError] = useState("")
+//   const [isSending, setIsSending] = useState(false)
+//   const messageAreaRef = useRef(null)
+//   const messageInputRef = useRef(null)
+//   const searchInputRef = useRef(null)
+//   const attachmentInputRef = useRef(null)
+//   const cameraInputRef = useRef(null)
+//     const custnmbr = localStorage.getItem("custnmbr")
+//       const userId = Number(localStorage.getItem("UserID"))
+//     console.log("Login userID finding:", userId);
+//   useEffect(() => {
+
+//     function handleSearch() {
+//       setSearchOpen(true)
+//       requestAnimationFrame(() => searchInputRef.current?.focus())
+//     }
+
+//     function handleClear() {
+//       setClearDialogOpen(true)
+//     }
+
+//     window.addEventListener("aloha-messages-search", handleSearch)
+//     window.addEventListener("aloha-messages-clear", handleClear)
+
+//     return () => {
+//       window.removeEventListener("aloha-messages-search", handleSearch)
+//       window.removeEventListener("aloha-messages-clear", handleClear)
+//     }
+//   }, [])
+
+//   useEffect(() => {
+//     if (!messageAreaRef.current) return
+
+//     messageAreaRef.current.scrollTop = messageAreaRef.current.scrollHeight
+//   }, [messages, open])
+
+//   useEffect(() => {
+//     if (!messageInputRef.current) return
+
+//     const input = messageInputRef.current
+//     input.style.height = "auto"
+//     input.style.height = `${Math.min(input.scrollHeight, 72)}px`
+//     input.style.overflowY = input.scrollHeight > 72 ? "auto" : "hidden"
+//   }, [message])
+
+//   function confirmClearChat() {
+//     setMessages([])
+//     setSearchQuery("")
+//     setSearchOpen(false)
+//     setClearDialogOpen(false)
+//   }
+
+//   async function handleSend() {
+//     const text = message.trim()
+
+//     // The API only accepts text, so attachment-only messages are not sent yet
+//     if (!text || isSending) return
+
+//     // Read localStorage inside the handler (not at render time) so it
+//     // doesn't break server-side rendering in Next.js
+ 
+//   const custnmbr = localStorage.getItem("custnmbr")
+//   const userId = Number(localStorage.getItem("UserID")) // API expects a number
+//   console.log("custnmbr:", custnmbr, "userId:", userId, "text:", text)
+//     const tempId = `temp-${Date.now()}`
+
+//     // Optimistic bubble with the "sending" clock icon
+//     setMessages((currentMessages) => [
+//       ...currentMessages,
+//       {
+//         id: tempId,
+//         senderId: userId,
+//         senderName: previewUser.name,
+//         senderRoleKey: previewUser.roleKey,
+//         senderAccountStatus: "active",
+//         senderAvatar: previewUser.avatar,
+//         type: "sent",
+//         text,
+//         status: "sending",
+//         createdAt: new Date().toISOString(),
+//         attachments: [],
+//       },
+//     ])
+//     setMessage("")
+//     setError("")
+//     setIsSending(true)
+// // return;
+//     try {
+//       const res = await dispatch(
+//         PostMessages({
+//           data: { custnmbr, userId, messageText: text },
+//         })
+//       ).unwrap()
+
+//       const saved = res?.data
+
+//       // Replace the temp bubble with the saved message (double-check icon)
+//       setMessages((currentMessages) =>
+//         currentMessages.map((item) =>
+//           item.id === tempId
+//             ? {
+//                 ...item,
+//                 id: saved?.messageId ?? tempId,
+//                 text: saved?.messageText ?? item.text,
+//                 status: "sent",
+//               }
+//             : item
+//         )
+//       )
+//       setSelectedFiles([])
+//       if (attachmentInputRef.current) attachmentInputRef.current.value = ""
+//       if (cameraInputRef.current) cameraInputRef.current.value = ""
+//     } catch (err) {
+//       // Show the red failed icon on the bubble and the error above the input
+//       setMessages((currentMessages) =>
+//         currentMessages.map((item) =>
+//           item.id === tempId ? { ...item, status: "failed" } : item
+//         )
+//       )
+//       setError(typeof err === "string" ? err : "Failed to send message.")
+//     } finally {
+//       setIsSending(false)
+//     }
+//   }
+
+//   function handleSelectedFiles(event) {
+//     setSelectedFiles((files) => [...files, ...Array.from(event.target.files ?? [])])
+//   }
+
+//   function removeSelectedFile(index) {
+//     setSelectedFiles((files) => files.filter((_, fileIndex) => fileIndex !== index))
+//   }
+
+//   const chatBoxClass = fullscreen
+//     ? "flex h-full min-h-0 flex-col overflow-hidden bg-background "
+//     : "fixed bottom-0 right-6 z-50 flex h-[620px] w-[430px] flex-col overflow-hidden rounded-t-xl border bg-background shadow-2xl"
+//   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
+//   const visibleMessages = normalizedSearchQuery
+//     ? messages.filter((item) => {
+//         const text = item.text ?? ""
+//         const attachmentText = (item.attachments ?? [])
+//           .map((attachment) => attachment.fileName)
+//           .join(" ")
+
+//         return `${text} ${attachmentText}`
+//           .toLowerCase()
+//           .includes(normalizedSearchQuery)
+//       })
+//     : messages
+//   const currentUser = previewUser
+//   const loading = false
+//   const loadingOlder = false
+//   const clearError = ""
+//   const isClearing = false
+
+//   return (
+//     <>
+//       <Dialog
+//         open={clearDialogOpen}
+//         onOpenChange={(nextOpen) => {
+//           if (!isClearing) {
+//             setClearDialogOpen(nextOpen)
+//           }
+//         }}
+//       >
+//         <DialogContent showCloseButton={!isClearing}>
+//           <DialogHeader>
+//             <DialogTitle>Clear all chats?</DialogTitle>
+//             <DialogDescription>
+//               This permanently deletes every message for all users from the
+//               database. This action cannot be undone.
+//             </DialogDescription>
+//           </DialogHeader>
+
+//           {clearError ? (
+//             <div
+//               role="alert"
+//               className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm font-medium text-destructive"
+//             >
+//               {clearError}
+//             </div>
+//           ) : null}
+
+//           <DialogFooter>
+//             <Button
+//               type="button"
+//               variant="outline"
+//               disabled={isClearing}
+//               onClick={() => setClearDialogOpen(false)}
+//             >
+//               Cancel
+//             </Button>
+//             <Button
+//               type="button"
+//               variant="destructive"
+//               disabled={isClearing}
+//               onClick={confirmClearChat}
+//             >
+//               {isClearing ? (
+//                 <Loader2 className="animate-spin" />
+//               ) : null}
+//               {isClearing ? "Clearing..." : "Confirm"}
+//             </Button>
+//           </DialogFooter>
+//         </DialogContent>
+//       </Dialog>
+
+//       {open ? (
+//         <div className={chatBoxClass}>
+//           {!fullscreen && (
+//             <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-3">
+//               <div className="flex min-w-0 items-center gap-3">
+//                 <img
+//                   src={getAvatar(currentUser)}
+//                   alt={t("customer")}
+//                   className="h-9 w-9 rounded-full object-cover"
+//                 />
+//                 <div className="min-w-0">
+//                   <h3 className="truncate font-semibold">{t("newMessage")}</h3>
+//                 </div>
+//               </div>
+
+//               <div className="flex items-center gap-2">
+//                 <Link href="/messages">
+//                   <button
+//                     type="button"
+//                     className="rounded-md p-1 hover:bg-muted"
+//                     aria-label={t("openMessagesPage")}
+//                   >
+//                     <Maximize2 className="h-4 w-4" />
+//                   </button>
+//                 </Link>
+
+//                 <button
+//                   type="button"
+//                   onClick={() => setOpen(false)}
+//                   className="rounded-md p-1 hover:bg-muted"
+//                   aria-label={t("closeChat")}
+//                 >
+//                   <X className="h-5 w-5" />
+//                 </button>
+//               </div>
+//             </div>
+//           )}
+
+//           <div
+//             ref={messageAreaRef}
+//             className="min-h-0 flex-1 overflow-y-auto px-2 py-3 sm:px-5 sm:py-4"
+//           >
+//             {searchOpen && (
+//               <div className="sticky top-0 z-10 -mx-2 mb-3 border-b bg-background/95 px-2 pb-3 backdrop-blur sm:-mx-5 sm:px-5">
+//                 <div className="flex min-h-10 items-center gap-2 rounded-full border bg-muted/35 px-3">
+//                   <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+//                   <input
+//                     ref={searchInputRef}
+//                     value={searchQuery}
+//                     onChange={(event) => setSearchQuery(event.target.value)}
+//                     placeholder="Search messages"
+//                     className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+//                   />
+//                   <button
+//                     type="button"
+//                     className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+//                     aria-label="Close search"
+//                     onClick={() => {
+//                       setSearchOpen(false)
+//                       setSearchQuery("")
+//                     }}
+//                   >
+//                     <X className="h-4 w-4" />
+//                   </button>
+//                 </div>
+//               </div>
+//             )}
+//             {loading ? (
+//               <div className="flex h-full items-center justify-center text-muted-foreground">
+//                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+//                 Loading messages
+//               </div>
+//             ) : visibleMessages.length === 0 ? (
+//               <div className="flex h-full items-center justify-center px-8 text-center text-sm text-muted-foreground">
+//                 {normalizedSearchQuery
+//                   ? "No messages found."
+//                   : "Start a team conversation between store managers and employees."}
+//               </div>
+//             ) : (
+//               <div className="flex min-h-full flex-col">
+//                 {loadingOlder && (
+//                   <div className="flex justify-center pb-3 text-muted-foreground">
+//                     <Loader2 className="h-4 w-4 animate-spin" />
+//                   </div>
+//                 )}
+
+//                 <div className="mt-auto flex items-center gap-2 pb-4 sm:gap-3 sm:pb-5">
+//                   <div className="h-px flex-1 bg-border" />
+//                   <span className="text-xs font-semibold text-muted-foreground">
+//                     {formatDate(visibleMessages[visibleMessages.length - 1]?.createdAt)}
+//                   </span>
+//                   <div className="h-px flex-1 bg-border" />
+//                 </div>
+
+//                 <div className="space-y-4 sm:space-y-5">
+//                   {visibleMessages.map((item) => (
+//                     <div
+//                       key={item.id}
+//                       className={`flex min-w-0 gap-2 sm:gap-3 ${
+//                         item.type === "sent" ? "justify-end" : "items-start"
+//                       }`}
+//                     >
+//                       {item.type === "received" && (
+//                         <img
+//                           src={item.senderAvatar || fallbackAvatar}
+//                           alt={item.senderName || t("customer")}
+//                           className="h-8 w-8 shrink-0 rounded-full object-cover sm:h-10 sm:w-10"
+//                         />
+//                       )}
+
+//                       <div
+//                         className={`min-w-0 max-w-[82%] sm:max-w-[520px] ${
+//                           item.type === "sent"
+//                             ? "rounded-2xl bg-primary px-3 py-2 text-primary-foreground sm:px-4"
+//                             : "rounded-2xl bg-muted px-3 py-2 sm:px-4"
+//                         }`}
+//                       >
+//                         {item.type !== "sent" && (
+//                           <div className="mb-1 flex min-w-0 items-baseline gap-2 leading-5 justify-between">
+//                             <span className="truncate text-sm font-semibold text-foreground">
+//                               {item.senderName || t("customer")}
+//                             </span>
+//                             {item.senderAccountStatus === "removed" ? (
+//                               <Badge
+//                                 variant="destructive"
+//                                 className="shrink-0 text-[10px]"
+//                               >
+//                                 Removed
+//                               </Badge>
+//                             ) : item.senderAccountStatus === "inactive" ? (
+//                               <Badge
+//                                 variant="outline"
+//                                 className="shrink-0 text-[10px] text-muted-foreground"
+//                               >
+//                                 Inactive
+//                               </Badge>
+//                             ) : item.senderRoleKey ? (
+//                               <span className="shrink-0 text-[11px] font-normal text-muted-foreground">
+//                                 ~ {formatRole(item.senderRoleKey)}
+//                               </span>
+//                             ) : null}
+//                           </div>
+//                         )}
+
+//                         {item.text && (
+//                           <p className="whitespace-pre-line break-words text-sm leading-relaxed">
+//                             {item.text}
+//                           </p>
+//                         )}
+
+//                         {item.attachments?.length > 0 && (
+//                           <div className="mt-2 space-y-2">
+//                             {item.attachments.map((attachment) => {
+//                               const isImage = attachment.mimeType?.startsWith("image/")
+
+//                               return (
+//                                 <a
+//                                   key={attachment.id}
+//                                   href={attachment.url}
+//                                   target="_blank"
+//                                   rel="noreferrer"
+//                                   className={`block overflow-hidden rounded-lg border ${
+//                                     item.type === "sent"
+//                                       ? "border-primary-foreground/20 bg-primary-foreground/10"
+//                                       : "border-border bg-background"
+//                                   }`}
+//                                 >
+//                                   {isImage ? (
+//                                     <img
+//                                       src={attachment.url}
+//                                       alt={attachment.fileName}
+//                                       className="max-h-56 w-full object-cover"
+//                                     />
+//                                   ) : (
+//                                     <span className="flex items-center gap-2 px-3 py-2 text-xs">
+//                                       <FileText className="h-4 w-4 shrink-0" />
+//                                       <span className="truncate">
+//                                         {attachment.fileName}
+//                                       </span>
+//                                     </span>
+//                                   )}
+//                                 </a>
+//                               )
+//                             })}
+//                           </div>
+//                         )}
+
+//                         <div
+//                           className={`mt-1 flex items-center justify-end gap-2 text-[11px] ${
+//                             item.type === "sent"
+//                               ? "text-primary-foreground/70"
+//                               : "text-muted-foreground"
+//                           }`}
+//                         >
+//                           <span>
+//                             {formatDate(item.createdAt)} - {formatTime(item.createdAt)}
+//                           </span>
+//                           {item.type === "sent" && (
+//                             <MessageStatus status={item.status} />
+//                           )}
+//                         </div>
+//                       </div>
+//                     </div>
+//                   ))}
+//                 </div>
+//               </div>
+//             )}
+//           </div>
+
+//           <div className="shrink-0 border-t bg-background px-1.5 py-1.5 sm:px-3 sm:py-2">
+//             {error && (
+//               <div className="px-2 pb-2 text-xs font-medium text-destructive">
+//                 {error}
+//               </div>
+//             )}
+
+//             {selectedFiles.length > 0 && (
+//               <div className="flex gap-2 overflow-x-auto px-2 pb-2">
+//                 {selectedFiles.map((file, index) => (
+//                   <button
+//                     key={`${file.name}-${file.lastModified}-${index}`}
+//                     type="button"
+//                     onClick={() => removeSelectedFile(index)}
+//                     className="flex max-w-[180px] shrink-0 items-center gap-2 rounded-full border bg-muted/60 px-3 py-1.5 text-xs"
+//                     title="Remove file"
+//                   >
+//                     <Paperclip className="h-3.5 w-3.5 shrink-0" />
+//                     <span className="truncate">{file.name}</span>
+//                     <X className="h-3.5 w-3.5 shrink-0" />
+//                   </button>
+//                 ))}
+//               </div>
+//             )}
+
+//             <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+//               <div className="flex min-h-11 min-w-0 flex-1 items-center gap-1 rounded-full border bg-muted/35 px-1.5 py-1.5 focus-within:ring-2 focus-within:ring-primary/30 sm:px-2">
+//                 <button
+//                   type="button"
+//                   className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:size-8"
+//                   aria-label={t("attachFile")}
+//                   onClick={() => attachmentInputRef.current?.click()}
+//                 >
+//                   <Paperclip className="h-4 w-4 sm:h-5 sm:w-5" />
+//                 </button>
+//                 <input
+//                   ref={attachmentInputRef}
+//                   type="file"
+//                   className="hidden"
+//                   accept="image/jpeg,image/png,image/webp,application/pdf"
+//                   multiple
+//                   onChange={handleSelectedFiles}
+//                 />
+
+//                 <textarea
+//                   ref={messageInputRef}
+//                   value={message}
+//                   onChange={(e) => setMessage(e.target.value)}
+//                   onKeyDown={(e) => {
+//                     if (e.key === "Enter" && !e.shiftKey) {
+//                       e.preventDefault()
+//                       handleSend()
+//                     }
+//                   }}
+//                   placeholder={t("writeMessage")}
+//                   rows={1}
+//                   className="no-scrollbar min-h-8 min-w-0 flex-1 resize-none bg-transparent px-1 py-1.5 text-sm leading-5 outline-none placeholder:text-muted-foreground [overflow-wrap:anywhere]"
+//                 />
+
+//                 <button
+//                   type="button"
+//                   className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:size-8"
+//                   aria-label={t("openCamera")}
+//                   onClick={() => cameraInputRef.current?.click()}
+//                 >
+//                   <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
+//                 </button>
+//                 <input
+//                   ref={cameraInputRef}
+//                   type="file"
+//                   accept="image/*"
+//                   capture="environment"
+//                   className="hidden"
+//                   onChange={handleSelectedFiles}
+//                 />
+//               </div>
+
+//               <button
+//                 type="button"
+//                 onClick={handleSend}
+//                 className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60 sm:size-11"
+//                 disabled={!message.trim() || isSending}
+//                 aria-label={t("sendMessage")}
+//               >
+//                 {isSending ? (
+//                   <Loader2 className="h-4 w-4 animate-spin sm:h-5 sm:w-5" />
+//                 ) : (
+//                   <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+//                 )}
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       ) : (
+//         !fullscreen && (
+//           <button
+//             type="button"
+//             onClick={() => setOpen(true)}
+//             className="fixed bottom-0 right-6 z-50 flex w-[280px] items-center justify-between rounded-t-xl border bg-background px-4 py-2 shadow-lg"
+//           >
+//             <div className="flex w-full items-center justify-between gap-2">
+//               <div className="flex min-w-0 items-center gap-3">
+//                 <img
+//                   src={getAvatar(currentUser)}
+//                   alt={t("avatar")}
+//                   className="h-8 w-8 rounded-full object-cover"
+//                 />
+//                 <span className="truncate font-semibold">{t("newMessage")}</span>
+//               </div>
+
+//               <ChevronUp className="h-5 w-5 shrink-0" />
+//             </div>
+//           </button>
+//         )
+//       )}
+//     </>
+//   )
+// }
+
+//both get and post=======================================>
+  "use client"
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
+import { useDispatch } from "react-redux"
 import {
   Camera,
   CheckCheck,
@@ -28,6 +1344,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { PostMessages } from "../../redux/slices/postSlice"
+import { GetMessageslist } from "../../redux/slices/getSlice"
 
 const fallbackAvatar = "https://api.dicebear.com/9.x/adventurer/svg?seed=Crate"
 
@@ -64,51 +1382,41 @@ function formatRole(roleKey) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
+// Map the API role code to a readable key (extend as needed)
+const roleKeyMap = {
+  O: "owner",
+  S: "store-manager",
+  T: "territory-manager",
+  E: "employee",
+  D: "department-manager",
+  A: "area-manager",
+}
+
+// Convert one API row into the shape the UI renders.
+// Adjust the field names here if your GET response differs.
+function mapApiMessage(row, currentUserId) {
+  return {
+    id: row.messageId,
+    senderId: row.userId,
+    senderName: row.senderName,
+    senderRoleKey:
+      roleKeyMap[row.senderRoles] ?? String(row.senderRoles ?? "").toLowerCase(),
+    senderAccountStatus: "active",
+    senderAvatar: "",
+    type: Number(row.userId) === currentUserId ? "sent" : "received",
+    text: row.messageText,
+    status: "sent",
+    createdAt: row.createdDTS,
+    attachments: [],
+  }
+}
+
 const previewUser = {
   id: 1,
   name: "Crate Inc",
   roleKey: "store-manager",
   avatar: "",
 }
-
-const previewMessages = [
-  {
-    id: 1,
-    senderName: "Crate Support",
-    senderRoleKey: "sales-manager",
-    senderAccountStatus: "active",
-    senderAvatar: "",
-    type: "received",
-    text: "Good morning! Your produce order is packed and ready.",
-    status: "sent",
-    createdAt: "2026-06-30T09:12:00.000Z",
-    attachments: [],
-  },
-  {
-    id: 2,
-    senderName: "Crate Inc",
-    senderRoleKey: "store-manager",
-    senderAccountStatus: "active",
-    senderAvatar: "",
-    type: "sent",
-    text: "Wonderful, thank you. Is the delivery window still 2–4 PM?",
-    status: "sent",
-    createdAt: "2026-06-30T09:14:00.000Z",
-    attachments: [],
-  },
-  {
-    id: 3,
-    senderName: "Crate Support",
-    senderRoleKey: "sales-manager",
-    senderAccountStatus: "active",
-    senderAvatar: "",
-    type: "received",
-    text: "Yes, your driver will arrive between 2:00 and 4:00 PM.",
-    status: "sent",
-    createdAt: "2026-06-30T09:15:00.000Z",
-    attachments: [],
-  },
-]
 
 function MessageStatus({ status }) {
   if (status === "failed") {
@@ -136,18 +1444,46 @@ function MessageStatus({ status }) {
 
 export default function Messages({ fullscreen = false }) {
   const t = useTranslations("messages")
+  const dispatch = useDispatch()
   const [open, setOpen] = useState(fullscreen)
   const [message, setMessage] = useState("")
-  const [messages, setMessages] = useState(previewMessages)
+  const [messages, setMessages] = useState([])
+  const [loading, setLoading] = useState(true)
   const [selectedFiles, setSelectedFiles] = useState([])
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [clearDialogOpen, setClearDialogOpen] = useState(false)
+  const [error, setError] = useState("")
+  const [isSending, setIsSending] = useState(false)
   const messageAreaRef = useRef(null)
   const messageInputRef = useRef(null)
   const searchInputRef = useRef(null)
   const attachmentInputRef = useRef(null)
   const cameraInputRef = useRef(null)
+
+  // ───────────── GET: load the conversation when the component mounts ─────────────
+  useEffect(() => {
+    const custnmbr = localStorage.getItem("custnmbr")
+    const currentUserId = Number(localStorage.getItem("UserID"))
+
+    dispatch(GetMessageslist(custnmbr))
+      .unwrap()
+      .then((list) => {
+        const sorted = [...list]
+          .sort((a, b) => new Date(a.createdDTS) - new Date(b.createdDTS))
+          .map((row) => mapApiMessage(row, currentUserId))
+
+        setMessages(sorted)
+      })
+      .catch((err) => {
+        setError(
+          typeof err === "string"
+            ? err
+            : err?.message || "Failed to load messages."
+        )
+      })
+      .finally(() => setLoading(false))
+  }, [dispatch])
 
   useEffect(() => {
     function handleSearch() {
@@ -172,7 +1508,7 @@ export default function Messages({ fullscreen = false }) {
     if (!messageAreaRef.current) return
 
     messageAreaRef.current.scrollTop = messageAreaRef.current.scrollHeight
-  }, [messages, open])
+  }, [messages, open, loading])
 
   useEffect(() => {
     if (!messageInputRef.current) return
@@ -190,28 +1526,77 @@ export default function Messages({ fullscreen = false }) {
     setClearDialogOpen(false)
   }
 
-  function handleSend() {
+  // ───────────── POST: send a message ─────────────
+  async function handleSend() {
     const text = message.trim()
 
-    if (!text && selectedFiles.length === 0) return
+    // The API only accepts text, so attachment-only messages are not sent
+    if (!text || isSending) return
 
-    setMessages((currentMessages) => [...currentMessages, {
-      id: Date.now(),
-      senderId: previewUser.id,
-      senderName: previewUser.name,
-      senderRoleKey: previewUser.roleKey,
-      senderAccountStatus: "active",
-      senderAvatar: previewUser.avatar,
-      type: "sent",
-      text,
-      status: "sent",
-      createdAt: new Date().toISOString(),
-      attachments: [],
-    }])
+    // Read localStorage inside the handler so it never runs during SSR
+    const custnmbr = localStorage.getItem("custnmbr")
+    const userId = Number(localStorage.getItem("UserID")) // API expects a number
+    const senderName = localStorage.getItem("name") || previewUser.name
+
+    const tempId = `temp-${Date.now()}`
+
+    // Optimistic bubble with the "sending" clock icon
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        id: tempId,
+        senderId: userId,
+        senderName,
+        senderRoleKey: previewUser.roleKey,
+        senderAccountStatus: "active",
+        senderAvatar: previewUser.avatar,
+        type: "sent",
+        text,
+        status: "sending",
+        createdAt: new Date().toISOString(),
+        attachments: [],
+      },
+    ])
     setMessage("")
-    setSelectedFiles([])
-    if (attachmentInputRef.current) attachmentInputRef.current.value = ""
-    if (cameraInputRef.current) cameraInputRef.current.value = ""
+    setError("")
+    setIsSending(true)
+
+    try {
+      const res = await dispatch(
+        PostMessages({
+          data: { custnmbr, userId, messageText: text },
+        })
+      ).unwrap()
+
+      const saved = res?.data
+
+      // Replace the temp bubble with the saved message (double-check icon)
+      setMessages((currentMessages) =>
+        currentMessages.map((item) =>
+          item.id === tempId
+            ? {
+                ...item,
+                id: saved?.messageId ?? tempId,
+                text: saved?.messageText ?? item.text,
+                status: "sent",
+              }
+            : item
+        )
+      )
+      setSelectedFiles([])
+      if (attachmentInputRef.current) attachmentInputRef.current.value = ""
+      if (cameraInputRef.current) cameraInputRef.current.value = ""
+    } catch (err) {
+      // Red failed icon on the bubble, error text above the input
+      setMessages((currentMessages) =>
+        currentMessages.map((item) =>
+          item.id === tempId ? { ...item, status: "failed" } : item
+        )
+      )
+      setError(typeof err === "string" ? err : "Failed to send message.")
+    } finally {
+      setIsSending(false)
+    }
   }
 
   function handleSelectedFiles(event) {
@@ -239,9 +1624,7 @@ export default function Messages({ fullscreen = false }) {
       })
     : messages
   const currentUser = previewUser
-  const loading = false
   const loadingOlder = false
-  const error = ""
   const clearError = ""
   const isClearing = false
 
@@ -587,10 +1970,14 @@ export default function Messages({ fullscreen = false }) {
                 type="button"
                 onClick={handleSend}
                 className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60 sm:size-11"
-                disabled={!message.trim() && selectedFiles.length === 0}
+                disabled={!message.trim() || isSending}
                 aria-label={t("sendMessage")}
               >
-                <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+                {isSending ? (
+                  <Loader2 className="h-4 w-4 animate-spin sm:h-5 sm:w-5" />
+                ) : (
+                  <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+                )}
               </button>
             </div>
           </div>
