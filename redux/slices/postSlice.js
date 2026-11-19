@@ -1009,6 +1009,44 @@ export const Deleteusers = createAsyncThunk(
 /*******************EMPLOYEE SCREEN POST API FUNCTIONS END***************************/
 
 
+//********************MESSAGES / CHAT_POST************************************ */
+export const PostMessages = createAsyncThunk(
+  "messages/post",
+  async ({ data }, { rejectWithValue }) => {
+    try {
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/customerchat`;
+
+      const response = await axios.post(URL, data, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+      });
+
+      if (response.data?.success === false) {
+        return rejectWithValue(
+          response.data?.error ||      // <-- added
+            response.data?.Msg ||
+            response.data?.message ||
+            "Failed to create message."
+        );
+      }
+
+      return response.data;
+    } catch (error) {
+      const d = error.response?.data;
+
+      return rejectWithValue(
+        d?.error ||                    // <-- added
+          d?.Msg ||
+          d?.message ||
+          (typeof d === "string" ? d : null) ||
+          error.message ||
+          "Failed to create message."
+      );
+    }
+  }
+);
 
 // ============================================================
 // SLICE  (Crea pattern — createSlice with extraReducers builder)

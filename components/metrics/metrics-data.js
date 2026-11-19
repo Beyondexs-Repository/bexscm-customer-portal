@@ -1,5 +1,5 @@
 export const money = new Intl.NumberFormat("en-US", {
-  style: "currency", currency: "USD", maximumFractionDigits: 0,
+  style: "currency", currency: "USD", maximumFractionDigits: 0,maximumFractionDigits: 2,
 })
 
 export const periods = {

@@ -1,34 +1,34 @@
 "use client";
 import { useDispatch } from "react-redux";
-import { PostLogin } from "../../redux/slices/postSlice"; 
+import { PostLogin } from "../../redux/slices/postSlice";
 import { resetGetSlice } from "../../redux/slices/getSlice";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
-	ArrowLeftIcon,
-	ArrowRightIcon,
-	ChevronDownIcon,
-	CheckIcon,
-	LanguagesIcon,
-	PhoneIcon,
-	MailIcon,
-	ShieldCheckIcon,
-	SparklesIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ChevronDownIcon,
+  CheckIcon,
+  LanguagesIcon,
+  PhoneIcon,
+  MailIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
 } from "lucide-react";
 import {
-	getCountries,
-	getCountryCallingCode,
-	parsePhoneNumberFromString,
+  getCountries,
+  getCountryCallingCode,
+  parsePhoneNumberFromString,
 } from "libphonenumber-js/min";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { localeStorageKey, locales, localeLabels } from "@/lib/i18n";
 import { hasSession, saveSession } from "@/lib/auth";
@@ -44,665 +44,674 @@ import { loginAuthApi } from "@/lib/api/authApi";
 const preferredCountries = ["US", "IN", "GB", "AE", "CA", "AU"];
 
 function getCountryName(country) {
-	try {
-		if (typeof Intl !== "undefined" && Intl.DisplayNames) {
-			return (
-				new Intl.DisplayNames(["en"], { type: "region" }).of(country) ?? country
-			);
-		}
-	} catch {
-		return country;
-	}
+  try {
+    if (typeof Intl !== "undefined" && Intl.DisplayNames) {
+      return (
+        new Intl.DisplayNames(["en"], { type: "region" }).of(country) ?? country
+      );
+    }
+  } catch {
+    return country;
+  }
 
-	return country;
+  return country;
 }
 
 function getFlagEmoji(country) {
-	return country
-		.toUpperCase()
-		.replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
+  return country
+    .toUpperCase()
+    .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
 }
 
 const countries = getCountries()
-	.map((country) => ({
-		country,
-		callingCode: getCountryCallingCode(country),
-		flag: getFlagEmoji(country),
-		name: getCountryName(country),
-	}))
-	.sort((first, second) => {
-		const firstPreferred = preferredCountries.indexOf(first.country);
-		const secondPreferred = preferredCountries.indexOf(second.country);
+  .map((country) => ({
+    country,
+    callingCode: getCountryCallingCode(country),
+    flag: getFlagEmoji(country),
+    name: getCountryName(country),
+  }))
+  .sort((first, second) => {
+    const firstPreferred = preferredCountries.indexOf(first.country);
+    const secondPreferred = preferredCountries.indexOf(second.country);
 
-		if (firstPreferred !== -1 || secondPreferred !== -1) {
-			return (
-				(firstPreferred === -1 ? 999 : firstPreferred) -
-				(secondPreferred === -1 ? 999 : secondPreferred)
-			);
-		}
+    if (firstPreferred !== -1 || secondPreferred !== -1) {
+      return (
+        (firstPreferred === -1 ? 999 : firstPreferred) -
+        (secondPreferred === -1 ? 999 : secondPreferred)
+      );
+    }
 
-		return first.name.localeCompare(second.name);
-	});
+    return first.name.localeCompare(second.name);
+  });
 
 function getPhoneError(phone, selectedCountry, t) {
-	const digits = phone.replace(/\D/g, "");
+  const digits = phone.replace(/\D/g, "");
 
-	if (!digits) {
-		return t("phoneRequired");
-	}
+  if (!digits) {
+    return t("phoneRequired");
+  }
 
-	const parsedPhone = parsePhoneNumberFromString(digits, selectedCountry);
+  const parsedPhone = parsePhoneNumberFromString(digits, selectedCountry);
 
-	if (!parsedPhone || parsedPhone.country !== selectedCountry) {
-		return t("countryMismatch");
-	}
+  if (!parsedPhone || parsedPhone.country !== selectedCountry) {
+    return t("countryMismatch");
+  }
 
-	if (!parsedPhone.isPossible()) {
-		return t("lengthMismatch");
-	}
+  if (!parsedPhone.isPossible()) {
+    return t("lengthMismatch");
+  }
 
-	if (!parsedPhone.isValid()) {
-		return t("validPhone");
-	}
+  if (!parsedPhone.isValid()) {
+    return t("validPhone");
+  }
 
-	return "";
+  return "";
 }
 
 export default function Login() {
-	const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
-	const router = useRouter();
-	const locale = useLocale();
-	const t = useTranslations("auth");
-	const phoneId = useId();
-	const otpLabelId = useId();
-	const countrySearchId = useId();
-	const [selectedCountry, setSelectedCountry] = useState("IN");
-	const [countryPickerOpen, setCountryPickerOpen] = useState(false);
-	const [countrySearch, setCountrySearch] = useState("");
-	const [phone, setPhone] = useState("");
-	const [loginMethod, setLoginMethod] = useState("phone");
-	const [email, setEmail] = useState("");
-	const [phoneError, setPhoneError] = useState("");
-	const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-	const [step, setStep] = useState("phone");
-	const [message, setMessage] = useState("");
-	const [isSendingOtp, setIsSendingOtp] = useState(false);
-	const [selectedLocale, setSelectedLocale] = useState(locale);
-	const otpRefs = useRef([]);
-	const countryPickerRef = useRef(null);
+  const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("auth");
+  const phoneId = useId();
+  const otpLabelId = useId();
+  const countrySearchId = useId();
+  const [selectedCountry, setSelectedCountry] = useState("IN");
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
+  const [phone, setPhone] = useState("");
+  const [loginMethod, setLoginMethod] = useState("phone");
+  const [email, setEmail] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [step, setStep] = useState("phone");
+  const [message, setMessage] = useState("");
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [selectedLocale, setSelectedLocale] = useState(locale);
+  const otpRefs = useRef([]);
+  const countryPickerRef = useRef(null);
 
-	const selectedCountryData = countries.find(
-		(country) => country.country === selectedCountry,
-	);
-	const otpValue = otp.join("");
-	const parsedPhone = useMemo(
-		() => parsePhoneNumberFromString(phone.replace(/\D/g, ""), selectedCountry),
-		[phone, selectedCountry],
-	);
-	const formattedPhone = parsedPhone?.formatInternational();
-	const maskedPhone = useMemo(() => {
-		const digits = phone.replace(/\D/g, "");
+  const selectedCountryData = countries.find(
+    (country) => country.country === selectedCountry,
+  );
+  const otpValue = otp.join("");
+  const parsedPhone = useMemo(
+    () => parsePhoneNumberFromString(phone.replace(/\D/g, ""), selectedCountry),
+    [phone, selectedCountry],
+  );
+  const formattedPhone = parsedPhone?.formatInternational();
+  const maskedPhone = useMemo(() => {
+    const digits = phone.replace(/\D/g, "");
 
-		if (!digits || !selectedCountryData) {
-			return "";
-		}
+    if (!digits || !selectedCountryData) {
+      return "";
+    }
 
-		return `+${selectedCountryData.callingCode} ******${digits.slice(-4)}`;
-	}, [phone, selectedCountryData]);
+    return `+${selectedCountryData.callingCode} ******${digits.slice(-4)}`;
+  }, [phone, selectedCountryData]);
 
-	const filteredCountries = useMemo(() => {
-		const query = countrySearch.trim().toLowerCase();
+  const filteredCountries = useMemo(() => {
+    const query = countrySearch.trim().toLowerCase();
 
-		if (!query) return countries;
+    if (!query) return countries;
 
-		return countries.filter(
-			(country) =>
-				country.name.toLowerCase().includes(query) ||
-				country.country.toLowerCase().includes(query) ||
-				`+${country.callingCode}`.includes(query),
-		);
-	}, [countrySearch]);
+    return countries.filter(
+      (country) =>
+        country.name.toLowerCase().includes(query) ||
+        country.country.toLowerCase().includes(query) ||
+        `+${country.callingCode}`.includes(query),
+    );
+  }, [countrySearch]);
 
-	useEffect(() => {
-		if (hasSession()) {
-			router.replace("/");
-		}
-	}, [router]);
+  useEffect(() => {
+    if (hasSession()) {
+      router.replace("/");
+    }
+  }, [router]);
 
-	useEffect(() => {
-		if (step === "otp") {
-			otpRefs.current[0]?.focus();
-		}
-	}, [step]);
+  useEffect(() => {
+    if (step === "otp") {
+      otpRefs.current[0]?.focus();
+    }
+  }, [step]);
 
-	useEffect(() => {
-		function handleClickOutside(event) {
-			if (
-				countryPickerRef.current &&
-				!countryPickerRef.current.contains(event.target)
-			) {
-				setCountryPickerOpen(false);
-			}
-		}
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        countryPickerRef.current &&
+        !countryPickerRef.current.contains(event.target)
+      ) {
+        setCountryPickerOpen(false);
+      }
+    }
 
-		document.addEventListener("mousedown", handleClickOutside);
-		document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
 
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-			document.removeEventListener("touchstart", handleClickOutside);
-		};
-	}, []);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
 
-	// async function handleSendOtp(event) {
-	// 	event.preventDefault();
-	// 	if (loginMethod === "email") return;
+  // async function handleSendOtp(event) {
+  // 	event.preventDefault();
+  // 	if (loginMethod === "email") return;
 
-	// 	const nextError = getPhoneError(phone, selectedCountry, t);
+  // 	const nextError = getPhoneError(phone, selectedCountry, t);
 
-	// 	if (nextError) {
-	// 		setPhoneError(nextError);
-	// 		setMessage("");
-	// 		return;
-	// 	}
+  // 	if (nextError) {
+  // 		setPhoneError(nextError);
+  // 		setMessage("");
+  // 		return;
+  // 	}
 
-	// 	setPhoneError("");
-	// 	setMessage("");
-	// 	setIsSendingOtp(true);
+  // 	setPhoneError("");
+  // 	setMessage("");
+  // 	setIsSendingOtp(true);
 
-	// 	const rawDigits = phone.replace(/\D/g, "");
-	// 	const callingCode = selectedCountryData?.callingCode
-	// 		? `+${selectedCountryData.callingCode}`
-	// 		: "+91";
+  // 	const rawDigits = phone.replace(/\D/g, "");
+  // 	const callingCode = selectedCountryData?.callingCode
+  // 		? `+${selectedCountryData.callingCode}`
+  // 		: "+91";
 
-	// 	try {
-	// 		const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/auth/login`;
+  // 	try {
+  // 		const url = `${process.env.NEXT_PUBLIC_NRL_API_URL}/auth/login`;
 
-	// 		const payload = {
-	// 			countryCode: callingCode,
-	// 			mobileNumber: rawDigits,
-	// 			email: "",
-	// 			channel: 0,
-	// 		};
+  // 		const payload = {
+  // 			countryCode: callingCode,
+  // 			mobileNumber: rawDigits,
+  // 			email: "",
+  // 			channel: 0,
+  // 		};
 
-	// 		console.log("Login API URL:", url);
-	// 		console.log("Login API Payload:", payload);
+  // 		console.log("Login API URL:", url);
+  // 		console.log("Login API Payload:", payload);
 
-	// 		const response = await fetch(url, {
-	// 			method: "POST",
-	// 			headers: {
-	// 				"Content-Type": "application/json",
-	// 				Accept: "application/json",
-	// 				Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-	// 			},
-	// 			body: JSON.stringify(payload),
-	// 		});
+  // 		const response = await fetch(url, {
+  // 			method: "POST",
+  // 			headers: {
+  // 				"Content-Type": "application/json",
+  // 				Accept: "application/json",
+  // 				Authorization: `${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+  // 			},
+  // 			body: JSON.stringify(payload),
+  // 		});
 
-	// 		console.log("Login API HTTP Status:", response.status);
-	// 		console.log("Login API HTTP OK:", response.ok);
+  // 		console.log("Login API HTTP Status:", response.status);
+  // 		console.log("Login API HTTP OK:", response.ok);
 
-	// 		const responseText = await response.text();
+  // 		const responseText = await response.text();
 
-	// 		console.log("Login API Raw Response:", responseText);
+  // 		console.log("Login API Raw Response:", responseText);
 
-	// 		let result = null;
+  // 		let result = null;
 
-	// 		try {
-	// 			result = responseText ? JSON.parse(responseText) : null;
-	// 		} catch (parseError) {
-	// 			console.warn("Login API response is not JSON:", responseText);
-	// 		}
+  // 		try {
+  // 			result = responseText ? JSON.parse(responseText) : null;
+  // 		} catch (parseError) {
+  // 			console.warn("Login API response is not JSON:", responseText);
+  // 		}
 
-	// 		console.log("Login API Parsed Response:", result);
+  // 		console.log("Login API Parsed Response:", result);
 
-	// 		if (!response.ok || result?.success === false) {
-	// 			throw new Error(
-	// 				result?.message ||
-	// 				result?.Msg ||
-	// 				`Unable to send OTP. HTTP ${response.status}`
-	// 			);
-	// 		}
+  // 		if (!response.ok || result?.success === false) {
+  // 			throw new Error(
+  // 				result?.message ||
+  // 				result?.Msg ||
+  // 				`Unable to send OTP. HTTP ${response.status}`
+  // 			);
+  // 		}
 
-	// 		setStep("otp");
-	// 		setMessage(
-	// 			result?.message || t("otpSent", { phone: formattedPhone ?? maskedPhone })
-	// 		);
-	// 	} catch (error) {
-	// 		console.error("Login API request failed:", error);
-	// 		setPhoneError(
-	// 			error?.message ||
-	// 			"Failed to send OTP. Please check your network or phone number."
-	// 		);
-	// 	} finally {
-	// 		setIsSendingOtp(false);
-	// 	}
-	// }
+  // 		setStep("otp");
+  // 		setMessage(
+  // 			result?.message || t("otpSent", { phone: formattedPhone ?? maskedPhone })
+  // 		);
+  // 	} catch (error) {
+  // 		console.error("Login API request failed:", error);
+  // 		setPhoneError(
+  // 			error?.message ||
+  // 			"Failed to send OTP. Please check your network or phone number."
+  // 		);
+  // 	} finally {
+  // 		setIsSendingOtp(false);
+  // 	}
+  // }
 
-async function handleSendOtp(event) {
-  event.preventDefault();
-  if (loginMethod === "email") return;
+  async function handleSendOtp(event) {
+    event.preventDefault();
+    if (loginMethod === "email") return;
 
-  const nextError = getPhoneError(phone, selectedCountry, t);
-  if (nextError) {
-    setPhoneError(nextError);
+    const nextError = getPhoneError(phone, selectedCountry, t);
+    if (nextError) {
+      setPhoneError(nextError);
+      setMessage("");
+      return;
+    }
+
+    setPhoneError("");
     setMessage("");
-    return;
+    setIsSendingOtp(true);
+
+    const rawDigits = phone.replace(/\D/g, "");
+    const callingCode = selectedCountryData?.callingCode
+      ? `+${selectedCountryData.callingCode}`
+      : "+91";
+
+    const payload = {
+      countryCode: callingCode,
+      mobileNumber: rawDigits,
+      email: "",
+      channel: 0,
+    };
+
+    try {
+      const result = await dispatch(PostLogin({ data: payload })).unwrap();
+      if (result?.success === false) {
+        throw new Error(
+          result?.message || result?.Msg || "Unable to send OTP.",
+        );
+      }
+
+      const user = result?.data;
+      const storedata = result?.assignments;
+      const customerNumber = normalizeCustomerNumber(user?.custnmbr);
+      if (!customerNumber) {
+        throw new Error(
+          "The login API did not return a customer number. Please contact support.",
+        );
+      }
+
+      localStorage.setItem("custnmbr", customerNumber);
+      // territoryIds, areaIds, locationIds, departmentIds this user may access
+      localStorage.setItem(
+        "assignments",
+        JSON.stringify(result?.assignments ?? {}),
+      );
+      localStorage.removeItem("selectedLocation");
+      localStorage.removeItem("userStoresCache");
+      dispatch(resetGetSlice());
+
+      for (const key of ["loggedInUser", "roles"]) {
+        const value = user[key === "loggedInUser" ? "userId" : key];
+        if (value == null) localStorage.removeItem(key);
+        else localStorage.setItem(key, value);
+      }
+	  localStorage.setItem("UserID", user.userId);
+      localStorage.setItem("name", user.fullName);
+      localStorage.setItem("emailID", user.emailID);
+      localStorage.setItem("countryCode", user.countryCode);
+      localStorage.setItem(
+        "mobileNumber",
+        String(user.mobileNumber ?? rawDigits),
+      );
+      setStep("otp");
+      setMessage(
+        result?.message ||
+          t("otpSent", { phone: formattedPhone ?? maskedPhone }),
+      );
+    } catch (error) {
+      console.error("Login API request failed:", error);
+      setPhoneError(
+        error?.message ||
+          "Failed to send OTP. Please check your network or phone number.",
+      );
+    } finally {
+      setIsSendingOtp(false);
+    }
+  }
+  function handlePhoneChange(event) {
+    setPhone(event.target.value.replace(/[^\d\s().-]/g, ""));
+    if (phoneError) setPhoneError("");
   }
 
-  setPhoneError("");
-  setMessage("");
-  setIsSendingOtp(true);
-
-  const rawDigits = phone.replace(/\D/g, "");
-  const callingCode = selectedCountryData?.callingCode
-    ? `+${selectedCountryData.callingCode}`
-    : "+91";
-
-  const payload = {
-    countryCode: callingCode,
-    mobileNumber: rawDigits,
-    email: "",
-    channel: 0,
-  };
-
-  try {
-    const result = await dispatch(PostLogin({ data: payload })).unwrap();
-    if (result?.success === false) {
-      throw new Error(result?.message || result?.Msg || "Unable to send OTP.");
-    }
-
-    const user = result?.data;
-	const storedata = result?.assignments;
-    const customerNumber = normalizeCustomerNumber(user?.custnmbr);
-    if (!customerNumber) {
-      throw new Error("The login API did not return a customer number. Please contact support.");
-    }
-
-    localStorage.setItem("custnmbr", customerNumber);
-	// territoryIds, areaIds, locationIds, departmentIds this user may access
-localStorage.setItem("assignments", JSON.stringify(result?.assignments ?? {}));
-localStorage.removeItem("selectedLocation");
-localStorage.removeItem("userStoresCache");
-dispatch(resetGetSlice());
-
-for (const key of ["loggedInUser", "roles"]) {
-      const value = user[key === "loggedInUser" ? "userId" : key];
-      if (value == null) localStorage.removeItem(key);
-      else localStorage.setItem(key, value);
-    }
-	  localStorage.setItem("name", user.fullName);
-localStorage.setItem("emailID", user.emailID);
-	 localStorage.setItem("countryCode", user.countryCode);
-localStorage.setItem("mobileNumber", String(user.mobileNumber ?? rawDigits));
-    setStep("otp");
-    setMessage(
-      result?.message || t("otpSent", { phone: formattedPhone ?? maskedPhone })
-    );
-  } catch (error) {
-    console.error("Login API request failed:", error);
-    setPhoneError(
-      error?.message ||
-      "Failed to send OTP. Please check your network or phone number."
-    );
-  } finally {
-    setIsSendingOtp(false);
+  function handleCountryChange(country) {
+    setSelectedCountry(country.country);
+    setCountryPickerOpen(false);
+    setCountrySearch("");
+    setPhoneError("");
   }
+
+  function handleOtpChange(index, value) {
+    const nextValue = value.replace(/\D/g, "").slice(-1);
+    const nextOtp = [...otp];
+    nextOtp[index] = nextValue;
+    setOtp(nextOtp);
+
+    if (nextValue && index < otpRefs.current.length - 1) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  }
+
+  function handleOtpPaste(event) {
+    const pastedDigits = event.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+
+    if (!pastedDigits) return;
+
+    event.preventDefault();
+    const nextOtp = ["", "", "", "", "", ""];
+
+    pastedDigits.split("").forEach((digit, index) => {
+      nextOtp[index] = digit;
+    });
+
+    setOtp(nextOtp);
+    otpRefs.current[Math.min(pastedDigits.length, 6) - 1]?.focus();
+  }
+
+  function handleOtpKeyDown(index, event) {
+    if (event.key === "Backspace" && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  }
+
+  function handleVerifyOtp(event) {
+    event.preventDefault();
+
+    if (otpValue.length !== 6) {
+      setMessage(t("enterOtp"));
+      return;
+    }
+
+    if (!getCustomerNumber()) {
+      setMessage("Customer number not found. Please request a new OTP.");
+      return;
+    }
+
+    setMessage(t("phoneVerified"));
+    saveSession();
+    router.replace("/");
+  }
+
+  function handleChangePhone() {
+    setStep("phone");
+    setOtp(["", "", "", "", "", ""]);
+    setMessage("");
+    window.setTimeout(() => document.getElementById(phoneId)?.focus(), 0);
+  }
+
+  function handleLocaleChange(nextLocale) {
+    setSelectedLocale(nextLocale);
+    window.localStorage.setItem(localeStorageKey, nextLocale);
+    window.dispatchEvent(
+      new CustomEvent("crate-locale-change", { detail: nextLocale }),
+    );
+  }
+
+  return (
+    <main className="login-page min-h-dvh bg-[#fff2dc] bg-[url(/login.png)] bg-cover bg-right bg-no-repeat text-[#071936] md:bg-left">
+      <section className="login-layout mx-auto flex min-h-dvh w-full max-w-7xl items-center justify-center px-4 py-4 sm:px-8 sm:py-6 md:justify-end lg:px-10 xl:px-14">
+        {/* Login Card */}
+        <section className="login-card relative w-full min-w-0 max-w-[380px] rounded-2xl border border-white/70 bg-white/95 p-5 shadow-2xl shadow-orange-950/10 backdrop-blur sm:max-w-md sm:p-6 md:max-w-[380px] lg:p-7">
+          <div className="absolute right-3 top-3 z-40">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-2.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+                  aria-label={t("language")}
+                >
+                  <LanguagesIcon className="size-4" />
+                  <span>{localeLabels[selectedLocale] ?? "English"}</span>
+                  <ChevronDownIcon className="size-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                {locales.map((item) => (
+                  <DropdownMenuItem
+                    key={item}
+                    onSelect={() => handleLocaleChange(item)}
+                    className="justify-between"
+                  >
+                    <span>{localeLabels[item]}</span>
+                    {selectedLocale === item ? (
+                      <CheckIcon className="size-4" />
+                    ) : null}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-orange-100 text-orange-500">
+            {step === "phone" ? (
+              loginMethod === "phone" ? (
+                <PhoneIcon className="size-7" />
+              ) : (
+                <MailIcon className="size-7" />
+              )
+            ) : (
+              <ShieldCheckIcon className="size-7" />
+            )}
+          </div>
+
+          <div className="mt-4 text-center">
+            <h2 className="text-xl font-black tracking-tight sm:text-2xl">
+              {step === "phone"
+                ? loginMethod === "phone"
+                  ? t("enterMobile")
+                  : "Enter your Email ID"
+                : t("enterOtpTitle")}
+            </h2>
+            <p className="mx-auto mt-2 max-w-sm whitespace-pre-line text-xs font-semibold leading-5 text-slate-500">
+              {step === "phone"
+                ? t("secureSignIn")
+                : t("useCode", { phone: formattedPhone ?? maskedPhone })}
+            </p>
+          </div>
+
+          {step === "phone" ? (
+            <form className="mt-5 space-y-4" onSubmit={handleSendOtp}>
+              <div className="space-y-4">
+                <div
+                  role="group"
+                  aria-label="Sign-in method"
+                  className="grid grid-cols-2 gap-1 mb-3"
+                >
+                  {[
+                    ["phone", t("phone")],
+                    ["email", t("email")],
+                  ].map(([method, label]) => (
+                    <button
+                      key={method}
+                      type="button"
+                      aria-pressed={loginMethod === method}
+                      disabled={isSendingOtp}
+                      className={`min-h-11  border-b-2 px-2 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-400 ${loginMethod === method ? "border-orange-500 bg-orange-50 text-orange-600" : "border-transparent bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                      onClick={() => {
+                        setLoginMethod(method);
+                        setPhoneError("");
+                        setMessage("");
+                        setCountryPickerOpen(false);
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="space-y-2">
+                  {loginMethod === "phone" ? (
+                    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center overflow-visible border-b border-slate-200 focus-within:border-orange-500">
+                      <div className="relative" ref={countryPickerRef}>
+                        <button
+                          type="button"
+                          aria-expanded={countryPickerOpen}
+                          className="flex h-6 w-full items-center justify-between gap-1.5 whitespace-nowrap border-r border-slate-200 px-2 text-sm font-semibold"
+                          onClick={() => setCountryPickerOpen((open) => !open)}
+                        >
+                          <span className="flex min-w-0 items-center gap-1">
+                            <span>{selectedCountryData?.country}</span>
+                            <span>+{selectedCountryData?.callingCode}</span>
+                          </span>
+                          <ChevronDownIcon className="size-4 shrink-0 text-slate-400" />
+                        </button>
+
+                        {countryPickerOpen && (
+                          <div className="absolute left-0 top-[calc(100%+0.5rem)] z-50 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-xl border bg-white shadow-xl">
+                            <div className="border-b p-2">
+                              <Input
+                                id={countrySearchId}
+                                value={countrySearch}
+                                onChange={(event) =>
+                                  setCountrySearch(event.target.value)
+                                }
+                                placeholder={t("searchCountry")}
+                                className="h-9"
+                              />
+                            </div>
+
+                            <div className="max-h-52 overflow-y-auto p-1">
+                              {filteredCountries.map((country) => (
+                                <button
+                                  key={country.country}
+                                  type="button"
+                                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-orange-50"
+                                  onClick={() => handleCountryChange(country)}
+                                >
+                                  <span className="text-lg">
+                                    {country.flag}
+                                  </span>
+                                  <span className="min-w-0 flex-1 truncate font-semibold">
+                                    {country.name}
+                                  </span>
+                                  <span className="text-xs font-bold text-slate-500">
+                                    +{country.callingCode}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <Input
+                        id={phoneId}
+                        inputMode="tel"
+                        autoComplete="tel-national"
+                        placeholder={t("enterPhone")}
+                        value={phone}
+                        onChange={handlePhoneChange}
+                        className="h-12 rounded-none border-0 px-3 text-sm shadow-none focus-visible:ring-0"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <Input
+                        type="email"
+                        autoComplete="email"
+                        required
+                        aria-label="Email ID"
+                        placeholder="Enter your email address"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        className="h-12 rounded-none border-0 border-b border-slate-200 bg-transparent text-sm shadow-none focus-visible:border-orange-500 focus-visible:ring-0"
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+              {phoneError && (
+                <p className="text-sm font-semibold text-destructive">
+                  {phoneError}
+                </p>
+              )}
+
+              <div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
+                <ShieldCheckIcon className="size-5 text-green-500" />
+                {t("secureData")}
+              </div>
+
+              <Button
+                className="h-12 w-full rounded-lg bg-orange-500 text-base font-extrabold text-white shadow-lg shadow-orange-500/25 hover:bg-orange-600"
+                size="lg"
+                type="submit"
+                disabled={isSendingOtp || loginMethod === "email"}
+              >
+                {isSendingOtp ? (
+                  <span>Sending OTP...</span>
+                ) : (
+                  <>
+                    {t("sendOtp")}
+                    <ArrowRightIcon className="size-5" />
+                  </>
+                )}
+              </Button>
+            </form>
+          ) : (
+            <form className="mt-5 space-y-5" onSubmit={handleVerifyOtp}>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-sm font-bold" id={otpLabelId}>
+                    {t("otpCode")}
+                  </label>
+
+                  <button
+                    className="flex items-center gap-1 text-sm font-bold text-orange-600 underline-offset-4 hover:underline"
+                    type="button"
+                    onClick={handleChangePhone}
+                  >
+                    <ArrowLeftIcon className="size-4" />
+                    {t("changeNumber")}
+                  </button>
+                </div>
+
+                <div
+                  aria-labelledby={otpLabelId}
+                  className="grid grid-cols-6 gap-2"
+                  role="group"
+                >
+                  {otp.map((digit, index) => (
+                    <Input
+                      key={index}
+                      aria-label={t("otpDigit", { index: index + 1 })}
+                      autoComplete={index === 0 ? "one-time-code" : "off"}
+                      className="h-11 rounded-lg px-0 text-center text-lg font-black border-2 border-slate-200 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                      inputMode="numeric"
+                      maxLength={1}
+                      ref={(element) => {
+                        otpRefs.current[index] = element;
+                      }}
+                      value={digit}
+                      onChange={(event) =>
+                        handleOtpChange(index, event.target.value)
+                      }
+                      onKeyDown={(event) => handleOtpKeyDown(index, event)}
+                      onPaste={handleOtpPaste}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <Button
+                className="h-12 w-full rounded-lg bg-orange-500 text-base font-extrabold text-white shadow-lg shadow-orange-500/25 hover:bg-orange-600"
+                size="lg"
+                type="submit"
+              >
+                {t("verifyContinue")}
+                <ArrowRightIcon className="size-5" />
+              </Button>
+            </form>
+          )}
+
+          {message && (
+            <p className="mt-4 rounded-lg bg-orange-50 px-3 py-2 text-xs font-semibold text-slate-600">
+              {message}
+            </p>
+          )}
+
+          <div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold text-slate-400">
+            <SparklesIcon className="size-4 text-orange-400" />
+            {t("footerNote")}
+          </div>
+        </section>
+      </section>
+    </main>
+  );
 }
-	function handlePhoneChange(event) {
-		setPhone(event.target.value.replace(/[^\d\s().-]/g, ""));
-		if (phoneError) setPhoneError("");
-	}
-
-	function handleCountryChange(country) {
-		setSelectedCountry(country.country);
-		setCountryPickerOpen(false);
-		setCountrySearch("");
-		setPhoneError("");
-	}
-
-	function handleOtpChange(index, value) {
-		const nextValue = value.replace(/\D/g, "").slice(-1);
-		const nextOtp = [...otp];
-		nextOtp[index] = nextValue;
-		setOtp(nextOtp);
-
-		if (nextValue && index < otpRefs.current.length - 1) {
-			otpRefs.current[index + 1]?.focus();
-		}
-	}
-
-	function handleOtpPaste(event) {
-		const pastedDigits = event.clipboardData
-			.getData("text")
-			.replace(/\D/g, "")
-			.slice(0, 6);
-
-		if (!pastedDigits) return;
-
-		event.preventDefault();
-		const nextOtp = ["", "", "", "", "", ""];
-
-		pastedDigits.split("").forEach((digit, index) => {
-			nextOtp[index] = digit;
-		});
-
-		setOtp(nextOtp);
-		otpRefs.current[Math.min(pastedDigits.length, 6) - 1]?.focus();
-	}
-
-	function handleOtpKeyDown(index, event) {
-		if (event.key === "Backspace" && !otp[index] && index > 0) {
-			otpRefs.current[index - 1]?.focus();
-		}
-	}
-
-	function handleVerifyOtp(event) {
-		event.preventDefault();
-
-		if (otpValue.length !== 6) {
-			setMessage(t("enterOtp"));
-			return;
-		}
-
-		if (!getCustomerNumber()) {
-			setMessage("Customer number not found. Please request a new OTP.");
-			return;
-		}
-
-		setMessage(t("phoneVerified"));
-		saveSession();
-		router.replace("/");
-	}
-
-	function handleChangePhone() {
-		setStep("phone");
-		setOtp(["", "", "", "", "", ""]);
-		setMessage("");
-		window.setTimeout(() => document.getElementById(phoneId)?.focus(), 0);
-	}
-
-	function handleLocaleChange(nextLocale) {
-		setSelectedLocale(nextLocale);
-		window.localStorage.setItem(localeStorageKey, nextLocale);
-		window.dispatchEvent(
-			new CustomEvent("crate-locale-change", { detail: nextLocale }),
-		);
-	}
-
-	return (
-		<main className="login-page min-h-dvh bg-[#fff2dc] bg-[url(/login.png)] bg-cover bg-right bg-no-repeat text-[#071936] md:bg-left">
-			<section className="login-layout mx-auto flex min-h-dvh w-full max-w-7xl items-center justify-center px-4 py-4 sm:px-8 sm:py-6 md:justify-end lg:px-10 xl:px-14">
-				{/* Login Card */}
-				<section className="login-card relative w-full min-w-0 max-w-[380px] rounded-2xl border border-white/70 bg-white/95 p-5 shadow-2xl shadow-orange-950/10 backdrop-blur sm:max-w-md sm:p-6 md:max-w-[380px] lg:p-7">
-					<div className="absolute right-3 top-3 z-40">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<button
-									type="button"
-									className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-2.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
-									aria-label={t("language")}
-								>
-									<LanguagesIcon className="size-4" />
-									<span>{localeLabels[selectedLocale] ?? "English"}</span>
-									<ChevronDownIcon className="size-3.5" />
-								</button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-36">
-								{locales.map((item) => (
-									<DropdownMenuItem
-										key={item}
-										onSelect={() => handleLocaleChange(item)}
-										className="justify-between"
-									>
-										<span>{localeLabels[item]}</span>
-										{selectedLocale === item ? (
-											<CheckIcon className="size-4" />
-										) : null}
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
-
-					<div className="mx-auto flex size-14 items-center justify-center rounded-full bg-orange-100 text-orange-500">
-						{step === "phone" ? (
-							loginMethod === "phone" ? (
-								<PhoneIcon className="size-7" />
-							) : (
-								<MailIcon className="size-7" />
-							)
-						) : (
-							<ShieldCheckIcon className="size-7" />
-						)}
-					</div>
-
-					<div className="mt-4 text-center">
-						<h2 className="text-xl font-black tracking-tight sm:text-2xl">
-							{step === "phone"
-								? loginMethod === "phone"
-									? t("enterMobile")
-									: "Enter your Email ID"
-								: t("enterOtpTitle")}
-						</h2>
-						<p className="mx-auto mt-2 max-w-sm whitespace-pre-line text-xs font-semibold leading-5 text-slate-500">
-							{step === "phone"
-								? t("secureSignIn")
-								: t("useCode", { phone: formattedPhone ?? maskedPhone })}
-						</p>
-					</div>
-
-					{step === "phone" ? (
-						<form className="mt-5 space-y-4" onSubmit={handleSendOtp}>
-							<div className="space-y-4">
-								<div
-									role="group"
-									aria-label="Sign-in method"
-									className="grid grid-cols-2 gap-1 mb-3"
-								>
-									{[
-										["phone", t("phone")],
-										["email", t("email")],
-									].map(([method, label]) => (
-										<button
-											key={method}
-											type="button"
-											aria-pressed={loginMethod === method}
-											disabled={isSendingOtp}
-											className={`min-h-11  border-b-2 px-2 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-400 ${loginMethod === method ? "border-orange-500 bg-orange-50 text-orange-600" : "border-transparent bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
-											onClick={() => {
-												setLoginMethod(method);
-												setPhoneError("");
-												setMessage("");
-												setCountryPickerOpen(false);
-											}}
-										>
-											{label}
-										</button>
-									))}
-								</div>
-								<div className="space-y-2">
-									{loginMethod === "phone" ? (
-										<div className="grid grid-cols-[auto_minmax(0,1fr)] items-center overflow-visible border-b border-slate-200 focus-within:border-orange-500">
-											<div className="relative" ref={countryPickerRef}>
-												<button
-													type="button"
-													aria-expanded={countryPickerOpen}
-													className="flex h-6 w-full items-center justify-between gap-1.5 whitespace-nowrap border-r border-slate-200 px-2 text-sm font-semibold"
-													onClick={() => setCountryPickerOpen((open) => !open)}
-												>
-													<span className="flex min-w-0 items-center gap-1">
-														<span>{selectedCountryData?.country}</span>
-														<span>+{selectedCountryData?.callingCode}</span>
-													</span>
-													<ChevronDownIcon className="size-4 shrink-0 text-slate-400" />
-												</button>
-
-												{countryPickerOpen && (
-													<div className="absolute left-0 top-[calc(100%+0.5rem)] z-50 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-xl border bg-white shadow-xl">
-														<div className="border-b p-2">
-															<Input
-																id={countrySearchId}
-																value={countrySearch}
-																onChange={(event) =>
-																	setCountrySearch(event.target.value)
-																}
-																placeholder={t("searchCountry")}
-																className="h-9"
-															/>
-														</div>
-
-														<div className="max-h-52 overflow-y-auto p-1">
-															{filteredCountries.map((country) => (
-																<button
-																	key={country.country}
-																	type="button"
-																	className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-orange-50"
-																	onClick={() => handleCountryChange(country)}
-																>
-																	<span className="text-lg">
-																		{country.flag}
-																	</span>
-																	<span className="min-w-0 flex-1 truncate font-semibold">
-																		{country.name}
-																	</span>
-																	<span className="text-xs font-bold text-slate-500">
-																		+{country.callingCode}
-																	</span>
-																</button>
-															))}
-														</div>
-													</div>
-												)}
-											</div>
-
-											<Input
-												id={phoneId}
-												inputMode="tel"
-												autoComplete="tel-national"
-												placeholder={t("enterPhone")}
-												value={phone}
-												onChange={handlePhoneChange}
-												className="h-12 rounded-none border-0 px-3 text-sm shadow-none focus-visible:ring-0"
-											/>
-										</div>
-									) : (
-										<>
-											<Input
-												type="email"
-												autoComplete="email"
-												required
-												aria-label="Email ID"
-												placeholder="Enter your email address"
-												value={email}
-												onChange={(event) => setEmail(event.target.value)}
-												className="h-12 rounded-none border-0 border-b border-slate-200 bg-transparent text-sm shadow-none focus-visible:border-orange-500 focus-visible:ring-0"
-											/>
-										</>
-									)}
-								</div>
-							</div>
-							{phoneError && (
-								<p className="text-sm font-semibold text-destructive">
-									{phoneError}
-								</p>
-							)}
-
-							<div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
-								<ShieldCheckIcon className="size-5 text-green-500" />
-								{t("secureData")}
-							</div>
-
-							<Button
-								className="h-12 w-full rounded-lg bg-orange-500 text-base font-extrabold text-white shadow-lg shadow-orange-500/25 hover:bg-orange-600"
-								size="lg"
-								type="submit"
-								disabled={isSendingOtp || loginMethod === "email"}
-							>
-								{isSendingOtp ? (
-									<span>Sending OTP...</span>
-								) : (
-									<>
-										{t("sendOtp")}
-										<ArrowRightIcon className="size-5" />
-									</>
-								)}
-							</Button>
-						</form>
-					) : (
-						<form className="mt-5 space-y-5" onSubmit={handleVerifyOtp}>
-							<div className="space-y-3">
-								<div className="flex items-center justify-between gap-3">
-									<label className="text-sm font-bold" id={otpLabelId}>
-										{t("otpCode")}
-									</label>
-
-									<button
-										className="flex items-center gap-1 text-sm font-bold text-orange-600 underline-offset-4 hover:underline"
-										type="button"
-										onClick={handleChangePhone}
-									>
-										<ArrowLeftIcon className="size-4" />
-										{t("changeNumber")}
-									</button>
-								</div>
-
-								<div
-									aria-labelledby={otpLabelId}
-									className="grid grid-cols-6 gap-2"
-									role="group"
-								>
-									{otp.map((digit, index) => (
-										<Input
-											key={index}
-											aria-label={t("otpDigit", { index: index + 1 })}
-											autoComplete={index === 0 ? "one-time-code" : "off"}
-											className="h-11 rounded-lg px-0 text-center text-lg font-black border-2 border-slate-200 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-											inputMode="numeric"
-											maxLength={1}
-											ref={(element) => {
-												otpRefs.current[index] = element;
-											}}
-											value={digit}
-											onChange={(event) =>
-												handleOtpChange(index, event.target.value)
-											}
-											onKeyDown={(event) => handleOtpKeyDown(index, event)}
-											onPaste={handleOtpPaste}
-										/>
-									))}
-								</div>
-							</div>
-
-							<Button
-								className="h-12 w-full rounded-lg bg-orange-500 text-base font-extrabold text-white shadow-lg shadow-orange-500/25 hover:bg-orange-600"
-								size="lg"
-								type="submit"
-							>
-								{t("verifyContinue")}
-								<ArrowRightIcon className="size-5" />
-							</Button>
-						</form>
-					)}
-
-					{message && (
-						<p className="mt-4 rounded-lg bg-orange-50 px-3 py-2 text-xs font-semibold text-slate-600">
-							{message}
-						</p>
-					)}
-
-					<div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold text-slate-400">
-						<SparklesIcon className="size-4 text-orange-400" />
-						{t("footerNote")}
-					</div>
-				</section>
-			</section>
-		</main>
-	);
-}
-
-
-
 
 // LOGIN With API Call--22.09.2026
 // "use client";
@@ -813,7 +822,6 @@ localStorage.setItem("mobileNumber", String(user.mobileNumber ?? rawDigits));
 // 	return "";
 // }
 
-
 // function getEmailError(email, t) {
 // 	const trimmed = email.trim();
 
@@ -854,7 +862,6 @@ localStorage.setItem("mobileNumber", String(user.mobileNumber ?? rawDigits));
 // 	const otpRefs = useRef([]);
 // 	const countryPickerRef = useRef(null);
 // 	// const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-
 
 // 	const selectedCountryData = countries.find(
 // 		(country) => country.country === selectedCountry,
@@ -918,7 +925,6 @@ localStorage.setItem("mobileNumber", String(user.mobileNumber ?? rawDigits));
 // 			document.removeEventListener("touchstart", handleClickOutside);
 // 		};
 // 	}, []);
-
 
 // 	//Login API Call
 // 	async function handleSendOtp(event) {
@@ -1041,7 +1047,6 @@ localStorage.setItem("mobileNumber", String(user.mobileNumber ?? rawDigits));
 // 		}
 // 	}
 
-
 // 	// Resend OTP API Call
 // 	async function handleResendOtp() {
 // 		if (isResendingOtp) return;
@@ -1137,8 +1142,6 @@ localStorage.setItem("mobileNumber", String(user.mobileNumber ?? rawDigits));
 // 			setIsResendingOtp(false);
 // 		}
 // 	}
-
-
 
 // 	function handlePhoneChange(event) {
 // 		setPhone(event.target.value.replace(/[^\d\s().-]/g, ""));
