@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import ProductImage from "@/components/product-image"
-import { can, canAct, getManageableRoles } from "@/lib/permissions"
+import { can } from "@/lib/permissions"
 
 
 const money = new Intl.NumberFormat("en-US", {
@@ -40,9 +40,7 @@ export default function InvoiceDetails({ invoiceId }) {
   const dispatch = useDispatch()
 
   const invoiceData = useSelector((state) => state.getSlice.GetInvoicedetailsdata)
-  const loading = useSelector((state) => state.getSlice.GetInvoicedetailsloading)
   const error = useSelector((state) => state.getSlice.GetInvoicedetailserror)
-
 
   const pdfLoading = useSelector((state) => state.getSlice.GetinvoicePDFloading)
 
@@ -50,13 +48,33 @@ export default function InvoiceDetails({ invoiceId }) {
   const requestedPageSize = Number.parseInt(searchParams.get("rows") ?? "", 10) || 5
   const pageSize = rowOptions.includes(requestedPageSize) ? requestedPageSize : 5
 
-    const [role, setRole] = useState(null)
-      useEffect(() => {
-        setRole(localStorage.getItem("roles"))
-      }, [])
-
+  const [role, setRole] = useState(null)
   useEffect(() => {
-    if (invoiceId) dispatch(GetInvoicedetails(invoiceId))
+    setRole(localStorage.getItem("roles"))
+  }, [])
+
+  // false on every mount / invoice change -> loader shows until fresh data arrives
+  const [detailsReady, setDetailsReady] = useState(false)
+
+  // Fetch on every visit (cached Redux data is never shown first)
+  useEffect(() => {
+    // No invoice id -> nothing to fetch, show "Invoice not found." instead of an endless loader
+    if (!invoiceId) {
+      setDetailsReady(true)
+      return
+    }
+
+    let cancelled = false
+    setDetailsReady(false)
+
+    // a dispatched thunk resolves for success AND failure, so .finally always runs
+    dispatch(GetInvoicedetails(invoiceId)).finally(() => {
+      if (!cancelled) setDetailsReady(true)
+    })
+
+    return () => {
+      cancelled = true // ignore the result if the screen was left
+    }
   }, [invoiceId, dispatch])
 
   // Ignore stale data from a previously opened invoice
@@ -76,28 +94,38 @@ export default function InvoiceDetails({ invoiceId }) {
     </Button>
   )
 
-  if (!invoice) {
-    const message = loading
-      ? "Loading invoice..."
-      : typeof error === "string"
-        ? error
-        : error?.message || "Invoice not found."
-
+  // Loader on first load AND every time you open this screen.
+  // IMPORTANT: keep this below every hook above.
+  if (!detailsReady) {
     return (
       <div
         role="status"
         aria-live="polite"
-        className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground"
+        className="flex h-full min-h-[60vh] flex-col items-center justify-center gap-2 text-center text-muted-foreground"
       >
-        {loading ? (
-          <>
-            <Loader2 className="size-6 animate-spin text-primary" />
-            <p className="text-xs font-medium">{message}</p>
-          </>
-        ) : (
-          <p className="text-xs font-medium">{message}</p>
-        )}
+        <Loader2 className="size-6 animate-spin text-primary" />
+        <p className="text-xs font-medium">Loading invoice...</p>
       </div>
+    )
+  }
+
+  // Finished loading but there is nothing to show (error / wrong id)
+  if (!invoice) {
+    const message =
+      typeof error === "string"
+        ? error
+        : error?.message || "Invoice not found."
+
+    return (
+      <main className="space-y-3 p-4">
+        {backButton}
+        <div
+          role="alert"
+          className="flex flex-col items-center justify-center gap-2 py-16 text-center text-muted-foreground"
+        >
+          <p className="text-xs font-medium">{message}</p>
+        </div>
+      </main>
     )
   }
 
@@ -145,12 +173,12 @@ export default function InvoiceDetails({ invoiceId }) {
               <FileDown className="size-4" />
             )}
             {pdfLoading ? "Downloading..." : "Download"}
-          </Button> 
-          {can(role, "invoice.share") && (
-          <Button size="sm" className="w-full">
-            <Share2 className="size-4" />
-            Share
           </Button>
+          {can(role, "invoice.share") && (
+            <Button size="sm" className="w-full">
+              <Share2 className="size-4" />
+              Share
+            </Button>
           )}
         </div>
       </div>

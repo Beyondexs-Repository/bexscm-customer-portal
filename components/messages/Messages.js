@@ -2517,9 +2517,13 @@ export default function Messages({ fullscreen = false }) {
               </div>
             )}
             {loading ? (
-              <div className="flex h-full items-center justify-center text-muted-foreground">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading messages
+              <div
+          role="status"
+          aria-live="polite"
+          className="flex min-h-100 flex-col items-center justify-center gap-2 p-6 text-muted-foreground"
+        >
+                 <Loader2 className="size-6 animate-spin text-primary" />
+          <p className="text-xs font-medium">Loading Messages...</p>
               </div>
             ) : visibleMessages.length === 0 ? (
               <div className="flex h-full items-center justify-center px-8 text-center text-sm text-muted-foreground">
