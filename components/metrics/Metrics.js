@@ -634,29 +634,65 @@ export default function Metrics() {
 
   // Summary (KPIs, charts, top products, order status)
   const summaryData = useSelector((state) => state.getSlice.summaryData)
-  const summaryLoading = useSelector((state) => state.getSlice.summaryLoading)
+  // const summaryLoading = useSelector((state) => state.getSlice.summaryLoading)
   const summaryError = useSelector((state) => state.getSlice.summaryError)
 
   // Products
   const productsData = useSelector((state) => state.getSlice.productsData)
-  const productsLoading = useSelector((state) => state.getSlice.productsLoading)
+  // const productsLoading = useSelector((state) => state.getSlice.productsLoading)
   const productsError = useSelector((state) => state.getSlice.productsError)
 
   // Payments
   const paymentsData = useSelector((state) => state.getSlice.paymentsData)
   const paymentsError = useSelector((state) => state.getSlice.paymentsError)
 
+  // false on every mount / period change -> skeleton shows until fresh data arrives
+const [summaryReady, setSummaryReady] = useState(false)
+const [paymentsReady, setPaymentsReady] = useState(false)
+
   // Summary and products depend on the selected period, so refetch when it changes
-  useEffect(() => {
-    const apiPeriod = periodApiMap[period]
-    dispatch(GetSummarylist({ period: apiPeriod }))
-    dispatch(GetProductslist({ period: apiPeriod }))
-  }, [dispatch, period])
+  // useEffect(() => {
+    
+  //   const apiPeriod = periodApiMap[period]
+  //   dispatch(GetSummarylist({ period: apiPeriod }))
+  //   dispatch(GetProductslist({ period: apiPeriod }))
+  // }, [dispatch, period])
+  // Summary + products depend on the selected period
+useEffect(() => {
+  let cancelled = false
+  setSummaryReady(false)
+
+  const apiPeriod = periodApiMap[period]
+  // a dispatched thunk resolves for success AND failure, so .finally always runs
+  Promise.all([
+    dispatch(GetSummarylist({ period: apiPeriod })),
+    dispatch(GetProductslist({ period: apiPeriod })),
+  ]).finally(() => {
+    if (!cancelled) setSummaryReady(true)
+  })
+
+  return () => {
+    cancelled = true // ignore results of an older period / unmounted screen
+  }
+}, [dispatch, period])
 
   // Payments cover all invoice dates, so fetch once
-  useEffect(() => {
-    dispatch(GetPaymentslist({ attentionTake: 5 }))
-  }, [dispatch])
+  // useEffect(() => {
+  //   dispatch(GetPaymentslist({ attentionTake: 5 }))
+  // }, [dispatch])
+  // Payments cover all invoice dates, so fetch once per visit
+useEffect(() => {
+  let cancelled = false
+  setPaymentsReady(false)
+
+  dispatch(GetPaymentslist({ attentionTake: 5 })).finally(() => {
+    if (!cancelled) setPaymentsReady(true)
+  })
+
+  return () => {
+    cancelled = true
+  }
+}, [dispatch])
 
   const summaryError_ = errorText(summaryError)
   const productsError_ = errorText(productsError)
@@ -787,18 +823,21 @@ export default function Metrics() {
   // First load: nothing has arrived yet (no data and no error), so show the skeleton.
   // This also covers the moment before the effects dispatch, so there is no empty flash.
   // IMPORTANT: this early return must stay below every hook above.
-  const initialLoading =
-    (!summaryData && !summaryError_) || (!paymentsData && !paymentsError_)
+  // const initialLoading =
+  //   (!summaryData && !summaryError_) || (!paymentsData && !paymentsError_)
 
-  if (initialLoading) return <MetricsSkeleton />
+  // if (initialLoading) return <MetricsSkeleton />
 
+  // Skeleton whenever fresh data is still on the way: first visit, coming back
+// to this screen, or changing the period. Keep this below every hook.
+if (!summaryReady || !paymentsReady) return <MetricsSkeleton />
   // Period changed: old data is still on screen while the new data loads
-  const refreshing = summaryLoading && !!summaryData
+  // const refreshing = summaryLoading && !!summaryData
 
   return (
     <main
-      aria-busy={refreshing}
-      className={`mx-auto grid w-full min-w-0 max-w-[1600px] gap-4 p-2 transition-opacity sm:gap-5 sm:p-4 ${refreshing ? "opacity-60" : ""}`}
+      // aria-busy={refreshing}
+      className={`mx-auto grid w-full min-w-0 max-w-[1600px] gap-4 p-2 transition-opacity sm:gap-5 sm:p-4`}
     >
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
         <div className="min-w-0">
@@ -914,7 +953,9 @@ export default function Metrics() {
         </MetricPanel>
       </div>
 
-      <ProductTable products={periodProducts} total={productsTotal} loading={productsLoading} error={productsError_} />
+      <ProductTable products={periodProducts} total={productsTotal} 
+      // loading={productsLoading} 
+      error={productsError_} />
 
       <div className="flex flex-wrap items-end justify-between gap-2 pt-2">
         <div><h2 className="text-base font-semibold">Payments & balances</h2><p className="mt-1 text-xs text-muted-foreground">Current account position across all invoice dates.</p></div>

@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { can, canAct, getManageableRoles } from "@/lib/permissions"
+import { can } from "@/lib/permissions"
 
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
@@ -32,7 +32,6 @@ export default function InvoicesPageClient() {
   const dispatch = useDispatch()
 
   const customerInvoicesdata = useSelector((state) => state.getSlice.customerInvoicesdata)
-  const loading = useSelector((state) => state.getSlice.customerInvoicesloading)
   const error = useSelector((state) => state.getSlice.customerInvoiceserror)
 
   const [downloadingId, setDownloadingId] = useState(null)
@@ -62,9 +61,30 @@ export default function InvoicesPageClient() {
     setCustnmbr(localStorage.getItem("custnmbr") ?? "")
   }, [])
 
-  // Fetch once custnmbr is known
+  // false on every mount -> loader shows until fresh data arrives
+  const [invoicesReady, setInvoicesReady] = useState(false)
+
+  // Fetch on every visit once custnmbr is known (cached Redux data is never shown first)
   useEffect(() => {
-    if (custnmbr) dispatch(GetCustomerInvoiceItems(custnmbr))
+    if (custnmbr === null) return // still reading localStorage
+
+    // No customer number -> nothing to fetch, show the empty state instead of an endless loader
+    if (!custnmbr) {
+      setInvoicesReady(true)
+      return
+    }
+
+    let cancelled = false
+    setInvoicesReady(false)
+
+    // a dispatched thunk resolves for success AND failure, so .finally always runs
+    dispatch(GetCustomerInvoiceItems(custnmbr)).finally(() => {
+      if (!cancelled) setInvoicesReady(true)
+    })
+
+    return () => {
+      cancelled = true // ignore the result if the screen was left
+    }
   }, [custnmbr, dispatch])
 
   const allInvoices = useMemo(
@@ -120,11 +140,12 @@ export default function InvoicesPageClient() {
   const start = (currentPage - 1) * pageSize
   const invoices = filteredInvoices.slice(start, start + pageSize)
 
-   const [role, setRole] = useState(null)
-    useEffect(() => {
-      setRole(localStorage.getItem("roles"))
-    }, [])
-  
+  const [role, setRole] = useState(null)
+  useEffect(() => {
+    setRole(localStorage.getItem("roles"))
+  }, [])
+  // role is null until localStorage is read; treat the list as visible until then
+  const showList = role === null || can(role, "invoice.list")
 
   const handleDownloadPdf = (invoiceNumber) => {
     setDownloadingId(invoiceNumber)
@@ -134,13 +155,26 @@ export default function InvoicesPageClient() {
       .finally(() => setDownloadingId(null))
   }
 
-  const emptyMessage = loading
-    ? t("loading")
-    : error
-      ? typeof error === "string"
-        ? error
-        : error?.message || String(error)
-      : t("empty")
+  const emptyMessage = error
+    ? typeof error === "string"
+      ? error
+      : error?.message || String(error)
+    : t("empty")
+
+  // Loader on first load AND every time you come back to this screen.
+  // IMPORTANT: keep this below every hook above.
+  if (!invoicesReady) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex min-h-[60vh] flex-col items-center justify-center gap-2 text-center text-muted-foreground"
+      >
+        <Loader2 className="size-6 animate-spin text-primary" />
+        <p className="text-xs font-medium">{t("loading")}</p>
+      </div>
+    )
+  }
 
   return (
     <main className="space-y-4 p-2 sm:space-y-5 sm:p-4">
@@ -183,7 +217,7 @@ export default function InvoicesPageClient() {
       </form>
 
 
-      {can(role, "invoice.list") && (
+      {showList && (
         <Card className="overflow-hidden py-0">
           <CardHeader className="border-b px-4 py-4 sm:px-6">
             <CardTitle className="text-base">{t("title")}</CardTitle>
@@ -270,7 +304,7 @@ export default function InvoicesPageClient() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={9} className="px-6 py-12 text-center text-muted-foreground">
+                      <td colSpan={9} className={`px-6 py-12 text-center ${error ? "font-medium text-destructive" : "text-muted-foreground"}`}>
                         {emptyMessage}
                       </td>
                     </tr>
