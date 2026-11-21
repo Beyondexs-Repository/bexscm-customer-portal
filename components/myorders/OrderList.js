@@ -829,7 +829,7 @@ function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
       disabled={!canViewOrderDetails}
       onClick={() => onSelect(order.id)}
       className={cn(
-        "grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-lg border bg-card p-3 text-left shadow-sm transition-colors enabled:hover:bg-muted/50 disabled:cursor-default sm:p-4 md:grid-cols-[minmax(0,2fr)_minmax(7rem,1.2fr)_minmax(5rem,1fr)_minmax(5.5rem,1fr)_auto] md:items-center md:gap-4 lg:gap-6",
+        "grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-lg border bg-card p-3 text-left shadow-sm transition-colors enabled:hover:bg-muted/50 disabled:cursor-default sm:p-4 md:grid-cols-[minmax(0,2fr)_minmax(7rem,1.2fr)_minmax(4rem,0.8fr)_minmax(6rem,1fr)_minmax(5rem,0.8fr)_auto] md:items-center md:gap-4 lg:gap-6",
         selected && "border-primary",
       )}
     >
@@ -874,7 +874,13 @@ function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
         <p className="text-[11px] text-muted-foreground">{t("type")}</p>
         <p className="break-words text-xs font-bold leading-snug">{order.type}</p>
       </div>
-
+{/* NEW: GP Order Number */}
+<div className="hidden min-w-0 md:block">
+  <p className="text-[11px] text-muted-foreground">GP Order No.</p>
+  <p className="break-words text-xs font-bold leading-snug">
+    {order.gpOrderNumber?.trim() || "—"}
+  </p>
+</div>
       <div className="hidden pr-2 text-right md:block">
         <p className="text-[11px] text-muted-foreground">{t("total")}</p>
         <p className="whitespace-nowrap text-xs font-bold">{formatCurrency(order.total)}</p>
