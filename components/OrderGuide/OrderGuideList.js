@@ -1656,10 +1656,13 @@ export function OrderGuideList({
         closeDialog();
       } catch (error) {
         console.error("Create Order Guide Group Error:", error);
-        setNameDialogError(
-          error?.message || "Failed to add group. Please try again.",
-        );
-        toast.error(message);
+        // setNameDialogError(
+        //   error?.message || "Failed to add group. Please try again.",
+        // );
+        // toast.error(message);
+         toast.error(
+      error?.message || "Order guide group already exists. Please try again.",
+    );
       } finally {
         setIsSavingName(false);
       }
@@ -1696,9 +1699,12 @@ export function OrderGuideList({
         closeDialog();
       } catch (error) {
         console.error("Modify Order Guide Error:", error);
-        setNameDialogError(
-          error?.message || "Failed to rename order guide. Please try again.",
-        );
+        // setNameDialogError(
+        //   error?.message || "Failed to rename order guide. Please try again.",
+        // );
+        toast.error(
+      error?.message || "Failed to rename order guide. Please try again.",
+    );
       } finally {
         setIsSavingName(false);
       }
@@ -1740,9 +1746,12 @@ export function OrderGuideList({
         closeDialog();
       } catch (error) {
         console.error("Update Order Guide Group Error:", error);
-        setNameDialogError(
-          error?.message || "Failed to rename group. Please try again.",
-        );
+        // setNameDialogError(
+        //   error?.message || "Failed to rename group. Please try again.",
+        // );
+        toast.error(
+      error?.message || "Failed to rename group. Please try again.",
+    );
       } finally {
         setIsSavingName(false);
       }
