@@ -835,6 +835,7 @@ export const GetTerritorylist = createAsyncThunk(
 
 export const GetAreaList = createAsyncThunk(
   "Area/Area_list_GET",
+  /** @param {(number | string)[]} territoryIds */
   async (territoryIds, { rejectWithValue }) => {
     if (!territoryIds?.length) return [];
 
@@ -880,6 +881,7 @@ export const GetAreaList = createAsyncThunk(
 
 export const GetLocationList = createAsyncThunk(
   "Location/Location_list_GET",
+  /** @param {(number | string)[] | { areaIds?: (number | string)[], territoryIds?: (number | string)[] }} selection */
   async (selection, { rejectWithValue }) => {
     const areaIds = Array.isArray(selection) ? selection : selection?.areaIds ?? [];
     const territoryIds = Array.isArray(selection) ? [] : selection?.territoryIds ?? [];
