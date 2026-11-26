@@ -294,7 +294,7 @@ function QuickActions() {
 
   return (
     <section aria-label={t("ariaLabel")} className="@container min-w-0">
-      <div className="grid grid-cols-1 gap-2 @min-[22rem]:grid-cols-2 @min-[64rem]:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 @min-[64rem]:grid-cols-4">
         {quickActions.map((action) => {
           const Icon = action.icon
 
@@ -316,7 +316,7 @@ function QuickActions() {
                 <p className="break-words text-xs font-semibold sm:text-sm">
                   {t(`${action.key}.title`)}
                 </p>
-                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
+                <p className="mt-0.5 hidden line-clamp-2 text-[11px] leading-snug text-muted-foreground sm:block">
                   {t(`${action.key}.description`)}
                 </p>
               </div>

@@ -447,7 +447,7 @@ export default function WelcomeCard() {
 
   return (
     <section
-      className="group relative min-h-[18rem] touch-pan-y overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[20rem]"
+      className="group relative min-h-[12rem] touch-pan-y overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[20rem]"
       aria-roledescription="carousel"
       aria-label="Featured promotions"
       onTouchStart={handleTouchStart}
@@ -481,19 +481,19 @@ export default function WelcomeCard() {
             <>
               <div className="absolute inset-y-0 left-0 w-[40%] bg-gradient-to-r from-white via-white/95 to-transparent dark:from-slate-950 dark:via-slate-950/90 dark:to-transparent" />
 
-              <div className="relative z-10 flex min-h-[18rem] w-[40%] flex-col justify-center px-10 pb-12 pt-5 sm:min-h-[20rem] sm:p-8">
+              <div className="relative z-10 flex min-h-[12rem] w-[55%] flex-col justify-center px-4 pb-5 pt-2 sm:min-h-[20rem] sm:w-[40%] sm:p-8">
                 {slide.title && (
-                  <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl dark:text-white">
+                  <h1 className="mt-1 text-lg font-bold leading-tight tracking-tight text-slate-950 sm:mt-2 sm:text-4xl dark:text-white">
                     {slide.title}
                   </h1>
                 )}
                 {slide.description && (
-                  <p className="mt-1 text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-300">
+                  <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-600 sm:line-clamp-none sm:text-base dark:text-slate-300">
                     {slide.description}
                   </p>
                 )}
                 {slide.action && (
-                  <Button asChild size="sm" className="mt-6 min-h-9 w-fit py-2">
+                  <Button asChild size="sm" className="mt-2 h-8 min-h-8 w-fit px-2 py-1 text-xs sm:mt-6 sm:h-9 sm:min-h-9 sm:px-3 sm:py-2 sm:text-sm">
                     <Link href={slide.href}>
                       {slide.action}
                       <ArrowRight className="size-4" />

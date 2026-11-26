@@ -8,14 +8,14 @@ function Shimmer({ className = "" }) {
 // ───────────── Welcome banner ─────────────
 function BannerSkeleton() {
   return (
-    <section aria-hidden="true" className="relative min-h-[18rem] overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[20rem]">
+    <section aria-hidden="true" className="relative min-h-[12rem] overflow-hidden rounded-xl border bg-card shadow-sm sm:min-h-[20rem]">
       <Shimmer className="absolute inset-0 rounded-none" />
       {/* faint text blocks where the promo title / description / button sit */}
-      <div className="relative z-10 flex min-h-[18rem] w-[40%] flex-col justify-center gap-3 px-10 pb-12 pt-5 sm:min-h-[20rem] sm:p-8">
-        <div className="h-8 w-4/5 rounded-md bg-background/60" />
-        <div className="h-8 w-3/5 rounded-md bg-background/60" />
-        <div className="mt-1 h-4 w-2/3 rounded-md bg-background/60" />
-        <div className="mt-4 h-9 w-32 rounded-md bg-background/60" />
+      <div className="relative z-10 flex min-h-[12rem] w-[55%] flex-col justify-center gap-2 px-4 pb-5 pt-2 sm:min-h-[20rem] sm:w-[40%] sm:gap-3 sm:p-8">
+        <div className="h-6 w-4/5 rounded-md bg-background/60 sm:h-8" />
+        <div className="h-6 w-3/5 rounded-md bg-background/60 sm:h-8" />
+        <div className="mt-1 h-3 w-2/3 rounded-md bg-background/60 sm:h-4" />
+        <div className="mt-2 h-8 w-32 rounded-md bg-background/60 sm:mt-4 sm:h-9" />
       </div>
     </section>
   )

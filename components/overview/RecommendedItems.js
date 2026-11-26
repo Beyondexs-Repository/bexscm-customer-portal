@@ -226,7 +226,7 @@ export default function RecommendedItems() {
             <p className="text-xs text-muted-foreground">From your live catalog</p>
           </div>
         </div>
-        <Button disabled variant="outline" size="sm" className="ml-auto shrink-0 disabled:opacity-100">
+        <Button disabled variant="outline" size="sm" className="w-full disabled:opacity-100 sm:ml-auto sm:w-auto sm:shrink-0">
           View all products<ChevronRight className="size-4" />
         </Button>
       </div>
