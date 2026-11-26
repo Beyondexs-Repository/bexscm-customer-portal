@@ -228,6 +228,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
+import { useSearchParams } from "next/navigation"
 
 import { cn } from "@/lib/utils"
 
@@ -281,9 +282,11 @@ export function isUpcomingOrder(order) {
 }
 
 export default function MyOrders() {
+  const searchParams = useSearchParams()
+  const initialOrderId = searchParams.get("id") ?? ""
   const t = useTranslations("myOrders")
   const canViewOrderDetails = true
-  const [selectedOrderId, setSelectedOrderId] = useState(null)
+  const [selectedOrderId, setSelectedOrderId] = useState(initialOrderId || null)
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("All Types");
   const DEFAULT_CUSTNMBR = localStorage.getItem("custnmbr");
@@ -366,8 +369,17 @@ function resizeDetails(width) {
     [orderList, statusFilter, typeFilter],
   )
 
-  const selectedOrder =
-    filteredOrders.find((order) => order.id === selectedOrderId) || null
+  useEffect(() => {
+    setSelectedOrderId(initialOrderId || null)
+  }, [initialOrderId])
+
+  const selectedOrder = selectedOrderId
+    ? filteredOrders.find((order) =>
+        [order.id, order.orderId, order.orderNumber, order.gpOrderNumber].some(
+          (value) => String(value ?? "").toLowerCase() === String(selectedOrderId).toLowerCase(),
+        ),
+      ) || null
+    : null
 
   const fetchCustomerOrders = async (customerId) => {
     setIsLoading(true);
@@ -453,6 +465,7 @@ function resizeDetails(width) {
         orders={orderList}
         filteredOrders={filteredOrders}
         selectedOrder={selectedOrder}
+        initialSearch={initialOrderId}
         statusFilter={statusFilter}
         typeFilter={typeFilter}
         customerId={customerId}

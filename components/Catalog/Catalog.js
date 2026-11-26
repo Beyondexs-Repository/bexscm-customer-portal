@@ -1284,6 +1284,7 @@ import {
   Star,
   RotateCcw,
   Search,
+  SearchX,
   SlidersHorizontal,
   Loader2,
   List,
@@ -1623,6 +1624,7 @@ function getProductSearchText(product) {
     product.category,
     product.subcategory,
     product.unit,
+    product.packSize,
   ]
     .filter(Boolean)
     .join(" ")
@@ -2084,7 +2086,7 @@ const rawItems = useMemo(() => {
     const searchDelay = window.setTimeout(() => {
       setAppliedSearchQuery(searchQuery);
       setCurrentPage(1);
-    }, 1000);
+    }, 300);
 
     return () => window.clearTimeout(searchDelay);
   }, [searchQuery]);
@@ -2121,22 +2123,17 @@ const rawItems = useMemo(() => {
       filtered = selectedSubcategory?.products ?? [];
     }
 
-    const normalizedSearch = appliedSearchQuery.trim().toLowerCase();
+    const searchTerms = appliedSearchQuery
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
 
-    if (normalizedSearch && voiceProducts.length === 0) {
-      filtered = filtered.filter((product) =>
-        [
-          product.name,
-          product.category,
-          product.subcategory,
-          product.unit,
-          product.id,
-        ]
-          .filter(Boolean)
-          .some((value) =>
-            String(value).toLowerCase().includes(normalizedSearch),
-          ),
-      );
+    if (searchTerms.length > 0 && voiceProducts.length === 0) {
+      filtered = filtered.filter((product) => {
+        const haystack = getProductSearchText(product);
+        return searchTerms.every((term) => haystack.includes(term));
+      });
     }
 
    if (sortBy === "Price Low to High") {
@@ -2474,6 +2471,54 @@ const rawItems = useMemo(() => {
                 <Button type="button" variant="ghost" size="sm" onClick={exitTargetMode}>Done</Button>
               </div>
             )}
+            {products.length === 0 ? (
+              <div
+                role="status"
+                aria-live="polite"
+                className="mx-auto grid max-w-md justify-items-center gap-3 px-4 py-16 text-center"
+              >
+                <div className="grid size-14 place-items-center rounded-full bg-muted text-muted-foreground">
+                  <SearchX className="size-7" />
+                </div>
+                <h2 className="text-base font-semibold text-foreground">
+                  {searchQuery.trim()
+                    ? `No match found for "${searchQuery.trim()}"`
+                    : "No products found"}
+                </h2>
+                {/* <p className="text-sm text-muted-foreground">
+                  We couldn&apos;t find any products matching your search. Try one of these:
+                </p>
+                <ul className="space-y-1 text-left text-sm text-muted-foreground">
+                  <li>• Check the spelling of your keywords</li>
+                  <li>• Use fewer or more general words (e.g. &quot;chicken&quot; instead of &quot;chicken breast 5kg&quot;)</li>
+                  <li>• Search by item code or brand name</li>
+                  <li>• Set Category and Subcategory back to &quot;All&quot;</li>
+                </ul>
+                <div className="mt-2 flex flex-wrap justify-center gap-2">
+                  {searchQuery.trim() ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setVoiceProducts([]);
+                        setVoiceStatus("idle");
+                        setSearchQuery("");
+                        setAppliedSearchQuery("");
+                        setCurrentPage(1);
+                      }}
+                    >
+                      Clear search
+                    </Button>
+                  ) : null}
+                  <Button type="button" size="sm" onClick={handleClearAll}>
+                    <RotateCcw className="size-3.5" />
+                    Clear all filters
+                  </Button>
+                </div> */}
+              </div>
+            ) : (
+            <>
             <div className="mb-3 flex min-h-10 min-w-0 items-center justify-between gap-3 text-xs text-muted-foreground sm:text-sm">
               <p aria-live="polite">
                 {t("showingProducts", { start: products.length === 0 ? 0 : startIndex + 1, end: endIndex, total: products.length })}
@@ -2612,6 +2657,8 @@ const rawItems = useMemo(() => {
             <span>{t("perPage")}</span>
           </div>
             </div>
+            </>
+            )}
           </>
         )}
       </div>

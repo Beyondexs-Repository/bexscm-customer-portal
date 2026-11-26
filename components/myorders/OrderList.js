@@ -753,6 +753,7 @@ import {
   Search,
   Truck,
   UserCheck,
+  X,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -820,7 +821,7 @@ function StatCard({ icon: Icon, value, label, tone, active, onClick }) {
   )
 }
 
-function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
+export function OrderRow({ order, selected, onSelect, canViewOrderDetails, showChevron = true }) {
   const t = useTranslations("myOrders")
 
   return (
@@ -872,7 +873,7 @@ function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
 
       <div className="hidden min-w-0 md:block">
         <p className="text-[11px] text-muted-foreground">{t("type")}</p>
-        <p className="break-words text-xs font-bold leading-snug">{order.type}</p>
+        <p className="break-words text-xs font-bold leading-snug">{order.type || order.createType}</p>
       </div>
 {/* NEW: GP Order Number */}
 <div className="hidden min-w-0 md:block">
@@ -885,8 +886,9 @@ function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
         <p className="text-[11px] text-muted-foreground">{t("total")}</p>
         <p className="whitespace-nowrap text-xs font-bold">{formatCurrency(order.total)}</p>
       </div>
-
+{showChevron && (
       <ChevronRight className="mt-1 size-4 text-muted-foreground md:mt-0" />
+      )}
     </button>
   )
 }
@@ -909,6 +911,7 @@ export default function OrderList({
   onTypeFilterChange,
   onSelectOrder,
   canViewOrderDetails,
+  initialSearch = "",
 }) {
   const t = useTranslations("myOrders")
   const [inputCustomer, setInputCustomer] = useState(customerId)
@@ -917,7 +920,7 @@ export default function OrderList({
   // Live text filter (order number / status / type) — mirrors the
   // instant "type to filter" behavior, applied on top of whatever is
   // already loaded, without needing to hit Search or refetch.
-  const [searchText, setSearchText] = useState("")
+  const [searchText, setSearchText] = useState(initialSearch)
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -933,6 +936,10 @@ export default function OrderList({
     setCurrentPage(1)
   }, [statusFilter, typeFilter, customerId, searchText, filteredOrders.length])
 
+  useEffect(() => {
+    setSearchText(initialSearch)
+  }, [initialSearch])
+
   // Instant client-side search across order number, status, and type.
   const searchedOrders = useMemo(() => {
     const query = searchText.trim().toLowerCase()
@@ -940,6 +947,9 @@ export default function OrderList({
 
     return filteredOrders.filter((order) => {
       const orderNumber = String(order.orderNumber ?? "").toLowerCase()
+      const orderId = String(order.id ?? "").toLowerCase()
+      const apiOrderId = String(order.orderId ?? "").toLowerCase()
+      const gpOrderNumber = String(order.gpOrderNumber ?? "").toLowerCase()
       const status = String(order.status ?? "").toLowerCase()
       const type = String(order.type ?? "").toLowerCase()
       const deliveryDate = String(order.deliveryDate ?? "").toLowerCase()
@@ -948,6 +958,9 @@ export default function OrderList({
 
       return (
         orderNumber.includes(query) ||
+        orderId.includes(query) ||
+        apiOrderId.includes(query) ||
+        gpOrderNumber.includes(query) ||
         status.includes(query) ||
         type.includes(query) ||
         deliveryDate.includes(query) ||
@@ -1061,19 +1074,36 @@ const upcomingCount = orders.filter(isUpcomingOrder).length
               <div className="relative flex-1 sm:w-64">
                 <Input
                   type="text"
-                  placeholder="Search Order or Customer ID"
-                  value={inputCustomer}
+                  // placeholder="Search Order or Customer ID"
+                  placeholder="Search Order No"
+                  // value={inputCustomer}
+                  value={searchText}
                   onChange={handleSearchChange}
-                  className="h-9 pr-8 text-xs [font-family:inherit] text-inherit "
+                  className="h-9 pr-14 text-xs [font-family:inherit] text-inherit "
                 />
                 <button type="submit" aria-label="Search Customer Orders" className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground">
                   <Search className="size-4" />
                 </button>
+                {searchText && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    title="Clear search"
+                    onClick={() => {
+                      setSearchText("")
+                      setInputCustomer("")
+                    }}
+                    className="absolute right-8 top-2.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
               </div>
               {/* <Button type="submit" size="sm" variant="default" className="h-9 px-3 text-xs">
                 {t("search") || "Search"}
               </Button> */}
-              {onRefresh && (
+              {/* Refresh button temporarily hidden. */}
+              {/* {onRefresh && (
                 <Button
                   type="button"
                   size="sm"
@@ -1085,7 +1115,7 @@ const upcomingCount = orders.filter(isUpcomingOrder).length
                 >
                   <RefreshCw className={cn("size-3.5", isLoading && "animate-spin")} />
                 </Button>
-              )}
+              )} */}
             </form>
 
             <div className="flex items-center gap-2">

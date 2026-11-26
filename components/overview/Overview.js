@@ -246,6 +246,7 @@ import {
   ClipboardList,
   MessageSquareText,
   ShoppingBag,
+  ReceiptTextIcon,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
 import QuickOrderGuide from "./QuickOrderGuide"
@@ -281,8 +282,8 @@ const quickActions = [
   },
   {
     key: "messages",
-    href: "/messages",
-    icon: MessageSquareText,
+    href: "/invoices",
+    icon: ReceiptTextIcon,
     iconClassName:
       "bg-cyan-50 text-cyan-600 dark:bg-cyan-950/50 dark:text-cyan-300",
   },

@@ -483,8 +483,8 @@ function formatDisplayDate(value) {
           <div className="grid grid-cols-2 gap-3">
             {/* ReOrder - Left */}
             <Button
-              variant="outline"
-              className="h-11 w-full text-primary"
+              variant="default"
+              className="h-11 w-full"
               onClick={() => {
                 setReOrderItems(
                   order.items.map((item) => {
@@ -503,8 +503,8 @@ function formatDisplayDate(value) {
             </Button>
 
             <Button
-              variant="outline"
-              className="h-11 w-full text-primary"
+              variant="default"
+              className="h-11 w-full"
               disabled={isDownloadingInvoice}
               onClick={handleDownloadInvoice}
             >

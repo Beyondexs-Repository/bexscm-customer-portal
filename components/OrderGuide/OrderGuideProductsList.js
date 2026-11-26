@@ -1521,7 +1521,10 @@ const [isSavingEssential, setIsSavingEssential] = useState(false);
 
   const categoryLabel = product.category || product.subcategory;
   const orderControls = canPlaceOrder ? (
-    <div className="grid w-full grid-cols-[1fr_1.3fr] gap-2">
+    <div className={cn(
+      "grid w-full grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-2",
+      listLayout && "max-sm:-ml-[5.5rem] max-sm:w-[calc(100%_+_5.5rem)]",
+    )}>
       <div className="grid h-8 grid-cols-3 overflow-hidden rounded-md border bg-background">
         <Button
           variant="ghost"
@@ -1575,7 +1578,7 @@ const [isSavingEssential, setIsSavingEssential] = useState(false);
         }}
       >
         <ShoppingCart />
-        <span className="truncate">
+        <span className="min-w-0 whitespace-nowrap">
           {isInCart ? "Added" : "Add to Cart"}
         </span>
       </Button>
@@ -1594,7 +1597,7 @@ const [isSavingEssential, setIsSavingEssential] = useState(false);
       className={cn(
         "relative min-w-0 overflow-hidden rounded-lg border bg-card text-card-foreground",
         listLayout && "flex items-start gap-2 p-2.5 sm:gap-3",
-        listLayout && canEdit && "pr-11",
+        listLayout && canEdit && "sm:pr-11",
         isDragging && "opacity-40",
         listLayout && selected && "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/40",
       )}
@@ -1602,7 +1605,7 @@ const [isSavingEssential, setIsSavingEssential] = useState(false);
       {(canEdit || canPlaceOrder) && (
         <div className={cn(
           "flex shrink-0 flex-col items-center",
-          listLayout ? "w-6 self-stretch justify-between gap-3 py-1" : "absolute left-2 top-2 z-10",
+          listLayout ? "w-6 self-start justify-start gap-3 py-1" : "absolute left-2 top-2 z-10",
         )}>
           <input
             type="checkbox"
@@ -1697,11 +1700,11 @@ const [isSavingEssential, setIsSavingEssential] = useState(false);
           listLayout && "grid min-w-0 flex-1 grid-cols-1 gap-2 self-stretch space-y-0 p-0 sm:grid-cols-[minmax(0,1fr)_13rem] sm:items-center sm:gap-4",
         )}
       >
-        <div className={cn("min-w-0 space-y-1", listLayout && "flex-1")}>
+        <div className={cn("min-w-0 space-y-1", listLayout && "flex-1", listLayout && canEdit && "max-sm:pr-8")}>
           <div className="min-w-0 sm:flex sm:items-center sm:gap-2">
             <Link
               href={`/catalog/details/?id=${encodeURIComponent(product.id)}`}
-              className="block min-w-0 truncate text-[0.72rem] font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
+              className="block min-w-0 truncate text-xs font-bold outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
             >
               {product.name}
             </Link>
@@ -1724,10 +1727,12 @@ const [isSavingEssential, setIsSavingEssential] = useState(false);
                   <span className="truncate">{categoryLabel}</span>
                 </Badge>
               ) : null}
-              <p className="truncate text-[0.7rem] font-medium text-muted-foreground lg:text-xs">
-                {product.sku ? `Item code: ${product.sku}` : "Item code: —"}
-                <span className="px-1.5 text-border">|</span>
-                Pack Size: 1 {product.unit}
+              <p className="flex min-w-0 flex-wrap items-center gap-x-1 text-[0.7rem] font-medium text-muted-foreground lg:text-xs">
+                <span className="break-all">
+                  {product.sku ? `Item code: ${product.sku}` : "Item code: —"}
+                </span>
+                <span className="hidden px-0.5 text-border min-[480px]:inline">|</span>
+                <span className="whitespace-nowrap">Pack Size: 1 {product.unit}</span>
               </p>
             </>
           ) : (
@@ -1745,7 +1750,7 @@ const [isSavingEssential, setIsSavingEssential] = useState(false);
 
           <p
             className={cn(
-              "text-[0.95rem] font-bold lg:text-base",
+              "pt-2 text-[0.95rem] font-bold lg:text-base",
               listLayout && "text-sm lg:text-sm",
             )}
           >
@@ -1756,7 +1761,10 @@ const [isSavingEssential, setIsSavingEssential] = useState(false);
         {canPlaceOrder && (
           <div className="min-w-0 space-y-4">
             {orderControls}
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            <div className={cn(
+              "flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-2",
+              listLayout && "max-sm:-ml-[5.5rem] max-sm:w-[calc(100%_+_5.5rem)]",
+            )}>
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 bg-transparent p-0 text-xs font-normal text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -2972,7 +2980,7 @@ export function OrderGuideProductsList({
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b px-2 pb-2 pt-0 lg:px-3 lg:pb-3">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b px-2 pb-2 pt-0 lg:px-3 lg:pb-3">
           <div className="relative min-w-0 basis-full sm:basis-auto sm:flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
