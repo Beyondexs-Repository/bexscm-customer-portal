@@ -278,7 +278,7 @@
     "ordersDelivered": "Pedidos entregados",
     "upcomingOrders": "Pedidos próximos",
     "totalSpend": "Gasto total",
-    "recentOrders": "Pedidos recientes",
+    "recentOrders": "Historial de pedidos",
     "filterHint": "Filtra por estado, tipo de pedido o dirección de orden.",
     "orderType": "Tipo de pedido",
     "allTypes": "Todos los tipos",
@@ -464,8 +464,8 @@
     "description": "Consulta tus pedidos anteriores"
   },
   "messages": {
-    "title": "Mensajes",
-    "description": "Contacta a tu equipo"
+    "title": "Facturas",
+    "description": "Consulta tus facturas"
   }
 },
 "recentInvoices": {

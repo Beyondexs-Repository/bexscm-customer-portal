@@ -820,7 +820,7 @@ function StatCard({ icon: Icon, value, label, tone, active, onClick }) {
   )
 }
 
-function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
+export function OrderRow({ order, selected, onSelect, canViewOrderDetails, showChevron = true }) {
   const t = useTranslations("myOrders")
 
   return (
@@ -872,7 +872,7 @@ function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
 
       <div className="hidden min-w-0 md:block">
         <p className="text-[11px] text-muted-foreground">{t("type")}</p>
-        <p className="break-words text-xs font-bold leading-snug">{order.type}</p>
+        <p className="break-words text-xs font-bold leading-snug">{order.type || order.createType}</p>
       </div>
 {/* NEW: GP Order Number */}
 <div className="hidden min-w-0 md:block">
@@ -885,8 +885,9 @@ function OrderRow({ order, selected, onSelect, canViewOrderDetails }) {
         <p className="text-[11px] text-muted-foreground">{t("total")}</p>
         <p className="whitespace-nowrap text-xs font-bold">{formatCurrency(order.total)}</p>
       </div>
-
+{showChevron && (
       <ChevronRight className="mt-1 size-4 text-muted-foreground md:mt-0" />
+      )}
     </button>
   )
 }
@@ -1061,8 +1062,9 @@ const upcomingCount = orders.filter(isUpcomingOrder).length
               <div className="relative flex-1 sm:w-64">
                 <Input
                   type="text"
-                  placeholder="Search Order or Customer ID"
-                  value={inputCustomer}
+                  // placeholder="Search Order or Customer ID"
+                  placeholder="Search Order No"
+                  // value={inputCustomer}
                   onChange={handleSearchChange}
                   className="h-9 pr-8 text-xs [font-family:inherit] text-inherit "
                 />

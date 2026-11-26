@@ -312,7 +312,7 @@
     "ordersDelivered": "Orders Delivered",
     "upcomingOrders": "Upcoming Orders",
     "totalSpend": "Total Spend",
-    "recentOrders": "Recent Orders",
+    "recentOrders": "Order history",
     "filterHint": "Filter by status, order type, or sort direction.",
     "orderType": "Order Type",
     "allTypes": "All Types",
@@ -500,8 +500,8 @@
       "description": "View your past orders"
     },
     "messages": {
-      "title": "Messages",
-      "description": "Contact your team"
+      "title": "Invoices",
+      "description": "View your invoices"
     }
   },
   "recentInvoices": {

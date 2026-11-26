@@ -117,6 +117,7 @@ overviewData: {
     promotions: [],
     recommendedItems: [],
     recentInvoices: [],
+    recentOrders: [],
   },
   overviewStatus: "idle",   // "idle" | "loading" | "succeeded" | "failed"
   overviewError: null,
@@ -626,7 +627,7 @@ export const GetOverviewlist = createAsyncThunk(
 
       if (!custnmbr) return rejectWithValue("Customer number not found.")
 
-      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/home/${encodeURIComponent(custnmbr)}?take=6&invoiceTake=5`
+      const URL = `${process.env.NEXT_PUBLIC_NRL_API_URL}/home/${encodeURIComponent(custnmbr)}?take=6&invoiceTake=5&orderTake=5`
 
       const response = await axios.get(URL, {
         headers: {
@@ -648,6 +649,7 @@ export const GetOverviewlist = createAsyncThunk(
         promotions: data.promotions ?? [],
         recommendedItems: data.recommendedItems ?? [],
         recentInvoices: data.recentInvoices ?? [],
+        recentOrders: data.recentOrders ?? [],
       }
     } catch (error) {
       const data = error.response?.data
